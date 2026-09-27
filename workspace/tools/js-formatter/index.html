@@ -65,7 +65,6 @@ tailwind.config = { theme: { extend: {
       <button id="go" class="ws-btn">Run</button>
       <button id="dl" class="ws-btn-ghost">Download</button>
     </div>
-    <div class="mt-2 text-[11px] font-mono text-white/30">Lightweight tokenizer — handles strings, template literals and regex safely. Not a full AST parser.</div>
     <div class="mt-1 text-[11px] font-mono" id="err"></div>
     <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Output</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
   </section>
@@ -132,12 +131,23 @@ function minify(code) {
     }
     return s;
   }
+  function skipRegex() {
+    let s='/'; i++;
+    while(i<code.length) {
+      if(code[i]==='\\') { s+=code[i]+(code[i+1]||''); i+=2; continue; }
+      if(code[i]==='/') { i++; s+='/'; while(i<code.length&&/[gimsuy]/.test(code[i])) s+=code[i++]; return s; }
+      if(code[i]==='\n') return s;
+      s+=code[i]; i++;
+    }
+    return s;
+  }
   while(i<code.length) {
     const c=code[i];
     if(c==='/'&&code[i+1]==='/') { let end=code.indexOf('\n',i); if(end<0)end=code.length; i=end; continue; }
     if(c==='/'&&code[i+1]==='*') { let end=code.indexOf('*/',i+2); if(end<0)end=code.length; else end+=2; i=end; continue; }
     if(c==='"'||c==="'") { out+=skipString(c); continue; }
     if(c==='`') { out+=skipTemplate(); continue; }
+    if(c==='/'&&i>0&&!isWS(code[i-1])&&code[i-1]!==')') { out+=skipRegex(); continue; }
     if(isWS(c)) { i++; continue; }
     out+=c; i++;
   }

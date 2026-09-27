@@ -74,7 +74,7 @@ tailwind.config = { theme: { extend: {
     <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Output</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
     <div class="mt-4">
       <div class="ws-label mb-2">Live preview</div>
-      <iframe id="preview" class="w-full min-h-[200px] rounded-xl border border-white/10 bg-white" sandbox="allow-same-origin"></iframe>
+      <iframe id="preview" class="w-full min-h-[200px] rounded-xl border border-white/10 bg-white" sandbox="allow-same-origin allow-scripts"></iframe>
     </div>
   </section>
 
@@ -119,12 +119,10 @@ function prettify(html, ind, keepComments) {
 function minify(html, keepComments) {
   let s=html;
   if(!keepComments) s=s.replace(/<!--[\s\S]*?-->/g,'');
-  // protect pre/textarea/script from whitespace collapse
-  const protected_ = [];
-  s = s.replace(/<(pre|textarea|script)\b[^>]*>[\s\S]*?<\/\1>/gi, m => { protected_.push(m); return '\x00' + (protected_.length - 1) + '\x00'; });
+  const prot=[];
+  s=s.replace(/<(pre|textarea|script)\b[^>]*>[\s\S]*?<\/\1>/gi,m=>{prot.push(m);return'\u0000PROT'+(prot.length-1)+'\u0000'});
   s=s.replace(/\s+/g,' ').replace(/\s*</g,'<').replace(/<\s+/g,'<').replace(/\s*>/g,'>').replace(/>\s+</g,'><').trim();
-  // restore protected blocks
-  s = s.replace(/\x00(\d+)\x00/g, (_, n) => protected_[parseInt(n)]);
+  s=s.replace(/\u0000PROT(\d+)\u0000/g,(_,n)=>prot[+n]);
   return s;
 }
 function run() {

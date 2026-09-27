@@ -118,22 +118,16 @@ function minifyCSS(css) {
 function minify(html, keepComments, collapseInline) {
   let s = html;
   if (!keepComments) s = s.replace(/<!--[\s\S]*?-->/g, '');
-  // minify inline <style> blocks
   s = s.replace(/<style([^>]*)>([\s\S]*?)<\/style>/gi, (m, attr, css) => '<style' + attr + '>' + minifyCSS(css) + '</style>');
-  // protect <pre>, <textarea>, <script> from whitespace collapse
-  const protected = [];
-  s = s.replace(/<(pre|textarea|script)\b[^>]*>[\s\S]*?<\/\1>/gi, m => { protected.push(m); return '\x00' + (protected.length - 1) + '\x00'; });
+  const prot = [];
+  s = s.replace(/<(pre|textarea)\b[^>]*>[\s\S]*?<\/\1>/gi, m => { prot.push(m); return '\uE000' + (prot.length - 1) + '\uE000'; });
+  s = s.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, m => { prot.push(m); return '\uE000' + (prot.length - 1) + '\uE000'; });
   s = s.replace(/^\s+/, '').replace(/\s+$/, '');
   s = s.replace(/\s+/g, ' ');
-  s = s.replace(/\s*</g, '<').replace(/<\s+/g, '<');
-  s = s.replace(/\s*>/g, '>').replace(/\s+$/, '');
-  if (collapseInline) {
-    s = s.replace(/>\s+</g, '><');
-  } else {
-    s = s.replace(/>\s+</g, '> <');
-  }
-  // restore protected blocks
-  s = s.replace(/\x00(\d+)\x00/g, (_, n) => protected[parseInt(n)]);
+  s = s.replace(/\s*</g, '<').replace(/<\s+/g, '<').replace(/\s*>/g, '>').replace(/\s+$/, '');
+  if (collapseInline) { s = s.replace(/>\s+</g, '><'); }
+  else { s = s.replace(/>\s+</g, '> <'); }
+  s = s.replace(/\uE000(\d+)\uE000/g, (_, n) => prot[+n]);
   return s.trim();
 }
 function run() {
