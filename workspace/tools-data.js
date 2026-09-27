@@ -107,4 +107,10 @@ const RAW = [
   {slug:"yaml-to-json",name:"YAML to JSON",cat:"data",blurb:"Parse YAML and export formatted JSON.",tags:["YAML","JSON","CONVERT","CLIENT-SIDE"],ready:true},
   {slug:"json-to-csv",name:"JSON to CSV",cat:"data",blurb:"Flatten a JSON array into CSV with headers and download.",tags:["JSON","CSV","CONVERT","CLIENT-SIDE"],ready:true},
   {slug:"xml-formatter",name:"XML Formatter",cat:"data",blurb:"Prettify or minify XML with validation and indentation control.",tags:["XML","FORMAT","PRETTIFY","CLIENT-SIDE"],ready:true},
+  {slug:"html-formatter",name:"HTML Formatter",cat:"data",blurb:"Prettify or minify HTML with indentation control.",tags:["HTML","FORMAT","PRETTIFY","CLIENT-SIDE"],ready:true},
+  {slug:"css-formatter",name:"CSS Formatter",cat:"data",blurb:"Prettify or minify CSS with indentation control.",tags:["CSS","FORMAT","PRETTIFY","CLIENT-SIDE"],ready:true},
+  {slug:"js-formatter",name:"JS Formatter",cat:"data",blurb:"Prettify or minify JavaScript with indentation control.",tags:["JS","FORMAT","PRETTIFY","CLIENT-SIDE"],ready:true},
+  {slug:"css-minifier",name:"CSS Minifier",cat:"data",blurb:"Minify CSS with before/after byte count and download.",tags:["CSS","MINIFY","CLIENT-SIDE"],ready:true},
+  {slug:"html-minifier",name:"HTML Minifier",cat:"data",blurb:"Minify HTML with comment control and byte savings.",tags:["HTML","MINIFY","CLIENT-SIDE"],ready:true},
+  {slug:"utm-builder",name:"UTM Builder",cat:"data",blurb:"Build UTM tracking URLs with live preview and shortener.",tags:["UTM","URL","MARKETING","CLIENT-SIDE"],ready:true},
   ];
