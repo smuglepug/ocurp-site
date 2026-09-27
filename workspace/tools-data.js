@@ -70,4 +70,11 @@ const RAW = [
   {slug:"markdown-to-pdf",name:"Markdown to PDF",cat:"document",blurb:"Write markdown, preview it, export a clean paginated PDF.",tags:["MARKDOWN","PDF","EXPORT"],ready:true},
   {slug:"html-to-pdf",name:"HTML to PDF",cat:"document",blurb:"Paste HTML, preview it live, export a styled PDF.",tags:["HTML","PDF","EXPORT"],ready:true},
   {slug:"pdf-page-extract",name:"Extract PDF Pages",cat:"document",blurb:"Pull a page range into a new PDF with one click.",tags:["PDF","EXTRACT","RANGE"],ready:true},
+  {slug:"image-compress",name:"Image Compressor",cat:"design",blurb:"Quality slider with before/after preview and download.",tags:["IMAGE","COMPRESS","CLIENT-SIDE"],ready:true},
+  {slug:"image-resize",name:"Image Resizer",cat:"design",blurb:"Resize by pixels or percentage with aspect-ratio lock.",tags:["IMAGE","RESIZE","CLIENT-SIDE"],ready:true},
+  {slug:"image-crop",name:"Image Cropper",cat:"design",blurb:"Drag a crop box with fixed ratios and download.",tags:["IMAGE","CROP","CLIENT-SIDE"],ready:true},
+  {slug:"image-convert",name:"Image Converter",cat:"design",blurb:"PNG, JPG and WebP via canvas with quality control.",tags:["IMAGE","CONVERT","CLIENT-SIDE"],ready:true},
+  {slug:"heic-to-jpg",name:"HEIC to JPG",cat:"design",blurb:"Decode HEIC in-browser via heic2any, no upload.",tags:["HEIC","IMAGE","CLIENT-SIDE"],ready:true},
+  {slug:"svg-to-png",name:"SVG to PNG",cat:"design",blurb:"Rasterise an uploaded SVG at your chosen scale.",tags:["SVG","PNG","CLIENT-SIDE"],ready:true},
+  {slug:"png-to-jpg",name:"PNG to JPG",cat:"design",blurb:"Flatten transparency onto a chosen background colour.",tags:["PNG","JPG","FLATTEN"],ready:true},
   ];
