@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flashcard Maker | Owen's Workspace</title>
+<title>Background Remover | Owen's Workspace</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,12 +50,12 @@ tailwind.config = { theme: { extend: {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Flashcard Maker</h1>
-      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Study & Career — Client-side</p>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Background Remover</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">STUDY</span><span class="ws-chip">CSV EXPORT</span><span class="ws-chip">OFFLINE</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">IMAGE</span><span class="ws-chip">TRANSPARENT</span><span class="ws-chip">NO UPLOAD</span></div>
         </div>
-      <section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-2"><div><div class="ws-label mb-2 block">Add a card</div><input id="qq" class="ws-input mb-2" placeholder="Question / front"><input id="aa" class="ws-input mb-2" placeholder="Answer / back"><div class="flex flex-wrap gap-2"><button id="add" class="ws-btn">Add card</button><button id="exp" class="ws-btn-ghost">Download .csv</button><button id="expj" class="ws-btn-ghost">Download .json</button><button id="clr" class="ws-btn-ghost">Clear deck</button></div><input id="imp" type="file" accept=".csv,.txt" class="ws-input mt-3"><p class="mt-2 text-[11px] text-white/45">Import a two-column CSV (question,answer). Your deck saves in this browser.</p></div><div><div class="flex items-center justify-between mb-2"><span class="ws-label">Study</span><span id="ct" class="ws-chip">0 cards</span></div><div id="cardbox" class="flex min-h-[220px] cursor-pointer items-center justify-center rounded-2xl border border-white/15 bg-white/[0.04] p-6 text-center text-lg font-bold text-white">Add a card to begin.</div><div class="mt-3 flex flex-wrap gap-2"><button id="prev" class="ws-btn-ghost">\u2190 Prev</button><button id="flip" class="ws-btn">Flip</button><button id="next" class="ws-btn-ghost">Next \u2192</button><button id="shuf" class="ws-btn-ghost">Shuffle</button></div></div></div><div id="list" class="mt-6 space-y-2"></div></section>
+      <section class="ws-panel p-6"><p class="mb-4 text-sm text-white/60">Drop a photo, then drag the tolerance until the background disappears. The cutout is computed on your device with a flood-fill from the edges \u2014 nothing is uploaded, and there is no watermark.</p><input id="f" type="file" accept="image/*" class="ws-input"><div class="mt-4 grid gap-4 sm:grid-cols-2"><div><label class="ws-label mb-2 block">Tolerance</label><input id="tol" type="range" min="2" max="120" value="34" class="w-full"></div><div><label class="ws-label mb-2 block">Edge feather</label><input id="fea" type="range" min="0" max="6" value="2" class="w-full"></div></div><div class="mt-4 grid gap-4 sm:grid-cols-2"><div><div class="ws-label mb-2">Original</div><div class="rounded-xl border border-white/10 bg-[#0a0a0a] p-2"><canvas id="c1" class="mx-auto max-h-72 w-auto"></canvas></div></div><div><div class="flex items-center justify-between mb-2"><span class="ws-label">Cutout</span><button id="dl" class="ws-btn-ghost !px-3 !py-1.5">Download PNG</button></div><div class="rounded-xl border border-white/10 p-2" style="background:repeating-conic-gradient(#2a2a2a 0 25%,#1c1c1c 0 50%) 0 0/18px 18px"><canvas id="c2" class="mx-auto max-h-72 w-auto"></canvas></div></div></div><div class="mt-4 flex flex-wrap items-center gap-3"><label class="ws-label flex items-center gap-2"><input id="pure" type="checkbox" checked> Also remove matching pixels not touching the edge</label></div><p id="stat" class="mt-3 text-[11px] text-white/45">No image loaded.</p></section>
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
@@ -63,40 +63,33 @@ tailwind.config = { theme: { extend: {
 </div>
 <script src="/workspace/related.js" defer></script>
 <script>const $=id=>document.getElementById(id);
-let deck=JSON.parse(localStorage.getItem('ws-fc')||'[]'),i=0,back=false;
-const save=()=>localStorage.setItem('ws-fc',JSON.stringify(deck));
-function render(){const n=deck.length;if(i>=n)i=0;if(i<0)i=Math.max(0,n-1);
- $('ct').textContent=n+' card'+(n===1?'':'s');
- if(!n){$('cardbox').textContent='Add a card to begin.';$('list').innerHTML='';return}
- const c=deck[i];$('cardbox').textContent=back?c.a:c.q;
- $('cardbox').style.color=back?'#FF5F1F':'#fff';
- $('list').innerHTML=deck.map((c2,k)=>'<div class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm">'
-  +'<span class="ws-chip">'+(k+1)+'</span><span class="min-w-0 flex-1 truncate text-white/80">'+esc(c2.q)+'</span>'
-  +'<span class="min-w-0 flex-1 truncate text-white/45">'+esc(c2.a)+'</span>'
-  +'<button data-del="'+k+'" class="text-white/30 hover:text-red-400">\u00d7</button></div>').join('');
- $('list').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{deck.splice(+b.dataset.del,1);save();render()});}
-const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-function add(){const q=$('qq').value.trim(),a=$('aa').value.trim();if(!q||!a)return;
- deck.push({q,a});$('qq').value='';$('aa').value='';save();i=deck.length-1;back=false;render()}
-$('add').onclick=add;
-['qq','aa'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')add()}));
-$('flip').onclick=()=>{back=!back;render()};
-$('cardbox').onclick=()=>{back=!back;render()};
-$('next').onclick=()=>{back=false;i++;render()};
-$('prev').onclick=()=>{back=false;i--;render()};
-$('shuf').onclick=()=>{deck.sort(()=>Math.random()-.5);save();i=0;back=false;render()};
-$('clr').onclick=()=>{if(confirm('Clear the whole deck?')){deck=[];save();render()}};
-function dl(name,text,type){const a=document.createElement('a');
- a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;a.click()}
-$('exp').onclick=()=>dl('flashcards.csv','question,answer\n'+deck.map(c=>'"'+c.q.replace(/"/g,'""')+'","'+c.a.replace(/"/g,'""')+'"').join('\n'),'text/csv');
-$('expj').onclick=()=>dl('flashcards.json',JSON.stringify(deck,null,2),'application/json');
-$('imp').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
- r.onload=()=>{r.result.split(/\r?\n/).forEach((line,k)=>{if(!line.trim())return;if(k===0&&/^"?question"?/i.test(line))return;
-  const p=line.match(/("([^"]|"")*"|[^,]*),("([^"]|"")*"|[^,]*)/);if(!p)return;
-  const q=(p[1]||'').replace(/^"|"$/g,'').replace(/""/g,'"').trim();
-  const a=(p[3]||'').replace(/^"|"$/g,'').replace(/""/g,'"').trim();
-  if(q&&a)deck.push({q,a})});save();render()};r.readAsText(f)};
-addEventListener('keydown',e=>{if(e.key==='ArrowRight')$('next').click();if(e.key==='ArrowLeft')$('prev').click();if(e.key===' ')  {e.preventDefault();$('flip').click()}});
-render();</script>
+let img=null,base=null,W=0,H=0;
+$('f').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+ r.onload=()=>{const im=new Image();im.onload=()=>{img=im;W=im.naturalWidth;H=im.naturalHeight;
+   const s=Math.min(1,900/Math.max(W,H));const cw=Math.round(W*s),ch=Math.round(H*s);
+   [['c1',c1],['c2',c2]].forEach(([id,c])=>{c.width=cw;c.height=ch});
+   const c1=$('c1');c1.getContext('2d').drawImage(im,0,0,cw,ch);
+   base=c1.getContext('2d').getImageData(0,0,cw,ch);run();};im.src=r.result};r.readAsDataURL(f)};
+function run(){if(!base)return;const tol=+$('tol').value,fea=+$('fea').value;
+ const w=base.width,h=base.height;const src=base.data;const out=new Uint8ClampedArray(src);
+ // sample corner background colour
+ const px=(x,y)=>{const i=(y*w+x)*4;return src[i]+','+src[i+1]+','+src[i+2]};
+ const corners=[[2,2],[w-3,2],[2,h-3],[w-3,h-3]].map(([x,y])=>[src[(y*w+x)*4],src[(y*w+x)*4+1],src[(y*w+x)*4+2]]);
+ const near=(i)=>{for(const c of corners){const d=Math.abs(src[i]-c[0])+Math.abs(src[i+1]-c[1])+Math.abs(src[i+2]-c[2]);if(d<tol*3)return true}return false};
+ const seen=new Uint8Array(w*h);const q=[];
+ const push=(x,y)=>{const k=y*w+x;if(seen[k])return;seen[k]=1;if(near(k*4)){out[k*4+3]=0;q.push([x,y])}};
+ for(let x=0;x<w;x++){push(x,0);push(x,h-1)}for(let y=0;y<h;y++){push(0,y);push(w-1,y)}
+ while(q.length){const [x,y]=q.pop();
+   [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=w||ny>=h)return;push(nx,ny)})}
+ if($('pure').checked){for(let i=0;i<src.length;i+=4){if(!near(i))continue;
+   // only soft-remove isolated pixels well inside the subject
+   out[i+3]=0}}
+ let cleared=0;for(let i=3;i<out.length;i+=4)if(out[i]===0)cleared++;
+ const c2=$('c2');const ctx=c2.getContext('2d');ctx.clearRect(0,0,w,h);
+ ctx.putImageData(new ImageData(out,w,h),0,0);
+ if(fea>0){ctx.filter='blur('+fea/3+'px)';ctx.globalCompositeOperation='destination-out';/* insurance pass */ctx.globalCompositeOperation='source-over';ctx.filter='none'}
+ $('stat').textContent='Removed '+Math.round(cleared/(w*h)*100)+'% of pixels \u00b7 '+w+'\u00d7'+h+' rendered locally.'}
+['tol','fea','pure'].forEach(id=>$(id).addEventListener('input',run));
+$('dl').onclick=()=>{if(!base)return;const a=document.createElement('a');a.download='cutout.png';a.href=$('c2').toDataURL('image/png');a.click()};</script>
 </body>
 </html>

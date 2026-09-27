@@ -50,4 +50,6 @@ const RAW = [
   {slug:"typing-speed",name:"Typing Speed Test",cat:"study",blurb:"WPM and accuracy over a timed passage.",tags:["TEST"],ready:true},
   {slug:"pomodoro",name:"Pomodoro Timer",cat:"study",blurb:"Focus sessions with a chime, right in the tab.",tags:["FOCUS"],ready:true},
   {slug:"kanban",name:"Kanban Board",cat:"study",blurb:"Drag-and-drop tasks saved in this browser.",tags:["TASKS"],ready:true},
-];
+    {slug:"background-remover",name:"Background Remover",cat:"design",blurb:"Cut the background off a photo in your browser — no upload, no watermark.",tags:["IMAGE","PNG"],ready:true},
+    {slug:"element-mixer",name:"Element Mixer",cat:"study",blurb:"All 118 elements — tap two to see the compound they form.",tags:["CHEMISTRY","TABLE"],ready:true},
+  ];
