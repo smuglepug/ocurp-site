@@ -83,4 +83,10 @@ const RAW = [
   {slug:"image-watermark",name:"Watermark Image",cat:"design",blurb:"Add a text watermark with position, opacity, colour and rotation.",tags:["IMAGE","WATERMARK","CANVAS"],ready:true},
   {slug:"image-rotate",name:"Rotate & Flip",cat:"design",blurb:"Rotate 90/180/270 and flip horizontally or vertically, download.",tags:["IMAGE","ROTATE","FLIP"],ready:true},
   {slug:"image-to-ascii",name:"Image to ASCII",cat:"design",blurb:"Convert any image to ASCII art with adjustable width and ramp.",tags:["IMAGE","ASCII","ART"],ready:true},
+  {slug:"favicon-maker",name:"Favicon Maker",cat:"design",blurb:"One image to 16/32/48/180/512 favicons plus a .ico bundle.",tags:["FAVICON","ICO","PNG","CLIENT-SIDE"],ready:true},
+  {slug:"image-collage",name:"Collage Maker",cat:"design",blurb:"Arrange images in a grid with custom gap and background, export PNG.",tags:["IMAGE","COLLAGE","GRID","CLIENT-SIDE"],ready:true},
+  {slug:"image-to-favicon",name:"SVG to Favicon",cat:"design",blurb:"Rasterise an SVG at every favicon size and generate the link tags.",tags:["SVG","FAVICON","ICO","CLIENT-SIDE"],ready:true},
+  {slug:"remove-line-breaks",name:"Remove Line Breaks",cat:"data",blurb:"Strip unwanted newlines, optionally merge paragraphs.",tags:["TEXT","LINE BREAKS","CLEANUP","CLIENT-SIDE"],ready:true},
+  {slug:"remove-duplicate-lines",name:"Remove Duplicate Lines",cat:"data",blurb:"Dedupe lines with case and whitespace options, keep order.",tags:["TEXT","DEDUPE","LINES","CLIENT-SIDE"],ready:true},
+  {slug:"remove-extra-spaces",name:"Remove Extra Spaces",cat:"data",blurb:"Collapse runs of spaces and tabs, trim each line.",tags:["TEXT","SPACES","CLEANUP","CLIENT-SIDE"],ready:true},
   ];
