@@ -22,7 +22,7 @@
   function chip(id, label) {
     var on = active === id;
     return '<button data-cat="' + esc(id) + '" class="rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all '
-      + (on ? 'border-accent bg-accent/10 text-accent' : 'border-white/10 bg-white/[0.03] text-white/45 hover:border-white/25 hover:text-white/80')
+      + (on ? 'border-accent bg-accent/10 text-accent' : 'border-white/15 bg-white/[0.04] text-white/60 hover:border-white/30 hover:text-white/90')
       + '">' + esc(label) + '</button>';
   }
 
@@ -40,7 +40,7 @@
       + logo
       + '</div>';
     var tags = e.tags.slice(0, 3).map(function (t) {
-      return '<span class="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white/40">' + esc(t) + '</span>';
+      return '<span class="rounded-full border border-white/15 bg-white/[0.05] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white/55">' + esc(t) + '</span>';
     }).join('');
     var action = '<span class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.22em] '
       + (e.ready ? 'text-white/40 transition-colors group-hover:text-accent' : 'text-white/25') + '">'
