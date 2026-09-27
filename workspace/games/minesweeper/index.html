@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Character & Word Counter | Owen's Workspace</title>
+<title>Minesweeper | Owen's Workspace</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,44 +46,53 @@ tailwind.config = { theme: { extend: {
 <div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
 <div class="relative z-10 mx-auto w-full max-w-5xl px-5 pb-20 pt-8 sm:px-8">
   <div class="mb-8 flex flex-wrap items-center gap-4">
-    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Character & Word Counter</h1>
-      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Minesweeper</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
     </div>
   </div>
-
-  <section class="ws-panel p-6">
-    <label class="ws-label mb-2 block">Text</label>
-    <textarea id="src" class="ws-input min-h-[140px]" placeholder="Paste your essay, post or note"></textarea>
-    <div id="stats" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3"></div>
-  </section>
-
-  <div class="mt-10 flex flex-wrap gap-2"><span class="ws-chip">TEXT</span><span class="ws-chip">LIVE</span><span class="ws-chip">CLIENT-SIDE</span></div>
+<section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_240px]"><div id="grid" class="mx-auto grid max-w-[420px] gap-1"></div><div class="flex flex-col gap-4"><div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="ws-label mb-1">Mines left</div><div class="font-display text-3xl font-black text-accent" id="left">10</div></div><select id="lvl" class="ws-input"><option value="9,9,10">Easy 9x9</option><option value="12,12,20">Medium 12x12</option><option value="16,16,40">Hard 16x16</option></select><button id="new" class="ws-btn">New game</button><p class="text-[10px] text-white/30 leading-relaxed">Click to reveal, right-click to flag.</p></div></div></section>
+  <div class="mt-10 flex flex-wrap gap-2"><span class="ws-chip">PUZZLE</span><span class="ws-chip">LOGIC</span><span class="ws-chip">LOCAL BEST</span></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
   </div>
 </div>
-<script>
-const $=id=>document.getElementById(id);
-const STAT=[
- ['Words',s=>s.trim()?s.trim().split(/\s+/).length:0],
- ['Characters',s=>s.length],
- ['No spaces',s=>s.replace(/\s/g,'').length],
- ['Sentences',s=>(s.match(/[.!?]+(\s|$)/g)||[]).length],
- ['Paragraphs',s=>s.split(String.fromCharCode(10)+String.fromCharCode(10)).filter(p=>p.trim()).length],
- ['Reading time',s=>{const w=s.trim()?s.trim().split(/\s+/).length:0;return w?Math.max(1,Math.round(w/200))+' min':'0 min'}],
-];
-function run(){
-  const s=$('src').value;
-  $('stats').innerHTML=STAT.map(([n,f])=>
-    '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="font-display text-2xl font-black text-accent">'+f(s)+'</div><div class="ws-label mt-1">'+n+'</div></div>'
-  ).join('');
-}
-$('src').addEventListener('input',run);
-run();
-</script>
+<script>const $=id=>document.getElementById(id);
+let W,H,M,g,revealed,flags,over;
+function reset(){const [w,h,m]=$('lvl').value.split(',').map(Number);W=w;H=h;M=m;
+  g=Array(H).fill().map(()=>Array(W).fill(0));revealed=Array(H).fill().map(()=>Array(W).fill(false));
+  flags=Array(H).fill().map(()=>Array(W).fill(false));over=false;
+  let placed=0;while(placed<M){const r=Math.floor(Math.random()*H),c=Math.floor(Math.random()*W);
+    if(g[r][c]!==-1){g[r][c]=-1;placed++}}
+  for(let r=0;r<H;r++)for(let c=0;c<W;c++){if(g[r][c]===-1)continue;
+    let n=0;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<H&&nc>=0&&nc<W&&g[nr][nc]===-1)n++}g[r][c]=n}
+  $('left').textContent=M;draw()}
+function draw(){$('grid').style.gridTemplateColumns='repeat('+W+',1fr)';
+  let html='';
+  for(let r=0;r<H;r++)for(let c=0;c<W;c++){
+    const v=g[r][c],rv=revealed[r][c],fl=flags[r][c];
+    let cls='border-white/10 bg-white/[0.05] hover:bg-white/[0.10]',txt='';
+    if(rv){cls='border-white/5 bg-white/[0.02]';
+      if(v===-1){cls='border-red-500/40 bg-red-500/20';txt='💥'}
+      else txt=v||''}
+    else if(fl){txt='🚩'}
+    const col=v>0&&rv?'color:'+['','#38bdf8','#4ade80','#fbbf24','#fb923c','#f87171','#a78bfa','#f472b6','#e5e7eb'][v]:'';
+    html+='<button data-r="'+r+'" data-c="'+c+'" class="flex aspect-square items-center justify-center rounded border font-display text-sm font-black '+cls+'" style="'+col+'">'+txt+'</button>'}
+  $('grid').innerHTML=html;
+  $('grid').querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>reveal(+b.dataset.r,+b.dataset.c);
+    b.oncontextmenu=e=>{e.preventDefault();flag(+b.dataset.r,+b.dataset.c)}})}
+function reveal(r,c){if(over||revealed[r][c]||flags[r][c])return;revealed[r][c]=true;
+  if(g[r][c]===-1){over=true;for(let i=0;i<H;i++)for(let j=0;j<W;j++)revealed[i][j]=true;draw();return}
+  if(g[r][c]===0)for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;
+    if(nr>=0&&nr<H&&nc>=0&&nc<W&&!revealed[nr][nc])reveal(nr,nc)}
+  draw()}
+function flag(r,c){if(over||revealed[r][c])return;flags[r][c]=!flags[r][c];
+  $('left').textContent=M-flags.flat().filter(Boolean).length;draw()}
+$('new').onclick=reset;$('lvl').onchange=reset;reset();</script>
 </body>
 </html>

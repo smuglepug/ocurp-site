@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Character & Word Counter | Owen's Workspace</title>
+<title>Wordle | Owen's Workspace</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,44 +46,45 @@ tailwind.config = { theme: { extend: {
 <div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
 <div class="relative z-10 mx-auto w-full max-w-5xl px-5 pb-20 pt-8 sm:px-8">
   <div class="mb-8 flex flex-wrap items-center gap-4">
-    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Character & Word Counter</h1>
-      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Wordle</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
     </div>
   </div>
-
-  <section class="ws-panel p-6">
-    <label class="ws-label mb-2 block">Text</label>
-    <textarea id="src" class="ws-input min-h-[140px]" placeholder="Paste your essay, post or note"></textarea>
-    <div id="stats" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3"></div>
-  </section>
-
-  <div class="mt-10 flex flex-wrap gap-2"><span class="ws-chip">TEXT</span><span class="ws-chip">LIVE</span><span class="ws-chip">CLIENT-SIDE</span></div>
+<section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_240px]"><div><div id="board" class="mx-auto grid max-w-[320px] gap-2"></div><div class="mt-4 flex justify-center gap-2"><input id="in" class="ws-input !w-40 text-center font-mono uppercase" maxlength="5" placeholder="GUESS"><button id="ok" class="ws-btn">Enter</button></div></div><div class="flex flex-col gap-4"><div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="ws-label mb-1">Guesses left</div><div class="font-display text-3xl font-black text-accent" id="left">6</div></div><div id="msg" class="text-center text-sm text-white/60">Guess the 5-letter word.</div><button id="new" class="ws-btn">New word</button><p class="text-[10px] text-white/30 leading-relaxed">Green = right spot, amber = wrong spot.</p></div></div></section>
+  <div class="mt-10 flex flex-wrap gap-2"><span class="ws-chip">WORDS</span><span class="ws-chip">GUESS</span><span class="ws-chip">LOCAL</span></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
   </div>
 </div>
-<script>
-const $=id=>document.getElementById(id);
-const STAT=[
- ['Words',s=>s.trim()?s.trim().split(/\s+/).length:0],
- ['Characters',s=>s.length],
- ['No spaces',s=>s.replace(/\s/g,'').length],
- ['Sentences',s=>(s.match(/[.!?]+(\s|$)/g)||[]).length],
- ['Paragraphs',s=>s.split(String.fromCharCode(10)+String.fromCharCode(10)).filter(p=>p.trim()).length],
- ['Reading time',s=>{const w=s.trim()?s.trim().split(/\s+/).length:0;return w?Math.max(1,Math.round(w/200))+' min':'0 min'}],
-];
-function run(){
-  const s=$('src').value;
-  $('stats').innerHTML=STAT.map(([n,f])=>
-    '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="font-display text-2xl font-black text-accent">'+f(s)+'</div><div class="ws-label mt-1">'+n+'</div></div>'
-  ).join('');
-}
-$('src').addEventListener('input',run);
-run();
-</script>
+<script>const $=id=>document.getElementById(id);
+const WORDS=['PLANT','HOUSE','LIGHT','RIVER','MONEY','BRAVE','WORLD','CRANE','STONE','SMILE','GLOBE','TIGER','CLOUD','MUSIC','PAPER','GHOST','SHARP','TRAIN','BEACH','SOUND'];
+let word,rows,tries;
+function reset(){word=WORDS[Math.floor(Math.random()*WORDS.length)];rows=[];tries=0;
+  $('left').textContent='6';$('msg').textContent='Guess the 5-letter word.';$('in').value='';draw()}
+function draw(){
+  let html='';
+  for(let r=0;r<6;r++){html+='<div class="grid grid-cols-5 gap-2">';
+    for(let c=0;c<5;c++){const g=rows[r]&&rows[r].word[c];let cls='border-white/10 bg-white/[0.03] text-white';
+      if(g){const st=rows[r].res[c];
+        cls=st==='hit'?'border-green-500 bg-green-500/20 text-green-300':st==='near'?'border-amber-500 bg-amber-500/20 text-amber-300':'border-white/10 bg-white/[0.04] text-white/40'}
+      html+='<div class="flex aspect-square items-center justify-center rounded-lg border font-display text-xl font-black uppercase '+cls+'">'+(g||'')+'</div>'}
+    html+='</div>'}
+  $('board').innerHTML=html}
+function submit(){
+  const g=$('in').value.toUpperCase().trim();
+  if(g.length!==5||!/^[A-Z]{5}$/.test(g)){$('msg').textContent='Enter a 5-letter word.';return}
+  const res=[];const wl=word.split('');
+  for(let i=0;i<5;i++){if(g[i]===wl[i]){res.push('hit');wl[i]=null}
+    else if(wl.includes(g[i])){res.push('near');wl[wl.indexOf(g[i])]=null}else res.push('miss')}
+  rows.push({word:g,res});tries++;$('in').value='';$('left').textContent=6-tries;draw();
+  if(g===word){$('msg').textContent='🎉 Correct!';return}
+  if(tries>=6)$('msg').textContent='Out of tries — the word was '+word;}
+$('ok').onclick=submit;
+$('in').addEventListener('keydown',e=>{if(e.key==='Enter')submit()});
+$('new').onclick=reset;reset();</script>
 </body>
 </html>

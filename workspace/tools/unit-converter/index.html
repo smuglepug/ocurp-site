@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Character & Word Counter | Owen's Workspace</title>
+<title>Unit Converter | Owen's Workspace</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,40 +50,34 @@ tailwind.config = { theme: { extend: {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Character & Word Counter</h1>
-      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Unit Converter</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
     </div>
   </div>
-
-  <section class="ws-panel p-6">
-    <label class="ws-label mb-2 block">Text</label>
-    <textarea id="src" class="ws-input min-h-[140px]" placeholder="Paste your essay, post or note"></textarea>
-    <div id="stats" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3"></div>
-  </section>
-
-  <div class="mt-10 flex flex-wrap gap-2"><span class="ws-chip">TEXT</span><span class="ws-chip">LIVE</span><span class="ws-chip">CLIENT-SIDE</span></div>
+<section class="ws-panel p-6"><div class="grid gap-3 sm:grid-cols-2"><div><label class="ws-label mb-2 block">Category</label><select id="cat" class="ws-input"><option>Length</option><option>Weight</option><option>Temperature</option><option>Area</option><option>Volume</option><option>Speed</option></select></div><div><label class="ws-label mb-2 block">Value</label><input id="val" type="number" value="1" class="ws-input"></div><div><label class="ws-label mb-2 block">From</label><select id="from" class="ws-input"></select></div><div><label class="ws-label mb-2 block">To</label><select id="to" class="ws-input"></select></div></div><div class="mt-5 rounded-xl border border-white/10 bg-white/[0.04] p-6 text-center"><div class="ws-label mb-1">Result</div><div class="font-display text-3xl font-black text-accent" id="res">—</div></div></section>
+  <div class="mt-10 flex flex-wrap gap-2"><span class="ws-chip">UNITS</span><span class="ws-chip">CONVERT</span><span class="ws-chip">CLIENT-SIDE</span></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
   </div>
 </div>
-<script>
-const $=id=>document.getElementById(id);
-const STAT=[
- ['Words',s=>s.trim()?s.trim().split(/\s+/).length:0],
- ['Characters',s=>s.length],
- ['No spaces',s=>s.replace(/\s/g,'').length],
- ['Sentences',s=>(s.match(/[.!?]+(\s|$)/g)||[]).length],
- ['Paragraphs',s=>s.split(String.fromCharCode(10)+String.fromCharCode(10)).filter(p=>p.trim()).length],
- ['Reading time',s=>{const w=s.trim()?s.trim().split(/\s+/).length:0;return w?Math.max(1,Math.round(w/200))+' min':'0 min'}],
-];
-function run(){
-  const s=$('src').value;
-  $('stats').innerHTML=STAT.map(([n,f])=>
-    '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="font-display text-2xl font-black text-accent">'+f(s)+'</div><div class="ws-label mt-1">'+n+'</div></div>'
-  ).join('');
-}
-$('src').addEventListener('input',run);
-run();
-</script>
+<script>const $=id=>document.getElementById(id);
+const U={Length:{m:1,km:1000,cm:0.01,mm:0.001,mi:1609.344,yd:0.9144,ft:0.3048,in:0.0254},
+ Weight:{kg:1,g:0.001,mg:1e-6,lb:0.453592,oz:0.0283495,t:1000},
+ Area:{'m²':1,'km²':1e6,'cm²':1e-4,ha:1e4,acre:4046.86,'ft²':0.092903},
+ Volume:{L:1,mL:0.001,'m³':1000,gal:3.78541,qt:0.946353,cup:0.236588},
+ Speed:{'m/s':1,'km/h':0.277778,mph:0.44704,knot:0.514444},
+ Temperature:{C:1,F:1,K:1}};
+function fill(){const c=$('cat').value,ks=Object.keys(U[c]);
+  $('from').innerHTML=ks.map(k=>'<option>'+k+'</option>').join('');
+  $('to').innerHTML=ks.map(k=>'<option>'+k+'</option>').join('');
+  $('to').value=ks[1]||ks[0];run()}
+function conv(v,f,t,c){if(c==='Temperature'){let cv=f==='C'?v:f==='F'?(v-32)*5/9:v-273.15;
+  return t==='C'?cv:t==='F'?cv*9/5+32:cv+273.15}
+  return v*U[c][f]/U[c][t]}
+function run(){const c=$('cat').value,v=parseFloat($('val').value)||0;
+  const r=conv(v,$('from').value,$('to').value,c);
+  $('res').textContent=(Math.round(r*1e6)/1e6)+' '+$('to').value}
+$('cat').addEventListener('change',fill);
+['val','from','to'].forEach(id=>$(id).addEventListener('input',run));fill();</script>
 </body>
 </html>

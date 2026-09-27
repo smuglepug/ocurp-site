@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Character & Word Counter | Owen's Workspace</title>
+<title>Flashcards | Owen's Workspace</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,40 +50,32 @@ tailwind.config = { theme: { extend: {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Character & Word Counter</h1>
-      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Flashcards</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Study & Career — Client-side</p>
     </div>
   </div>
-
-  <section class="ws-panel p-6">
-    <label class="ws-label mb-2 block">Text</label>
-    <textarea id="src" class="ws-input min-h-[140px]" placeholder="Paste your essay, post or note"></textarea>
-    <div id="stats" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3"></div>
-  </section>
-
-  <div class="mt-10 flex flex-wrap gap-2"><span class="ws-chip">TEXT</span><span class="ws-chip">LIVE</span><span class="ws-chip">CLIENT-SIDE</span></div>
+<section class="ws-panel p-6"><div class="grid gap-3 sm:grid-cols-2"><textarea id="f" class="ws-input min-h-[70px]" placeholder="Front (question)"></textarea><textarea id="b" class="ws-input min-h-[70px]" placeholder="Back (answer)"></textarea></div><button id="add" class="ws-btn mt-3">Add card</button><div id="stage" class="mt-6 flex min-h-[200px] cursor-pointer items-center justify-center rounded-2xl border border-white/10 bg-[#0a0a0a] p-8 text-center" ><div><div class="ws-label mb-2" id="side">QUESTION</div><div id="face" class="font-display text-xl font-bold text-white">Add cards to begin</div></div></div><div class="mt-4 flex flex-wrap items-center justify-center gap-3"><button id="prev" class="ws-btn-ghost">←</button><span id="pos" class="font-mono text-sm text-white/50">0 / 0</span><button id="next" class="ws-btn">→</button><button id="shuffle" class="ws-btn-ghost">Shuffle</button><button id="clear" class="ws-btn-ghost">Clear all</button></div></section>
+  <div class="mt-10 flex flex-wrap gap-2"><span class="ws-chip">STUDY</span><span class="ws-chip">MEMORY</span><span class="ws-chip">LOCAL</span></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
   </div>
 </div>
-<script>
-const $=id=>document.getElementById(id);
-const STAT=[
- ['Words',s=>s.trim()?s.trim().split(/\s+/).length:0],
- ['Characters',s=>s.length],
- ['No spaces',s=>s.replace(/\s/g,'').length],
- ['Sentences',s=>(s.match(/[.!?]+(\s|$)/g)||[]).length],
- ['Paragraphs',s=>s.split(String.fromCharCode(10)+String.fromCharCode(10)).filter(p=>p.trim()).length],
- ['Reading time',s=>{const w=s.trim()?s.trim().split(/\s+/).length:0;return w?Math.max(1,Math.round(w/200))+' min':'0 min'}],
-];
-function run(){
-  const s=$('src').value;
-  $('stats').innerHTML=STAT.map(([n,f])=>
-    '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="font-display text-2xl font-black text-accent">'+f(s)+'</div><div class="ws-label mt-1">'+n+'</div></div>'
-  ).join('');
-}
-$('src').addEventListener('input',run);
-run();
-</script>
+<script>const $=id=>document.getElementById(id);
+let cards=JSON.parse(localStorage.getItem('ws-fc')||'[]'),i=0,flip=false;
+function save(){localStorage.setItem('ws-fc',JSON.stringify(cards))}
+function draw(){const c=cards[i];
+  $('stage').style.display=cards.length?'flex':'none';
+  if(!c){$('face').textContent='Add cards to begin';$('side').textContent='QUESTION';$('pos').textContent='0 / 0';return}
+  $('side').textContent=flip?'ANSWER':'QUESTION';
+  $('face').textContent=flip?c.b:c.f;
+  $('face').style.color=flip?'#4ade80':'#fff';
+  $('pos').textContent=(i+1)+' / '+cards.length}
+$('stage').onclick=()=>{flip=!flip;draw()};
+$('add').onclick=()=>{if(!$('f').value.trim())return;cards.push({f:$('f').value,b:$('b').value});$('f').value='';$('b').value='';save();i=cards.length-1;flip=false;draw()};
+$('next').onclick=()=>{if(cards.length){i=(i+1)%cards.length;flip=false;draw()}};
+$('prev').onclick=()=>{if(cards.length){i=(i-1+cards.length)%cards.length;flip=false;draw()}};
+$('shuffle').onclick=()=>{cards=cards.sort(()=>Math.random()-.5);i=0;flip=false;draw()};
+$('clear').onclick=()=>{if(confirm('Delete all flashcards?')){cards=[];i=0;save();draw()}};
+draw();</script>
 </body>
 </html>

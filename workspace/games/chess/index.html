@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Character & Word Counter | Owen's Workspace</title>
+<title>Chess | Owen's Workspace</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,44 +46,59 @@ tailwind.config = { theme: { extend: {
 <div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
 <div class="relative z-10 mx-auto w-full max-w-5xl px-5 pb-20 pt-8 sm:px-8">
   <div class="mb-8 flex flex-wrap items-center gap-4">
-    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Character & Word Counter</h1>
-      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Chess</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
     </div>
   </div>
-
-  <section class="ws-panel p-6">
-    <label class="ws-label mb-2 block">Text</label>
-    <textarea id="src" class="ws-input min-h-[140px]" placeholder="Paste your essay, post or note"></textarea>
-    <div id="stats" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3"></div>
-  </section>
-
-  <div class="mt-10 flex flex-wrap gap-2"><span class="ws-chip">TEXT</span><span class="ws-chip">LIVE</span><span class="ws-chip">CLIENT-SIDE</span></div>
+<section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_240px]"><div id="board" class="mx-auto grid aspect-square w-full max-w-[440px] grid-cols-8 overflow-hidden rounded-xl border border-white/10"></div><div class="flex flex-col gap-4"><div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="ws-label mb-1">Turn</div><div class="font-display text-2xl font-black text-accent" id="turn">White</div></div><div id="msg" class="text-center text-xs text-white/50">Tap a piece, then a highlighted square.</div><button id="new" class="ws-btn">New game</button><p class="text-[10px] text-white/30 leading-relaxed">Two players, same screen. Basic chess moves.</p></div></div></section>
+  <div class="mt-10 flex flex-wrap gap-2"><span class="ws-chip">BOARD</span><span class="ws-chip">2-PLAYER</span><span class="ws-chip">STRATEGY</span></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
   </div>
 </div>
-<script>
-const $=id=>document.getElementById(id);
-const STAT=[
- ['Words',s=>s.trim()?s.trim().split(/\s+/).length:0],
- ['Characters',s=>s.length],
- ['No spaces',s=>s.replace(/\s/g,'').length],
- ['Sentences',s=>(s.match(/[.!?]+(\s|$)/g)||[]).length],
- ['Paragraphs',s=>s.split(String.fromCharCode(10)+String.fromCharCode(10)).filter(p=>p.trim()).length],
- ['Reading time',s=>{const w=s.trim()?s.trim().split(/\s+/).length:0;return w?Math.max(1,Math.round(w/200))+' min':'0 min'}],
-];
-function run(){
-  const s=$('src').value;
-  $('stats').innerHTML=STAT.map(([n,f])=>
-    '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="font-display text-2xl font-black text-accent">'+f(s)+'</div><div class="ws-label mt-1">'+n+'</div></div>'
-  ).join('');
-}
-$('src').addEventListener('input',run);
-run();
-</script>
+<script>const $=id=>document.getElementById(id);
+const GLYPH={K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
+let bd,turn,sel;
+function reset(){bd=[
+ ['r','n','b','q','k','b','n','r'],
+ ['p','p','p','p','p','p','p','p'],
+ [0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],
+ [0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],
+ ['P','P','P','P','P','P','P','P'],
+ ['R','N','B','Q','K','B','N','R']];
+ turn='w';sel=null;$('turn').textContent='White';$('msg').textContent='Tap a piece, then a highlighted square.';draw()}
+const isW=p=>p&&p===p.toUpperCase();
+function moves(r,c){const p=bd[r][c];if(!p)return[];const m=[];const own=isW(p)?isW:q=>q&&!isW(q);
+  const add=(nr,nc)=>{if(nr<0||nr>7||nc<0||nc>7)return false;if(own(bd[nr][nc]))return false;m.push([nr,nc]);return !bd[nr][nc]};
+  const D=p.toUpperCase();
+  if(D==='P'){const d=isW(p)?-1:1;if(!bd[r+d]?.[c]){m.push([r+d,c]);
+      if((isW(p)&&r===6)||(!isW(p)&&r===1))if(!bd[r+2*d]?.[c])m.push([r+2*d,c])}
+    for(const dc of[-1,1]){const nr=r+d,nc=c+dc;if(nr>=0&&nr<8&&nc>=0&&nc<8&&bd[nr][nc]&&!own(bd[nr][nc]))m.push([nr,nc])}}
+  else if(D==='N'){[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([a,c2])=>{const nr=r+a,nc=c+c2;
+    if(nr>=0&&nr<8&&nc>=0&&nc<8&&!own(bd[nr][nc]))m.push([nr,nc])})}
+  else if(D==='K'){[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([a,c2])=>{const nr=r+a,nc=c+c2;
+    if(nr>=0&&nr<8&&nc>=0&&nc<8&&!own(bd[nr][nc]))m.push([nr,nc])})}
+  else{const dirs=D==='R'?[[1,0],[-1,0],[0,1],[0,-1]]:D==='B'?[[1,1],[1,-1],[-1,1],[-1,-1]]:[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+    dirs.forEach(([dr,dc])=>{let nr=r+dr,nc=c+dc;while(add(nr,nc)){nr+=dr;nc+=dc}})}
+  return m}
+function draw(){$('board').innerHTML=bd.map((row,r)=>row.map((p,c)=>{
+    const dark=(r+c)%2===1;const bg=dark?'#3a3a3a':'#e8e8e8';
+    const isSel=sel&&sel[0]===r&&sel[1]===c;
+    const isMov=sel&&moves(sel[0],sel[1]).some(([a,b2])=>a===r&&b2===c);
+    return '<button data-r="'+r+'" data-c="'+c+'" class="flex aspect-square items-center justify-center text-3xl" style="background:'+(isSel?'#FF5F1F':isMov?'#fbbf24':bg)+'">'
+      +'<span style="color:'+(isW(p)?'#fff':'#111')+';text-shadow:0 0 1px '+(isW(p)?'#000':'#fff')+'">'+(GLYPH[p]||'')+'</span></button>'}).join('')).join('');
+  $('board').querySelectorAll('button').forEach(el=>el.onclick=()=>click(+el.dataset.r,+el.dataset.c))}
+function click(r,c){const p=bd[r][c];
+  if(sel){const ok=moves(sel[0],sel[1]).some(([a,b2])=>a===r&&b2===c);
+    if(ok){bd[r][c]=bd[sel[0]][sel[1]];bd[sel[0]][sel[1]]=0;sel=null;
+      turn=turn==='w'?'b':'w';$('turn').textContent=turn==='w'?'White':'Black';$('msg').textContent='Move played.';}
+    else{sel=(p&&((turn==='w')===isW(p)))?[r,c]:null}}
+  else sel=(p&&((turn==='w')===isW(p)))?[r,c]:null;
+  draw()}
+$('new').onclick=reset;reset();</script>
 </body>
 </html>

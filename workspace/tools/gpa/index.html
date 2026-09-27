@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Character & Word Counter | Owen's Workspace</title>
+<title>GPA Calculator | Owen's Workspace</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,40 +50,32 @@ tailwind.config = { theme: { extend: {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Character & Word Counter</h1>
-      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">GPA Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Study & Career — Client-side</p>
     </div>
   </div>
-
-  <section class="ws-panel p-6">
-    <label class="ws-label mb-2 block">Text</label>
-    <textarea id="src" class="ws-input min-h-[140px]" placeholder="Paste your essay, post or note"></textarea>
-    <div id="stats" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3"></div>
-  </section>
-
-  <div class="mt-10 flex flex-wrap gap-2"><span class="ws-chip">TEXT</span><span class="ws-chip">LIVE</span><span class="ws-chip">CLIENT-SIDE</span></div>
+<section class="ws-panel p-6"><div id="rows" class="space-y-3"></div><button id="add" class="ws-btn-ghost mt-3">+ Add course</button><div id="sum" class="mt-4 grid gap-3 sm:grid-cols-2"></div></section>
+  <div class="mt-10 flex flex-wrap gap-2"><span class="ws-chip">GRADES</span><span class="ws-chip">GPA</span><span class="ws-chip">CLIENT-SIDE</span></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
   </div>
 </div>
-<script>
-const $=id=>document.getElementById(id);
-const STAT=[
- ['Words',s=>s.trim()?s.trim().split(/\s+/).length:0],
- ['Characters',s=>s.length],
- ['No spaces',s=>s.replace(/\s/g,'').length],
- ['Sentences',s=>(s.match(/[.!?]+(\s|$)/g)||[]).length],
- ['Paragraphs',s=>s.split(String.fromCharCode(10)+String.fromCharCode(10)).filter(p=>p.trim()).length],
- ['Reading time',s=>{const w=s.trim()?s.trim().split(/\s+/).length:0;return w?Math.max(1,Math.round(w/200))+' min':'0 min'}],
-];
-function run(){
-  const s=$('src').value;
-  $('stats').innerHTML=STAT.map(([n,f])=>
-    '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="font-display text-2xl font-black text-accent">'+f(s)+'</div><div class="ws-label mt-1">'+n+'</div></div>'
-  ).join('');
-}
-$('src').addEventListener('input',run);
-run();
-</script>
+<script>const $=id=>document.getElementById(id);
+const GR={A:4,'A-':3.7,'B+':3.3,B:3,'B-':2.7,'C+':2.3,C:2,'C-':1.7,'D+':1.3,D:1,F:0};
+let rows=[['',3,'A']];
+function draw(){
+  $('rows').innerHTML=rows.map((r,i)=>'<div class="flex gap-2">'
+   +'<input class="ws-input" data-i="'+i+'" data-k="0" value="'+r[0]+'" placeholder="Course">'
+   +'<input class="ws-input !w-24" type="number" data-i="'+i+'" data-k="1" value="'+r[1]+'" min="0" placeholder="Units">'
+   +'<select class="ws-input !w-28" data-i="'+i+'" data-k="2">'+Object.keys(GR).map(g=>'<option'+(g===r[2]?' selected':'')+'>'+g+'</option>').join('')+'</select>'
+   +'<button data-del="'+i+'" class="ws-btn-ghost !px-3">×</button></div>').join('');
+  $('rows').querySelectorAll('input,select').forEach(x=>x.oninput=x.onchange=()=>{rows[x.dataset.i][x.dataset.k]=x.dataset.k==='1'?(+x.value||0):x.value;sum()});
+  $('rows').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.del,1);draw()});
+  sum()}
+function sum(){let pts=0,u=0;rows.forEach(r=>{u+=(+r[1]||0);pts+=(+r[1]||0)*(GR[r[2]]??0)});
+  const gpa=u?pts/u:0;
+  $('sum').innerHTML=[['GPA',gpa.toFixed(2)],['Total units',u]]
+    .map(([k,v])=>'<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="font-display text-2xl font-black text-accent">'+v+'</div><div class="ws-label mt-1">'+k+'</div></div>').join('')}
+$('add').onclick=()=>{rows.push(['',3,'A']);draw()};draw();</script>
 </body>
 </html>

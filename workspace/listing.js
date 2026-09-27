@@ -21,8 +21,8 @@
 
   function chip(id, label) {
     var on = active === id;
-    return '<button data-cat="' + esc(id) + '" class="rounded-full border px-4 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] transition-all '
-      + (on ? 'border-accent bg-accent/10 text-accent' : 'border-white/10 bg-white/[0.03] text-white/40 hover:border-white/25 hover:text-white/70')
+    return '<button data-cat="' + esc(id) + '" class="rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all '
+      + (on ? 'border-accent bg-accent/10 text-accent' : 'border-white/10 bg-white/[0.03] text-white/45 hover:border-white/25 hover:text-white/80')
       + '">' + esc(label) + '</button>';
   }
 
@@ -30,32 +30,31 @@
     var cat = (typeof CATS !== 'undefined' && CATS[e.cat]) || (isGames ? 'GAME' : 'TOOL');
     var href = isWebsites ? e.url : '/workspace/' + base + '/' + e.slug + '/';
     var status = e.ready
-      ? '<span class="inline-flex items-center gap-1.5 rounded-full bg-green-500/15 px-2 py-0.5 text-[8px] font-black text-green-400 uppercase tracking-widest"><span class="h-1 w-1 rounded-full bg-green-500"></span>Ready</span>'
-      : '<span class="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2 py-0.5 text-[8px] font-black text-white/30 uppercase tracking-widest"><span class="h-1 w-1 rounded-full bg-white/30"></span>Building</span>';
+      ? '<span class="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-green-400"><span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>Ready</span>'
+      : '<span class="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-white/35"><span class="h-1.5 w-1.5 rounded-full bg-white/30"></span>Building</span>';
     var logo = isWebsites
-      ? '<div class="flex h-full w-full items-center justify-center"><span class="font-display text-3xl font-black text-white/15">' + esc(e.name.slice(0,2).toUpperCase()) + '</span></div>'
-      : '<img src="/workspace/logos/' + esc(e.slug) + '.png" alt="' + esc(e.name) + ' logo" loading="lazy" class="h-20 w-20 rounded-2xl border border-white/10 object-cover shadow-lg transition-transform duration-500 group-hover:scale-105">';
-    var art = '<div class="relative flex h-40 items-center justify-center overflow-hidden rounded-t-[1.2rem] border-b border-white/5 bg-[#0a0a0a]">'
-      + '<div class="absolute inset-0 opacity-[0.06]" style="background-image:linear-gradient(rgba(255,255,255,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.5) 1px,transparent 1px);background-size:22px 22px"></div>'
-      + '<div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-accent/10 blur-2xl"></div>'
-      + '<span class="absolute left-4 top-4 font-mono text-[9px] font-black uppercase tracking-[0.3em] text-white/25">' + esc(cat) + '</span>'
+      ? '<div class="flex h-full w-full items-center justify-center"><span class="font-display text-5xl font-black text-white/15">' + esc(e.name.slice(0, 2).toUpperCase()) + '</span></div>'
+      : '<img src="/workspace/logos/' + esc(e.slug) + '.png" alt="' + esc(e.name) + ' logo" loading="lazy" class="h-24 w-24 rounded-2xl border border-white/10 object-cover transition-transform duration-500 group-hover:scale-[1.04]">';
+    var art = '<div class="relative flex h-44 items-center justify-center overflow-hidden rounded-t-2xl bg-[#0a0a0a]">'
+      + '<div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/[0.07] blur-3xl"></div>'
       + logo
       + '</div>';
-    var tags = e.tags.map(function (t) {
-      return '<span class="rounded-md border border-white/5 bg-white/5 px-2 py-1 text-[7px] font-black uppercase tracking-[0.15em] text-white/30">' + esc(t) + '</span>';
+    var tags = e.tags.slice(0, 3).map(function (t) {
+      return '<span class="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white/40">' + esc(t) + '</span>';
     }).join('');
     var action = e.ready
-      ? '<span class="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3 text-[9px] font-black uppercase tracking-[0.3em] text-black shadow-lg">' + (isGames ? 'Play' : (isWebsites ? 'Visit' : 'Open')) + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M9 7h8v8"/></svg></span>'
-      : '<span class="flex w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] py-3 text-[9px] font-black uppercase tracking-[0.3em] text-white/30">In build</span>';
+      ? '<span class="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3.5 text-[10px] font-black uppercase tracking-[0.24em] text-black transition-opacity group-hover:opacity-90">' + (isGames ? 'Play' : (isWebsites ? 'Visit' : 'Open')) + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 17 17 7M9 7h8v8"/></svg></span>'
+      : '<span class="flex w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] py-3.5 text-[10px] font-black uppercase tracking-[0.24em] text-white/30">In build</span>';
     var target = isWebsites ? ' target="_blank" rel="noopener"' : '';
-    return '<a href="' + href + '"' + target + ' class="group relative overflow-hidden rounded-[1.2rem] border border-white/10 bg-white/[0.03] transition-all duration-500 hover:-translate-y-1 hover:border-accent/40 hover:bg-white/[0.05]" data-card>'
+    return '<a href="' + href + '"' + target + ' class="group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] transition-all duration-300 hover:-translate-y-1 hover:border-accent/30 hover:bg-white/[0.04]" data-card>'
       + art
-      + '<div class="flex flex-col p-5">'
-      + '<div class="flex items-center justify-between"><span class="font-mono text-[9px] font-black uppercase tracking-[0.2em] text-white/30">' + esc(e.slug) + '</span>' + status + '</div>'
-      + '<h3 class="mt-2 font-display text-lg font-black text-white leading-tight group-hover:text-accent transition-colors duration-300">' + esc(e.name) + '</h3>'
-      + '<p class="mt-2 line-clamp-2 text-[11px] text-white/45 leading-relaxed">' + esc(e.blurb) + '</p>'
-      + '<div class="mt-3 flex flex-wrap gap-1">' + tags + '</div>'
-      + '<div class="mt-4">' + action + '</div>'
+      + '<div class="flex flex-1 flex-col p-6">'
+      + '<div class="flex items-center justify-between gap-3"><span class="font-mono text-[9px] font-black uppercase tracking-[0.24em] text-white/30">' + esc(cat) + '</span>' + status + '</div>'
+      + '<h3 class="mt-3 font-display text-2xl font-black leading-tight tracking-tight text-white transition-colors duration-300 group-hover:text-accent">' + esc(e.name) + '</h3>'
+      + '<p class="mt-3 line-clamp-2 text-sm leading-relaxed text-white/45">' + esc(e.blurb) + '</p>'
+      + '<div class="mt-4 flex flex-wrap gap-1.5">' + tags + '</div>'
+      + '<div class="mt-6 flex-1"></div>'
+      + action
       + '</div></a>';
   }
 
