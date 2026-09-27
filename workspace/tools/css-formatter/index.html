@@ -85,71 +85,40 @@ function prettify(css, ind, sort) {
   let out = '', depth = 0, i = 0;
   const il = () => IS.repeat(depth);
   while (i < css.length) {
-    // skip whitespace
     while (i < css.length && /\s/.test(css[i])) i++;
     if (i >= css.length) break;
-    // at-rule
     if (css[i] === '@') {
       let brace = css.indexOf('{', i);
       let semi = css.indexOf(';', i);
-      if (semi >= 0 && (semi < brace || brace < 0)) {
-        out += il() + css.slice(i, semi + 1).trim() + '\n';
-        i = semi + 1; continue;
-      }
+      if (semi >= 0 && (semi < brace || brace < 0)) { out += il() + css.slice(i, semi + 1).trim() + '\n'; i = semi + 1; continue; }
       if (brace < 0) { out += il() + css.slice(i).trim() + '\n'; break; }
-      out += il() + css.slice(i, brace).trim() + ' {\n';
-      depth++; i = brace + 1; continue;
+      out += il() + css.slice(i, brace).trim() + ' {\n'; depth++; i = brace + 1; continue;
     }
-    // closing brace
-    if (css[i] === '}') {
-      depth = Math.max(0, depth - 1);
-      out = out.trimEnd() + '\n' + il() + '}\n';
-      i++; continue;
-    }
-    // find selector -> { or ;
+    if (css[i] === '}') { depth = Math.max(0, depth - 1); out = out.trimEnd() + '\n' + il() + '}\n'; i++; continue; }
     let brace = css.indexOf('{', i);
     let semi = css.indexOf(';', i);
-    if (brace < 0 && semi < 0) {
-      const rest = css.slice(i).trim();
-      if (rest) out += il() + rest + '\n';
-      break;
-    }
-    if (semi >= 0 && (brace < 0 || semi < brace)) {
-      // declaration without selector context — skip stray semicolons
-      i = semi + 1; continue;
-    }
-    // selector block
+    if (brace < 0 && semi < 0) { const rest = css.slice(i).trim(); if (rest) out += il() + rest + '\n'; break; }
+    if (semi >= 0 && (brace < 0 || semi < brace)) { i = semi + 1; continue; }
     const sel = css.slice(i, brace).trim();
-    out += il() + sel + ' {\n';
-    depth++;
-    i = brace + 1;
-    // collect declarations until matching }
-    let declEnd = i;
-    let scanDepth = 1;
-    while (declEnd < css.length && scanDepth > 0) {
-      if (css[declEnd] === '{') scanDepth++;
-      else if (css[declEnd] === '}') scanDepth--;
-      if (scanDepth === 0) break;
-      declEnd++;
-    }
+    out += il() + sel + ' {\n'; depth++; i = brace + 1;
+    let declEnd = i, scanDepth = 1;
+    while (declEnd < css.length && scanDepth > 0) { if (css[declEnd] === '{') scanDepth++; else if (css[declEnd] === '}') scanDepth--; if (scanDepth === 0) break; declEnd++; }
     const block = css.slice(i, declEnd);
     let props = block.split(';').map(p => p.trim()).filter(Boolean);
     if (sort) props.sort();
-    for (const p of props) {
-      const ci = p.indexOf(':');
-      if (ci < 0) continue;
-      const k = p.slice(0, ci).trim();
-      const v = p.slice(ci + 1).trim();
-      out += IS.repeat(depth) + k + ': ' + v + ';\n';
-    }
-    out += il() + '}\n';
-    depth--;
-    i = declEnd + 1;
+    for (const p of props) { const ci = p.indexOf(':'); if (ci < 0) continue; const k = p.slice(0, ci).trim(); const v = p.slice(ci + 1).trim(); out += IS.repeat(depth) + k + ': ' + v + ';\n'; }
+    out += il() + '}\n'; depth--; i = declEnd + 1;
   }
   return out.trim();
 }
 function minify(css) {
-  return css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ').replace(/\s*\{\s*/g, '{').replace(/\s*\}\s*/g, '}').replace(/\s*;\s*/g, ';').replace(/;\}/g, '}').replace(/\s*:\s*/g, ':').trim();
+  let out='', i=0;
+  while(i<css.length) {
+    if(css[i]==='"'||css[i]==="'") { let q=css[i]; out+=q; i++; while(i<css.length){if(css[i]==='\\'){out+=css[i]+(css[i+1]||'');i+=2;continue;}if(css[i]===q){out+=q;i++;break;}out+=css[i];i++;} continue; }
+    if(/\s/.test(css[i])) { i++; continue; }
+    out+=css[i]; i++;
+  }
+  return out.replace(/;\}/g,'}').replace(/\s*\{\s*/g,'{').replace(/\s*\}\s*/g,'}').replace(/\s*:\s*/g,':').replace(/\s*;\s*/g,';').trim();
 }
 function run() {
   const t = $('src').value;

@@ -62,11 +62,10 @@ tailwind.config = { theme: { extend: {
     <div class="mt-3 flex flex-wrap items-end gap-3">
       <div><label class="ws-label mb-1 block">Mode</label><select id="mode" class="ws-input !w-40"><option value="pretty">Prettify</option><option value="min">Minify</option></select></div>
       <div><label class="ws-label mb-1 block">Indent</label><select id="ind" class="ws-input !w-36"><option value="2">2 spaces</option><option value="4">4 spaces</option><option value="tab">Tabs</option></select></div>
-      <label class="flex items-center gap-2 text-sm text-white/70"><input id="semi" type="checkbox" checked class="accent-[#FF5F1F]"> Add semicolons</label>
       <button id="go" class="ws-btn">Run</button>
       <button id="dl" class="ws-btn-ghost">Download</button>
     </div>
-    <div class="mt-3 text-[11px] font-mono text-white/30">Lightweight tokenizer — not a full AST parser. Handles strings, template literals and regex literals safely.</div>
+    <div class="mt-2 text-[11px] font-mono text-white/30">Lightweight tokenizer — handles strings, template literals and regex safely. Not a full AST parser.</div>
     <div class="mt-1 text-[11px] font-mono" id="err"></div>
     <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Output</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
   </section>
@@ -83,23 +82,13 @@ function prettify(code, ind) {
   let out='', depth=0, i=0;
   const isWS=c=>c===' '||c==='\t'||c==='\n'||c==='\r';
   const indStr=()=>(ind==='\t'?'\t':' '.repeat(ind)).repeat(depth);
-  function skipString(q) {
-    let s=q; i++;
-    while(i<code.length) {
-      if(code[i]==='\\') { s+=code[i]+(code[i+1]||''); i+=2; continue; }
-      if(code[i]===q) { s+=q; i++; return s; }
-      s+=code[i]; i++;
-    }
-    return s;
-  }
+  function skipString(q) { let s=q; i++; while(i<code.length){if(code[i]==='\\'){s+=code[i]+(code[i+1]||'');i+=2;continue;}if(code[i]===q){s+=q;i++;return s;}s+=code[i];i++;} return s; }
   function skipTemplate() {
     let s='`'; i++;
     while(i<code.length) {
-      if(code[i]==='`') { s+='`'; i++; return s; }
       if(code[i]==='\\') { s+=code[i]+(code[i+1]||''); i+=2; continue; }
-      if(code[i]==='$'&&code[i+1]==='{') { s+='$'+'{'; i+=2; let d=1;
-        while(i<code.length&&d>0) { if(code[i]==='{')d++; if(code[i]==='}')d--; if(d===0){s+='}';i++;break;} s+=code[i]; i++; }
-        continue; }
+      if(code[i]==='`') { s+='`'; i++; return s; }
+      if(code[i]==='$'&&code[i+1]==='{') { s+='$'+'{'; i+=2; let d=1; while(i<code.length&&d>0){if(code[i]==='{')d++;else if(code[i]==='}')d--;if(d===0){s+='}';i++;break;}s+=code[i];i++;} continue; }
       s+=code[i]; i++;
     }
     return s;
@@ -132,12 +121,23 @@ function prettify(code, ind) {
 function minify(code) {
   let out='', i=0;
   const isWS=c=>c===' '||c==='\t'||c==='\n'||c==='\r';
+  function skipString(q) { let s=q; i++; while(i<code.length){if(code[i]==='\\'){s+=code[i]+(code[i+1]||'');i+=2;continue;}if(code[i]===q){s+=q;i++;return s;}s+=code[i];i++;} return s; }
+  function skipTemplate() {
+    let s='`'; i++;
+    while(i<code.length) {
+      if(code[i]==='\\') { s+=code[i]+(code[i+1]||''); i+=2; continue; }
+      if(code[i]==='`') { s+='`'; i++; return s; }
+      if(code[i]==='$'&&code[i+1]==='{') { s+='$'+'{'; i+=2; let d=1; while(i<code.length&&d>0){if(code[i]==='{')d++;else if(code[i]==='}')d--;if(d===0){s+='}';i++;break;}s+=code[i];i++;} continue; }
+      s+=code[i]; i++;
+    }
+    return s;
+  }
   while(i<code.length) {
     const c=code[i];
     if(c==='/'&&code[i+1]==='/') { let end=code.indexOf('\n',i); if(end<0)end=code.length; i=end; continue; }
     if(c==='/'&&code[i+1]==='*') { let end=code.indexOf('*/',i+2); if(end<0)end=code.length; else end+=2; i=end; continue; }
-    if(c==='"'||c==="'") { let q=c; out+=q; i++; while(i<code.length){if(code[i]==='\\'){out+=code[i]+(code[i+1]||'');i+=2;continue;}if(code[i]===q){out+=q;i++;break;}out+=code[i];i++;} continue; }
-    if(c==='`') { out+='`'; i++; while(i<code.length){if(code[i]==='`'){out+='`';i++;break;}if(code[i]==='\\'){out+=code[i]+(code[i+1]||'');i+=2;continue;}out+=code[i];i++;} continue; }
+    if(c==='"'||c==="'") { out+=skipString(c); continue; }
+    if(c==='`') { out+=skipTemplate(); continue; }
     if(isWS(c)) { i++; continue; }
     out+=c; i++;
   }
