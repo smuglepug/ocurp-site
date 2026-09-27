@@ -184,17 +184,28 @@ $('go').onclick=async()=>{
     let csvRows=allRows.map(r=>r.map(c=>c.trim()).filter(c=>c));
     if(!keepAll)csvRows=csvRows.filter(r=>r.length>1);
     csvData=csvRows.map(r=>r.map(escapeCsv).join(',')).join('\n');
-    const table=csvRows.slice(0,20);
+    // detect header row (first multi-column row with short cells)
+    let hasHeader=false;
+    if(csvRows.length>0&&csvRows[0].length>1){
+      const firstRow=csvRows[0];
+      const avgLen=firstRow.reduce((s,c)=>s+c.length,0)/firstRow.length;
+      if(avgLen<30)hasHeader=true;
+    }
+    const table=csvRows.slice(0,50);
     let html='<table class="ws-out text-xs">';
     table.forEach((row,i)=>{
       html+='<tr>';
-      row.forEach(cell=>{html+='<td class="border border-white/5 px-2 py-1">'+(cell||'&nbsp;')+'</td>'});
+      if(i===0&&hasHeader){
+        row.forEach(cell=>{html+='<th class="border border-white/10 px-2 py-1 bg-white/5 font-bold text-accent">'+(cell||'&nbsp;')+'</th>'});
+      }else{
+        row.forEach(cell=>{html+='<td class="border border-white/5 px-2 py-1">'+(cell||'&nbsp;')+'</td>'});
+      }
       html+='</tr>';
     });
     html+='</table>';
     $('preview').innerHTML='<div class="overflow-auto">'+html+'</div>';
     const fmt=$('fmt').value;
-    $('status').textContent='✓ '+csvRows.length+' rows, '+(csvRows[0]?csvRows[0].length:0)+' columns extracted from '+pdf.numPages+' pages. Format: '+fmt.toUpperCase();
+    $('status').textContent='✓ '+csvRows.length+' rows, '+(csvRows[0]?csvRows[0].length:0)+' columns extracted from '+pdf.numPages+' pages'+(hasHeader?' (header detected)':'')+'. Format: '+fmt.toUpperCase();
     $('status').style.color='#4ade80';
     $('dl').disabled=false;
     // store for xlsx
@@ -232,6 +243,8 @@ $('dl').onclick=async()=>{
       }
       XLSX.writeFile(wb,fileName+'.xlsx');
     }catch(e){
+      $('status').textContent='⚠ XLSX export failed, downloading CSV: '+e.message;
+      $('status').style.color='#fbbf24';
       const blob=new Blob([csvData],{type:'text/csv'});
       const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fileName+'.csv';a.click();
     }
