@@ -69,6 +69,7 @@ tailwind.config = { theme: { extend: {
       <button id="go" class="ws-btn" disabled>Remove & Download</button>
     </div>
     <div id="status" class="mt-4 text-sm"></div>
+    <label class="mt-4 flex items-center gap-2 text-xs text-white/40"><input id="rights" type="checkbox" class="accent-[#FF5F1F]"> I confirm I own this PDF or have permission to remove its restrictions.</label>
   </section>
 
   <div id="ws-more" class="mt-12"></div>
@@ -96,29 +97,35 @@ async function handleFile(f){
 }
 $('go').onclick=async()=>{
   if(!fileBytes)return;
-  $('status').textContent='Processing...';
-  $('status').style.color='';
+  if(!$('rights').checked){$('status').textContent='✗ Please confirm you own this PDF';$('status').style.color='#f87171';return}
+  $('go').disabled=true;
+  $('status').textContent='Loading PDF...';$('status').style.color='';
   try{
     const{PDFDocument}=await import('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm');
     let pdf;
+    let wasEncrypted=false;
     try{pdf=await PDFDocument.load(fileBytes,{ignoreEncryption:false})}
     catch(e){
+      wasEncrypted=true;
       const pwd=$('pwd').value;
       if(pwd)try{pdf=await PDFDocument.load(fileBytes,{password:pwd,ignoreEncryption:false})}catch(e2){throw new Error('Wrong password or unsupported encryption')}
       else throw new Error('This PDF is encrypted — enter the password above');
     }
+    $('status').textContent='Copying pages...';
     const newPdf=await PDFDocument.create();
     const pages=await newPdf.copyPages(pdf,pdf.getPageIndices());
     pages.forEach(p=>newPdf.addPage(p));
     const out=await newPdf.save();
     const blob=new Blob([out],{type:'application/pdf'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fileName.replace(/\.pdf$/i,'')+'-unlocked.pdf';a.click();
-    $('status').textContent='✓ Password removed — file downloaded ('+(out.byteLength/1024).toFixed(1)+' KB)';
+    const removed=['print','copy','edit','assembly','form-fill'].map(p=>'<span class="ws-chip mt-1">'+p+'</span>').join('');
+    $('status').innerHTML='✓ Password removed — '+(out.byteLength/1024).toFixed(1)+' KB downloaded.<div class="mt-2 flex flex-wrap gap-1">'+removed+'</div><div class="mt-1 text-xs text-white/40">All restrictions stripped: print, copy, edit, assembly, form-fill.</div>';
     $('status').style.color='#4ade80';
   }catch(e){
     $('status').textContent='✗ '+e.message;
     $('status').style.color='#f87171';
   }
+  $('go').disabled=false;
 };
 </script>
 </body>

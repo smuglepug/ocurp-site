@@ -73,6 +73,10 @@ tailwind.config = { theme: { extend: {
             <option value="p">Portrait</option>
             <option value="l">Landscape</option>
           </select></div>
+          <div><label class="ws-label mb-2 block">Margin (mm)</label>
+          <input id="margin" type="number" min="0" max="50" value="10" class="ws-input !w-20"></div>
+          <div><label class="ws-label mb-2 block">Header text</label>
+          <input id="header" type="text" class="ws-input !w-32" placeholder="Optional"></div>
           <button id="dl" class="ws-btn">Download PDF</button>
         </div>
       </div>
@@ -96,17 +100,41 @@ $('src').addEventListener('input',render);
 $('src').value='<h1 style="color:#FF5F1F">Hello World</h1>\n<p>This is <strong>HTML</strong> rendered to a <em>PDF</em>.</p>\n<ul>\n  <li>First item</li>\n  <li>Second item</li>\n</ul>\n<table border="1" style="border-collapse:collapse;padding:4px">\n  <tr><th>Name</th><th>Value</th></tr>\n  <tr><td>Alpha</td><td>100</td></tr>\n</table>';
 render();
 $('dl').onclick=async()=>{
-  const{jsPDF}=await import('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.esm.min.js');
-  const sizes={'a4':[210,297],'letter':[216,279],'a5':[148,210]};
-  const[size]=sizes[$('psize').value];
-  let w=size,h=sizes[$('psize').value][1];
-  if($('orient').value==='l'){[w,h]=[h,w]}
-  const pdf=new jsPDF({orientation:$('orient').value,unit:'mm',format:$('psize').value});
-  const container=document.createElement('div');
-  container.style.cssText='width:'+(w-20)+'mm;padding:10mm;font-family:Arial,sans-serif;font-size:11pt;color:#000;line-height:1.6';
-  container.innerHTML=$('src').value;
-  document.body.appendChild(container);
-  await pdf.html(container,{callback:()=>{pdf.save('html-to-pdf.pdf');document.body.removeChild(container)}});
+  $('dl').disabled=true;
+  try{
+    const{jsPDF}=await import('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.esm.min.js');
+    const sizes={'a4':[210,297],'letter':[216,279],'a5':[148,210]};
+    const[size]=sizes[$('psize').value];
+    let w=size,h=sizes[$('psize').value][1];
+    if($('orient').value==='l'){[w,h]=[h,w]}
+    const m=parseInt($('margin').value)||10;
+    const headerText=$('header').value.trim();
+    const pdf=new jsPDF({orientation:$('orient').value,unit:'mm',format:$('psize').value});
+    if(headerText){
+      pdf.setProperties({title:headerText});
+    }
+    const container=document.createElement('div');
+    container.style.cssText='width:'+(w-2*m)+'mm;padding:'+m+'mm;font-family:Arial,sans-serif;font-size:11pt;color:#000;line-height:1.6';
+    container.innerHTML=$('src').value;
+    document.body.appendChild(container);
+    await pdf.html(container,{
+      callback:()=>{
+        if(headerText){
+          const pageCount=pdf.internal.getNumberOfPages();
+          for(let i=1;i<=pageCount;i++){
+            pdf.setPage(i);
+            pdf.setFontSize(8);
+            pdf.setTextColor(150);
+            pdf.text(headerText,m,m-3);
+            pdf.text('Page '+i+' of '+pageCount,w-m,h-m+3,{align:'right'});
+          }
+        }
+        pdf.save('html-to-pdf.pdf');
+        document.body.removeChild(container);
+      }
+    });
+  }catch(e){alert('Error: '+e.message)}
+  $('dl').disabled=false;
 };
 </script>
 </body>

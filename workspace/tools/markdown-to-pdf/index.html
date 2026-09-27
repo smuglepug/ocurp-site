@@ -73,6 +73,8 @@ tailwind.config = { theme: { extend: {
             <option value="p">Portrait</option>
             <option value="l">Landscape</option>
           </select></div>
+          <div><label class="ws-label mb-2 block">Margin (mm)</label>
+          <input id="margin" type="number" min="0" max="50" value="10" class="ws-input !w-20"></div>
           <button id="dl" class="ws-btn">Download PDF</button>
         </div>
       </div>
@@ -91,38 +93,64 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>
 const $=id=>document.getElementById(id);
-// Minimal markdown -> HTML renderer
+// Markdown -> HTML renderer with GFM support
 function mdToHtml(s){
   let html='';
   const lines=s.split('\n');
-  let inList=false,inCode=false;
+  let inList=false,inCode=false,inTable=false,tableHeader=false;
   function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+  function inline(t){
+    t=esc(t);
+    t=t.replace(/~~([^~]+)~~/g,'<del>$1</del>');
+    t=t.replace(/`([^`]+)`/g,'<code style="background:#f0f0f0;padding:2px 4px;border-radius:3px">$1</code>');
+    t=t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+    t=t.replace(/\*([^*]+)\*/g,'<em>$1</em>');
+    t=t.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" style="color:#FF5F1F">$1</a>');
+    return t;
+  }
   for(let i=0;i<lines.length;i++){
     let line=lines[i];
-    if(line.trim().startsWith('```')){if(inCode){html+='</code></pre>';inCode=false}else{html+='<pre><code>';inCode=true}continue}
+    if(line.trim().startsWith('```')){if(inList){html+='</ul>';inList=false}if(inTable){html+='</tbody></table>';inTable=false}if(inCode){html+='</code></pre>';inCode=false}else{html+='<pre><code>';inCode=true}continue}
     if(inCode){html+=esc(line)+'\n';continue}
-    if(/^###\s+/.test(line)){if(inList){html+='</ul>';inList=false}html+='<h3>'+esc(line.replace(/^###\s+/,''))+'</h3>'}
-    else if(/^##\s+/.test(line)){if(inList){html+='</ul>';inList=false}html+='<h2>'+esc(line.replace(/^##\s+/,''))+'</h2>'}
-    else if(/^#\s+/.test(line)){if(inList){html+='</ul>';inList=false}html+='<h1>'+esc(line.replace(/^#\s+/,''))+'</h1>'}
-    else if(/^>\s+/.test(line)){html+='<blockquote style="border-left:3px solid #FF5F1F;padding-left:12px;margin:8px 0;color:#666">'+esc(line.replace(/^>\s+/,''))+'</blockquote>'}
-    else if(/^[-*]\s+/.test(line)){if(!inList){html+='<ul style="padding-left:20px">';inList=true}html+='<li>'+esc(line.replace(/^[-*]\s+/,''))+'</li>'}
-    else if(/^\d+\.\s+/.test(line)){html+='<ol style="padding-left:20px"><li>'+esc(line.replace(/^\d+\.\s+/,''))+'</li></ol>'}
+    // GFM table
+    if(/^\|.*\|/.test(line.trim())&&i+1<lines.length&&/^\|[\s\-:]+\|/.test(lines[i+1].trim())){
+      if(inList){html+='</ul>';inList=false}
+      if(!inTable){html+='<table style="border-collapse:collapse;width:100%;margin:12px 0">';inTable=true;tableHeader=true}
+      const cells=line.trim().split('|').filter(c=>c.trim()).map(c=>c.trim());
+      html+='<thead><tr>';
+      cells.forEach(c=>{html+='<th style="border:1px solid #ddd;padding:6px 8px;text-align:left;background:#f5f5f5">'+inline(c)+'</th>'});
+      html+='</tr></thead><tbody>';
+      tableHeader=false;
+      i++; // skip separator row
+      continue;
+    }
+    if(inTable&&line.trim().startsWith('|')){
+      const cells=line.trim().split('|').filter(c=>c.trim()).map(c=>c.trim());
+      html+='<tr>';
+      cells.forEach(c=>{html+='<td style="border:1px solid #ddd;padding:6px 8px">'+inline(c)+'</td>'});
+      html+='</tr>';
+      continue;
+    }
+    if(inTable&&!line.trim().startsWith('|')){html+='</tbody></table>';inTable=false}
+    if(/^###\s+/.test(line)){if(inList){html+='</ul>';inList=false}html+='<h3>'+inline(line.replace(/^###\s+/,''))+'</h3>'}
+    else if(/^##\s+/.test(line)){if(inList){html+='</ul>';inList=false}html+='<h2>'+inline(line.replace(/^##\s+/,''))+'</h2>'}
+    else if(/^#\s+/.test(line)){if(inList){html+='</ul>';inList=false}html+='<h1>'+inline(line.replace(/^#\s+/,''))+'</h1>'}
+    else if(/^>\s+/.test(line)){html+='<blockquote style="border-left:3px solid #FF5F1F;padding-left:12px;margin:8px 0;color:#666">'+inline(line.replace(/^>\s+/,''))+'</blockquote>'}
+    else if(/^[-*]\s+\[[x ]\]\s+/i.test(line)){if(!inList){html+='<ul style="padding-left:20px;list-style:none">';inList=true}const checked=/^\s*[-*]\s+\[x\]/i.test(line);html+='<li style="list-style:none;padding-left:20px;text-indent:-20px">'+(checked?'☑ ':'☐ ')+inline(line.replace(/^[-*]\s+\[[x ]\]\s+/i,''))+'</li>'}
+    else if(/^[-*]\s+/.test(line)){if(!inList){html+='<ul style="padding-left:20px">';inList=true}html+='<li>'+inline(line.replace(/^[-*]\s+/,''))+'</li>'}
+    else if(/^\d+\.\s+/.test(line)){if(inList){html+='</ul>';inList=false}html+='<ol style="padding-left:20px"><li>'+inline(line.replace(/^\d+\.\s+/,''))+'</li></ol>'}
+    else if(/^---+$/.test(line.trim())){if(inList){html+='</ul>';inList=false}html+='<hr style="border:none;border-top:1px solid #ddd;margin:16px 0">'}
     else if(!line.trim()){if(inList){html+='</ul>';inList=false}html+='<br>'}
-    else{if(inList){html+='</ul>';inList=false}
-      let t=esc(line);
-      t=t.replace(/\`([^\`]+)\`/g,'<code style="background:#f0f0f0;padding:2px 4px;border-radius:3px">$1</code>');
-      t=t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
-      t=t.replace(/\*([^*]+)\*/g,'<em>$1</em>');
-      t=t.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" style="color:#FF5F1F">$1</a>');
-      html+='<p style="margin:8px 0">'+t+'</p>'}
+    else{if(inList){html+='</ul>';inList=false}html+='<p style="margin:8px 0">'+inline(line)+'</p>'}
   }
   if(inList)html+='</ul>';
+  if(inTable)html+='</tbody></table>';
   if(inCode)html+='</code></pre>';
   return html;
 }
 function render(){$('preview').innerHTML=mdToHtml($('src').value)}
 $('src').addEventListener('input',render);
-$('src').value='# Markdown to PDF\n\n## Features\n- **Bold** and *italic* text\n- `Inline code` blocks\n- Links and lists\n\n> This is a blockquote.\n\n1. First item\n2. Second item\n\n---\n\nWrite your markdown here, then click **Download PDF**.';
+$('src').value='# Markdown to PDF\n\n## Features\n- **Bold** and *italic* text\n- ~~Strikethrough~~ support\n- `Inline code` blocks\n- [Links](https://example.com) and lists\n\n> This is a blockquote.\n\n1. First item\n2. Second item\n\n---\n\n### Task list\n- [x] Build the tool\n- [ ] Ship it\n\n### GFM Table\n\n| Name | Score |\n|------|-------|\n| Alpha | 95 |\n| Beta | 87 |\n\nWrite your markdown here, then click **Download PDF**.';
 render();
 $('dl').onclick=async()=>{
   const{jsPDF}=await import('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.esm.min.js');
@@ -130,10 +158,11 @@ $('dl').onclick=async()=>{
   const[size]=sizes[$('psize').value];
   let w=size,h=sizes[$('psize').value][1];
   if($('orient').value==='l'){[w,h]=[h,w]}
+  const m=parseInt($('margin').value)||10;
   const pdf=new jsPDF({orientation:$('orient').value,unit:'mm',format:$('psize').value});
   const html=$('preview').innerHTML;
   const container=document.createElement('div');
-  container.style.cssText='width:'+(w-20)+'mm;padding:10mm;font-family:Arial,sans-serif;font-size:11pt;color:#000;line-height:1.6';
+  container.style.cssText='width:'+(w-2*m)+'mm;padding:'+m+'mm;font-family:Arial,sans-serif;font-size:11pt;color:#000;line-height:1.6';
   container.innerHTML=html;
   document.body.appendChild(container);
   await pdf.html(container,{callback:()=>{pdf.save('markdown.pdf');document.body.removeChild(container)}});

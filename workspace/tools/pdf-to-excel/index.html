@@ -68,12 +68,18 @@ tailwind.config = { theme: { extend: {
       <select id="delim" class="ws-input !w-40">
         <option value="auto">Auto-detect</option>
         <option value=",">Comma</option>
-        <option value="	">Tab</option>
+        <option value="&#9;">Tab</option>
         <option value="|">Pipe</option>
         <option value="  ">Double-space</option>
       </select></div>
+      <div><label class="ws-label mb-2 block">Output</label>
+      <select id="fmt" class="ws-input !w-32">
+        <option value="csv">CSV</option>
+        <option value="xlsx">XLSX</option>
+      </select></div>
+      <label class="flex items-center gap-1 text-xs text-white/40 mt-2"><input id="keeponly" type="checkbox" checked class="accent-[#FF5F1F]"> Table rows only</label>
       <button id="go" class="ws-btn" disabled>Extract & Preview</button>
-      <button id="dl" class="ws-btn-ghost" disabled>Download CSV</button>
+      <button id="dl" class="ws-btn-ghost" disabled>Download</button>
     </div>
     <div id="status" class="mt-4 text-sm"></div>
     <div class="mt-4">
@@ -113,11 +119,13 @@ function csvTable(csv){
 $('go').onclick=async()=>{
   if(!fileBytes)return;
   $('status').textContent='Extracting text...';
+  $('go').disabled=true;
   try{
     const pdfjs=await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.mjs');
     pdfjs.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.mjs';
     const pdf=await pdfjs.getDocument({data:fileBytes}).promise;
-    let allText=[];
+    let allRows=[];
+    let pageSheets=[];
     for(let i=1;i<=pdf.numPages;i++){
       const page=await pdf.getPage(i);
       const content=await page.getTextContent();
@@ -128,31 +136,31 @@ $('go').onclick=async()=>{
         lines[y].push({x:it.transform[4],text:it.str});
       });
       const sortedYs=Object.keys(lines).map(Number).sort((a,b)=>a-b);
+      let pageRows=[];
       sortedYs.forEach(y=>{
         lines[y].sort((a,b)=>a.x-b.x);
         const rowText=lines[y].map(it=>it.text).join(' ');
-        allText.push(rowText);
+        pageRows.push(rowText);
       });
+      pageSheets.push(pageRows);
+      allRows=allRows.concat(pageRows);
     }
     // detect delimiter
     const d=$('delim').value;
     let delim=',';
     if(d==='auto'){
-      const sample=allText.slice(0,50).join('\n');
+      const sample=allRows.slice(0,50).join('\n');
       const counts={'\t':(sample.match(/\t/g)||[]).length,'|':(sample.match(/\|/g)||[]).length,'  ':(sample.match(/ {2,}/g)||[]).length};
       delim=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
       if(delim==='  ')delim=/ {2,}/;
       if(counts[delim]===0)delim=/\s{2,}|\t/;
-    } else if(d==='  '){
-      delim=/ {2,}/;
-    } else {
-      delim=d;
-    }
+    } else if(d==='  '){delim=/ {2,}/} else {delim=d}
     // split into columns
-    const csvRows=allText.map(line=>{
-      if(typeof delim==='string')return line.split(delim).map(c=>c.trim()).filter(c=>c);
-      else return line.split(delim).map(c=>c.trim()).filter(c=>c);
-    }).filter(r=>r.length>1); // keep only multi-column rows (table-like)
+    const keepOnly=$('keeponly').checked;
+    let csvRows=allRows.map(line=>{
+      return (typeof delim==='string'?line.split(delim):line.split(delim)).map(c=>c.trim()).filter(c=>c);
+    });
+    if(keepOnly)csvRows=csvRows.filter(r=>r.length>1);
     csvData=csvRows.map(r=>r.map(escapeCsv).join(',')).join('\n');
     const table=csvRows.slice(0,20);
     let html='<table class="ws-out text-xs">';
@@ -163,18 +171,39 @@ $('go').onclick=async()=>{
     });
     html+='</table>';
     $('preview').innerHTML='<div class="overflow-auto">'+html+'</div>';
-    $('status').textContent='✓ '+csvRows.length+' rows extracted from '+pdf.numPages+' pages. Delimiter: '+(typeof delim==='string'?('"'+delim+'"'):'multi-space/tab');
+    const fmt=$('fmt').value;
+    $('status').textContent='✓ '+csvRows.length+' rows extracted from '+pdf.numPages+' pages. Delimiter: '+(typeof delim==='string'?('"'+delim+'"'):'multi-space/tab')+'. Format: '+fmt.toUpperCase();
     $('status').style.color='#4ade80';
     $('dl').disabled=false;
+    // store for xlsx
+    window._csvRows=csvRows;window._pageSheets=pageSheets;window._delim=delim;
   }catch(e){
     $('status').textContent='✗ '+e.message;
     $('status').style.color='#f87171';
   }
+  $('go').disabled=false;
 };
-$('dl').onclick=()=>{
-  if(!csvData)return;
-  const blob=new Blob([csvData],{type:'text/csv'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fileName+'.csv';a.click();
+$('dl').onclick=async()=>{
+  const fmt=$('fmt').value;
+  if(fmt==='xlsx'){
+    try{
+      const XLSX=await import('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js');
+      const wb=XLSX.utils.book_new();
+      const rows=window._csvRows||[];
+      const wsData=rows.map(r=>r.map(c=>c||''));
+      const ws=XLSX.utils.aoa_to_sheet(wsData);
+      XLSX.utils.book_append_sheet(wb,ws,'Table');
+      XLSX.writeFile(wb,fileName+'.xlsx');
+    }catch(e){
+      // fallback to CSV
+      const blob=new Blob([csvData],{type:'text/csv'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fileName+'.csv';a.click();
+    }
+  }else{
+    if(!csvData)return;
+    const blob=new Blob([csvData],{type:'text/csv'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fileName+'.csv';a.click();
+  }
 };
 </script>
 </body>

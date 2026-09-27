@@ -65,11 +65,23 @@ tailwind.config = { theme: { extend: {
     <div id="fileInfo" class="mt-4 hidden"></div>
     <div id="controls" class="mt-4 hidden">
       <div class="flex flex-wrap gap-3 items-end">
-        <div><label class="ws-label mb-2 block">From page</label>
-        <input id="from" type="number" min="1" value="1" class="ws-input !w-28"></div>
-        <div><label class="ws-label mb-2 block">To page</label>
-        <input id="to" type="number" min="1" class="ws-input !w-28"></div>
-        <button id="go" class="ws-btn">Extract & Download</button>
+        <div><label class="ws-label mb-2 block">Mode</label>
+        <select id="mode" class="ws-input !w-40">
+          <option value="range">Page range</option>
+          <option value="individual">Pick pages</option>
+          <option value="split">Split all pages</option>
+        </select></div>
+        <div id="rangeControls">
+          <div><label class="ws-label mb-2 block">From page</label>
+          <input id="from" type="number" min="1" value="1" class="ws-input !w-28"></div>
+          <div><label class="ws-label mb-2 block">To page</label>
+          <input id="to" type="number" min="1" class="ws-input !w-28"></div>
+        </div>
+        <div id="pickControls" class="hidden">
+          <div><label class="ws-label mb-2 block">Pages (comma-separated)</label>
+          <input id="pages" type="text" class="ws-input !w-48" placeholder="1,3,5,7"></div>
+        </div>
+        <button id="go" class="ws-btn" disabled>Extract & Download</button>
       </div>
       <p id="pageInfo" class="mt-3 text-xs text-white/40"></p>
       <div id="status" class="mt-3 text-sm"></div>
@@ -91,6 +103,15 @@ drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('bord
 drop.addEventListener('dragleave',()=>drop.classList.remove('border-accent/40'));
 drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('border-accent/40');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])});
 fileInput.addEventListener('change',()=>{if(fileInput.files[0])handleFile(fileInput.files[0])});
+function updateMode(){
+  const m=$('mode').value;
+  $('rangeControls').classList.toggle('hidden',m!=='range');
+  $('pickControls').classList.toggle('hidden',m!=='individual');
+  if(m==='split')$('go').disabled=false;
+  else if(m==='range')$('go').disabled=false;
+  else $('go').disabled=false;
+}
+$('mode').addEventListener('change',updateMode);
 async function handleFile(f){
   $('status').textContent='';
   fileBytes=await f.arrayBuffer();fileName=f.name;
@@ -104,35 +125,67 @@ async function handleFile(f){
     $('controls').classList.remove('hidden');
     $('from').value='1';$('to').value=numPages;
     $('to').max=numPages;$('from').max=numPages;
-    $('pageInfo').textContent=numPages+' pages total. Range: 1-'+numPages;
+    $('pageInfo').textContent=numPages+' pages total. Select a mode above.';
+    updateMode();
   }catch(e){
     $('status').textContent='✗ '+e.message;
     $('status').style.color='#f87171';
   }
 }
 $('go').onclick=async()=>{
-  const from=Math.max(1,parseInt($('from').value)||1);
-  const to=Math.min(numPages,parseInt($('to').value)||numPages);
-  if(from>to){$('status').textContent='✗ From page must be before to page';$('status').style.color='#f87171';return}
+  if(!fileBytes)return;
+  const mode=$('mode').value;
+  $('go').disabled=true;
   $('status').textContent='Extracting...';$('status').style.color='';
   try{
     const{PDFDocument}=await import('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm');
     const pdf=await PDFDocument.load(fileBytes);
-    const newPdf=await PDFDocument.create();
-    const indices=[];
-    for(let i=from-1;i<=to-1;i++)indices.push(i);
-    const pages=await newPdf.copyPages(pdf,indices);
-    pages.forEach(p=>newPdf.addPage(p));
-    const out=await newPdf.save();
-    const blob=new Blob([out],{type:'application/pdf'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-    a.download=fileName.replace(/\.pdf$/i,'')+'-pages-'+from+'-'+to+'.pdf';a.click();
-    $('status').textContent='✓ Extracted '+pages.length+' pages ('+(out.byteLength/1024).toFixed(1)+' KB) — downloaded';
-    $('status').style.color='#4ade80';
+    if(mode==='split'){
+      for(let i=0;i<numPages;i++){
+        const singlePdf=await PDFDocument.create();
+        const[p]=await singlePdf.copyPages(pdf,[i]);
+        singlePdf.addPage(p);
+        const out=await singlePdf.save();
+        const blob=new Blob([out],{type:'application/pdf'});
+        const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+        a.download=fileName.replace(/\.pdf$/i,'')+'-page-'+(i+1)+'.pdf';a.click();
+      }
+      $('status').textContent='✓ Split into '+numPages+' individual PDFs — downloaded';
+      $('status').style.color='#4ade80';
+    } else if(mode==='individual'){
+      const pageList=$('pages').value.split(',').map(s=>parseInt(s.trim())).filter(n=>n>=1&&n<=numPages);
+      if(pageList.length===0){$('status').textContent='✗ Enter valid page numbers (1-'+numPages+')';$('status').style.color='#f87171';$('go').disabled=false;return}
+      const indices=pageList.map(n=>n-1);
+      const newPdf=await PDFDocument.create();
+      const pages=await newPdf.copyPages(pdf,indices);
+      pages.forEach(p=>newPdf.addPage(p));
+      const out=await newPdf.save();
+      const blob=new Blob([out],{type:'application/pdf'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      a.download=fileName.replace(/\.pdf$/i,'')+'-extracted.pdf';a.click();
+      $('status').textContent='✓ Extracted '+pages.length+' pages ('+(out.byteLength/1024).toFixed(1)+' KB) — downloaded';
+      $('status').style.color='#4ade80';
+    } else {
+      const from=Math.max(1,parseInt($('from').value)||1);
+      const to=Math.min(numPages,parseInt($('to').value)||numPages);
+      if(from>to){$('status').textContent='✗ From page must be before to page';$('status').style.color='#f87171';$('go').disabled=false;return}
+      const indices=[];
+      for(let i=from-1;i<=to-1;i++)indices.push(i);
+      const newPdf=await PDFDocument.create();
+      const pages=await newPdf.copyPages(pdf,indices);
+      pages.forEach(p=>newPdf.addPage(p));
+      const out=await newPdf.save();
+      const blob=new Blob([out],{type:'application/pdf'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      a.download=fileName.replace(/\.pdf$/i,'')+'-pages-'+from+'-'+to+'.pdf';a.click();
+      $('status').textContent='✓ Extracted '+pages.length+' pages ('+(out.byteLength/1024).toFixed(1)+' KB) — downloaded';
+      $('status').style.color='#4ade80';
+    }
   }catch(e){
     $('status').textContent='✗ '+e.message;
     $('status').style.color='#f87171';
   }
+  $('go').disabled=false;
 };
 </script>
 </body>
