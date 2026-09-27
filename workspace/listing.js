@@ -48,7 +48,7 @@
       + (e.ready ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 17 17 7M9 7h8v8"/></svg>' : '')
       + '</span>';
     var target = isWebsites ? ' target="_blank" rel="noopener"' : '';
-    return '<a href="' + href + '"' + target + ' class="group relative flex flex-col overflow-hidden rounded-2xl border border-white/15 bg-white/[0.045] transition-all duration-300 hover:-translate-y-1 hover:border-accent/50 hover:bg-white/[0.07]" data-card>'
+    return '<a href="' + href + '"' + target + ' class="group relative flex flex-col overflow-hidden rounded-2xl border border-white/20 bg-white/[0.06] transition-all duration-300 hover:-translate-y-1 hover:border-accent/60 hover:bg-white/[0.09]" data-card>'
       + art
       + '<div class="flex flex-1 flex-col p-6">'
       + '<div class="flex items-center justify-between gap-3"><span class="font-mono text-[9px] font-black uppercase tracking-[0.24em] text-white/55">' + esc(cat) + '</span>' + status + '</div>'
