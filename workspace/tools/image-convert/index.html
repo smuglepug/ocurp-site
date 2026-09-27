@@ -53,36 +53,25 @@ tailwind.config = { theme: { extend: {
       <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Image Converter</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">IMAGE</span><span class="ws-chip">CONVERT</span><span class="ws-chip">CLIENT-SIDE</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">IMAGE</span><span class="ws-chip">CONVERT</span><span class="ws-chip">BATCH</span></div>
         </div>
       
   <section class="ws-panel p-6">
     <div id="drop" class="border-2 border-dashed border-white/15 rounded-xl p-8 text-center cursor-pointer transition-colors hover:border-accent/50">
-      <p class="text-sm text-white/50">Drop or click to upload an image</p>
+      <p class="text-sm text-white/50">Drop or click to upload images (batch supported)</p>
     </div>
-    <input id="file" type="file" accept="image/*" class="hidden">
+    <input id="file" type="file" accept="image/*" multiple class="hidden">
     <div id="controls" class="mt-6 hidden">
       <div class="flex flex-wrap items-end gap-4">
         <div><label class="ws-label mb-2 block">Output format</label>
-          <select id="fmt" class="ws-input !w-40"><option value="image/png">PNG</option><option value="image/jpeg">JPEG</option><option value="image/webp">WebP</option></select></div>
-        <div class="flex-1 min-w-[200px]"><label class="ws-label mb-2 block">Quality: <span id="qv">90</span>%</label>
+          <select id="fmt" class="ws-input !w-40"><option value="image/png">PNG</option><option value="image/jpeg">JPEG</option><option value="image/webp">WebP</option><option value="image/bmp">BMP</option></select></div>
+        <div class="flex-1 min-w-[180px]"><label class="ws-label mb-2 block">Quality: <span id="qv">90</span>%</label>
           <input id="q" type="range" min="10" max="100" value="90" class="w-full accent-[#FF5F1F]"></div>
-        <div><label class="ws-label mb-2 block">Background</label>
+        <div><label class="ws-label mb-2 block">Background (for JPEG/BMP)</label>
           <input id="bg" type="color" value="#FFFFFF" class="h-10 w-16 rounded-lg border border-white/10 bg-transparent cursor-pointer"></div>
-        <button id="dl" class="ws-btn">Download</button>
+        <button id="dlAll" class="ws-btn">Download all</button>
       </div>
-      <div class="mt-6 grid gap-4 sm:grid-cols-2">
-        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-          <div class="ws-label mb-2">Original</div>
-          <img id="before" class="mx-auto max-h-48 rounded-lg" alt="original">
-          <div class="mt-2 text-center text-xs text-white/50" id="origInfo"></div>
-        </div>
-        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-          <div class="ws-label mb-2">Converted</div>
-          <img id="after" class="mx-auto max-h-48 rounded-lg" alt="converted">
-          <div class="mt-2 text-center text-xs text-white/50" id="newInfo"></div>
-        </div>
-      </div>
+      <div id="items" class="mt-6 space-y-3"></div>
     </div>
   </section>
 
@@ -94,37 +83,54 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
-let imgEl=null,origFile=null;
+let files=[];
 const drop=$('drop'),file=$('file');
 drop.onclick=()=>file.click();
 drop.ondragover=e=>{e.preventDefault();drop.classList.add('border-accent')};
 drop.ondragleave=()=>drop.classList.remove('border-accent');
-drop.ondrop=e=>{e.preventDefault();drop.classList.remove('border-accent');if(e.dataTransfer.files[0])handle(e.dataTransfer.files[0])};
-file.onchange=e=>{if(e.target.files[0])handle(e.target.files[0])};
-function handle(f){
-  origFile=f;const url=URL.createObjectURL(f);
-  imgEl=new Image();imgEl.onload=()=>{
-    $('before').src=url;$('origInfo').textContent=(imgEl.naturalWidth+' × '+imgEl.naturalHeight+' — '+f.type.split('/')[1].toUpperCase());
-    $('controls').classList.remove('hidden');convert();
-  };imgEl.src=url;
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('border-accent');if(e.dataTransfer.files.length)handle([...e.dataTransfer.files])};
+file.onchange=e=>{if(e.target.files.length)handle([...e.target.files])};
+function fmtSize(b){return b>1048576?(b/1048576).toFixed(2)+' MB':(b/1024).toFixed(1)+' KB'}
+function handle(fs){
+  files=[];$('items').innerHTML='';$('controls').classList.remove('hidden');
+  fs.forEach((f,i)=>{
+    const url=URL.createObjectURL(f);
+    const item={file:f,url,id:i,blob:null};
+    files.push(item);
+    const img=new Image();img.onload=()=>{
+      const div=document.createElement('div');div.className='rounded-xl border border-white/10 bg-white/[0.04] p-4';
+      div.innerHTML='<div class="flex items-center gap-4"><img class="h-16 w-16 object-cover rounded-lg" src="'+url+'" alt=""><div class="flex-1 min-w-0"><div class="text-sm font-medium text-white truncate">'+f.name+'</div><div class="text-xs text-white/40">'+img.naturalWidth+'×'+img.naturalHeight+' · '+f.type.split('/')[1].toUpperCase()+' · '+fmtSize(f.size)+'</div><div class="text-xs text-accent mt-1" id="conv'+i+'">Converting…</div></div><a id="dl'+i+'" class="ws-btn-ghost !px-3 !py-1.5 !text-xs hidden">Download</a></div>';
+      $('items').appendChild(div);
+      convertOne(item,img,i);
+    };img.src=url;
+  });
 }
-function convert(){
-  if(!imgEl)return;
+function convertOne(item,img,i){
   const q=parseInt($('q').value)/100;$('qv').textContent=$('q').value;
   const fmt=$('fmt').value;
-  const c=document.createElement('canvas');c.width=imgEl.naturalWidth;c.height=imgEl.naturalHeight;
+  const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
   const ctx=c.getContext('2d');
-  if(fmt==='image/jpeg'){ctx.fillStyle=$('bg').value;ctx.fillRect(0,0,c.width,c.height)}
-  ctx.drawImage(imgEl,0,0);
-  c.toBlob(b=>{
-    const u=URL.createObjectURL(b);$('after').src=u;
-    $('newInfo').textContent=(c.width+' × '+c.height+' — '+fmt.split('/')[1].toUpperCase()+' — '+fmtSize(b.size));
-    $('dl').onclick=()=>{const a=document.createElement('a');a.href=u;a.download='converted.'+fmt.split('/')[1];a.click()};
-  },fmt,q);
+  if(fmt==='image/jpeg'||fmt==='image/bmp'){ctx.fillStyle=$('bg').value;ctx.fillRect(0,0,c.width,c.height)}
+  ctx.drawImage(img,0,0);
+  try{
+    c.toBlob(b=>{
+      if(!b&&fmt==='image/bmp'){$('conv'+i).textContent='BMP not supported in this browser — try PNG';return}
+      if(!b){$('conv'+i).textContent='Conversion failed';return}
+      item.blob=b;const u=URL.createObjectURL(b);
+      $('conv'+i).textContent=fmtSize(b.size)+' · '+fmt.split('/')[1].toUpperCase();
+      const dl=$('dl'+i);dl.href=u;dl.download='converted.'+fmt.split('/')[1];dl.classList.remove('hidden');
+    },fmt,q);
+  }catch(e){$('conv'+i).textContent=fmt+' not supported — try PNG or JPEG'}
 }
-function fmtSize(b){return b>1048576?(b/1048576).toFixed(2)+' MB':(b/1024).toFixed(1)+' KB'}
-$('fmt').addEventListener('change',convert);
-$('q').addEventListener('input',convert);
+function reconvert(){
+  files.forEach((item,i)=>{
+    if(!item.url)return;
+    const img=new Image();img.onload=()=>{convertOne(item,img,i)};img.src=item.url;
+  });
+}
+$('fmt').addEventListener('change',reconvert);
+$('q').addEventListener('input',reconvert);
+$('dlAll').onclick=()=>{files.forEach(item=>{if(item.blob){const a=document.createElement('a');a.href=URL.createObjectURL(item.blob);a.download='converted_'+item.file.name.split('.')[0]+'.'+$('fmt').value.split('/')[1];a.click()}})};
 </script>
 </body>
 </html>
