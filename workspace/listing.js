@@ -30,7 +30,7 @@
     var cat = (typeof CATS !== 'undefined' && CATS[e.cat]) || (isGames ? 'GAME' : 'TOOL');
     var href = isWebsites ? e.url : '/workspace/' + base + '/' + e.slug + '/';
     var status = e.ready
-      ? '<span class="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-green-400"><span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>Ready</span>'
+      ? ''
       : '<span class="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-white/35"><span class="h-1.5 w-1.5 rounded-full bg-white/30"></span>Building</span>';
     var logo = isWebsites
       ? '<div class="flex h-full w-full items-center justify-center"><span class="font-display text-5xl font-black text-white/15">' + esc(e.name.slice(0, 2).toUpperCase()) + '</span></div>'
@@ -39,7 +39,7 @@
       + '<div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/[0.07] blur-3xl"></div>'
       + logo
       + '</div>';
-    var tags = e.tags.slice(0, 3).map(function (t) {
+    var tags = e.tags.filter(function (t) { return String(t).toUpperCase() !== 'CLIENT-SIDE'; }).slice(0, 3).map(function (t) {
       return '<span class="rounded-full border border-white/15 bg-white/[0.05] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white/55">' + esc(t) + '</span>';
     }).join('');
     var action = '<span class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.22em] '
