@@ -40,20 +40,20 @@
       + logo
       + '</div>';
     var tags = e.tags.filter(function (t) { return String(t).toUpperCase() !== 'CLIENT-SIDE'; }).slice(0, 3).map(function (t) {
-      return '<span class="rounded-full border border-white/15 bg-white/[0.05] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white/55">' + esc(t) + '</span>';
+      return '<span class="rounded-full border border-white/15 bg-white/[0.05] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white/65">' + esc(t) + '</span>';
     }).join('');
     var action = '<span class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.22em] '
-      + (e.ready ? 'text-white/40 transition-colors group-hover:text-accent' : 'text-white/25') + '">'
+      + (e.ready ? 'text-accent' : 'text-white/25') + '">'
       + (e.ready ? (isGames ? 'Play' : (isWebsites ? 'Visit' : 'Open')) : 'In build')
       + (e.ready ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 17 17 7M9 7h8v8"/></svg>' : '')
       + '</span>';
     var target = isWebsites ? ' target="_blank" rel="noopener"' : '';
-    return '<a href="' + href + '"' + target + ' class="group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] transition-all duration-300 hover:-translate-y-1 hover:border-accent/30 hover:bg-white/[0.04]" data-card>'
+    return '<a href="' + href + '"' + target + ' class="group relative flex flex-col overflow-hidden rounded-2xl border border-white/15 bg-white/[0.045] transition-all duration-300 hover:-translate-y-1 hover:border-accent/50 hover:bg-white/[0.07]" data-card>'
       + art
       + '<div class="flex flex-1 flex-col p-6">'
-      + '<div class="flex items-center justify-between gap-3"><span class="font-mono text-[9px] font-black uppercase tracking-[0.24em] text-white/30">' + esc(cat) + '</span>' + status + '</div>'
+      + '<div class="flex items-center justify-between gap-3"><span class="font-mono text-[9px] font-black uppercase tracking-[0.24em] text-white/55">' + esc(cat) + '</span>' + status + '</div>'
       + '<h3 class="mt-3 font-display text-2xl font-black leading-tight tracking-tight text-white transition-colors duration-300 group-hover:text-accent">' + esc(e.name) + '</h3>'
-      + '<p class="mt-3 line-clamp-2 text-sm leading-relaxed text-white/45">' + esc(e.blurb) + '</p>'
+      + '<p class="mt-3 line-clamp-2 text-sm leading-relaxed text-white/60">' + esc(e.blurb) + '</p>'
       + '<div class="mt-4 flex flex-wrap gap-1.5">' + tags + '</div>'
       + '<div class="mt-6 flex-1"></div>'
       + action
