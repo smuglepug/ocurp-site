@@ -60,18 +60,10 @@ tailwind.config = { theme: { extend: {
     <div id="drop" class="rounded-xl border-2 border-dashed border-white/10 p-8 text-center transition-colors">
       <p class="ws-label">Drop a PDF or click to upload</p>
       <input id="file" type="file" accept="application/pdf" class="hidden">
-      <p class="mt-2 text-xs text-white/30">Extracts table-like rows from PDF text into CSV.</p>
+      <p class="mt-2 text-xs text-white/30">Extracts table-like rows from PDF text into XLSX or CSV — all in your browser.</p>
     </div>
     <div id="fileInfo" class="mt-4 hidden"></div>
     <div class="mt-4 flex flex-wrap gap-3 items-end">
-      <div><label class="ws-label mb-2 block">Delimiters detected</label>
-      <select id="delim" class="ws-input !w-40">
-        <option value="auto">Auto-detect</option>
-        <option value=",">Comma</option>
-        <option value="&#9;">Tab</option>
-        <option value="|">Pipe</option>
-        <option value="  ">Double-space</option>
-      </select></div>
       <div><label class="ws-label mb-2 block">Output</label>
       <select id="fmt" class="ws-input !w-32">
         <option value="xlsx" selected>XLSX</option>
@@ -130,37 +122,66 @@ $('go').onclick=async()=>{
     for(let i=1;i<=pdf.numPages;i++){
       const page=await pdf.getPage(i);
       const content=await page.getTextContent();
-      const lines={};
+      // Group text items into rows by Y position
+      const yMap={};
       content.items.forEach(it=>{
-        const y=Math.round(it.transform[5]/5)*5;
-        if(!lines[y])lines[y]=[];
-        lines[y].push({x:it.transform[4],text:it.str});
+        if(!it.str||!it.str.trim())return;
+        const y=Math.round(it.transform[5]/3)*3;
+        if(!yMap[y])yMap[y]=[];
+        yMap[y].push({x:it.transform[4],w:it.width||it.str.length*4,text:it.str});
       });
-      const sortedYs=Object.keys(lines).map(Number).sort((a,b)=>a-b);
+      const sortedYs=Object.keys(yMap).map(Number).sort((a,b)=>b-a); // top to bottom (PDF coords)
+      // Detect column boundaries from X positions across all rows
+      let xPositions=[];
+      sortedYs.forEach(y=>{
+        yMap[y].forEach(it=>{
+          xPositions.push({x:it.x,w:it.w});
+        });
+      });
+      // Cluster X positions into columns (gap-based)
+      xPositions.sort((a,b)=>a.x-b.x);
+      let cols=[];
+      if(xPositions.length>0){
+        let current={minX:xPositions[0].x,maxX:xPositions[0].x+xPositions[0].w};
+        for(let j=1;j<xPositions.length;j++){
+          const xp=xPositions[j];
+          if(xp.x-current.maxX<15){ // same column cluster
+            current.maxX=Math.max(current.maxX,xp.x+xp.w);
+          }else{
+            cols.push(current);
+            current={minX:xp.x,maxX:xp.x+xp.w};
+          }
+        }
+        cols.push(current);
+      }
+      // Assign each text item to a column
       let pageRows=[];
       sortedYs.forEach(y=>{
-        lines[y].sort((a,b)=>a.x-b.x);
-        const rowText=lines[y].map(it=>it.text).join(' ');
-        pageRows.push(rowText);
+        yMap[y].sort((a,b)=>a.x-b.x);
+        if(cols.length>1){
+          // Multi-column: assign each item to nearest column
+          const rowArr=new Array(cols.length).fill('');
+          yMap[y].forEach(it=>{
+            let bestCol=0,bestDist=Infinity;
+            for(let c=0;c<cols.length;c++){
+              const colCenter=(cols[c].minX+cols[c].maxX)/2;
+              const dist=Math.abs(it.x-colCenter);
+              if(dist<bestDist){bestDist=dist;bestCol=c}
+            }
+            rowArr[bestCol]+=(rowArr[bestCol]?' ':'')+it.text;
+          });
+          pageRows.push(rowArr);
+        }else{
+          // Single column: just join text
+          pageRows.push([yMap[y].map(it=>it.text).join(' ')]);
+        }
       });
       pageSheets.push(pageRows);
       allRows=allRows.concat(pageRows);
     }
-    // detect delimiter
-    const d=$('delim').value;
-    let delim=',';
-    if(d==='auto'){
-      const sample=allRows.slice(0,50).join('\n');
-      const counts={'\t':(sample.match(/\t/g)||[]).length,'|':(sample.match(/\|/g)||[]).length,'  ':(sample.match(/ {2,}/g)||[]).length};
-      delim=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
-      if(delim==='  ')delim=/ {2,}/;
-      if(counts[delim]===0)delim=/\s{2,}|\t/;
-    } else if(d==='  '){delim=/ {2,}/} else {delim=d}
-    // split into columns
+    // No delimiter splitting needed — columns already detected structurally
     const keepAll=$('allrows').checked;
-    let csvRows=allRows.map(line=>{
-      return (typeof delim==='string'?line.split(delim):line.split(delim)).map(c=>c.trim()).filter(c=>c);
-    });
+    let csvRows=allRows.map(r=>r.map(c=>c.trim()).filter(c=>c));
     if(!keepAll)csvRows=csvRows.filter(r=>r.length>1);
     csvData=csvRows.map(r=>r.map(escapeCsv).join(',')).join('\n');
     const table=csvRows.slice(0,20);
@@ -173,7 +194,7 @@ $('go').onclick=async()=>{
     html+='</table>';
     $('preview').innerHTML='<div class="overflow-auto">'+html+'</div>';
     const fmt=$('fmt').value;
-    $('status').textContent='✓ '+csvRows.length+' rows extracted from '+pdf.numPages+' pages. Delimiter: '+(typeof delim==='string'?('"'+delim+'"'):'multi-space/tab')+'. Format: '+fmt.toUpperCase();
+    $('status').textContent='✓ '+csvRows.length+' rows, '+(csvRows[0]?csvRows[0].length:0)+' columns extracted from '+pdf.numPages+' pages. Format: '+fmt.toUpperCase();
     $('status').style.color='#4ade80';
     $('dl').disabled=false;
     // store for xlsx
@@ -191,11 +212,8 @@ $('dl').onclick=async()=>{
       const XLSX=await import('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js');
       const wb=XLSX.utils.book_new();
       if($('perpage').checked&&window._pageSheets){
-        const delim=window._delim||',';
         window._pageSheets.forEach((pageRows,idx)=>{
-          const rows=pageRows.map(line=>{
-            return (typeof delim==='string'?line.split(delim):line.split(delim)).map(c=>c.trim()).filter(c=>c);
-          }).filter(r=>r.length>1);
+          const rows=pageRows.filter(r=>r.length>1);
           if(rows.length>0){
             const wsData=rows.map(r=>r.map(c=>c||''));
             const ws=XLSX.utils.aoa_to_sheet(wsData);
