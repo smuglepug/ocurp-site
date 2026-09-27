@@ -53,9 +53,9 @@ tailwind.config = { theme: { extend: {
       <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Chess</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">BOARD</span><span class="ws-chip">2-PLAYER</span><span class="ws-chip">STRATEGY</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">BOARD</span><span class="ws-chip">2-PLAYER</span><span class="ws-chip">ELO</span></div>
         </div>
-      <section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_240px]"><div id="board" class="mx-auto grid aspect-square w-full max-w-[440px] grid-cols-8 overflow-hidden rounded-xl border border-white/10"></div><div class="flex flex-col gap-4"><div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="ws-label mb-1">Turn</div><div class="font-display text-2xl font-black text-accent" id="turn">White</div></div><div id="msg" class="text-center text-xs text-white/50">Tap a piece, then a highlighted square.</div><button id="new" class="ws-btn">New game</button><p class="text-[10px] text-white/30 leading-relaxed">Two players, same screen. Basic chess moves.</p></div></div></section>
+      <section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_260px]"><div id="board" class="mx-auto grid aspect-square w-full max-w-[460px] grid-cols-8 overflow-hidden rounded-xl border border-white/15"></div><div class="flex flex-col gap-3"><div class="grid grid-cols-2 gap-3"><div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Turn</div><div class="font-display text-xl font-black text-accent" id="turn">White</div></div><div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Your ELO</div><div class="font-display text-xl font-black text-white" id="elo">1200</div></div></div><div id="msg" class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Tap a piece, then a highlighted square.</div><div><div class="ws-label mb-1">Captured</div><div id="cap" class="min-h-[26px] font-display text-xl text-white/70"></div></div><div class="flex gap-2"><button id="undo" class="ws-btn-ghost flex-1">Undo</button><button id="new" class="ws-btn flex-1">New game</button></div><p class="text-[10px] text-white/50 leading-relaxed">Two players, one screen. Check and checkmate are detected; your rating updates after each finished game (K=32).</p></div></div></section>
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
@@ -63,44 +63,71 @@ tailwind.config = { theme: { extend: {
 </div>
 <script src="/workspace/related.js" defer></script>
 <script>const $=id=>document.getElementById(id);
-const GLYPH={K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
-let bd,turn,sel;
-function reset(){bd=[
- ['r','n','b','q','k','b','n','r'],
- ['p','p','p','p','p','p','p','p'],
- [0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],
- [0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],
- ['P','P','P','P','P','P','P','P'],
- ['R','N','B','Q','K','B','N','R']];
- turn='w';sel=null;$('turn').textContent='White';$('msg').textContent='Tap a piece, then a highlighted square.';draw()}
+const SOLID={K:'\u265A',Q:'\u265B',R:'\u265C',B:'\u265D',N:'\u265E',P:'\u265F'};
+let bd,turn,sel,hist,capW,capB,over;
+const START=[['r','n','b','q','k','b','n','r'],['p','p','p','p','p','p','p','p'],
+ [0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],
+ ['P','P','P','P','P','P','P','P'],['R','N','B','Q','K','B','N','R']];
 const isW=p=>p&&p===p.toUpperCase();
-function moves(r,c){const p=bd[r][c];if(!p)return[];const m=[];const own=isW(p)?isW:q=>q&&!isW(q);
-  const add=(nr,nc)=>{if(nr<0||nr>7||nc<0||nc>7)return false;if(own(bd[nr][nc]))return false;m.push([nr,nc]);return !bd[nr][nc]};
-  const D=p.toUpperCase();
-  if(D==='P'){const d=isW(p)?-1:1;if(!bd[r+d]?.[c]){m.push([r+d,c]);
-      if((isW(p)&&r===6)||(!isW(p)&&r===1))if(!bd[r+2*d]?.[c])m.push([r+2*d,c])}
-    for(const dc of[-1,1]){const nr=r+d,nc=c+dc;if(nr>=0&&nr<8&&nc>=0&&nc<8&&bd[nr][nc]&&!own(bd[nr][nc]))m.push([nr,nc])}}
-  else if(D==='N'){[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([a,c2])=>{const nr=r+a,nc=c+c2;
-    if(nr>=0&&nr<8&&nc>=0&&nc<8&&!own(bd[nr][nc]))m.push([nr,nc])})}
-  else if(D==='K'){[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([a,c2])=>{const nr=r+a,nc=c+c2;
-    if(nr>=0&&nr<8&&nc>=0&&nc<8&&!own(bd[nr][nc]))m.push([nr,nc])})}
-  else{const dirs=D==='R'?[[1,0],[-1,0],[0,1],[0,-1]]:D==='B'?[[1,1],[1,-1],[-1,1],[-1,-1]]:[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
-    dirs.forEach(([dr,dc])=>{let nr=r+dr,nc=c+dc;while(add(nr,nc)){nr+=dr;nc+=dc}})}
-  return m}
+function eloGet(){return +(localStorage.getItem('ws-chess-elo')||1200)}
+function eloSet(v){localStorage.setItem('ws-chess-elo',Math.round(v))}
+function reset(){bd=START.map(r=>r.slice());turn='w';sel=null;hist=[];capW=[];capB=[];over=false;
+ $('msg').textContent='Tap a piece, then a highlighted square.';$('turn').textContent='White';$('elo').textContent=eloGet();draw()}
+function clone(b){return b.map(r=>r.slice())}
+function movesOn(b,r,c){const p=b[r][c];if(!p)return[];const m=[];const own=isW(p)?isW:q=>q&&!isW(q);
+ const add=(nr,nc)=>{if(nr<0||nr>7||nc<0||nc>7)return false;if(own(b[nr][nc]))return false;m.push([nr,nc]);return !b[nr][nc]};
+ const D=p.toUpperCase();
+ if(D==='P'){const d=isW(p)?-1:1;if(r+d>=0&&r+d<8){if(!b[r+d][c]){m.push([r+d,c]);
+   if((isW(p)&&r===6)||(!isW(p)&&r===1))if(!b[r+2*d][c])m.push([r+2*d,c])}
+   for(const dc of[-1,1]){const nr=r+d,nc=c+dc;if(nr>=0&&nr<8&&nc>=0&&nc<8&&b[nr][nc]&&!own(b[nr][nc]))m.push([nr,nc])}}}
+ else if(D==='N'){[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([a,c2])=>{const nr=r+a,nc=c+c2;
+   if(nr>=0&&nr<8&&nc>=0&&nc<8&&!own(b[nr][nc]))m.push([nr,nc])})}
+ else if(D==='K'){[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([a,c2])=>{const nr=r+a,nc=c+c2;
+   if(nr>=0&&nr<8&&nc>=0&&nc<8&&!own(b[nr][nc]))m.push([nr,nc])})}
+ else{const dirs=D==='R'?[[1,0],[-1,0],[0,1],[0,-1]]:D==='B'?[[1,1],[1,-1],[-1,1],[-1,-1]]:[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+   dirs.forEach(([dr,dc])=>{let nr=r+dr,nc=c+dc;while(add(nr,nc)){nr+=dr;nc+=dc}})}
+ return m}
+function moves(r,c){return movesOn(bd,r,c).filter(([nr,nc])=>{
+ const nb=clone(bd);nb[nr][nc]=nb[r][c];nb[r][c]=0;return !inCheck(nb,isW(bd[r][c]))})}
+function findKing(b,white){for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=b[r][c];if(p&&p.toUpperCase()==='K'&&isW(p)===white)return[r,c]}return null}
+function inCheck(b,white){const k=findKing(b,white);if(!k)return false;
+ for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=b[r][c];if(p&&isW(p)!==white){
+   for(const [nr,nc] of movesOn(b,r,c)){if(nr===k[0]&&nc===k[1])return true}}}
+ return false}
+function anyLegal(b,white){for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=b[r][c];
+  if(p&&isW(p)===white){const saveB=bd;bd=b;const mm=movesOn(b,r,c).filter(([nr,nc])=>{const nb=clone(b);nb[nr][nc]=nb[r][c];nb[r][c]=0;return !inCheck(nb,white)});bd=saveB;
+   if(mm.length)return true}}
+ return false}
 function draw(){$('board').innerHTML=bd.map((row,r)=>row.map((p,c)=>{
-    const dark=(r+c)%2===1;const bg=dark?'#3a3a3a':'#e8e8e8';
-    const isSel=sel&&sel[0]===r&&sel[1]===c;
-    const isMov=sel&&moves(sel[0],sel[1]).some(([a,b2])=>a===r&&b2===c);
-    return '<button data-r="'+r+'" data-c="'+c+'" class="flex aspect-square items-center justify-center text-3xl" style="background:'+(isSel?'#FF5F1F':isMov?'#fbbf24':bg)+'">'
-      +'<span style="color:'+(isW(p)?'#fff':'#111')+';text-shadow:0 0 1px '+(isW(p)?'#000':'#fff')+'">'+(GLYPH[p]||'')+'</span></button>'}).join('')).join('');
-  $('board').querySelectorAll('button').forEach(el=>el.onclick=()=>click(+el.dataset.r,+el.dataset.c))}
-function click(r,c){const p=bd[r][c];
-  if(sel){const ok=moves(sel[0],sel[1]).some(([a,b2])=>a===r&&b2===c);
-    if(ok){bd[r][c]=bd[sel[0]][sel[1]];bd[sel[0]][sel[1]]=0;sel=null;
-      turn=turn==='w'?'b':'w';$('turn').textContent=turn==='w'?'White':'Black';$('msg').textContent='Move played.';}
-    else{sel=(p&&((turn==='w')===isW(p)))?[r,c]:null}}
-  else sel=(p&&((turn==='w')===isW(p)))?[r,c]:null;
-  draw()}
+  const dark=(r+c)%2===1;const bg=dark?'#5a6472':'#c9d1dc';
+  const isSel=sel&&sel[0]===r&&sel[1]===c;
+  const isMov=sel&&moves(sel[0],sel[1]).some(([a,b2])=>a===r&&b2===c);
+  const isChk=(p&&p.toUpperCase()==='K'&&inCheck(bd,isW(p)))?true:false;
+  const sbg=isSel?'#FF5F1F':isMov?((bd[r][c])?'#fbbf24':'#86efac'):(isChk?'#ef4444':bg);
+  const col=isW(p)?'#ffffff':'#0b1220';
+  const strk=isW(p)?'#0b1220':'#ffffff';
+  return '<button data-r="'+r+'" data-c="'+c+'" class="flex aspect-square items-center justify-center" style="background:'+sbg+'">'
+   +'<span style="font-size:clamp(18px,4.2vw,34px);line-height:1;color:'+col+';-webkit-text-stroke:1.4px '+strk+';text-shadow:0 1px 2px rgba(0,0,0,.45)">'+(p?SOLID[p.toUpperCase()]:'')+'</span></button>'}).join('')).join('');
+ $('board').querySelectorAll('button').forEach(el=>el.onclick=()=>click(+el.dataset.r,+el.dataset.c));
+ $('cap').textContent=(capW.map(x=>SOLID[x.toUpperCase()]).join('')||'\u2014')+'  vs  '+(capB.map(x=>SOLID[x.toUpperCase()]).join('')||'\u2014')}
+function inCheckTurn(){return inCheck(bd,turn==='w')}
+function click(r,c){if(over)return;const p=bd[r][c];
+ if(sel){const ok=moves(sel[0],sel[1]).some(([a,b2])=>a===r&&b2===c);
+  if(ok){hist.push({b:clone(bd),t:turn,cw:capW.slice(),cb:capB.slice()});
+    const taken=bd[r][c];if(taken){(isW(taken)?capB:capW).push(taken)}
+    bd[r][c]=bd[sel[0]][sel[1]];bd[sel[0]][sel[1]]=0;sel=null;turn=turn==='w'?'b':'w';
+    $('turn').textContent=turn==='w'?'White':'Black';
+    const chk=inCheck(bd,turn==='w'),legal=anyLegal(bd,turn==='w');
+    if(chk&&!legal){over=true;$('msg').textContent=(turn==='w'?'Black':'White')+' wins by checkmate!';score(turn==='w'?false:true)}
+    else if(!chk&&!legal){over=true;$('msg').textContent='Stalemate \u2014 drawn.'}
+    else $('msg').textContent=chk?'Check!':(turn==='w'?'White to move.':'Black to move.')}
+  else{sel=(p&&((turn==='w')===isW(p)))?[r,c]:null}}
+ else sel=(p&&((turn==='w')===isW(p)))?[r,c]:null;
+ draw()}
+function score(whiteWon){const me=eloGet(),opp=1200,K=32,exp=1/(1+Math.pow(10,(opp-me)/400));
+ const s=whiteWon?1:0;const v=me+K*(s-exp);eloSet(v);$('elo').textContent=eloGet()}
+$('undo').onclick=()=>{const h=hist.pop();if(!h)return;bd=h.b;turn=h.t;capW=h.cw;capB=h.cb;sel=null;over=false;
+ $('turn').textContent=turn==='w'?'White':'Black';$('msg').textContent='Move undone.';draw()};
 $('new').onclick=reset;reset();</script>
 </body>
 </html>
