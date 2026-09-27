@@ -42,9 +42,11 @@
     var tags = e.tags.slice(0, 3).map(function (t) {
       return '<span class="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white/40">' + esc(t) + '</span>';
     }).join('');
-    var action = e.ready
-      ? '<span class="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3.5 text-[10px] font-black uppercase tracking-[0.24em] text-black transition-opacity group-hover:opacity-90">' + (isGames ? 'Play' : (isWebsites ? 'Visit' : 'Open')) + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 17 17 7M9 7h8v8"/></svg></span>'
-      : '<span class="flex w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] py-3.5 text-[10px] font-black uppercase tracking-[0.24em] text-white/30">In build</span>';
+    var action = '<span class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.22em] '
+      + (e.ready ? 'text-white/40 transition-colors group-hover:text-accent' : 'text-white/25') + '">'
+      + (e.ready ? (isGames ? 'Play' : (isWebsites ? 'Visit' : 'Open')) : 'In build')
+      + (e.ready ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 17 17 7M9 7h8v8"/></svg>' : '')
+      + '</span>';
     var target = isWebsites ? ' target="_blank" rel="noopener"' : '';
     return '<a href="' + href + '"' + target + ' class="group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] transition-all duration-300 hover:-translate-y-1 hover:border-accent/30 hover:bg-white/[0.04]" data-card>'
       + art
