@@ -8,5 +8,11 @@ const RAW = [
   {slug:"wordle",name:"Word Guess",cat:"game",blurb:"Six guesses, colour-coded feedback, saved streaks.",tags:["WORDS"],ready:true},
   {slug:"minesweeper",name:"Minesweeper",cat:"game",blurb:"Flag the mines, clear the field, three difficulties.",tags:["PUZZLE"],ready:true},
   {slug:"typing-race",name:"Typing Race",cat:"game",blurb:"Beat the clock against a moving target pace.",tags:["SPEED"],ready:true},
-  {slug:"chess",name:"Chess",cat:"game",blurb:"Full rules with a real engine opponent.",tags:["STOCKFISH"],ready:true},
-];
+  {slug:"chess",name:"Chess",cat:"game",blurb:"Two-player board with check, checkmate and a live ELO rating.",tags:["BOARD","ELO"],ready:true},
+    {slug:"checkers",name:"Checkers",cat:"game",blurb:"Draughts with forced captures, kings and a simple AI.",tags:["BOARD","AI"],ready:true},
+    {slug:"reversi",name:"Reversi / Othello",cat:"game",blurb:"Flip discs in every direction against a scoring AI.",tags:["BOARD","FLIP"],ready:true},
+    {slug:"connect-four",name:"Connect Four",cat:"game",blurb:"Drop discs, four in a row, AI that blocks.",tags:["AI","PUZZLE"],ready:true},
+    {slug:"simon",name:"Simon Says",cat:"game",blurb:"Repeat the growing sequence — each pad has its own tone.",tags:["MEMORY","AUDIO"],ready:true},
+    {slug:"mastermind",name:"Mastermind",cat:"game",blurb:"Crack the four-colour code with exact/partial feedback.",tags:["LOGIC","PUZZLE"],ready:true},
+    {slug:"hangman",name:"Hangman",cat:"game",blurb:"Guess the word before the drawing runs out.",tags:["WORDS","GUESS"],ready:true},
+  ];

@@ -113,4 +113,10 @@ const RAW = [
   {slug:"css-minifier",name:"CSS Minifier",cat:"data",blurb:"Minify CSS with before/after byte count and download.",tags:["CSS","MINIFY","CLIENT-SIDE"],ready:true},
   {slug:"html-minifier",name:"HTML Minifier",cat:"data",blurb:"Minify HTML with comment control and byte savings.",tags:["HTML","MINIFY","CLIENT-SIDE"],ready:true},
   {slug:"utm-builder",name:"UTM Builder",cat:"data",blurb:"Build UTM tracking URLs with live preview and shortener.",tags:["UTM","URL","MARKETING","CLIENT-SIDE"],ready:true},
-  ];
+  {slug:"cron-builder",name:"Cron Builder",cat:"data",blurb:"Build cron expressions from dropdowns with plain-English descriptions.",tags:["CRON","SCHEDULE","CLIENT-SIDE"],ready:true},
+  {slug:"mime-types",name:"MIME Types",cat:"data",blurb:"Look up any file extension to its MIME type and back.",tags:["MIME","FILE","CLIENT-SIDE"],ready:true},
+  {slug:"user-agent-parser",name:"User Agent Parser",cat:"data",blurb:"Parse a UA string into browser, OS, engine and device.",tags:["UA","BROWSER","CLIENT-SIDE"],ready:true},
+  {slug:"url-parser",name:"URL Parser",cat:"data",blurb:"Break any URL into protocol, host, port, path, query and hash.",tags:["URL","PARSE","CLIENT-SIDE"],ready:true},
+  {slug:"qr-scanner",name:"QR Scanner",cat:"data",blurb:"Decode QR codes from a camera or uploaded image.",tags:["QR","CAMERA","CLIENT-SIDE"],ready:true},
+  {slug:"barcode-gen",name:"Barcode Generator",cat:"data",blurb:"Generate CODE128, EAN, UPC and more barcodes as PNG.",tags:["BARCODE","CODE128","EAN","CLIENT-SIDE"],ready:true},
+];
