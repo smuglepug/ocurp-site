@@ -108,11 +108,12 @@ function wordDiff(a,b){
   let h='';
   d.forEach(op=>{
     if(op.t==='eq')h+=esc(op.v);
-    else if(op.t==='del')h+='<span style="background:rgba(239,68,68,.2);color:#fca5a5;border-radius:2px">'+esc(op.v)+'</span>';
-    else h+='<span style="background:rgba(34,197,94,.2);color:#86efac;border-radius:2px">'+esc(op.v)+'</span>';
+    else if(op.t==='del')h+='<span style="background:rgba(239,68,68,.25);color:#fca5a5;border-radius:2px;padding:0 1px">'+esc(op.v)+'</span>';
+    else h+='<span style="background:rgba(34,197,94,.25);color:#86efac;border-radius:2px;padding:0 1px">'+esc(op.v)+'</span>';
   });
   return h;
 }
+function ln(n){return '<span style="color:rgba(255,255,255,.2);user-select:none;display:inline-block;width:2.5em;text-align:right;margin-right:8px">'+n+'</span>'}
 function run(){
   let a=$('a').value,b=$('b').value;
   const hideEq=$('hideEq')&&$('hideEq').checked;
@@ -122,26 +123,27 @@ function run(){
   if(igWs){la=la.map(l=>l.trim());lb=lb.map(l=>l.trim())}
   if(igCase){la=la.map(l=>l.toLowerCase());lb=lb.map(l=>l.toLowerCase())}
   const d=lcs(la,lb);
+  let n=1;
   if(sideBySide){
     let left='',right='';
     d.forEach(op=>{
       if(op.t==='eq'){
-        if(!hideEq){left+='<div style="color:rgba(255,255,255,.4);padding:2px 8px">'+esc(op.v)+'</div>';right+='<div style="color:rgba(255,255,255,.4);padding:2px 8px">'+esc(op.v)+'</div>'}
+        if(!hideEq){left+='<div style="color:rgba(255,255,255,.4);padding:1px 8px">'+ln(n)+esc(op.v)+'</div>';right+='<div style="color:rgba(255,255,255,.4);padding:1px 8px">'+ln(n)+esc(op.v)+'</div>';n++}
       }else if(op.t==='del'){
-        left+='<div style="background:rgba(239,68,68,.12);color:#f87171;border-left:3px solid #ef4444;padding:2px 8px">- '+esc(op.v)+'</div>';
-        right+='<div style="opacity:.15;padding:2px 8px">&nbsp;</div>';
+        left+='<div style="background:rgba(239,68,68,.12);color:#f87171;border-left:3px solid #ef4444;padding:1px 8px">'+ln(n)+'- '+esc(op.v)+'</div>';
+        right+='<div style="opacity:.15;padding:1px 8px">&nbsp;</div>';
       }else{
-        left+='<div style="opacity:.15;padding:2px 8px">&nbsp;</div>';
-        right+='<div style="background:rgba(34,197,94,.12);color:#4ade80;border-left:3px solid #22c55e;padding:2px 8px">+ '+esc(op.v)+'</div>';
+        left+='<div style="opacity:.15;padding:1px 8px">&nbsp;</div>';
+        right+='<div style="background:rgba(34,197,94,.12);color:#4ade80;border-left:3px solid #22c55e;padding:1px 8px">'+ln(n)+'+ '+esc(op.v)+'</div>';n++;
       }
     });
     $('diff').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:0"><div style="border-right:1px solid rgba(255,255,255,.1);padding-right:12px">'+left+'</div><div style="padding-left:12px">'+right+'</div></div>';
   }else{
     let h='';
     d.forEach(op=>{
-      if(op.t==='eq'){if(!hideEq)h+='<div style="color:rgba(255,255,255,.4);padding:2px 8px">'+esc(op.v)+'</div>'}
-      else if(op.t==='del')h+='<div style="background:rgba(239,68,68,.12);color:#f87171;border-left:3px solid #ef4444;padding:2px 8px">- '+esc(op.v)+'</div>';
-      else h+='<div style="background:rgba(34,197,94,.12);color:#4ade80;border-left:3px solid #22c55e;padding:2px 8px">+ '+esc(op.v)+'</div>';
+      if(op.t==='eq'){if(!hideEq)h+='<div style="color:rgba(255,255,255,.4);padding:1px 8px">'+ln(n)+esc(op.v)+'</div>';n++}
+      else if(op.t==='del')h+='<div style="background:rgba(239,68,68,.12);color:#f87171;border-left:3px solid #ef4444;padding:1px 8px">'+ln(n)+'- '+esc(op.v)+'</div>';
+      else{h+='<div style="background:rgba(34,197,94,.12);color:#4ade80;border-left:3px solid #22c55e;padding:1px 8px">'+ln(n)+'+ '+esc(op.v)+'</div>';n++}
     });
     $('diff').innerHTML=h;
   }
