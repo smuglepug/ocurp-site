@@ -50,7 +50,7 @@ tailwind.config = { theme: { extend: {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">PDF Tables to CSV</h1>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">PDF Tables to Excel</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">PDF & Documents — Client-side</p>
           </div>
           <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">PDF</span><span class="ws-chip">CSV</span><span class="ws-chip">EXTRACT</span></div>
@@ -74,10 +74,11 @@ tailwind.config = { theme: { extend: {
       </select></div>
       <div><label class="ws-label mb-2 block">Output</label>
       <select id="fmt" class="ws-input !w-32">
+        <option value="xlsx" selected>XLSX</option>
         <option value="csv">CSV</option>
-        <option value="xlsx">XLSX</option>
       </select></div>
       <label class="flex items-center gap-1 text-xs text-white/40 mt-2"><input id="perpage" type="checkbox" class="accent-[#FF5F1F]"> One sheet per page</label>
+      <label class="flex items-center gap-1 text-xs text-white/40 mt-2"><input id="allrows" type="checkbox" class="accent-[#FF5F1F]"> Keep all rows</label>
       <button id="go" class="ws-btn" disabled>Extract & Preview</button>
       <button id="dl" class="ws-btn-ghost" disabled>Download</button>
     </div>
@@ -156,11 +157,11 @@ $('go').onclick=async()=>{
       if(counts[delim]===0)delim=/\s{2,}|\t/;
     } else if(d==='  '){delim=/ {2,}/} else {delim=d}
     // split into columns
-    const keepOnly=true; // always keep table-like rows
+    const keepAll=$('allrows').checked;
     let csvRows=allRows.map(line=>{
       return (typeof delim==='string'?line.split(delim):line.split(delim)).map(c=>c.trim()).filter(c=>c);
     });
-    csvRows=csvRows.filter(r=>r.length>1);
+    if(!keepAll)csvRows=csvRows.filter(r=>r.length>1);
     csvData=csvRows.map(r=>r.map(escapeCsv).join(',')).join('\n');
     const table=csvRows.slice(0,20);
     let html='<table class="ws-out text-xs">';
