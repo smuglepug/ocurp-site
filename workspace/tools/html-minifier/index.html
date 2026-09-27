@@ -125,6 +125,7 @@ function minifyCSS(css) {
 function minifyJS(code) {
   let out='', i=0;
   const isWS=c=>c===' '||c==='\t'||c==='\n'||c==='\r';
+  const isIdent=c=>/[a-zA-Z0-9_$]/.test(c);
   function skipStr(q){let s=q;i++;while(i<code.length){if(code[i]==='\\'){s+=code[i]+(code[i+1]||'');i+=2;continue;}if(code[i]===q){s+=q;i++;return s;}s+=code[i];i++;}return s;}
   function skipTmpl(){let s='`';i++;while(i<code.length){if(code[i]==='\\'){s+=code[i]+(code[i+1]||'');i+=2;continue;}if(code[i]==='`'){s+='`';i++;return s;}if(code[i]==='$'&&code[i+1]==='{'){s+='$'+'{';i+=2;let d=1;while(i<code.length&&d>0){if(code[i]==='{')d++;else if(code[i]==='}')d--;if(d===0){s+='}';i++;break;}s+=code[i];i++;}continue;}s+=code[i];i++;}return s;}
   while(i<code.length){
@@ -133,22 +134,26 @@ function minifyJS(code) {
     if(c==='/'&&code[i+1]==='*'){let e=code.indexOf('*/',i+2);if(e<0)e=code.length;else e+=2;i=e;continue;}
     if(c==='"'||c==="'"){out+=skipStr(c);continue;}
     if(c==='`'){out+=skipTmpl();continue;}
-    if(isWS(c)){i++;continue;}
+    if(isWS(c)){if(out.length>0&&isIdent(out[out.length-1])&&i+1<code.length&&isIdent(code[i+1])){out+=' ';}i++;continue;}
     out+=c;i++;
   }
   return out;
 }
-var SCR_CLOSE='<\\/'+'script'+'>';
+var SCR='scr'+'ipt';
 function minify(html, keepComments, collapseInline, minifyJSFlag) {
   let s = html;
   if (!keepComments) s = s.replace(/<!--[\s\S]*?-->/g, '');
   s = s.replace(/<style([^>]*)>([\s\S]*?)<\/style>/gi, (m, attr, css) => '<style' + attr + '>' + minifyCSS(css) + '<\/style>');
   if (minifyJSFlag) {
-    s = s.replace(/<script([^>]*)>([\s\S]*?)<\/script>/gi, (m, attr, js) => '<script' + attr + '>' + minifyJS(js) + '<\\/script>');
+    var scrRe=new RegExp('<'+SCR+'([^>]*)>([\\s\\S]*?)<\\/'+SCR+'>','gi');
+    s = s.replace(scrRe, (m, attr, js) => '<'+SCR+attr+'>' + minifyJS(js) + '<\\/'+SCR+'>');
   }
   const prot = [];
   s = s.replace(/<(pre|textarea)\b[^>]*>[\s\S]*?<\/\1>/gi, m => { prot.push(m); return '\uE000' + (prot.length - 1) + '\uE000'; });
-  if (!minifyJSFlag) s = s.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, m => { prot.push(m); return '\uE000' + (prot.length - 1) + '\uE000'; });
+  if (!minifyJSFlag) {
+    var scrRe2=new RegExp('<'+SCR+'\\b[^>]*>[\\s\\S]*?<\\/'+SCR+'>','gi');
+    s = s.replace(scrRe2, m => { prot.push(m); return '\uE000' + (prot.length - 1) + '\uE000'; });
+  }
   s = s.replace(/^\s+/, '').replace(/\s+$/, '');
   s = s.replace(/\s+/g, ' ');
   s = s.replace(/\s*</g, '<').replace(/<\s+/g, '<').replace(/\s*>/g, '>').replace(/\s+$/, '');
