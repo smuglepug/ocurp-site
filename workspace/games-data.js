@@ -15,7 +15,7 @@ const RAW = [
   {slug:"simon",name:"Simon Says",cat:"game",blurb:"Repeat the growing sequence — each pad has its own tone.",tags:["MEMORY","AUDIO"],ready:true},
   {slug:"mastermind",name:"Mastermind",cat:"game",blurb:"Crack the four-colour code with exact/partial feedback.",tags:["LOGIC","PUZZLE"],ready:true},
   {slug:"hangman",name:"Hangman",cat:"game",blurb:"Guess the word before the drawing runs out.",tags:["WORDS","GUESS"],ready:true},
-  {slug:"falling-sand",name:"Falling Sand",cat:"game",blurb:"Sandbox sim — pour sand, water, fire and acid, then watch them react.",tags:["SANDBOX","SIM"],ready:true},
+  {slug:"falling-sand",name:"Sandbox",cat:"game",blurb:"27 elements, density physics and real pair reactions — pour, ignite, dissolve, grow.",tags:["SANDBOX","SIM","PHYSICS"],ready:true},
   {slug:"perfect-circle",name:"Perfect Circle",cat:"game",blurb:"Draw one freehand circle and get scored on how round it really is.",tags:["SKILL","CANVAS"],ready:true},
   {slug:"password-game",name:"The Password Game",cat:"game",blurb:"Every rule you satisfy unlocks a worse one. Ten rules stand between you and the win.",tags:["PUZZLE","RULES"],ready:true},
   {slug:"spend-a-billion",name:"Spend a Billion",cat:"game",blurb:"You have one billion dollars. Try to actually spend it.",tags:["TYCOON","BUDGET"],ready:true},
