@@ -28,6 +28,7 @@ const RAW = [
   {slug:"pdf-to-text",name:"PDF to Text",cat:"document",blurb:"Pull the text layer out of any PDF.",tags:["PDF"],ready:true},
   {slug:"tts",name:"Browser TTS",cat:"audio",blurb:"Read text aloud with the voices on your device.",tags:["SPEECH"],ready:true},
   {slug:"voice-recorder",name:"Voice Recorder",cat:"audio",blurb:"Record, trim and download clips locally.",tags:["MIC"],ready:true},
+  {slug:"voice-changer",name:"Voice Changer",cat:"audio",blurb:"Record or upload audio and change your voice with 12 DSP presets, then save a WAV.",tags:["MIC","EFFECTS","CLIENT-SIDE"],ready:true},
   {slug:"tone-synth",name:"Tone & SFX Synth",cat:"audio",blurb:"Generate tones and effects with the Web Audio API.",tags:["AUDIO"],ready:true},
   {slug:"pitch-speed",name:"Pitch & Speed Changer",cat:"audio",blurb:"Shift pitch and playback rate of any audio file.",tags:["AUDIO"],ready:true},
   {slug:"password-strength",name:"Password Analyser",cat:"data",blurb:"Entropy, crack-time estimates and weakness checks.",tags:["SECURITY"],ready:true},
