@@ -74,7 +74,7 @@ tailwind.config = { theme: { extend: {
     <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">UTM URL</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
     <div class="mt-4">
       <div class="ws-label mb-2">QR code</div>
-      <div id="qr" class="rounded-xl bg-white p-4 w-fit"></div>
+      <img id="qr" class="rounded-xl bg-white p-2" width="120" height="120" alt="QR code">
     </div>
     <div class="mt-3 text-[11px] font-mono text-white/40" id="shortResult"></div>
   </section>
@@ -90,10 +90,10 @@ const $=id=>document.getElementById(id);
 function build() {
   const url=$('url').value.trim();
   $('urlErr').textContent='';
-  if(!url) { $('out').textContent=''; return ''; }
+  if(!url) { $('out').textContent=''; $('qr').src=''; return ''; }
   let parsed;
   try { parsed=new URL(url); }
-  catch(e) { $('urlErr').textContent='\u2717 Invalid URL — must include protocol (https://...)'; $('out').textContent=''; return ''; }
+  catch(e) { $('urlErr').textContent='\u2717 Invalid URL — must include protocol (https://...)'; $('out').textContent=''; $('qr').src=''; return ''; }
   const p=new URLSearchParams(parsed.searchParams);
   const s=$('source').value.trim(); if(s) p.set('utm_source',s);
   const m=$('medium').value.trim(); if(m) p.set('utm_medium',m);
@@ -103,18 +103,8 @@ function build() {
   const base=parsed.origin+parsed.pathname;
   const full=base+'?'+p.toString()+parsed.hash;
   $('out').textContent=full;
-  drawQR(full);
+  $('qr').src='https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(full);
   return full;
-}
-function drawQR(text) {
-  try {
-    const qr=qrcode(0,'M');qr.addData(text);qr.make();
-    const n=qr.getModuleCount(),cell=4,pad=2,size=(n+pad*2)*cell;
-    let svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'"><rect width="'+size+'" height="'+size+'" fill="#fff"/>';
-    for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(qr.isDark(r,c)) svg+='<rect x="'+((c+pad)*cell)+'" y="'+((r+pad)*cell)+'" width="'+cell+'" height="'+cell+'" fill="#000"/>';
-    svg+='</svg>';
-    $('qr').innerHTML=svg;
-  } catch(e) { $('qr').innerHTML='<span class="text-xs text-white/40 p-4">QR: URL too long</span>'; }
 }
 ['url','source','medium','campaign','term','content'].forEach(id=>{
   $(id).addEventListener('input',()=>{build();$('shortResult').textContent='';});
@@ -128,7 +118,7 @@ $('short').onclick=()=>{
     .then(d=>{$('shortResult').textContent=d.shorturl?'Short: '+d.shorturl:'Error: '+(d.errormessage||'failed');})
     .catch(()=>{$('shortResult').textContent='Shortener unavailable';});
 };
-$('clear').onclick=()=>{['url','source','medium','campaign','term','content'].forEach(id=>$(id).value='');$('out').textContent='';$('qr').innerHTML='';$('shortResult').textContent='';};
+$('clear').onclick=()=>{['url','source','medium','campaign','term','content'].forEach(id=>$(id).value='');$('out').textContent='';$('qr').src='';$('shortResult').textContent='';};
 build();
 </script>
 </body>

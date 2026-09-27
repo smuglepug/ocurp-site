@@ -78,71 +78,90 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
-function tokenizeCSS(css) {
-  let tokens=[], i=0, depth=0;
-  while(i<css.length) {
-    if(css[i]==='{'||css[i]==='}') { tokens.push({type:'brace',v:css[i]}); i++; continue; }
-    if(css[i]==='@') {
-      let end=css.indexOf('{',i);
-      if(end<0) end=css.length;
-      tokens.push({type:'atrule',v:css.slice(i,end).trim()}); i=end; continue;
-    }
-    let end=css.search(/[{}]/, i);
-    if(end<0) end=css.length;
-    const chunk=css.slice(i,end);
-    if(chunk.trim()) {
-      if(chunk.includes(':')&&!chunk.includes('{')) tokens.push({type:'decl',v:chunk.trim()});
-      else if(chunk.trim()) tokens.push({type:'selector',v:chunk.trim()});
-    }
-    i=end;
-  }
-  return tokens;
-}
 function prettify(css, ind, sort) {
-  css=css.replace(/\/\*[\s\S]*?\*\//g,'').trim();
-  if(!css) return '';
-  const tokens=tokenizeCSS(css);
-  let out='',depth=0;
-  const indStr=()=>(ind==='\t'?'\t':' '.repeat(ind)).repeat(depth);
-  for(let idx=0;idx<tokens.length;idx++) {
-    const tk=tokens[idx];
-    if(tk.type==='atrule') { out+=tk.v+' {\n'; depth++; continue; }
-    if(tk.type==='selector') { out+=tk.v+' {\n'; depth++; continue; }
-    if(tk.type==='decl') {
-      const ci=tk.v.indexOf(':');
-      if(ci<0) continue;
-      let k=tk.v.slice(0,ci).trim(), v=tk.v.slice(ci+1).replace(/;$/,'').trim();
-      out+=indStr()+k+': '+v+';\n';
+  css = css.replace(/\/\*[\s\S]*?\*\//g, '').trim();
+  if (!css) return '';
+  const IS = (ind === '\t' ? '\t' : ' '.repeat(ind));
+  let out = '', depth = 0, i = 0;
+  const il = () => IS.repeat(depth);
+  while (i < css.length) {
+    // skip whitespace
+    while (i < css.length && /\s/.test(css[i])) i++;
+    if (i >= css.length) break;
+    // at-rule
+    if (css[i] === '@') {
+      let brace = css.indexOf('{', i);
+      let semi = css.indexOf(';', i);
+      if (semi >= 0 && (semi < brace || brace < 0)) {
+        out += il() + css.slice(i, semi + 1).trim() + '\n';
+        i = semi + 1; continue;
+      }
+      if (brace < 0) { out += il() + css.slice(i).trim() + '\n'; break; }
+      out += il() + css.slice(i, brace).trim() + ' {\n';
+      depth++; i = brace + 1; continue;
     }
-    if(tk.type==='brace'&&tk.v==='}') {
-      depth=Math.max(0,depth-1);
-      out=indStr()+out.trimEnd()+'\n'+out.slice(out.length);
-      out=out.slice(0,-1)+'}\n\n';
+    // closing brace
+    if (css[i] === '}') {
+      depth = Math.max(0, depth - 1);
+      out = out.trimEnd() + '\n' + il() + '}\n';
+      i++; continue;
     }
-  }
-  if(sort) {
-    out=out.split('\n').reduce((acc,l)=>{
-      if(l.includes(':')&&!l.includes('{')) {acc.decls.push(l.trim()); return acc;}
-      if(acc.decls.length) {acc.result+=acc.decls.sort().join('\n')+'\n'; acc.decls=[];}
-      acc.result+=l+'\n'; return acc;
-    },{result:'',decls:[]});
+    // find selector -> { or ;
+    let brace = css.indexOf('{', i);
+    let semi = css.indexOf(';', i);
+    if (brace < 0 && semi < 0) {
+      const rest = css.slice(i).trim();
+      if (rest) out += il() + rest + '\n';
+      break;
+    }
+    if (semi >= 0 && (brace < 0 || semi < brace)) {
+      // declaration without selector context — skip stray semicolons
+      i = semi + 1; continue;
+    }
+    // selector block
+    const sel = css.slice(i, brace).trim();
+    out += il() + sel + ' {\n';
+    depth++;
+    i = brace + 1;
+    // collect declarations until matching }
+    let declEnd = i;
+    let scanDepth = 1;
+    while (declEnd < css.length && scanDepth > 0) {
+      if (css[declEnd] === '{') scanDepth++;
+      else if (css[declEnd] === '}') scanDepth--;
+      if (scanDepth === 0) break;
+      declEnd++;
+    }
+    const block = css.slice(i, declEnd);
+    let props = block.split(';').map(p => p.trim()).filter(Boolean);
+    if (sort) props.sort();
+    for (const p of props) {
+      const ci = p.indexOf(':');
+      if (ci < 0) continue;
+      const k = p.slice(0, ci).trim();
+      const v = p.slice(ci + 1).trim();
+      out += IS.repeat(depth) + k + ': ' + v + ';\n';
+    }
+    out += il() + '}\n';
+    depth--;
+    i = declEnd + 1;
   }
   return out.trim();
 }
 function minify(css) {
-  return css.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\s+/g,' ').replace(/\s*\{\s*/g,'{').replace(/\s*\}\s*/g,'}').replace(/\s*;\s*/g,';').replace(/;\}/g,'}').replace(/\s*:\s*/g,':').trim();
+  return css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ').replace(/\s*\{\s*/g, '{').replace(/\s*\}\s*/g, '}').replace(/\s*;\s*/g, ';').replace(/;\}/g, '}').replace(/\s*:\s*/g, ':').trim();
 }
 function run() {
-  const t=$('src').value;
-  $('err').textContent='';
-  if(!t.trim()) { $('out').textContent=''; return; }
-  const ind=$('ind').value==='tab'?'\t':parseInt($('ind').value);
-  try { $('out').textContent=$('mode').value==='pretty'?prettify(t,ind,$('sort').checked):minify(t); }
-  catch(e) { $('err').innerHTML='<span style="color:#f87171">\u2717 '+e.message+'</span>'; }
+  const t = $('src').value;
+  $('err').textContent = '';
+  if (!t.trim()) { $('out').textContent = ''; return; }
+  const ind = $('ind').value === 'tab' ? '\t' : parseInt($('ind').value);
+  try { $('out').textContent = $('mode').value === 'pretty' ? prettify(t, ind, $('sort').checked) : minify(t); }
+  catch (e) { $('err').innerHTML = '<span style="color:#f87171">\u2717 ' + e.message + '</span>'; }
 }
-$('go').onclick=run;
-$('dl').onclick=()=>{const txt=$('out').textContent;if(txt){const b=new Blob([txt],{type:'text/css'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=$('mode').value==='pretty'?'formatted.css':'minified.css';a.click();}};
-$('src').addEventListener('input',run);
+$('go').onclick = run;
+$('dl').onclick = () => { const txt = $('out').textContent; if (txt) { const b = new Blob([txt], { type: 'text/css' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = $('mode').value === 'pretty' ? 'formatted.css' : 'minified.css'; a.click(); } };
+$('src').addEventListener('input', run);
 run();
 </script>
 </body>
