@@ -57,17 +57,34 @@ tailwind.config = { theme: { extend: {
         </div>
       
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
   <section class="ws-panel p-6">
-    <label class="ws-label mb-2 block">Paste your text</label>
-    <textarea id="src" class="ws-input min-h-[200px] font-mono" placeholder="Paste any text, markdown or notes here…"></textarea>
-    <div class="mt-3 flex flex-wrap items-end gap-4">
-      <div><label class="ws-label mb-2 block">Font size</label>
-      <select id="fs" class="ws-input !w-32"><option value="12">12 pt</option><option value="14">14 pt</option><option value="10">10 pt</option><option value="16">16 pt</option></select></div>
-      <div><label class="ws-label mb-2 block">Page</label>
-      <select id="ps" class="ws-input !w-32"><option value="a4">A4</option><option value="letter">Letter</option></select></div>
-      <button id="go" class="ws-btn">Generate PDF</button>
+    <div class="grid gap-4 lg:grid-cols-2">
+      <div>
+        <label class="ws-label mb-2 block">Paste text or upload .docx</label>
+        <textarea id="src" class="ws-input min-h-[200px] font-mono" placeholder="Paste any text here, or upload a .docx file..."></textarea>
+        <div id="drop" class="mt-3 rounded-xl border-2 border-dashed border-white/10 p-4 text-center cursor-pointer transition-colors hover:border-white/20">
+          <div class="ws-label">Drop a .docx file here</div>
+          <input id="f" type="file" accept=".docx,.txt" class="hidden">
+        </div>
+      </div>
+      <div class="space-y-3">
+        <div><label class="ws-label mb-1 block">Page size</label>
+        <select id="ps" class="ws-input"><option value="a4">A4</option><option value="letter">US Letter</option><option value="legal">Legal</option></select></div>
+        <div><label class="ws-label mb-1 block">Orientation</label>
+        <select id="ori" class="ws-input"><option value="p">Portrait</option><option value="l">Landscape</option></select></div>
+        <div><label class="ws-label mb-1 block">Font size</label>
+        <select id="fs" class="ws-input !w-32"><option value="12">12 pt</option><option value="14">14 pt</option><option value="10">10 pt</option><option value="16">16 pt</option></select></div>
+        <div><label class="ws-label mb-1 block">Margin</label>
+        <select id="margin" class="ws-input !w-32"><option value="50">Normal (50pt)</option><option value="30">Narrow (30pt)</option><option value="72">Wide (72pt)</option></select></div>
+      </div>
     </div>
-    <div id="status" class="mt-3 text-[11px] font-mono"></div>
+    <div class="mt-4 flex flex-wrap gap-3">
+      <button id="go" class="ws-btn">Generate PDF</button>
+      <button id="prev" class="ws-btn-ghost">Preview</button>
+    </div>
+    <div id="status" class="mt-3 text-[11px] font-mono text-white/50"></div>
+    <iframe id="pdfFrame" class="mt-4 w-full rounded-xl border border-white/10 hidden" style="height:400px"></iframe>
   </section>
 
   <div id="ws-more" class="mt-12"></div>
@@ -78,27 +95,49 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>
 const $=id=>document.getElementById(id);
-$('go').onclick=()=>{
-  const text=$('src').value.trim();if(!text){$('status').textContent='Paste some text first';return}
+let fileName='';
+setupDrop($('drop'),$('f'),async files=>{
+  const f=files[0];if(!f)return;
+  fileName=f.name;
+  if(f.name.endsWith('.docx')){
+    try{
+      const arrayBuf=await f.arrayBuffer();
+      const result=await mammoth.extractRawText({arrayBuffer:arrayBuf});
+      $('src').value=result.value;
+      $('status').textContent='Loaded: '+f.name+' ('+result.value.length+' chars)';
+    }catch(e){$('status').textContent='Error: '+e.message}
+  }else if(f.name.endsWith('.txt')){
+    $('src').value=await f.text();
+    $('status').textContent='Loaded: '+f.name;
+  }
+});
+$('drop').onclick=()=>$('f').click();
+function buildPDF(){
+  const text=$('src').value.trim();if(!text)return null;
   const {jsPDF}=window.jspdf;
-  const fmt=$('ps').value;
-  const doc=new jsPDF({unit:'pt',format:fmt});
+  const doc=new jsPDF({unit:'pt',format:$('ps').value,orientation:$('ori').value});
   const fs=parseInt($('fs').value);
+  const margin=parseInt($('margin').value);
   doc.setFont('helvetica');doc.setFontSize(fs);
-  const margin=50;
-  const pw=doc.internal.pageSize.width;
-  const ph=doc.internal.pageSize.height;
+  const pw=doc.internal.pageSize.getWidth();
+  const ph=doc.internal.pageSize.getHeight();
   const lw=pw-margin*2;
   const lines=doc.splitTextToSize(text,lw);
   let y=margin;
-  for(const line of lines){
-    if(y>ph-margin){doc.addPage();y=margin}
-    doc.text(line,margin,y);y+=fs*1.6;
-  }
-  doc.save('document.pdf');
-  $('status').textContent='Downloaded — '+lines.length+' lines, '+doc.getNumberOfPages()+' page(s)';
+  for(const line of lines){if(y>ph-margin){doc.addPage();y=margin}doc.text(line,margin,y);y+=fs*1.6}
+  return doc;
+}
+$('go').onclick=()=>{
+  const doc=buildPDF();if(!doc){$('status').textContent='Paste or upload some text first';return}
+  doc.save(fileName.replace(/\.[^.]+$/,'')+'.pdf'||'document.pdf');
+  $('status').textContent='Downloaded: '+doc.getNumberOfPages()+' page(s)';
 };
-$('src').value='Owen Osayi\nThe Founder\n\nThis is a sample document. Replace this text with your own content, then click Generate PDF.\n\nThe text wraps automatically across pages with your chosen font size and paper format.';
+$('prev').onclick=()=>{
+  const doc=buildPDF();if(!doc){$('status').textContent='Paste or upload some text first';return}
+  const url=doc.output('bloburl');
+  $('pdfFrame').src=url;$('pdfFrame').classList.remove('hidden');
+  $('status').textContent='Preview: '+doc.getNumberOfPages()+' page(s)';
+};
 </script>
 </body>
 </html>

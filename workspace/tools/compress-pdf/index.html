@@ -57,25 +57,38 @@ tailwind.config = { theme: { extend: {
         </div>
       
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";</script>
   <section class="ws-panel p-6">
-    <label class="ws-label mb-2 block">PDF file</label>
-    <input id="f" type="file" accept="application/pdf" class="ws-input">
-    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+    <div id="drop" class="rounded-xl border-2 border-dashed border-white/10 p-6 text-center cursor-pointer transition-colors hover:border-white/20">
+      <div class="text-2xl mb-1 opacity=30">PDF</div>
+      <div class="ws-label">Drop a PDF here or click to browse</div>
+      <input id="f" type="file" accept="application/pdf" class="hidden">
+    </div>
+    <div class="mt-4 grid gap-4 sm:grid-cols-3">
       <div class="ws-panel p-4 text-center">
-        <div class="ws-label mb-1">Original size</div>
-        <div id="origSize" class="font-display text-2xl font-black text-white">\u2014</div>
+        <div class="ws-label mb-1">Original</div>
+        <div id="origSize" class="font-display text-2xl font-black text-white">--</div>
       </div>
       <div class="ws-panel p-4 text-center">
         <div class="ws-label mb-1">Compressed</div>
-        <div id="newSize" class="font-display text-2xl font-black text-accent">\u2014</div>
+        <div id="newSize" class="font-display text-2xl font-black text-accent">--</div>
+      </div>
+      <div class="ws-panel p-4 text-center">
+        <div class="ws-label mb-1">Saved</div>
+        <div id="ratio" class="font-display text-2xl font-black text-white">--</div>
       </div>
     </div>
-    <div class="mt-3 flex flex-wrap items-end gap-4">
-      <div><label class="ws-label mb-1 block">Object streams</label>
-      <select id="obj" class="ws-input !w-32"><option value="yes">Yes</option><option value="no">No</option></select></div>
-      <button id="go" class="ws-btn">Compress & Download</button>
+    <div class="mt-4 flex flex-wrap items-end gap-4">
+      <div><label class="ws-label mb-1 block">Compression level</label>
+      <select id="level" class="ws-input !w-40">
+        <option value="0.6">Recommended (60%)</option>
+        <option value="0.3">Maximum (30%)</option>
+        <option value="0.85">Light (85%)</option>
+      </select></div>
+      <button id="go" class="ws-btn" disabled>Compress &amp; Download</button>
     </div>
-    <div id="status" class="mt-3 text-[11px] font-mono"></div>
+    <div id="status" class="mt-3 text-[11px] font-mono text-white/50">Drop a PDF to start</div>
   </section>
 
   <div id="ws-more" class="mt-12"></div>
@@ -86,29 +99,52 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>
 const $=id=>document.getElementById(id);
-let origBytes=0;
-$('f').onchange=()=>{
-  const f=$('f').files[0];if(!f)return;
-  $('origSize').textContent=origBytes?Math.round(origBytes/1024)+' KB':'\u2014';
-  origBytes=f.size;
-  $('origSize').textContent=Math.round(origBytes/1024)+' KB';
-};
-function fmt(b){return Math.round(b/1024)+' KB'}
+let buf=null,origSize=0;
+function setupDrop(zone,input,onFiles){
+  zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('!border-accent','!bg-accent/5')});
+  zone.addEventListener('dragleave',e=>{zone.classList.remove('!border-accent','!bg-accent/5')});
+  zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('!border-accent','!bg-accent/5');if(e.dataTransfer.files.length)onFiles(e.dataTransfer.files)});
+  input.addEventListener('change',()=>{if(input.files.length)onFiles(input.files)});
+}
+setupDrop($('drop'),$('f'),async allFiles=>{
+  const f=allFiles[0];if(!f||f.type!=='application/pdf')return;
+  buf=await f.arrayBuffer();origSize=f.size;
+  $('origSize').textContent=Math.round(origSize/1024)+' KB';
+  $('newSize').textContent='--';$('ratio').textContent='--';
+  $('status').textContent='Ready: '+f.name;$('go').disabled=false;
+});
+$('drop').onclick=()=>$('f').click();
+function fmt(b){if(b<1048576)return Math.round(b/1024)+' KB';return (b/1048576).toFixed(1)+' MB'}
 $('go').onclick=async()=>{
-  const f=$('f').files[0];if(!f){$('status').textContent='Pick a PDF first';return}
-  $('status').textContent='Compressing…';
+  if(!buf)return;
+  $('go').disabled=true;$('status').textContent='Compressing... this re-renders every page at a lower image quality.';
   try{
+    const quality=parseFloat($('level').value);
+    const pdf=await pdfjsLib.getDocument({data:buf.slice(0)}).promise;
     const {PDFDocument}=window.PDFLib;
-    const src=await PDFDocument.load(await f.arrayBuffer());
-    const out=await PDFDocument.load(await src.copy().then ? src.save() : src.save());
-    // re-save with object streams
-    const bytes=await out.save({useObjectStreams:$('obj').value==='yes'});
-    const ratio=origBytes?Math.round((1-bytes.length/origBytes)*100):0;
+    const out=await PDFDocument.create();
+    for(let i=1;i<=pdf.numPages;i++){
+      const page=await pdf.getPage(i);
+      const vp=page.getViewport({scale:1.5});
+      const canvas=document.createElement('canvas');
+      canvas.width=vp.width;canvas.height=vp.height;
+      const ctx=canvas.getContext('2d');
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+      await page.render({canvasContext:ctx,viewport:vp}).promise;
+      const jpgBlob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));
+      const jpgBytes=new Uint8Array(await jpgBlob.arrayBuffer());
+      const img=await out.embedJpg(jpgBytes);
+      const pdfPage=out.addPage([vp.width,vp.height]);
+      pdfPage.drawImage(img,{x:0,y:0,width:vp.width,height:vp.height});
+    }
+    const bytes=await out.save();
     $('newSize').textContent=fmt(bytes.length);
-    $('status').textContent=(ratio>0?'Saved '+ratio+'%':'No change — already optimal')+' | '+fmt(origBytes)+' \u2192 '+fmt(bytes.length);
-    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
-    a.download='compressed.pdf';a.click();
-  }catch(e){$('status').textContent='\u2717 '+e.message}
+    const savedPct=Math.round((1-bytes.length/origSize)*100);
+    $('ratio').textContent=savedPct>0?savedPct+'%':'<1%';
+    $('status').textContent=savedPct>0?'Done: saved '+savedPct+'% ('+fmt(origSize)+' to '+fmt(bytes.length)+')':'Minimal change - PDF may already be optimized';
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));a.download='compressed.pdf';a.click();
+  }catch(e){$('status').textContent='Error: '+e.message}
+  finally{$('go').disabled=false}
 };
 </script>
 </body>
