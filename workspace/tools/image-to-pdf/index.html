@@ -34,6 +34,9 @@ tailwind.config = { theme: { extend: {
   .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
   .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
   .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input option { color:#000 !important; background-color:#fff !important }
+  select.ws-input { color:#fff }
+  select.ws-input option:checked, select.ws-input option:hover { background-color:#FF5F1F !important; color:#000 !important; }
   input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
   .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
   .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
@@ -60,7 +63,7 @@ tailwind.config = { theme: { extend: {
           </div>
           <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">PDF</span><span class="ws-chip">IMAGE</span><span class="ws-chip">CLIENT-SIDE</span></div>
         </div>
-      <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script><section class="ws-panel p-6"><label class="ws-label mb-2 block">Select images</label><input id="f" type="file" accept="image/*" multiple class="ws-input"><div id="thumbs" class="mt-4 flex flex-wrap gap-3"></div><a id="dl" class="ws-btn mt-4 inline-flex" download="images.pdf">Download PDF</a></section>
+      <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script><section class="ws-panel p-6"><label class="ws-label mb-2 block">Select images</label><input id="f" type="file" accept="image/*" multiple class="ws-input"><div id="thumbs" class="mt-4 flex flex-wrap gap-3"></div><button id="dl" class="ws-btn mt-4 inline-flex">Download PDF</button><div class="mt-2 text-xs text-white/50" id="status"></div></section>
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
@@ -68,20 +71,45 @@ tailwind.config = { theme: { extend: {
 </div>
 <script src="/workspace/related.js" defer></script>
 <script>const $=id=>document.getElementById(id);
-const {jsPDF}=window.jspdf||{};
+let pdfUrl=null;
+const getLib=()=>((window.jspdf&&window.jspdf.jsPDF)||window.jsPDF||null);
+function imgFormat(data){
+  if(/^data:image\/png/i.test(data))return 'PNG';
+  if(/^data:image\/webp/i.test(data))return 'WEBP';
+  if(/^data:image\/gif/i.test(data))return 'GIF';
+  return 'JPEG';
+}
 $('f').addEventListener('change',async e=>{
   const files=[...e.target.files];if(!files.length)return;
+  const J=getLib();
+  if(!J){$('status').textContent='The PDF library did not load - check your connection and reload.';return}
+  $('status').textContent='Building PDF...';
   $('thumbs').innerHTML='';
-  const doc=new jsPDF();
-  for(let i=0;i<files.length;i++){
-    const data=await new Promise(r=>{const f=new FileReader();f.onload=ev=>r(ev.target.result);f.readAsDataURL(files[i])});
-    const img=await new Promise(r=>{const im=new Image();im.onload=()=>r(im);im.src=data});
-    const pw=doc.internal.pageSize.getWidth(),ph=doc.internal.pageSize.getHeight();
-    const s=Math.min(pw/img.width,ph/img.height);
-    if(i)doc.addPage();
-    doc.addImage(data,'JPEG',(pw-img.width*s)/2,(ph-img.height*s)/2,img.width*s,img.height*s);
-    $('thumbs').innerHTML+='<img src="'+data+'" class="h-24 w-24 rounded-lg border border-white/10 object-cover">';
+  try{
+    const doc=new J({unit:'pt',format:'a4',orientation:'portrait'});
+    for(let i=0;i<files.length;i++){
+      const data=await new Promise(r=>{const f=new FileReader();f.onload=ev=>r(ev.target.result);f.readAsDataURL(files[i])});
+      const img=await new Promise((r,j)=>{const im=new Image();im.onload=()=>r(im);im.onerror=()=>j(new Error('could not read '+files[i].name));im.src=data});
+      const pw=doc.internal.pageSize.getWidth(),ph=doc.internal.pageSize.getHeight();
+      const s=Math.min(pw/img.width,ph/img.height);
+      if(i)doc.addPage();
+      doc.addImage(data,imgFormat(data),(pw-img.width*s)/2,(ph-img.height*s)/2,img.width*s,img.height*s);
+      $('thumbs').innerHTML+='<img src="'+data+'" class="h-24 w-24 rounded-lg border border-white/10 object-cover">';
+    }
+    const blob=doc.output('blob');
+    if(pdfUrl)URL.revokeObjectURL(pdfUrl);
+    pdfUrl=URL.createObjectURL(blob);
+    $('status').textContent=files.length+' page'+(files.length===1?'':'s')+' ready \u00b7 '+(blob.size/1024).toFixed(0)+' KB \u00b7 press Download PDF.';
+  }catch(err){
+    $('status').textContent='Could not build the PDF: '+(err&&err.message?err.message:err);
   }
-  $('dl').href=doc.output('bloburl');});</script>
+});
+$('dl').onclick=()=>{
+  if(!pdfUrl){$('status').textContent='Choose at least one image first.';return}
+  const a=document.createElement('a');
+  a.href=pdfUrl;a.download='images.pdf';
+  document.body.appendChild(a);a.click();a.remove();
+  $('status').textContent='Saved to your downloads as images.pdf.';
+};</script>
 </body>
 </html>
