@@ -77,4 +77,10 @@ const RAW = [
   {slug:"heic-to-jpg",name:"HEIC to JPG",cat:"design",blurb:"Decode HEIC in-browser via heic2any, no upload.",tags:["HEIC","IMAGE","CLIENT-SIDE"],ready:true},
   {slug:"svg-to-png",name:"SVG to PNG",cat:"design",blurb:"Rasterise an uploaded SVG at your chosen scale.",tags:["SVG","PNG","CLIENT-SIDE"],ready:true},
   {slug:"png-to-jpg",name:"PNG to JPG",cat:"design",blurb:"Flatten transparency onto a chosen background colour.",tags:["PNG","JPG","FLATTEN"],ready:true},
+  {slug:"image-to-base64",name:"Image to Base64",cat:"design",blurb:"Convert any image to a Base64 data URI — copy or download.",tags:["IMAGE","BASE64","CLIENT-SIDE"],ready:true},
+  {slug:"base64-to-image",name:"Base64 to Image",cat:"design",blurb:"Paste a data URI and preview or download the image.",tags:["IMAGE","BASE64","CLIENT-SIDE"],ready:true},
+  {slug:"exif-viewer",name:"EXIF Viewer",cat:"design",blurb:"Read camera EXIF metadata from a JPEG and strip it.",tags:["EXIF","JPEG","METADATA"],ready:true},
+  {slug:"image-watermark",name:"Watermark Image",cat:"design",blurb:"Add a text watermark with position, opacity, colour and rotation.",tags:["IMAGE","WATERMARK","CANVAS"],ready:true},
+  {slug:"image-rotate",name:"Rotate & Flip",cat:"design",blurb:"Rotate 90/180/270 and flip horizontally or vertically, download.",tags:["IMAGE","ROTATE","FLIP"],ready:true},
+  {slug:"image-to-ascii",name:"Image to ASCII",cat:"design",blurb:"Convert any image to ASCII art with adjustable width and ramp.",tags:["IMAGE","ASCII","ART"],ready:true},
   ];
