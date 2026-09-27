@@ -74,13 +74,14 @@ keeps the doctor away</textarea></div>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="igWs" type="checkbox" class="accent-[#FF5F1F]"> Ignore whitespace</label>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="igCase" type="checkbox" class="accent-[#FF5F1F]"> Ignore case</label>
       <button class="ws-btn-ghost" onclick="cp(this)">Copy</button>
-      <label class="flex items-center gap-2 text-sm text-white/70"><input id="hideEq" type="checkbox" class="accent-[#FF5F1F]"> Hide unchanged</label>
+      
     </div>
     <div class="mt-4 ws-panel p-4">
       <div class="mb-2 flex items-center justify-between"><span class="ws-label">Diff</span>
         <div class="flex gap-3 text-[9px] font-black tracking-wider"><span class="text-red-400">REMOVED</span><span class="text-green-400">ADDED</span></div>
       </div>
-      <div id="diff" class="ws-out min-h-[100px]"></div>
+      <div <span id="stats" class="text-xs text-white/50"></span>
+      id="diff" class="ws-out min-h-[100px]"></div>
     </div>
   </section>
 
@@ -108,8 +109,8 @@ function wordDiff(a,b){
   let h='';
   d.forEach(op=>{
     if(op.t==='eq')h+=esc(op.v);
-    else if(op.t==='del')h+='<span style="background:rgba(239,68,68,.25);color:#fca5a5;border-radius:2px;padding:0 1px">'+esc(op.v)+'</span>';
-    else h+='<span style="background:rgba(34,197,94,.25);color:#86efac;border-radius:2px;padding:0 1px">'+esc(op.v)+'</span>';
+    else if(op.t==='del')h+='<span style="background:rgba(239,68,68,.3);color:#fca5a5;border-radius:2px;padding:0 1px">'+esc(op.v)+'</span>';
+    else h+='<span style="background:rgba(34,197,94,.3);color:#86efac;border-radius:2px;padding:0 1px">'+esc(op.v)+'</span>';
   });
   return h;
 }
@@ -123,28 +124,51 @@ function run(){
   if(igWs){la=la.map(l=>l.trim());lb=lb.map(l=>l.trim())}
   if(igCase){la=la.map(l=>l.toLowerCase());lb=lb.map(l=>l.toLowerCase())}
   const d=lcs(la,lb);
+  let adds=0,dels=0;
+  d.forEach(op=>{if(op.t==='del')dels++;if(op.t==='ins')adds++});
+  $('stats').textContent=dels+' removed, '+adds+' added';
   let n=1;
   if(sideBySide){
     let left='',right='';
-    d.forEach(op=>{
+    for(let k=0;k<d.length;k++){
+      const op=d[k];
       if(op.t==='eq'){
         if(!hideEq){left+='<div style="color:rgba(255,255,255,.4);padding:1px 8px">'+ln(n)+esc(op.v)+'</div>';right+='<div style="color:rgba(255,255,255,.4);padding:1px 8px">'+ln(n)+esc(op.v)+'</div>';n++}
       }else if(op.t==='del'){
-        left+='<div style="background:rgba(239,68,68,.12);color:#f87171;border-left:3px solid #ef4444;padding:1px 8px">'+ln(n)+'- '+esc(op.v)+'</div>';
-        right+='<div style="opacity:.15;padding:1px 8px">&nbsp;</div>';
+        const next=d[k+1];
+        if(next&&next.t==='ins'){
+          const wd=wordDiff(op.v,next.v);
+          left+='<div style="background:rgba(239,68,68,.12);border-left:3px solid #ef4444;padding:1px 8px">'+ln(n)+'- '+wd+'</div>';
+          right+='<div style="background:rgba(34,197,94,.12);border-left:3px solid #22c55e;padding:1px 8px">'+ln(n)+'+ '+wd+'</div>';
+          k++;n++;
+        }else{
+          left+='<div style="background:rgba(239,68,68,.12);color:#f87171;border-left:3px solid #ef4444;padding:1px 8px">'+ln(n)+'- '+esc(op.v)+'</div>';
+          right+='<div style="opacity:.15;padding:1px 8px">&nbsp;</div>';
+        }
       }else{
         left+='<div style="opacity:.15;padding:1px 8px">&nbsp;</div>';
         right+='<div style="background:rgba(34,197,94,.12);color:#4ade80;border-left:3px solid #22c55e;padding:1px 8px">'+ln(n)+'+ '+esc(op.v)+'</div>';n++;
       }
-    });
+    }
     $('diff').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:0"><div style="border-right:1px solid rgba(255,255,255,.1);padding-right:12px">'+left+'</div><div style="padding-left:12px">'+right+'</div></div>';
   }else{
     let h='';
-    d.forEach(op=>{
+    for(let k=0;k<d.length;k++){
+      const op=d[k];
       if(op.t==='eq'){if(!hideEq)h+='<div style="color:rgba(255,255,255,.4);padding:1px 8px">'+ln(n)+esc(op.v)+'</div>';n++}
-      else if(op.t==='del')h+='<div style="background:rgba(239,68,68,.12);color:#f87171;border-left:3px solid #ef4444;padding:1px 8px">'+ln(n)+'- '+esc(op.v)+'</div>';
-      else{h+='<div style="background:rgba(34,197,94,.12);color:#4ade80;border-left:3px solid #22c55e;padding:1px 8px">'+ln(n)+'+ '+esc(op.v)+'</div>';n++}
-    });
+      else if(op.t==='del'){
+        const next=d[k+1];
+        if(next&&next.t==='ins'){
+          h+='<div style="background:rgba(239,68,68,.08);border-left:3px solid #ef4444;padding:1px 8px">'+ln(n)+'- '+wordDiff(op.v,next.v)+'</div>';
+          h+='<div style="background:rgba(34,197,94,.08);border-left:3px solid #22c55e;padding:1px 8px">'+ln(n)+'+ '+wordDiff(op.v,next.v)+'</div>';
+          k++;n++;
+        }else{
+          h+='<div style="background:rgba(239,68,68,.12);color:#f87171;border-left:3px solid #ef4444;padding:1px 8px">'+ln(n)+'- '+esc(op.v)+'</div>';
+        }
+      }else{
+        h+='<div style="background:rgba(34,197,94,.12);color:#4ade80;border-left:3px solid #22c55e;padding:1px 8px">'+ln(n)+'+ '+esc(op.v)+'</div>';n++;
+      }
+    }
     $('diff').innerHTML=h;
   }
 }
