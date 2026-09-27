@@ -68,7 +68,9 @@ stack:
   - python
 address:
   city: Lagos
-  country: Nigeria</textarea>
+  country: Nigeria
+flow: [a, b, c]
+inline: {x: 1, y: 2}</textarea>
     <div class="mt-3 flex flex-wrap items-end gap-3">
       <div><label class="ws-label mb-1 block">Indent</label><select id="ind" class="ws-input !w-36"><option value="2">2 spaces</option><option value="4">4 spaces</option></select></div>
       <button id="go" class="ws-btn">Convert</button>
@@ -89,45 +91,81 @@ const $=id=>document.getElementById(id);
 function parseVal(s){
   s=s.trim();
   if(s===''||s==='~'||s.toLowerCase()==='null')return null;
-  if(s.toLowerCase()==='true')return true;
-  if(s.toLowerCase()==='false')return false;
-  if(s.toLowerCase()==='yes')return true;
-  if(s.toLowerCase()==='no')return false;
-  if(s.toLowerCase()==='on')return true;
-  if(s.toLowerCase()==='off')return false;
+  if(s.toLowerCase()==='true'||s.toLowerCase()==='yes'||s.toLowerCase()==='on')return true;
+  if(s.toLowerCase()==='false'||s.toLowerCase()==='no'||s.toLowerCase()==='off')return false;
   if(/^[-+]?\d+$/.test(s))return parseInt(s,10);
-  if(/^[-+]?\d+\.\d+$/.test(s))return parseFloat(s);
+  if(/^[-+]?\d+\.\d+([eE][-+]?\d+)?$/.test(s))return parseFloat(s);
   if((s.startsWith('"')&&s.endsWith('"'))||(s.startsWith("'")&&s.endsWith("'"))){
     return s.slice(1,-1);
   }
+  // flow-style array [a, b, c]
   if(s.startsWith('[')&&s.endsWith(']')){
-    try{return JSON.parse(s)}catch(e){return s}
+    const inner=s.slice(1,-1).trim();
+    if(inner==='')return [];
+    return inner.split(',').map(v=>parseVal(v.trim()));
   }
+  // flow-style map {k: v, k2: v2}
   if(s.startsWith('{')&&s.endsWith('}')){
-    try{return JSON.parse(s)}catch(e){return s}
+    const inner=s.slice(1,-1).trim();
+    if(inner==='')return {};
+    const obj={};
+    // simple split on comma (not inside quotes)
+    const parts=[];
+    let cur='',inQ=false;
+    for(const c of inner){
+      if(c==='"'||c==="'")inQ=!inQ;
+      if(c===','&&!inQ){parts.push(cur);cur=''}
+      else cur+=c;
+    }
+    if(cur)parts.push(cur);
+    parts.forEach(p=>{
+      const ci=p.indexOf(':');
+      if(ci>0){
+        const k=p.slice(0,ci).trim().replace(/^["']|["']$/g,'');
+        const v=p.slice(ci+1).trim();
+        obj[k]=parseVal(v);
+      }
+    });
+    return obj;
   }
+  // literal block scalar indicator
+  if(s==='|'||s==='>')return null;
   return s;
 }
 function parseYaml(text){
   const lines=text.split('\n');
   let i=0;
+  let lineNum=0;
+  function getLine(){
+    while(i<lines.length){
+      lineNum++;
+      const l=lines[i];
+      if(!l.trim()||l.trim().startsWith('#')){i++;continue}
+      return l;
+    }
+    return null;
+  }
   function parseBlock(minIndent){
     let result=null;
     let isArray=false;
     while(i<lines.length){
+      const savedI=i;
       const line=lines[i];
       if(!line.trim()||line.trim().startsWith('#')){i++;continue}
+      lineNum++;
       const indent=line.length-line.trimStart().length;
-      if(indent<minIndent)break;
+      if(indent<minIndent){i=savedI;break}
       if(indent>minIndent){
         if(result===null){result=[];isArray=true}
         const sub=parseBlock(indent);
-        if(Array.isArray(result)&&result.length>0&&typeof result[result.length-1]==='object'){
-          // already handled
+        if(Array.isArray(result)&&typeof sub==='object'&&!Array.isArray(sub)&&Object.keys(sub).length===0){
+          // skip empty
+        } else {
+          result.push(sub);
         }
-        result.push(sub);
         continue;
       }
+      i++;
       const trimmed=line.trimStart();
       // list item
       if(trimmed.startsWith('- ')){
@@ -135,74 +173,68 @@ function parseYaml(text){
         if(!isArray){result=[result];isArray=true}
         const rest=trimmed.slice(2);
         if(rest.trim()===''){
-          i++;
           const sub=parseBlock(minIndent+1);
           result.push(sub);
           continue;
         }
-        // inline key: value
-        const colonIdx=rest.indexOf(': ');
+        // inline flow
+        if(rest.startsWith('[')&&rest.endsWith(']')){
+          result.push(parseVal(rest));
+          continue;
+        }
+        if(rest.startsWith('{')&&rest.endsWith('}')){
+          result.push(parseVal(rest));
+          continue;
+        }
+        const colonIdx=findColon(rest);
         if(colonIdx>0&&!rest.startsWith('"')&&!rest.startsWith("'")){
           const key=rest.slice(0,colonIdx).trim();
-          const val=parseVal(rest.slice(colonIdx+2));
+          const valStr=rest.slice(colonIdx+1).trim();
+          let val;
+          if(valStr===''){
+            const sub=parseBlock(minIndent+1);
+            val=sub;
+          } else {
+            val=parseVal(valStr);
+          }
           const obj={};
           obj[key]=val;
-          i++;
-          // check for further indented keys belonging to this object
-          while(i<lines.length){
-            const l2=lines[i];
-            if(!l2.trim()||l2.trim().startsWith('#')){i++;continue}
-            const ind2=l2.length-l2.trimStart().length;
-            if(ind2<=minIndent)break;
-            const t2=l2.trimStart();
-            if(t2.startsWith('- '))break;
-            const c2=t2.indexOf(': ');
-            if(c2>0){
-              const k2=t2.slice(0,c2).trim();
-              const v2=t2.slice(c2+2).trim();
-              if(v2===''){
-                i++;
-                const sub2=parseBlock(ind2+1);
-                obj[k2]=sub2;
-              } else {
-                obj[k2]=parseVal(v2);
-                i++;
-              }
-            } else {
-              break;
-            }
-          }
           result.push(obj);
         } else {
           result.push(parseVal(rest));
-          i++;
         }
         continue;
       }
-      // key: value
-      if(trimmed.startsWith('-')){i++;continue}
-      const colonIdx=trimmed.indexOf(':');
-      if(colonIdx<0){i++;continue}
-      if(isArray){break}
+      if(trimmed.startsWith('-')){
+        if(result===null){result=[];isArray=true}
+        i++;
+        const sub=parseBlock(minIndent+1);
+        result.push(sub);
+        continue;
+      }
+      if(isArray){i=savedI+1;break}
       if(result===null)result={};
+      const colonIdx=findColon(trimmed);
+      if(colonIdx<0){continue}
       const key=trimmed.slice(0,colonIdx).trim().replace(/^["']|["']$/g,'');
       const valStr=trimmed.slice(colonIdx+1).trim();
       if(valStr===''){
-        i++;
         const sub=parseBlock(minIndent+1);
-        if(sub===null||sub===undefined){
-          result[key]='';
-        } else if(Array.isArray(sub)&&sub.length===0){
-          result[key]=[];
-        } else {
-          result[key]=sub;
-        }
+        result[key]=sub||{};
       } else {
         result[key]=parseVal(valStr);
-        i++;
       }
     }
     return result||{};
+  }
+  function findColon(s){
+    let inQ=false;
+    for(let j=0;j<s.length;j++){
+      const c=s[j];
+      if(c==='"'||c==="'")inQ=!inQ;
+      if(c===':'&&!inQ&&(j+1>=s.length||s[j+1]===' '||s[j+1]==='\t'))return j;
+    }
+    return -1;
   }
   return parseBlock(0);
 }
@@ -213,9 +245,11 @@ function run(){
   try{
     const o=parseYaml(t);
     const ind=parseInt($('ind').value)||2;
-    $('out').textContent=JSON.stringify(o,null,ind);
+    const json=JSON.stringify(o,null,ind);
+    if(json==='{}'&&t.trim()){$('err').textContent='Warning: output may be incomplete — check YAML structure';}
+    $('out').textContent=json;
   }catch(e){
-    $('err').textContent='\u2717 '+e.message;
+    $('err').textContent='\u2717 Line '+lineNum+': '+e.message;
     $('out').textContent='';
   }
 }
@@ -224,6 +258,7 @@ $('src').addEventListener('input',run);
 run();
 $('dl').onclick=()=>{
   const text=$('out').textContent;
+  if(!text)return;
   const b=new Blob([text],{type:'application/json'});
   const u=URL.createObjectURL(b);
   const a=document.createElement('a');a.href=u;a.download='output.json';a.click();
