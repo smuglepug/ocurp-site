@@ -63,12 +63,19 @@ tailwind.config = { theme: { extend: {
 This is a paragraph about ocorp.space.
 It has multiple lines that should become one paragraph.
 
-A second paragraph follows here.</textarea>
+A second paragraph follows here.
+
+- Bullet point one
+- Bullet point two
+- Bullet point three</textarea>
     <div class="mt-4 flex flex-wrap items-end gap-3">
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="esc" type="checkbox" checked class="accent-[#FF5F1F]"> Escape HTML</label>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="br" type="checkbox" class="accent-[#FF5F1F]"> Line breaks as &lt;br&gt;</label>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="h1" type="checkbox" checked class="accent-[#FF5F1F]"> First line as &lt;h1&gt;</label>
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="full" type="checkbox" class="accent-[#FF5F1F]"> Full document</label>
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="lists" type="checkbox" checked class="accent-[#FF5F1F]"> Detect lists</label>
       <button id="go" class="ws-btn">Convert</button>
+      <button id="dl" class="ws-btn-ghost">Download .html</button>
     </div>
     <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">HTML output</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
   </section>
@@ -86,9 +93,31 @@ function run(){
   let s=$('src').value;
   if(!s.trim()){$('out').textContent='';return}
   if($('esc').checked)s=esc(s);
-  let paras=s.split(/\n\s*\n/).filter(p=>p.trim());
-  if(paras.length===0)paras=[s];
+  let lines=s.split('\n');
   let html='';
+  let inList=false;
+  let paras=[];
+  let cur=[];
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    if(line.trim()===''){
+      if(cur.length>0){paras.push(cur.join('\n'));cur=[]}
+      if(inList){html+='</ul>\n';inList=false}
+      continue;
+    }
+    // list detection
+    if($('lists').checked){
+      const mList=line.match(/^\s*[-*]\s+(.+)/);
+      if(mList){
+        if(!inList){html+='<ul>\n';inList=true}
+        html+='<li>'+mList[1]+'</li>\n';
+        continue;
+      }
+    }
+    cur.push(line);
+  }
+  if(cur.length>0)paras.push(cur.join('\n'));
+  if(inList)html+='</ul>\n';
   paras.forEach((p,i)=>{
     p=p.trim();
     if(i===0&&$('h1').checked){
@@ -102,14 +131,22 @@ function run(){
     }
     if(i<paras.length-1)html+='\n';
   });
+  if($('full').checked){
+    html='<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <title>Document</title>\n</head>\n<body>\n'+html+'</body>\n</html>';
+  }
   $('out').textContent=html;
 }
 $('go').onclick=run;
 $('src').addEventListener('input',run);
-$('br').addEventListener('change',run);
-$('h1').addEventListener('change',run);
-$('esc').addEventListener('change',run);
+['br','h1','esc','full','lists'].forEach(id=>$('id').addEventListener('change',run));
 run();
+$('dl').onclick=()=>{
+  const text=$('out').textContent;
+  const b=new Blob([text],{type:'text/html'});
+  const u=URL.createObjectURL(b);
+  const a=document.createElement('a');a.href=u;a.download='output.html';a.click();
+  URL.revokeObjectURL(u);
+};
 </script>
 </body>
 </html>

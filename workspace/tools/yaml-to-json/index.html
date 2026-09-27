@@ -72,6 +72,7 @@ address:
     <div class="mt-3 flex flex-wrap items-end gap-3">
       <div><label class="ws-label mb-1 block">Indent</label><select id="ind" class="ws-input !w-36"><option value="2">2 spaces</option><option value="4">4 spaces</option></select></div>
       <button id="go" class="ws-btn">Convert</button>
+      <button id="dl" class="ws-btn-ghost">Download .json</button>
     </div>
     <div class="mt-3 text-[11px] font-mono text-white/40" id="err"></div>
     <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">JSON output</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
@@ -90,12 +91,21 @@ function parseVal(s){
   if(s===''||s==='~'||s.toLowerCase()==='null')return null;
   if(s.toLowerCase()==='true')return true;
   if(s.toLowerCase()==='false')return false;
+  if(s.toLowerCase()==='yes')return true;
+  if(s.toLowerCase()==='no')return false;
+  if(s.toLowerCase()==='on')return true;
+  if(s.toLowerCase()==='off')return false;
   if(/^[-+]?\d+$/.test(s))return parseInt(s,10);
   if(/^[-+]?\d+\.\d+$/.test(s))return parseFloat(s);
-  if(s.startsWith('"')&&s.endsWith('"'))return s.slice(1,-1).replace(/\\"/g,'"').replace(/\\\\/g,'\\');
-  if(s.startsWith("'")&&s.endsWith("'"))return s.slice(1,-1);
-  if(s==='[]')return [];
-  if(s==='{}')return {};
+  if((s.startsWith('"')&&s.endsWith('"'))||(s.startsWith("'")&&s.endsWith("'"))){
+    return s.slice(1,-1);
+  }
+  if(s.startsWith('[')&&s.endsWith(']')){
+    try{return JSON.parse(s)}catch(e){return s}
+  }
+  if(s.startsWith('{')&&s.endsWith('}')){
+    try{return JSON.parse(s)}catch(e){return s}
+  }
   return s;
 }
 function parseYaml(text){
@@ -103,57 +113,90 @@ function parseYaml(text){
   let i=0;
   function parseBlock(minIndent){
     let result=null;
+    let isArray=false;
     while(i<lines.length){
       const line=lines[i];
       if(!line.trim()||line.trim().startsWith('#')){i++;continue}
       const indent=line.length-line.trimStart().length;
       if(indent<minIndent)break;
       if(indent>minIndent){
-        if(result===null)result=[];
+        if(result===null){result=[];isArray=true}
         const sub=parseBlock(indent);
-        if(result.length>0&&typeof result[result.length-1]==='object'&&!Array.isArray(result[result.length-1])){
-          // merge into last
+        if(Array.isArray(result)&&result.length>0&&typeof result[result.length-1]==='object'){
+          // already handled
         }
         result.push(sub);
         continue;
       }
       const trimmed=line.trimStart();
+      // list item
       if(trimmed.startsWith('- ')){
-        if(result===null)result=[];
-        const item=trimmed.slice(2);
-        if(item.includes(': ')&&!item.startsWith('"')){
-          // inline object
+        if(result===null){result=[];isArray=true}
+        if(!isArray){result=[result];isArray=true}
+        const rest=trimmed.slice(2);
+        if(rest.trim()===''){
           i++;
+          const sub=parseBlock(minIndent+1);
+          result.push(sub);
+          continue;
+        }
+        // inline key: value
+        const colonIdx=rest.indexOf(': ');
+        if(colonIdx>0&&!rest.startsWith('"')&&!rest.startsWith("'")){
+          const key=rest.slice(0,colonIdx).trim();
+          const val=parseVal(rest.slice(colonIdx+2));
           const obj={};
-          const parts=item.split(': ');
-          obj[parts[0].trim()]=parseVal(parts.slice(1).join(': '));
-          // check for further indented keys
+          obj[key]=val;
+          i++;
+          // check for further indented keys belonging to this object
           while(i<lines.length){
             const l2=lines[i];
             if(!l2.trim()||l2.trim().startsWith('#')){i++;continue}
             const ind2=l2.length-l2.trimStart().length;
-            if(ind2<=indent)break;
+            if(ind2<=minIndent)break;
             const t2=l2.trimStart();
-            const p2=t2.split(': ');
-            if(p2.length>=2)obj[p2[0].trim()]=parseVal(p2.slice(1).join(': '));
-            i++;
+            if(t2.startsWith('- '))break;
+            const c2=t2.indexOf(': ');
+            if(c2>0){
+              const k2=t2.slice(0,c2).trim();
+              const v2=t2.slice(c2+2).trim();
+              if(v2===''){
+                i++;
+                const sub2=parseBlock(ind2+1);
+                obj[k2]=sub2;
+              } else {
+                obj[k2]=parseVal(v2);
+                i++;
+              }
+            } else {
+              break;
+            }
           }
           result.push(obj);
         } else {
-          result.push(parseVal(item));
+          result.push(parseVal(rest));
           i++;
         }
         continue;
       }
+      // key: value
+      if(trimmed.startsWith('-')){i++;continue}
+      const colonIdx=trimmed.indexOf(':');
+      if(colonIdx<0){i++;continue}
+      if(isArray){break}
       if(result===null)result={};
-      const idx=trimmed.indexOf(':');
-      if(idx<0){i++;continue}
-      const key=trimmed.slice(0,idx).trim().replace(/^["']|["']$/g,'');
-      const valStr=trimmed.slice(idx+1).trim();
+      const key=trimmed.slice(0,colonIdx).trim().replace(/^["']|["']$/g,'');
+      const valStr=trimmed.slice(colonIdx+1).trim();
       if(valStr===''){
         i++;
-        const sub=parseBlock(indent+1);
-        result[key]=(sub===null)?'':sub;
+        const sub=parseBlock(minIndent+1);
+        if(sub===null||sub===undefined){
+          result[key]='';
+        } else if(Array.isArray(sub)&&sub.length===0){
+          result[key]=[];
+        } else {
+          result[key]=sub;
+        }
       } else {
         result[key]=parseVal(valStr);
         i++;
@@ -179,6 +222,13 @@ function run(){
 $('go').onclick=run;
 $('src').addEventListener('input',run);
 run();
+$('dl').onclick=()=>{
+  const text=$('out').textContent;
+  const b=new Blob([text],{type:'application/json'});
+  const u=URL.createObjectURL(b);
+  const a=document.createElement('a');a.href=u;a.download='output.json';a.click();
+  URL.revokeObjectURL(u);
+};
 </script>
 </body>
 </html>

@@ -64,13 +64,18 @@ tailwind.config = { theme: { extend: {
   {"name": "Zara", "role": "designer", "score": 91}
 ]</textarea>
     <div class="mt-3 flex flex-wrap items-end gap-3">
-      <div><label class="ws-label mb-1 block">Delimiter</label><select id="delim" class="ws-input !w-32"><option value=",">Comma</option><option value=";">Semicolon</option><option value="	">Tab</option></select></div>
+      <div><label class="ws-label mb-1 block">Delimiter</label><select id="delim" class="ws-input !w-32"><option value=",">Comma</option><option value=";">Semicolon</option><option value="\t">Tab</option></select></div>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="headers" type="checkbox" checked class="accent-[#FF5F1F]"> First row headers</label>
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="flat" type="checkbox" checked class="accent-[#FF5F1F]"> Flatten nested</label>
       <button id="go" class="ws-btn">Convert</button>
-      <button id="dl" class="ws-btn-ghost">Download CSV</button>
+      <button id="dl" class="ws-btn-ghost">Download .csv</button>
     </div>
     <div class="mt-3 text-[11px] font-mono text-white/40" id="err"></div>
     <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">CSV output</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
+    <div class="mt-4">
+      <div class="ws-label mb-2">Preview</div>
+      <div id="preview" class="overflow-x-auto rounded-xl border border-white/10"></div>
+    </div>
   </section>
 
   <div id="ws-more" class="mt-12"></div>
@@ -90,52 +95,116 @@ function escCsv(v,delim){
   }
   return s;
 }
+function flatten(obj,prefix,res){
+  for(const k in obj){
+    const key=prefix?prefix+'.'+k:k;
+    const v=obj[k];
+    if(v!==null&&typeof v==='object'&&!Array.isArray(v)){
+      flatten(v,key,res);
+    } else if(Array.isArray(v)){
+      res[key]=v.join('; ');
+    } else {
+      res[key]=v;
+    }
+  }
+  return res;
+}
 function run(){
   $('err').textContent='';
   const t=$('src').value.trim();
-  if(!t){$('out').textContent='';return}
+  if(!t){$('out').textContent='';$('preview').innerHTML='';return}
   try{
-    const arr=JSON.parse(t);
-    if(!Array.isArray(arr)){$('err').textContent='\u2717 Input must be a JSON array';$('out').textContent='';return}
+    let arr=JSON.parse(t);
+    if(!Array.isArray(arr)){
+      if(typeof arr==='object'&&arr!==null){
+        arr=[arr];
+      } else {
+        $('err').textContent='\u2717 Input must be a JSON array or object';
+        $('out').textContent='';
+        return;
+      }
+    }
     const delim=$('delim').value==='\\t'?'\t':$('delim').value;
-    let csv='';
-    // collect all keys
+    const doFlat=$('flat').checked;
+    // collect keys
     const allKeys=[];
-    arr.forEach(o=>{if(o&&typeof o==='object'&&!Array.isArray(o)){Object.keys(o).forEach(k=>{if(!allKeys.includes(k))allKeys.push(k)})}});
+    const flatArr=arr.map(o=>{
+      if(o&&typeof o==='object'&&!Array.isArray(o)){
+        const flat=doFlat?flatten(o,'',{}):o;
+        Object.keys(flat).forEach(k=>{if(!allKeys.includes(k))allKeys.push(k)});
+        return flat;
+      }
+      return o;
+    });
+    let csv='';
     if(allKeys.length===0){
-      // simple values
-      arr.forEach((v,i)=>{
-        csv+=escCsv(Array.isArray(v)?v.join('; '):(typeof v==='object'?'[object]':v),delim);
-        if(i<arr.length-1)csv+=delim==='\t'?'\n':'\n';
-      });
-      // actually for simple array, one per line
-      csv=arr.map(v=>escCsv(Array.isArray(v)?JSON.stringify(v):(typeof v==='object'?'':v),delim)).join('\n');
+      csv=flatArr.map(v=>escCsv(Array.isArray(v)?v.join('; '):(typeof v==='object'?'':v),delim)).join('\n');
     } else {
       if($('headers').checked){
         csv+=allKeys.map(k=>escCsv(k,delim)).join(delim)+'\n';
       }
-      arr.forEach((o,i)=>{
+      flatArr.forEach((o,i)=>{
         if(o&&typeof o==='object'&&!Array.isArray(o)){
           csv+=allKeys.map(k=>escCsv(o[k],delim)).join(delim);
+        } else {
+          csv+=escCsv(o,delim);
         }
-        if(i<arr.length-1)csv+='\n';
+        if(i<flatArr.length-1)csv+='\n';
       });
     }
     $('out').textContent=csv;
-    $('dl').onclick=()=>{
-      const b=new Blob([csv],{type:'text/csv'});
-      const u=URL.createObjectURL(b);
-      const a=document.createElement('a');a.href=u;a.download='export.csv';a.click();
-      URL.revokeObjectURL(u);
-    };
+    // preview table
+    const rows=csv.split('\n').filter(r=>r.trim());
+    if(rows.length>0&&allKeys.length>0){
+      const parseRow=r=>{
+        if(delim==='\t')return r.split('\t');
+        const out=[];let cur='';let inQ=false;
+        for(let j=0;j<r.length;j++){
+          const c=r[j];
+          if(inQ){
+            if(c==='"'&&r[j+1]==='"'){cur+='"';j++}
+            else if(c==='"')inQ=false;
+            else cur+=c;
+          } else {
+            if(c==='"')inQ=true;
+            else if(c===delim){out.push(cur);cur=''}
+            else cur+=c;
+          }
+        }
+        out.push(cur);
+        return out;
+      };
+      const start=$('headers').checked?1:0;
+      const dataRows=rows.slice(start,start+10);
+      let html='<table class="w-full text-xs"><thead><tr>'+allKeys.map(k=>'<th class="border border-white/10 bg-white/[0.06] px-3 py-2 text-left font-bold text-accent">'+esc(k)+'</th>').join('')+'</tr></thead><tbody>';
+      dataRows.forEach(r=>{
+        const cells=parseRow(r);
+        html+='<tr>'+allKeys.map((k,i)=>'<td class="border border-white/10 px-3 py-2 text-white/70">'+esc(cells[i]||'')+'</td>').join('')+'</tr>';
+      });
+      html+='</tbody></table>';
+      if(rows.length-start>10)html+='<div class="p-2 text-center text-[10px] text-white/30">'+(rows.length-start)+' rows total, showing first 10</div>';
+      $('preview').innerHTML=html;
+    } else {
+      $('preview').innerHTML='';
+    }
   }catch(e){
     $('err').textContent='\u2717 '+e.message;
     $('out').textContent='';
+    $('preview').innerHTML='';
   }
 }
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 $('go').onclick=run;
 $('src').addEventListener('input',run);
 run();
+$('dl').onclick=()=>{
+  const text=$('out').textContent;
+  if(!text)return;
+  const b=new Blob([text],{type:'text/csv'});
+  const u=URL.createObjectURL(b);
+  const a=document.createElement('a');a.href=u;a.download='export.csv';a.click();
+  URL.revokeObjectURL(u);
+};
 </script>
 </body>
 </html>
