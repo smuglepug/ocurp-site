@@ -64,4 +64,10 @@ const RAW = [
   {slug:"pdf-watermark",name:"Watermark PDF",cat:"document",blurb:"Add a diagonal text watermark with colour, opacity and position control.",tags:["PDF","WATERMARK"],ready:true},
   {slug:"pdf-page-numbers",name:"Add Page Numbers",cat:"document",blurb:"Add page numbers in 6 positions with multiple formats including Roman numerals.",tags:["PDF","NUMBERS"],ready:true},
   {slug:"pdf-metadata",name:"PDF Metadata",cat:"document",blurb:"Read, edit and save PDF title, author, subject and keywords.",tags:["PDF","METADATA"],ready:true},
+  {slug:"pdf-password-remove",name:"Remove PDF Password",cat:"document",blurb:"Strip the owner password from PDFs you own — no upload, no server.",tags:["PDF","PASSWORD","UNLOCK"],ready:true},
+  {slug:"pdf-to-excel",name:"PDF Tables to CSV",cat:"document",blurb:"Pull table-like rows out of any PDF into a downloadable CSV.",tags:["PDF","CSV","EXTRACT"],ready:true},
+  {slug:"ocr-image-to-text",name:"Image to Text (OCR)",cat:"document",blurb:"Run Tesseract.js OCR in the browser — no upload, multi-language.",tags:["OCR","TESSERACT","IMAGE"],ready:true},
+  {slug:"markdown-to-pdf",name:"Markdown to PDF",cat:"document",blurb:"Write markdown, preview it, export a clean paginated PDF.",tags:["MARKDOWN","PDF","EXPORT"],ready:true},
+  {slug:"html-to-pdf",name:"HTML to PDF",cat:"document",blurb:"Paste HTML, preview it live, export a styled PDF.",tags:["HTML","PDF","EXPORT"],ready:true},
+  {slug:"pdf-page-extract",name:"Extract PDF Pages",cat:"document",blurb:"Pull a page range into a new PDF with one click.",tags:["PDF","EXTRACT","RANGE"],ready:true},
   ];
