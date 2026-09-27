@@ -61,7 +61,18 @@ tailwind.config = { theme: { extend: {
     <textarea id="src" class="ws-input min-h-[80px]" placeholder="Type normal text to corrupt"></textarea>
     <div class="mt-4">
       <label class="ws-label mb-2 block">Intensity: <span id="lvlVal" class="text-accent">5</span></label>
-      <input id="lvl" type="range" min="1" max="20" value="5" class="w-full accent-[#FF5F1F]">
+      <input id="lvl" type="range" min="1" max="30" value="5" class="w-full accent-[#FF5F1F]">
+    </div>
+    <div class="mt-3 flex flex-wrap items-center gap-3">
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="up" type="checkbox" checked class="accent-[#FF5F1F]"> Up</label>
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="mid" type="checkbox" checked class="accent-[#FF5F1F]"> Middle</label>
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="down" type="checkbox" checked class="accent-[#FF5F1F]"> Down</label>
+    </div>
+    <div class="mt-4 flex flex-wrap gap-2">
+      <button class="ws-btn-ghost !px-3 !py-1.5" onclick="setPreset(2)">Mini</button>
+      <button class="ws-btn-ghost !px-3 !py-1.5" onclick="setPreset(5)">Normal</button>
+      <button class="ws-btn-ghost !px-3 !py-1.5" onclick="setPreset(10)">Maxi</button>
+      <button class="ws-btn-ghost !px-3 !py-1.5" onclick="setPreset(20)">Gone</button>
     </div>
     <div class="mt-3 flex flex-wrap items-end gap-3">
       <button id="go" class="ws-btn">Zalgoify</button>
@@ -78,30 +89,34 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
-const UP=['\u030d','\u030e','\u0310','\u0312','\u0313','\u031b','\u031d','\u031e','\u031f','\u0320','\u0322','\u0323','\u0324','\u0325','\u0326','\u0329','\u032a','\u032b','\u032c','\u032d','\u032e','\u0330','\u0331','\u0332'];
-const MID=['\u0300','\u0301','\u0302','\u0303','\u0304','\u0305','\u0306','\u0307','\u0308','\u0309','\u030a','\u030b','\u030c','\u030f','\u0311'];
-const DOWN=['\u0316','\u0317','\u0318','\u0319','\u031a','\u0321','\u0327','\u0328','\u0333','\u0334','\u0335','\u0336','\u0337','\u0338','\u0339','\u033a','\u033b','\u033c'];
-function rng(n){return Math.floor(Math.random()*n)}
+const UP=['\u030d','\u030e','\u0300','\u0301','\u0302','\u0303','\u0304','\u0305','\u0306','\u0307','\u0308','\u0309','\u030a','\u030b','\u030c','\u030f','\u0310','\u0311','\u0312','\u0313','\u031b','\u031d','\u031e','\u031f','\u0320','\u0322','\u0323','\u0324','\u0325','\u0326'];
+const MID=['\u0300','\u0301','\u0302','\u0303','\u0304','\u0305','\u0306','\u0307','\u0308','\u0309','\u030a','\u030b','\u030c','\u030f','\u0311','\u033f','\u0340','\u0341','\u0342','\u0343','\u0344'];
+const DOWN=['\u0316','\u0317','\u0318','\u0319','\u031a','\u0320','\u0321','\u0327','\u0328','\u0329','\u032a','\u032b','\u032c','\u032d','\u032e','\u032f','\u0330','\u0331','\u0332','\u0333','\u0334','\u0335','\u0336','\u0337','\u0338','\u0339','\u033a','\u033b','\u033c','\u033d','\u033e','\u033f'];
+let seed=12345;
+function rng(){seed=(seed*16807)%2147483647;return seed/2147483647}
 function zalgo(s,lvl){
+  seed=12345;
+  const u=$('up').checked,m=$('mid').checked,d=$('down').checked;
+  if(!u&&!m&&!d)return s;
   let out=[];
   for(const ch of s){
     if(ch===' '||ch==='\n'){out.push(ch);continue}
     let z=ch;
     for(let i=0;i<lvl;i++){
-      if(i%3===0)z+=UP[rng(UP.length)];
-      else if(i%3===1)z+=MID[rng(MID.length)];
-      else z+=DOWN[rng(DOWN.length)];
+      if(u&&(i%3===0))z+=UP[Math.floor(rng()*UP.length)];
+      if(m&&(i%3===1))z+=MID[Math.floor(rng()*MID.length)];
+      if(d&&(i%3===2))z+=DOWN[Math.floor(rng()*DOWN.length)];
     }
     out.push(z);
   }
   return out.join('');
 }
-function run(){
-  $('out').textContent=zalgo($('src').value,parseInt($('lvl').value)||5);
-}
+function run(){$('out').textContent=zalgo($('src').value,parseInt($('lvl').value)||5)}
+function setPreset(n){$('lvl').value=n;$('lvlVal').textContent=n;run()}
 $('go').onclick=run;
 $('src').addEventListener('input',run);
 $('lvl').addEventListener('input',e=>{$('lvlVal').textContent=e.target.value;run()});
+['up','mid','down'].forEach(id=>$(id).addEventListener('change',run));
 $('clr').onclick=()=>{$('src').value='';$('out').textContent=''};
 $('src').value='Hail Zalgo';
 run();

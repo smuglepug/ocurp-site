@@ -58,19 +58,29 @@ tailwind.config = { theme: { extend: {
       
   <section class="ws-panel p-6">
     <label class="ws-label mb-2 block">Text</label>
-    <textarea id="src" class="ws-input min-h-[100px]" placeholder="Type A-Z to convert to emoji"></textarea>
+    <textarea id="src" class="ws-input min-h-[80px]" placeholder="Type A-Z and 0-9"></textarea>
     <div class="mt-3 flex flex-wrap items-end gap-3">
-      <div><label class="ws-label mb-1 block">Style</label><select id="style" class="ws-input !w-40">
-        <option value="regional">Regional flags (A-Z)</option>
-        <option value="bold">Bold letters</option>
-        <option value="mono">Monospace letters</option>
-        <option value="squared">Squared letters</option>
+      <div><label class="ws-label mb-1 block">Mode</label><select id="mode" class="ws-input !w-52">
+        <option value="all">All styles (preview)</option>
+        <option value="bold">Bold</option>
+        <option value="italic">Italic</option>
+        <option value="bold-italic">Bold Italic</option>
+        <option value="mono">Monospace</option>
+        <option value="fullwidth">Fullwidth</option>
+        <option value="circled">Circled</option>
+        <option value="squared">Squared</option>
+        <option value="regional">Regional flags (pairs)</option>
+        <option value="fraktur">Fraktur</option>
+        <option value="double-struck">Double-struck</option>
+        <option value="sans-bold">Sans-serif Bold</option>
+        <option value="sans-italic">Sans-serif Italic</option>
+        <option value="sans-bold-italic">Sans-serif Bold Italic</option>
       </select></div>
       <button id="go" class="ws-btn">Convert</button>
       <button id="clr" class="ws-btn-ghost">Clear</button>
     </div>
-    <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Emoji</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
-    <div class="mt-4 text-[11px] text-white/40">Regional flags work with pairs of letters (country codes). Single letters map to bold/mono/squared emoji where available.</div>
+    <div id="single" class="mt-4"></div>
+    <div id="grid" class="mt-4 grid gap-3"></div>
   </section>
 
   <div id="ws-more" class="mt-12"></div>
@@ -81,64 +91,87 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
-const A=0x1F1E6; // regional indicator A
-const BOLD_A=0x1D5D4;
-const MONO_A=0x1D670;
-const SQUARED_A=0x1F130;
+const A='A'.charCodeAt(0);
+const Z='Z'.charCodeAt(0);
+const ZERO='0'.charCodeAt(0);
+const NINE='9'.charCodeAt(0);
+const RI_A=0x1F1E6;
+const BOLD_A=0x1D5D4, BOLD_0=0x1D7EC;
+const ITAL_A=0x1D634, ITAL_0=0x1D7E2;
+const BI_A=0x1D6D4, BI_0=0x1D7EC;
+const MONO_A=0x1D670, MONO_0=0x1D7F6;
+const FULL_A=0xFF21, FULL_0=0xFF10;
+const CIRC_A=0x24B6, CIRC_0=0x24EA;
+const SQR_A=0x1F130, SQR_0=0x2460;
+const FRAK_A=0x1D504, FRAK_0=0x1D7CE;
+const DS_A=0x1D538, DS_0=0x1D7D8;
+const SB_A=0x1D5C4, SB_0=0x1D7EC;
+const SI_A=0x1D608, SI_0=0x1D7EC;
+const SBI_A=0x1D63C, SBI_0=0x1D7EC;
+function conv(s, baseLetter, baseDigit){
+  let out=[];
+  for(const ch of s){
+    const u=ch.toUpperCase();
+    if(u>='A'&&u<='Z') out.push(String.fromCodePoint(baseLetter+(u.charCodeAt(0)-65)));
+    else if(ch>='0'&&ch<='9') out.push(String.fromCodePoint(baseDigit+(ch.charCodeAt(0)-48)));
+    else out.push(ch);
+  }
+  return out.join('');
+}
 function toRegional(s){
   let out=[];
   for(const ch of s){
-    const c=ch.toUpperCase();
-    if(c>='A'&&c<='Z'){out.push(String.fromCodePoint(A+(c.charCodeAt(0)-65)))}
-    else if(ch===' '){out.push('\u2753')}
-    else{out.push(ch)}
+    const u=ch.toUpperCase();
+    if(u>='A'&&u<='Z') out.push(String.fromCodePoint(RI_A+(u.charCodeAt(0)-65)));
+    else out.push(ch);
   }
   return out.join('');
 }
-function toBold(s){
-  let out=[];
-  for(const ch of s){
-    const c=ch.toUpperCase();
-    if(c>='A'&&c<='Z'){out.push(String.fromCodePoint(BOLD_A+(c.charCodeAt(0)-65)))}
-    else if(ch>='0'&&ch<='9'){out.push(String.fromCodePoint(0x1D7EC+(ch.charCodeAt(0)-48)))}
-    else{out.push(ch)}
-  }
-  return out.join('');
-}
-function toMono(s){
-  let out=[];
-  for(const ch of s){
-    const c=ch.toUpperCase();
-    if(c>='A'&&c<='Z'){out.push(String.fromCodePoint(MONO_A+(c.charCodeAt(0)-65)))}
-    else if(ch>='0'&&ch<='9'){out.push(String.fromCodePoint(0x1D7F6+(ch.charCodeAt(0)-48)))}
-    else{out.push(ch)}
-  }
-  return out.join('');
-}
-function toSquared(s){
-  let out=[];
-  for(const ch of s){
-    const c=ch.toUpperCase();
-    if(c>='A'&&c<='Z'){out.push(String.fromCodePoint(SQUARED_A+(c.charCodeAt(0)-65)))}
-    else{out.push(ch)}
-  }
-  return out.join('');
-}
+const STYLES={
+  'Bold':{fn:s=>conv(s,BOLD_A,BOLD_0)},
+  'Italic':{fn:s=>conv(s,ITAL_A,ITAL_0)},
+  'Bold Italic':{fn:s=>conv(s,BI_A,BI_0)},
+  'Monospace':{fn:s=>conv(s,MONO_A,MONO_0)},
+  'Fullwidth':{fn:s=>conv(s,FULL_A,FULL_0)},
+  'Circled':{fn:s=>conv(s,CIRC_A,CIRC_0)},
+  'Squared':{fn:s=>conv(s,SQR_A,SQR_0)},
+  'Fraktur':{fn:s=>conv(s,FRAK_A,FRAK_0)},
+  'Double-struck':{fn:s=>conv(s,DS_A,DS_0)},
+  'Sans Bold':{fn:s=>conv(s,SB_A,SB_0)},
+  'Sans Italic':{fn:s=>conv(s,SI_A,SI_0)},
+  'Sans Bold Italic':{fn:s=>conv(s,SBI_A,SBI_0)},
+  'Regional Flags':{fn:toRegional},
+};
 function run(){
   const s=$('src').value;
-  const st=$('style').value;
-  let r='';
-  if(st==='regional') r=toRegional(s);
-  else if(st==='bold') r=toBold(s);
-  else if(st==='mono') r=toMono(s);
-  else if(st==='squared') r=toSquared(s);
-  $('out').textContent=r;
+  const m=$('mode').value;
+  if(m==='all'){
+    $('single').innerHTML='';
+    $('grid').innerHTML=Object.keys(STYLES).map(k=>{
+      const r=STYLES[k].fn(s);
+      return '<div class="ws-panel ws-copy p-3"><div class="ws-label mb-1">'+k+'</div><pre class="ws-out text-base">'+r+'</pre></div>';
+    }).join('');
+  } else {
+    $('grid').innerHTML='';
+    let r='';
+    if(m==='regional') r=toRegional(s);
+    else {
+      const map={'bold':['Bold',BOLD_A,BOLD_0],'italic':['Italic',ITAL_A,ITAL_0],
+        'bold-italic':['Bold Italic',BI_A,BI_0],'mono':['Monospace',MONO_A,MONO_0],
+        'fullwidth':['Fullwidth',FULL_A,FULL_0],'circled':['Circled',CIRC_A,CIRC_0],
+        'squared':['Squared',SQR_A,SQR_0],'fraktur':['Fraktur',FRAK_A,FRAK_0],
+        'double-struck':['Double-struck',DS_A,DS_0],'sans-bold':['Sans Bold',SB_A,SB_0],
+        'sans-italic':['Sans Italic',SI_A,SI_0],'sans-bold-italic':['Sans Bold Italic',SBI_A,SBI_0]};
+      r=conv(s,map[m][1],map[m][2]);
+    }
+    $('single').innerHTML='<div class="ws-panel ws-copy p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out text-lg">'+r+'</pre></div>';
+  }
 }
 $('go').onclick=run;
 $('src').addEventListener('input',run);
-$('style').addEventListener('change',run);
-$('clr').onclick=()=>{$('src').value='';$('out').textContent=''};
-$('src').value='HELLO';
+$('mode').addEventListener('change',run);
+$('clr').onclick=()=>{$('src').value='';run()};
+$('src').value='HELLO 2026';
 run();
 </script>
 </body>

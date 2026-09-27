@@ -62,20 +62,22 @@ tailwind.config = { theme: { extend: {
         <option value="enc">Text to Morse</option>
         <option value="dec">Morse to Text</option>
       </select></div>
-      <div><label class="ws-label mb-1 block">Separator</label><select id="sep" class="ws-input !w-32">
-        <option value="slash">Slash ( / )</option>
-        <option value="space">Space</option>
-        <option value="pipe">Pipe ( | )</option>
+      <div><label class="ws-label mb-1 block">Word separator</label><select id="wsep" class="ws-input !w-36">
+        <option value="slash">/ (standard)</option>
+        <option value="space">Double space</option>
+        <option value="pipe">| pipe</option>
       </select></div>
+      <div><label class="ws-label mb-1 block">WPM</label><input id="wpm" type="number" min="5" max="40" value="15" class="ws-input !w-20"></div>
     </div>
     <label class="ws-label mb-2 block">Input</label>
-    <textarea id="src" class="ws-input min-h-[80px]" placeholder="SOS or .... .. ..."></textarea>
+    <textarea id="src" class="ws-input min-h-[80px]" placeholder="SOS or .... --- ..."></textarea>
     <div class="mt-3 flex flex-wrap items-end gap-3">
       <button id="go" class="ws-btn">Convert</button>
       <button id="play" class="ws-btn-ghost">Play sound</button>
       <button id="clr" class="ws-btn-ghost">Clear</button>
     </div>
     <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Output</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
+    <div id="visual" class="mt-4 text-[11px] font-mono text-white/40"></div>
   </section>
 
   <div id="ws-more" class="mt-12"></div>
@@ -88,67 +90,66 @@ tailwind.config = { theme: { extend: {
 const $=id=>document.getElementById(id);
 const M={A:'.-',B:'-...',C:'-.-.',D:'-..',E:'.',F:'..-.',G:'--.',H:'....',I:'..',J:'.---',K:'-.-',L:'.-..',M:'--',N:'-.',O:'---',P:'.--.',Q:'--.-',R:'.-.',S:'...',T:'-',U:'..-',V:'...-',W:'.--',X:'-..-',Y:'-.--',Z:'--..',
 '0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.',
-'.':'.-.-.-',',':'--..--','?':'..--..',"'":'.----.','!':'-.-.--','/':'-..-.','(':'-.--.',')':'-.--.-','&':'.-...',':':'---...',';':'-.-.-.','=':'-...-','+':'.-.-.','-':'-....-','_':'..--.-','"':'.-..-.','@':'.--.-.'};
-const RM={};
-for(const k in M)RM[M[k]]=k;
-function getSep(){const s=$('sep').value;return s==='slash'?' / ':s==='space'?' ':s==='pipe'?' | ':' '}
+'.':'.-.-.-',',':'--..--','?':'..--..','!':'-.-.--','/':'-..-.','(':'-.--.',')':'-.--.-','&':'.-...',':':'---...',';':'-.-.-.','=':'-...-','+':'.-.-.','-':'-....-','_':'..--.','@':'.--.-.'};
+const RM={};for(const k in M)RM[M[k]]=k;
 function encode(s){
-  const sep=getSep();
-  return s.toUpperCase().split('').map(ch=>{
-    if(ch===' ')return sep.trim();
-    return M[ch]||'';
-  }).filter(Boolean).join(sep);
+  const sep=$('wsep').value;
+  const wsep=sep==='slash'?' / ':sep==='pipe'?' | ':'  ';
+  return s.toUpperCase().split(/\s+/).map(w=>w.split('').map(ch=>M[ch]||'').filter(Boolean).join(' ')).join(wsep);
 }
 function decode(s){
-  const sep=getSep().trim();
-  const parts=s.split(/\s*[\/\|]\s*|\s+/).filter(Boolean);
-  let out=[];
-  let prevWasSpace=false;
-  for(const p of parts){
-    if(RM[p])out.push(RM[p]);
-    else if(p===''){}
-  }
-  // handle word separators
-  const raw=s.split(/[\/\|]/);
-  if(raw.length>1){
-    return raw.map(w=>w.trim().split(/\s+/).filter(Boolean).map(c=>RM[c]||'').join('')).join(' ').trim();
-  }
-  return parts.map(p=>RM[p]||'').join('');
+  const sep=$('wsep').value;
+  let wordSep=sep==='slash'?/[\/]/:sep==='pipe'?/\|/:/\s\s+/;
+  return s.toUpperCase().split(wordSep).map(word=>
+    word.trim().split(/\s+/).filter(Boolean).map(c=>RM[c]||'').join('')
+  ).join(' ');
 }
 function run(){
   const d=$('dir').value;
-  if(d==='enc') $('out').textContent=encode($('src').value);
+  if(d==='enc')$('out').textContent=encode($('src').value);
   else $('out').textContent=decode($('src').value);
+  updateVisual();
+}
+function updateVisual(){
+  const d=$('dir').value;
+  const morse=d==='enc'?encode($('src').value):$('src').value;
+  const dot='\u2022',dash='\u2014';
+  $('visual').textContent=morse.replace(/\./g,dot).replace(/-/g,dash);
 }
 $('go').onclick=run;
 $('dir').addEventListener('change',()=>{
   const d=$('dir').value;
-  $('src').placeholder=d==='enc'?'SOS':'.... .. ...';
-  $('src').value=d==='enc'?'SOS':'.... / --- / ...';
+  $('src').placeholder=d==='enc'?'SOS':'.... --- ...';
+  if(d==='enc')$('src').value='SOS';else $('src').value='.... --- ...';
   run();
 });
 $('src').addEventListener('input',run);
-$('sep').addEventListener('change',run);
-$('clr').onclick=()=>{$('src').value='';$('out').textContent=''};
+$('wsep').addEventListener('change',run);
+$('clr').onclick=()=>{$('src').value='';$('out').textContent='';$('visual').textContent=''};
 let audioCtx=null;
 $('play').onclick=()=>{
   const d=$('dir').value;
   const morse=d==='enc'?encode($('src').value):$('src').value;
+  const wpm=parseInt($('wpm').value)||15;
+  const unit=1.2/wpm;
+  const dotDur=unit,dashDur=3*unit,eleGap=unit,letterGap=3*unit,wordGap=7*unit;
   if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-  const dot=0.08,dash=0.24,gap=0.08,letterGap=0.24;
-  let t=audioCtx.currentTime;
+  if(audioCtx.state==='suspended')audioCtx.resume();
+  let t=audioCtx.currentTime+0.05;
   for(const ch of morse){
-    if(ch==='.'||ch==='\u2022'){
-      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-      o.frequency.value=600;o.connect(g);g.connect(audioCtx.destination);
-      g.gain.setValueAtTime(0.3,t);g.gain.setValueAtTime(0,t+dot);
-      o.start(t);o.stop(t+dot);t+=dot+gap;
-    }else if(ch==='-'){
-      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-      o.frequency.value=600;o.connect(g);g.connect(audioCtx.destination);
-      g.gain.setValueAtTime(0.3,t);g.gain.setValueAtTime(0,t+dash);
-      o.start(t);o.stop(t+dash);t+=dash+gap;
-    }else if(ch===' '||ch==='/'){t+=letterGap}
+    if(ch==='.'){playTone(t,dotDur);t+=dotDur+eleGap;}
+    else if(ch==='-'){playTone(t,dashDur);t+=dashDur+eleGap;}
+    else if(ch==='/'||ch==='|'){t+=wordGap;}
+    else if(ch===' '){t+=letterGap;}
+  }
+  function playTone(start,dur){
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.frequency.value=600;o.type='sine';o.connect(g);g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(0,start);
+    g.gain.linearRampToValueAtTime(0.3,start+0.005);
+    g.gain.setValueAtTime(0.3,start+dur-0.005);
+    g.gain.linearRampToValueAtTime(0,start+dur);
+    o.start(start);o.stop(start+dur);
   }
 };
 $('src').value='SOS';

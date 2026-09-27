@@ -86,15 +86,28 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
-const SMALL=['a','an','and','as','at','but','by','for','in','nor','of','on','or','so','the','to','up','yet','vs','via'];
 const AP_SMALL=['a','an','and','as','at','but','by','for','in','nor','of','on','or','so','the','to','up','yet','vs','via'];
-const CHI_SMALL=['a','an','and','as','at','but','by','for','in','nor','of','on','or','so','the','to','up','yet','vs','via','but','however','is','it'];
-const words=s=>s.replace(/[_-]+/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2').split(/\s+/).filter(Boolean);
+const CHI_SMALL=['a','an','and','as','at','but','by','for','in','nor','of','on','or','so','the','to','up','yet','vs','via','however','is','it','if','than','that','this','with'];
+const words=s=>s.replace(/[_-]+/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2').split(/(\s+)/).filter(Boolean);
+function capitalizeWord(w,lowerRest){
+  const m=w.match(/^[^a-zA-Z]*([a-zA-Z])/);
+  if(!m)return w;
+  const idx=m[0].length-1;
+  return w.slice(0,idx)+w[idx].toUpperCase()+(lowerRest?w.slice(idx+1).toLowerCase():w.slice(idx+1));
+}
 function titleCase(s,smallList){
-  return s.split(/\s+/).map((w,i)=>{
-    if(i>0&&smallList.includes(w.toLowerCase()))return w.toLowerCase();
-    return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();
-  }).join(' ');
+  const tokens=s.split(/(\s+)/);
+  const wordsArr=tokens.filter(t=>t.trim());
+  const wordCount=wordsArr.length;
+  let wi=0;
+  return tokens.map(t=>{
+    if(!t.trim())return t;
+    const isLast=wi===wordCount-1;
+    const isFirst=wi===0;
+    if((isFirst||isLast)){wi++;return capitalizeWord(t,true)}
+    if(smallList.includes(t.toLowerCase())){wi++;return t.toLowerCase()}
+    wi++;return capitalizeWord(t,true);
+  }).join('');
 }
 function run(){
   const s=$('src').value;
@@ -103,13 +116,16 @@ function run(){
   if(st==='title') r=titleCase(s,[]);
   else if(st==='ap') r=titleCase(s,AP_SMALL);
   else if(st==='chicago') r=titleCase(s,CHI_SMALL);
-  else if(st==='sentence') r=s.toLowerCase().replace(/(^|[.!?]\s+)([a-z])/g,(m,p,c)=>p+c.toUpperCase());
+  else if(st==='sentence') r=s.replace(/(^|[.!?]\s+)([a-zA-Z])/g,(m,p,c)=>p+c.toUpperCase()).replace(/^[a-zA-Z]/,c=>c.toUpperCase());
   else if(st==='upper') r=s.toUpperCase();
   else if(st==='lower') r=s.toLowerCase();
-  else if(st==='camel') r=words(s).map((w,i)=>i?w[0].toUpperCase()+w.slice(1).toLowerCase():w.toLowerCase()).join('');
-  else if(st==='pascal') r=words(s).map(w=>w[0].toUpperCase()+w.slice(1).toLowerCase()).join('');
-  else if(st==='snake') r=words(s).map(w=>w.toLowerCase()).join('_');
-  else if(st==='kebab') r=words(s).map(w=>w.toLowerCase()).join('-');
+  else if(st==='camel'){
+    const w=words(s).filter(t=>t.trim());
+    r=w.map((t,i)=>i?capitalizeWord(t,true):t.toLowerCase()).join('');
+  }
+  else if(st==='pascal') r=words(s).filter(t=>t.trim()).map(t=>capitalizeWord(t,true)).join('');
+  else if(st==='snake') r=words(s).filter(t=>t.trim()).map(t=>t.toLowerCase().replace(/[^a-z0-9]/g,'')).join('_');
+  else if(st==='kebab') r=words(s).filter(t=>t.trim()).map(t=>t.toLowerCase().replace(/[^a-z0-9]/g,'')).join('-');
   $('out').textContent=r;
 }
 $('go').onclick=run;
