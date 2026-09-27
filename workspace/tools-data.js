@@ -101,4 +101,10 @@ const RAW = [
   {slug:"zalgo",name:"Zalgo Text",cat:"data",blurb:"Corrupt text with combining diacritical marks at adjustable intensity.",tags:["TEXT","ZALGO","UNICODE","CLIENT-SIDE"],ready:true},
   {slug:"morse-code",name:"Morse Code",cat:"data",blurb:"Translate text to Morse and back with audio playback.",tags:["MORSE","AUDIO","ENCODE","DECODE","CLIENT-SIDE"],ready:true},
   {slug:"title-case",name:"Title Case Converter",cat:"data",blurb:"Title, AP, Chicago, sentence, camel, snake and kebab in one tool.",tags:["TEXT","TITLE CASE","AP","CHICAGO","CLIENT-SIDE"],ready:true},
+  {slug:"strip-html",name:"Strip HTML",cat:"data",blurb:"Remove all HTML tags and decode entities to plain text.",tags:["HTML","STRIP","TEXT","CLIENT-SIDE"],ready:true},
+  {slug:"text-to-html",name:"Text to HTML",cat:"data",blurb:"Convert plain text to HTML paragraphs with escaping and headings.",tags:["TEXT","HTML","CONVERT","CLIENT-SIDE"],ready:true},
+  {slug:"json-to-yaml",name:"JSON to YAML",cat:"data",blurb:"Convert JSON objects to clean YAML, client-side.",tags:["JSON","YAML","CONVERT","CLIENT-SIDE"],ready:true},
+  {slug:"yaml-to-json",name:"YAML to JSON",cat:"data",blurb:"Parse YAML and export formatted JSON.",tags:["YAML","JSON","CONVERT","CLIENT-SIDE"],ready:true},
+  {slug:"json-to-csv",name:"JSON to CSV",cat:"data",blurb:"Flatten a JSON array into CSV with headers and download.",tags:["JSON","CSV","CONVERT","CLIENT-SIDE"],ready:true},
+  {slug:"xml-formatter",name:"XML Formatter",cat:"data",blurb:"Prettify or minify XML with validation and indentation control.",tags:["XML","FORMAT","PRETTIFY","CLIENT-SIDE"],ready:true},
   ];
