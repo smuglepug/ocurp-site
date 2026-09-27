@@ -58,4 +58,10 @@ const RAW = [
   {slug:"split-pdf",name:"Split PDF",cat:"document",blurb:"Split every N pages or by custom ranges, download each part.",tags:["PDF","SPLIT"],ready:true},
   {slug:"organize-pdf",name:"Organise PDF Pages",cat:"document",blurb:"Delete, rotate and reorder pages, then download the result.",tags:["PDF","ROTATE"],ready:true},
   {slug:"compress-pdf",name:"Compress PDF",cat:"document",blurb:"Re-save with object streams and show before/after file size.",tags:["PDF","COMPRESS"],ready:true},
+  {slug:"pdf-to-jpg",name:"PDF to JPG",cat:"document",blurb:"Render every page to JPG or PNG, download individually or as a zip.",tags:["PDF","IMAGE","ZIP"],ready:true},
+  {slug:"jpg-to-pdf",name:"JPG to PDF",cat:"document",blurb:"Combine JPG, PNG and WebP images into a single paginated PDF.",tags:["PDF","IMAGE"],ready:true},
+  {slug:"pdf-rotate",name:"Rotate PDF",cat:"document",blurb:"Rotate all or selected pages with a live thumbnail preview.",tags:["PDF","ROTATE"],ready:true},
+  {slug:"pdf-watermark",name:"Watermark PDF",cat:"document",blurb:"Add a diagonal text watermark with colour, opacity and position control.",tags:["PDF","WATERMARK"],ready:true},
+  {slug:"pdf-page-numbers",name:"Add Page Numbers",cat:"document",blurb:"Add page numbers in 6 positions with multiple formats including Roman numerals.",tags:["PDF","NUMBERS"],ready:true},
+  {slug:"pdf-metadata",name:"PDF Metadata",cat:"document",blurb:"Read, edit and save PDF title, author, subject and keywords.",tags:["PDF","METADATA"],ready:true},
   ];
