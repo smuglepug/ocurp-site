@@ -30,6 +30,11 @@ tailwind.config = { theme: { extend: {
   .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
   .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
   .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
   .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
   .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
   .ws-btn:hover { opacity:.9 }
@@ -53,26 +58,40 @@ tailwind.config = { theme: { extend: {
       <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Image Compressor</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">IMAGE</span><span class="ws-chip">COMPRESS</span><span class="ws-chip">BATCH</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">IMAGE</span><span class="ws-chip">QUALITY</span><span class="ws-chip">CLIENT-SIDE</span></div>
         </div>
       
   <section class="ws-panel p-6">
     <div id="drop" class="border-2 border-dashed border-white/15 rounded-xl p-8 text-center cursor-pointer transition-colors hover:border-accent/50">
-      <p class="text-sm text-white/50">Drop or click to upload images (batch supported)</p>
-      <p class="mt-1 text-[10px] text-white/30">PNG, JPG, WebP — all client-side, no upload</p>
+      <p class="text-sm text-white/50">Drop or click to upload an image</p>
+      <p class="mt-1 text-[10px] text-white/30">PNG, JPG, WebP — all client-side</p>
     </div>
-    <input id="file" type="file" accept="image/*" multiple class="hidden">
+    <input id="file" type="file" accept="image/*" class="hidden">
     <div id="controls" class="mt-6 hidden">
       <div class="flex flex-wrap items-end gap-4">
-        <div class="flex-1 min-w-[200px]"><label class="ws-label mb-2 block">Quality: <span id="qv">80</span>%</label>
-          <input id="q" type="range" min="10" max="100" value="80" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Compression level</label>
+          <select id="lvl" class="ws-input !w-44"><option value="85">Light (85%)</option><option value="70" selected>Balanced (70%)</option><option value="50">Strong (50%)</option><option value="30">Extreme (30%)</option></select></div>
+        <div class="flex-1 min-w-[200px]"><label class="ws-label mb-2 block">Quality: <span id="qv">70</span>%</label>
+          <input id="q" type="range" min="10" max="100" value="70" class="w-full accent-[#FF5F1F]"></div>
         <div><label class="ws-label mb-2 block">Format</label>
           <select id="fmt" class="ws-input !w-32"><option value="image/jpeg">JPEG</option><option value="image/webp">WebP</option><option value="image/png">PNG (lossless)</option></select></div>
-        <button id="auto" class="ws-btn-ghost">Auto-optimize</button>
-        <button id="dlAll" class="ws-btn-ghost">Download all</button>
+        <button id="dl" class="ws-btn">Download</button>
       </div>
-      <div id="items" class="mt-6 space-y-3"></div>
-      <div class="mt-4 text-center font-display text-2xl font-black text-accent" id="totalSaved"></div>
+      <div class="mt-6 grid gap-4 sm:grid-cols-2">
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+          <div class="ws-label mb-2">Before</div>
+          <img id="before" class="mx-auto max-h-48 rounded-lg" alt="original">
+          <div class="mt-2 text-center text-xs text-white/50" id="origSize"></div>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+          <div class="ws-label mb-2">After</div>
+          <img id="after" class="mx-auto max-h-48 rounded-lg" alt="compressed">
+          <div class="mt-2 text-center text-xs text-white/50" id="newSize"></div>
+        </div>
+      </div>
+      <div class="mt-4 text-center font-display text-2xl font-black text-accent" id="saved"></div>
+      <div class="mt-1 text-center text-xs text-white/60" id="loss"></div>
+      <div class="mt-1 text-center text-[11px] text-white/40" id="dims"></div>
     </div>
   </section>
 
@@ -84,74 +103,69 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
-let files=[];
+let origBlob=null,origUrl=null;
 const drop=$('drop'),file=$('file');
 drop.onclick=()=>file.click();
 drop.ondragover=e=>{e.preventDefault();drop.classList.add('border-accent')};
 drop.ondragleave=()=>drop.classList.remove('border-accent');
-drop.ondrop=e=>{e.preventDefault();drop.classList.remove('border-accent');if(e.dataTransfer.files.length)handle([...e.dataTransfer.files])};
-file.onchange=e=>{if(e.target.files.length)handle([...e.target.files])};
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('border-accent');if(e.dataTransfer.files[0])handle(e.dataTransfer.files[0])};
+file.onchange=e=>{if(e.target.files[0])handle(e.target.files[0])};
 function fmtSize(b){return b>1048576?(b/1048576).toFixed(2)+' MB':(b/1024).toFixed(1)+' KB'}
-function handle(fs){
-  files=[];$('items').innerHTML='';$('totalSaved').textContent='';
-  $('controls').classList.remove('hidden');
-  fs.forEach((f,i)=>{
-    const url=URL.createObjectURL(f);
-    files.push({file:f,url,id:i,blob:null});
-    const div=document.createElement('div');div.className='rounded-xl border border-white/10 bg-white/[0.04] p-4';div.id='row'+i;
-    div.innerHTML='<div class="flex items-center gap-4"><img id="img'+i+'" class="h-16 w-16 object-cover rounded-lg" alt=""><div class="flex-1 min-w-0"><div class="text-sm font-medium text-white truncate">'+f.name+'</div><div class="text-xs text-white/40" id="info'+i+'">'+fmtSize(f.size)+'</div></div><div class="text-right"><div class="text-xs text-white/50" id="savings'+i+'"></div><a id="dl'+i+'" class="ws-btn-ghost !px-3 !py-1.5 !text-xs hidden">Download</a></div></div>';
-    $('items').appendChild(div);
-    $('img'+i).src=url;
-  });
-  compress();
+function handle(f){
+  origBlob=f;origUrl=URL.createObjectURL(f);
+  $('before').src=origUrl;$('origSize').textContent=fmtSize(f.size)+' ('+f.type+')';
+  $('controls').classList.remove('hidden');compress();
 }
 function compress(){
-  if(!files.length)return;
-  const q=parseInt($('q').value)/100;$('qv').textContent=$('q').value;
-  const fmt=$('fmt').value;
-  let totalOrig=0,totalNew=0,done=0;
-  files.forEach((item)=>{
-    totalOrig+=item.file.size;
-    const img=new Image();img.onload=()=>{
-      const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
-      c.getContext('2d').drawImage(img,0,0);
-      c.toBlob(b=>{
-        if(!b){done++;return}
-        item.blob=b;totalNew+=b.size;
-        const u=URL.createObjectURL(b);
-        const savedPct=((1-b.size/item.file.size)*100).toFixed(0);
-        const el=$('savings'+item.id);if(el)el.textContent=savedPct>0?'-'+savedPct+'%':(savedPct<0?'+'+Math.abs(savedPct)+'%':'0%');
-        const dl=$('dl'+item.id);dl.href=u;dl.download='compressed.'+fmt.split('/')[1];dl.classList.remove('hidden');
-        const info=$('info'+item.id);if(info)info.textContent=fmtSize(item.file.size)+' → '+fmtSize(b.size);
-        done++;if(done===files.length){$('totalSaved').textContent=((1-totalNew/totalOrig)*100>0?'Saved ':'Larger by ')+Math.abs((1-totalNew/totalOrig)*100).toFixed(0)+'% total'}
-      },fmt,q);
-    };img.src=item.url;
-  });
+  if(!origBlob)return;
+  const q=parseInt($('q').value)/100;
+  $('qv').textContent=$('q').value;
+  const img=new Image();img.onload=()=>{
+    const cap=MAXW();
+    let w=img.naturalWidth,h=img.naturalHeight;
+    if(cap&&w>cap){h=Math.round(h*cap/w);w=cap}
+    const c=document.createElement('canvas');c.width=w;c.height=h;
+    c.getContext('2d').drawImage(img,0,0,w,h);
+    $('dims').textContent=img.naturalWidth+'\u00d7'+img.naturalHeight+(cap&&img.naturalWidth>cap?' \u2192 '+w+'\u00d7'+h+' (resized)':' \u2192 unchanged size');
+    const fmt=$('fmt').value;
+    c.toBlob(b=>{
+      if(!b){$('after').src='';return}
+      const u=URL.createObjectURL(b);$('after').src=u;
+      $('newSize').textContent=fmtSize(b.size)+' ('+fmt.split('/')[1].toUpperCase()+')';
+      const savedPct=((1-b.size/origBlob.size)*100).toFixed(0);
+      $('saved').textContent=savedPct>0?'Saved '+savedPct+'%':(savedPct<0?'+'+Math.abs(savedPct)+'% larger':'No change');
+      measure(img,u,fmt);
+      $('dl').onclick=()=>{
+        const a=document.createElement('a');a.href=u;
+        const ext=fmt.split('/')[1];
+        a.download='compressed.'+ext;a.click();
+      };
+    },fmt,q);
+  };img.src=origUrl;
 }
+function measure(origImg,compUrl,fmt){
+  if(fmt==='image/png'){$('loss').textContent='PNG is lossless \u2014 pixel data identical to the original.';return}
+  const S=128;const A=document.createElement('canvas');A.width=A.height=S;
+  const B=document.createElement('canvas');B.width=B.height=S;
+  const ga=A.getContext('2d'),gb=B.getContext('2d');
+  ga.drawImage(origImg,0,0,S,S);
+  const cimg=new Image();cimg.onload=()=>{
+    gb.drawImage(cimg,0,0,S,S);
+    const da=ga.getImageData(0,0,S,S).data,db=gb.getImageData(0,0,S,S).data;
+    let sum=0,n=0;
+    for(let i=0;i<da.length;i+=4){
+      if(da[i+3]<10&&db[i+3]<10)continue;
+      sum+=Math.abs(da[i]-db[i])+Math.abs(da[i+1]-db[i+1])+Math.abs(da[i+2]-db[i+2]);n+=3}
+    const mean=n?sum/n:0;
+    const sim=Math.max(0,100-(mean/255*100));
+    $('loss').textContent='Similarity to original '+sim.toFixed(1)+'%  \u00b7  quality loss '+(100-sim).toFixed(1)+'%';
+  };
+  cimg.src=compUrl;
+}
+const MAXW=()=>{const v=$('lvl').value;return v==='50'?1600:v==='30'?1200:0};
+$('lvl').addEventListener('change',()=>{$('q').value=$('lvl').value;compress()});
 $('q').addEventListener('input',compress);
 $('fmt').addEventListener('change',compress);
-$('auto').onclick=()=>{
-  // auto-optimize: try quality 80, 70, 60, 50 and pick best that keeps under 70% of original
-  if(!files.length)return;
-  const fmt=$('fmt').value;
-  let best=[100,100];files.forEach(item=>{
-    for(const q of [80,70,60,50,40]){
-      const img=new Image();img.onload=()=>{
-        const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
-        c.getContext('2d').drawImage(img,0,0);
-        c.toBlob(b=>{
-          if(b&&b.size<item.file.size*0.7){if(q<best[0])best=[q,b.size/item.file.size]}
-        },fmt,q/100);
-      };img.src=item.url;
-    }
-  });
-  $('q').value=best[0]||75;$('qv').textContent=$('q').value;compress();
-};
-$('dlAll').onclick=()=>{
-  files.forEach(item=>{
-    if(item.blob){const a=document.createElement('a');a.href=URL.createObjectURL(item.blob);a.download='compressed_'+item.file.name;a.click()}
-  });
-};
 </script>
 </body>
 </html>

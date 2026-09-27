@@ -30,6 +30,11 @@ tailwind.config = { theme: { extend: {
   .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
   .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
   .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
   .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
   .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
   .ws-btn:hover { opacity:.9 }
@@ -59,28 +64,19 @@ tailwind.config = { theme: { extend: {
   <section class="ws-panel p-6">
     <div class="flex flex-wrap items-end gap-4 mb-4">
       <div>
-        <label class="ws-label mb-2 block">Upload images (2-20)</label>
+        <label class="ws-label mb-2 block">Upload images (2-12)</label>
         <input id="files" type="file" accept="image/*" multiple class="ws-input !w-auto">
-      </div>
-      <div><label class="ws-label mb-2 block">Layout</label>
-        <select id="layout" class="ws-input !w-32">
-          <option value="grid">Grid</option>
-          <option value="masonry">Masonry</option>
-          <option value="mosaic">Mosaic</option>
-        </select>
       </div>
       <div><label class="ws-label mb-2 block">Columns</label><input id="cols" type="number" min="1" max="6" value="3" class="ws-input !w-24"></div>
       <div><label class="ws-label mb-2 block">Gap (px)</label><input id="gap" type="number" min="0" max="50" value="8" class="ws-input !w-24"></div>
-      <div><label class="ws-label mb-2 block">Radius (px)</label><input id="radius" type="number" min="0" max="50" value="0" class="ws-input !w-24"></div>
       <div><label class="ws-label mb-2 block">Bg</label><input id="bg" type="color" value="#0a0a0a" class="h-10 w-16 cursor-pointer rounded-lg border border-white/10 bg-transparent"></div>
     </div>
     <div class="mt-4">
       <canvas id="cv" class="w-full max-w-[600px] rounded-xl border border-white/10 mx-auto block" style="display:none"></canvas>
       <div id="empty" class="text-center py-12 text-white/30 text-sm">Upload 2+ images to build a collage</div>
     </div>
-    <div class="mt-4 flex flex-wrap gap-3" id="actions" style="display:none">
+    <div class="mt-4 flex gap-3" id="actions" style="display:none">
       <button id="download" class="ws-btn">Download PNG</button>
-      <button id="copy" class="ws-btn-ghost">Copy image</button>
       <button id="clear" class="ws-btn-ghost">Clear</button>
     </div>
     <p id="count" class="mt-2 text-[11px] text-white/30"></p>
@@ -100,102 +96,46 @@ $('files').onchange=e=>{
   let loaded=0;
   files.forEach(f=>{
     const img=new Image();
-    img.onload=()=>{images.push(img);loaded++;if(loaded===files.length)render();};
+    img.onload=()=>{
+      images.push(img);
+      loaded++;
+      if(loaded===files.length)render();
+    };
     img.src=URL.createObjectURL(f);
   });
   $('count').textContent=files.length+' file(s) selected';
 };
 function render(){
-  if(images.length<2){$('count').textContent='Need at least 2 images';return;}
+  if(images.length<2){$('count').textContent='Need at least 2 images';return}
   const cols=parseInt($('cols').value)||3;
   const gap=parseInt($('gap').value)||8;
-  const rad=parseInt($('radius').value)||0;
   const bg=$('bg').value;
-  const layout=$('layout').value;
+  const rows=Math.ceil(images.length/cols);
   const cellW=200, cellH=200;
   const W=cols*cellW+(cols+1)*gap;
-  let H;
-  if(layout==='masonry'){
-    const colHeights=new Array(cols).fill(gap);
-    images.forEach((img,i)=>{
-      const col=i%cols;
-      const ar=img.width/img.height;
-      const h=cellW/ar;
-      colHeights[col]+=h+gap;
-    });
-    H=Math.max(...colHeights);
-  } else if(layout==='mosaic'){
-    const rows=Math.ceil(images.length/cols);
-    H=rows*cellH+(rows+1)*gap;
-  } else {
-    const rows=Math.ceil(images.length/cols);
-    H=rows*cellH+(rows+1)*gap;
-  }
+  const H=rows*cellH+(rows+1)*gap;
   const cv=$('cv');cv.width=W;cv.height=H;cv.style.display='block';
   $('empty').style.display='none';
   $('actions').style.display='flex';
   const cx=cv.getContext('2d');
   cx.fillStyle=bg;cx.fillRect(0,0,W,H);
-  function roundRect(x,y,w,h,r){
-    r=Math.min(r,w/2,h/2);
-    cx.beginPath();
-    cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);
-    cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);
-    cx.arcTo(x,y,x+w,y,r);cx.closePath();
-  }
-  if(layout==='masonry'){
-    const colHeights=new Array(cols).fill(gap);
-    images.forEach((img,i)=>{
-      const col=i%cols;
-      const ar=img.width/img.height;
-      const h=cellW/ar;
-      const x=gap+col*(cellW+gap);
-      const y=colHeights[col];
-      if(rad>0){cx.save();roundRect(x,y,cellW,h,rad);cx.clip();}
-      cx.drawImage(img,x,y,cellW,h);
-      if(rad>0)cx.restore();
-      colHeights[col]+=h+gap;
-    });
-  } else if(layout==='mosaic'){
-    images.forEach((img,i)=>{
-      const r=i%cols, c=Math.floor(i/cols);
-      const x=gap+r*(cellW+gap), y=gap+c*(cellH+gap);
-      const isLarge=(i===0&&images.length>=4);
-      const dw=isLarge?cellW*2:cellW, dh=isLarge?cellH*2:cellH;
-      const ar=img.width/img.height;
-      let sw=dw, sh=dh;
-      if(ar>1)sh=dw/ar;else sw=dh*ar;
-      if(rad>0){cx.save();roundRect(x+(dw-sw)/2,y+(dh-sh)/2,sw,sh,rad);cx.clip();}
-      cx.drawImage(img,x+(dw-sw)/2,y+(dh-sh)/2,sw,sh);
-      if(rad>0)cx.restore();
-    });
-  } else {
-    images.forEach((img,i)=>{
-      const r=i%cols, c=Math.floor(i/cols);
-      const x=gap+r*(cellW+gap), y=gap+c*(cellH+gap);
-      const ar=img.width/img.height;
-      let dw=cellW, dh=cellH;
-      if(ar>1){dh=cellH;dw=cellH*ar;}else{dw=cellW;dh=cellW/ar;}
-      if(rad>0){cx.save();roundRect(x+(cellW-dw)/2,y+(cellH-dh)/2,dw,dh,rad);cx.clip();}
-      cx.drawImage(img,x+(cellW-dw)/2,y+(cellH-dh)/2,dw,dh);
-      if(rad>0)cx.restore();
-    });
-  }
+  images.forEach((img,i)=>{
+    const r=i%cols, c=Math.floor(i/cols);
+    const x=gap+r*(cellW+gap), y=gap+c*(cellH+gap);
+    // cover-fit
+    const ar=img.width/img.height;
+    let dw=cellW, dh=cellH;
+    if(ar>1){dh=cellH;dw=cellH*ar;}else{dw=cellW;dh=cellW/ar;}
+    cx.drawImage(img,x+(cellW-dw)/2,y+(cellH-dh)/2,dw,dh);
+  });
 }
-$('layout').addEventListener('change',render);
 $('cols').addEventListener('input',render);
 $('gap').addEventListener('input',render);
-$('radius').addEventListener('input',render);
 $('bg').addEventListener('input',render);
 $('download').onclick=()=>{
   const cv=$('cv');
   if(cv.style.display==='none')return;
   const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download='collage.png';a.click();
-};
-$('copy').onclick=()=>{
-  const cv=$('cv');
-  if(cv.style.display==='none')return;
-  cv.toBlob(b=>{navigator.clipboard.write([new ClipboardItem({'image/png':b})]).then(()=>$('copy').textContent='Copied!');});
 };
 $('clear').onclick=()=>{images=[];$('cv').style.display='none';$('empty').style.display='block';$('actions').style.display='none';$('files').value='';$('count').textContent='';};
 </script>

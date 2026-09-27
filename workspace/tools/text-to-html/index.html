@@ -30,6 +30,11 @@ tailwind.config = { theme: { extend: {
   .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
   .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
   .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
   .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
   .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
   .ws-btn:hover { opacity:.9 }
@@ -60,24 +65,20 @@ tailwind.config = { theme: { extend: {
     <label class="ws-label mb-2 block">Plain text</label>
     <textarea id="src" class="ws-input min-h-[160px]" placeholder="Type plain text...">Owen Osayi — THE FOUNDER
 
-This is a paragraph about https://ocurp.space.
+This is a paragraph about ocorp.space.
 It has multiple lines that should become one paragraph.
 
 A second paragraph follows here.
 
-1. First item
-2. Second item
-3. Third item
-
-- Bullet one
-- Bullet two</textarea>
+- Bullet point one
+- Bullet point two
+- Bullet point three</textarea>
     <div class="mt-4 flex flex-wrap items-end gap-3">
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="esc" type="checkbox" checked class="accent-[#FF5F1F]"> Escape HTML</label>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="br" type="checkbox" class="accent-[#FF5F1F]"> Line breaks as &lt;br&gt;</label>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="h1" type="checkbox" checked class="accent-[#FF5F1F]"> First line as &lt;h1&gt;</label>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="full" type="checkbox" class="accent-[#FF5F1F]"> Full document</label>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="lists" type="checkbox" checked class="accent-[#FF5F1F]"> Detect lists</label>
-      <label class="flex items-center gap-2 text-sm text-white/70"><input id="links" type="checkbox" checked class="accent-[#FF5F1F]"> Auto-link URLs</label>
       <button id="go" class="ws-btn">Convert</button>
       <button id="dl" class="ws-btn-ghost">Download .html</button>
     </div>
@@ -93,55 +94,39 @@ A second paragraph follows here.
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-function autoLink(s){
-  return s.replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1">$1</a>');
-}
 function run(){
   let s=$('src').value;
   if(!s.trim()){$('out').textContent='';return}
-  let firstLine='';
-  const allLines=s.split('\n');
-  for(const l of allLines){if(l.trim()){firstLine=l.trim();break}}
   if($('esc').checked)s=esc(s);
   let lines=s.split('\n');
   let html='';
-  let inUl=false,inOl=false;
+  let inList=false;
   let paras=[];
   let cur=[];
-  function closeList(){
-    if(inUl){html+='</ul>\n';inUl=false}
-    if(inOl){html+='</ol>\n';inOl=false}
-  }
   for(let i=0;i<lines.length;i++){
     const line=lines[i];
     if(line.trim()===''){
       if(cur.length>0){paras.push(cur.join('\n'));cur=[]}
-      closeList();
+      if(inList){html+='</ul>\n';inList=false}
       continue;
     }
+    // list detection
     if($('lists').checked){
-      const mUl=line.match(/^\s*[-*]\s+(.+)/);
-      const mOl=line.match(/^\s*\d+[.)]\s+(.+)/);
-      if(mUl){
-        if(!inUl){closeList();html+='<ul>\n';inUl=true}
-        html+='<li>'+mUl[1]+'</li>\n';
-        continue;
-      }
-      if(mOl){
-        if(!inOl){closeList();html+='<ol>\n';inOl=true}
-        html+='<li>'+mOl[1]+'</li>\n';
+      const mList=line.match(/^\s*[-*]\s+(.+)/);
+      if(mList){
+        if(!inList){html+='<ul>\n';inList=true}
+        html+='<li>'+mList[1]+'</li>\n';
         continue;
       }
     }
-    closeList();
     cur.push(line);
   }
   if(cur.length>0)paras.push(cur.join('\n'));
-  closeList();
+  if(inList)html+='</ul>\n';
   paras.forEach((p,i)=>{
     p=p.trim();
     if(i===0&&$('h1').checked){
-      html='<h1>'+p+'</h1>\n'+html;
+      html+='<h1>'+p+'</h1>\n';
     } else {
       if($('br').checked){
         html+='<p>'+p.replace(/\n/g,'<br>')+'</p>';
@@ -151,18 +136,14 @@ function run(){
     }
     if(i<paras.length-1)html+='\n';
   });
-  if($('links').checked){
-    html=autoLink(html);
-  }
   if($('full').checked){
-    const title=firstLine?esc(firstLine):'Document';
-    html='<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <title>'+title+'</title>\n</head>\n<body>\n'+html+'</body>\n</html>';
+    html='<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <title>Document</title>\n</head>\n<body>\n'+html+'</body>\n</html>';
   }
   $('out').textContent=html;
 }
 $('go').onclick=run;
 $('src').addEventListener('input',run);
-['br','h1','esc','full','lists','links'].forEach(id=>$('id').addEventListener('change',run));
+['br','h1','esc','full','lists'].forEach(id=>$('id').addEventListener('change',run));
 run();
 $('dl').onclick=()=>{
   const text=$('out').textContent;

@@ -39,6 +39,8 @@ tailwind.config = { theme: { extend: {
   .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
   .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
   .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-btn.ok::after { content:' \2713'; color:#4ade80 }
+  .ws-btn-ghost.ok::after { content:' \2713'; color:#4ade80 }
 </style>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
@@ -63,11 +65,11 @@ tailwind.config = { theme: { extend: {
     <div class="mt-4 grid gap-4 md:grid-cols-2">
       <div class="ws-panel ws-copy p-4">
         <div class="mb-2 flex items-center justify-between"><span class="ws-label">Extension &rarr; MIME</span><button id="copyExt" class="ws-btn-ghost !px-3 !py-1.5">Copy</button></div>
-        <div id="extResult" class="ws-out"></div>
+        <div id="extResult" class="ws-out break-all"></div>
       </div>
       <div class="ws-panel ws-copy p-4">
         <div class="mb-2 flex items-center justify-between"><span class="ws-label">MIME &rarr; Extensions</span><button id="copyMime" class="ws-btn-ghost !px-3 !py-1.5">Copy</button></div>
-        <div id="mimeResult" class="ws-out"></div>
+        <div id="mimeResult" class="ws-out break-all"></div>
       </div>
     </div>
     <div class="mt-4">
@@ -88,18 +90,17 @@ const DB={
 ".pdf":"application/pdf",".zip":"application/zip",".gz":"application/gzip",".tar":"application/x-tar",".7z":"application/x-7z-compressed",".rar":"application/vnd.rar",".bz2":"application/x-bzip2",
 ".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",".gif":"image/gif",".svg":"image/svg+xml",".webp":"image/webp",".avif":"image/avif",".bmp":"image/bmp",".ico":"image/x-icon",".tiff":"image/tiff",".heic":"image/heic",".heif":"image/heif",
 ".mp3":"audio/mpeg",".wav":"audio/wav",".ogg":"audio/ogg",".flac":"audio/flac",".m4a":"audio/mp4",".aac":"audio/aac",".opus":"audio/opus",".aiff":"audio/x-aiff",".mid":"audio/midi",".midi":"audio/midi",
-".mp4":"video/mp4",".webm":"video/webm",".avi":"video/x-msvideo",".mov":"video/quicktime",".mkv":"video/x-matroska",".3gp":"video/3gpp",".3g2":"video/3g2",".ogv":"video/ogg",".m3u8":"application/vnd.apple.mpegurl",
+".mp4":"video/mp4",".webm":"video/webm",".avi":"video/x-msvideo",".mov":"video/quicktime",".mkv":"video/x-matroska",".3gp":"video/3gpp",".ogv":"video/ogg",".m3u8":"application/vnd.apple.mpegurl",
 ".doc":"application/msword",".docx":"application/vnd.openxmlformats-officedocument.wordprocessingml.document",".xls":"application/vnd.ms-excel",".xlsx":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",".ppt":"application/vnd.ms-powerpoint",".pptx":"application/vnd.openxmlformats-officedocument.presentationml.presentation",
 ".woff":"font/woff",".woff2":"font/woff2",".ttf":"font/ttf",".otf":"font/otf",
 ".wasm":"application/wasm",".epub":"application/epub+zip",".mobi":"application/x-mobipocket-ebook",".swf":"application/x-shockwave-flash",".torrent":"application/x-bittorrent",
 ".sqlite3":"application/vnd.sqlite3",".db":"application/vnd.sqlite3",".jar":"application/java-archive",".class":"application/java-vm",".dex":"application/vnd.android.dex",".apk":"application/vnd.android.package-archive",
-".rtf":"application/rtf",".exe":"application/x-msdownload",".dll":"application/x-msdownload",".so":"application/octet-stream",".dylib":"application/octet-stream",".obj":"application/octet-stream",".bin":"application/octet-stream",
+".rtf":"application/rtf",".exe":"application/x-msdownload",".dll":"application/x-msdownload",".so":"application/octet-stream",".dylib":"application/octet-stream",".bin":"application/octet-stream",
 ".ps1":"text/plain",".sh":"text/x-shellscript",".bash":"text/x-shellscript",".zsh":"text/x-shellscript",
-".py":"text/x-python",".rb":"text/x-ruby",".php":"text/x-php",".java":"text/x-java",".c":"text/x-c",".cpp":"text/x-c++",".cs":"text/x-csharp",".go":"text/x-go",".rs":"text/rust",".ts":"text/typescript",".tsx":"text/jsx",".jsx":"text/jsx",".vue":"text/x-vue",".svelte":"text/x-svelte",".kt":"text/x-kotlin",".swift":"text/x-swift",".scala":"text/x-scala",".pl":"text/x-perl",".lua":"text/x-lua",".r":"text/x-r",".jl":"text/x-julia",".dart":"text/x-dart",".elm":"text/x-elm",".clj":"text/x-clojure",".ex":"text/x-elixir",".exs":"text/x-elixir",".erl":"text/x-erlang",".hrl":"text/x-erlang",".fs":"text/x-fsharp",".ml":"text/x-ocaml",".nim":"text/x-nim",".v":"text/x-verilog",".sv":"text/x-systemverilog",
-".sql":"application/sql",".graphql":"application/graphql",".gql":"application/graphql",".proto":"text/x-protobuf",".thrift":"text/x-thrift",
+".py":"text/x-python",".rb":"text/x-ruby",".php":"text/x-php",".java":"text/x-java",".c":"text/x-c",".cpp":"text/x-c++",".cs":"text/x-csharp",".go":"text/x-go",".rs":"text/rust",".ts":"text/typescript",".tsx":"text/jsx",".jsx":"text/jsx",".vue":"text/x-vue",".svelte":"text/x-svelte",".kt":"text/x-kotlin",".swift":"text/x-swift",".scala":"text/x-scala",".pl":"text/x-perl",".lua":"text/x-lua",".r":"text/x-r",".jl":"text/x-julia",".dart":"text/x-dart",".clj":"text/x-clojure",".ex":"text/x-elixir",".fs":"text/x-fsharp",".ml":"text/x-ocaml",".nim":"text/x-nim",".v":"text/x-verilog",
+".sql":"application/sql",".graphql":"application/graphql",".gql":"application/graphql",".proto":"text/x-protobuf",
 ".ini":"text/plain",".conf":"text/plain",".env":"text/plain",".lock":"text/plain",".log":"text/plain",".properties":"text/plain",".cfg":"text/plain",
-".glb":"model/gltf-binary",".gltf":"model/gltf+json",".fbx":"model/fbx",".stl":"model/stl",".obj2":"model/obj",".dae":"model/vnd.collada+xml",".3ds":"model/x3ds",".blend":"model/blend",".usdz":"model/usd",
-".html":"text/html"
+".glb":"model/gltf-binary",".gltf":"model/gltf+json",".fbx":"model/fbx",".stl":"model/stl",".dae":"model/vnd.collada+xml",".usdz":"model/usd"
 };
 var REV={};
 for(var ext in DB){var m=DB[ext];if(!REV[m])REV[m]=[];REV[m].push(ext)}
@@ -109,30 +110,27 @@ function run(){
   if(!v){$('extResult').textContent='';$('mimeResult').textContent='';return}
   var extV,mimeV;
   if(v.startsWith('.')){
-    var m=DB[v];extV=m||'(unknown)';mimeV=m?REV[m].join(', '):'(no match)';}
-  else if(v.includes('/')){
-    var exts=REV[v];extV=exts?exts.join(', '):'(unknown)';mimeV=v in REV?v:'(not found)';}
-  else{
+    var m=DB[v];extV=m||'(unknown)';mimeV=m?REV[m].join(', '):'(no match)';
+  }else if(v.includes('/')){
+    var exts=REV[v];extV=exts?exts.join(', '):'(unknown)';mimeV=(v in REV)?v:'(not found)';
+  }else{
     var dot='.'+v;var m2=DB[dot];
     if(m2){extV=m2;mimeV=REV[m2].join(', ');}
     else{
-      var matches=Object.keys(DB).filter(e=>DB[e]===v||DB[e].includes(v));
-      if(matches.length){extV=matches.join(', ');mimeV=DB[matches[0]];}
-      else{var fuzzy=Object.keys(DB).filter(e=>e.slice(1).includes(v));
-        if(fuzzy.length){extV=fuzzy.slice(0,5).map(f=>f+' '+DB[f]).join('\n');mimeV=fuzzy.slice(0,5).map(f=>DB[f]).join(', ');}
-        else{extV='(no match)';mimeV='Type .'+v+' or type/subtype';}
-      }
+      var fuzzy=Object.keys(DB).filter(function(e){return e.slice(1).includes(v)});
+      if(fuzzy.length){extV=fuzzy.slice(0,5).map(function(f){return f+' '+DB[f]}).join('\n');mimeV=fuzzy.slice(0,5).map(function(f){return DB[f]}).join(', ');}
+      else{extV='(no match)';mimeV='Type .'+v+' or type/subtype';}
     }
   }
   $('extResult').textContent=extV;
   $('mimeResult').textContent=mimeV;
 }
 $('src').addEventListener('input',run);
-$('copyExt').onclick=()=>{navigator.clipboard.writeText($('extResult').textContent);$('copyExt').classList.add('ok');setTimeout(()=>$('copyExt').classList.remove('ok'),1200)};
-$('copyMime').onclick=()=>{navigator.clipboard.writeText($('mimeResult').textContent);$('copyMime').classList.add('ok');setTimeout(()=>$('copyMime').classList.remove('ok'),1200)};
-const common=[['.html','text/html'],['.css','text/css'],['.js','text/javascript'],['.json','application/json'],['.xml','application/xml'],['.txt','text/plain'],['.csv','text/csv'],['.md','text/markdown'],['.png','image/png'],['.jpg','image/jpeg'],['.gif','image/gif'],['.svg','image/svg+xml'],['.webp','image/webp'],['.mp3','audio/mpeg'],['.wav','audio/wav'],['.mp4','video/mp4'],['.webm','video/webm'],['.pdf','application/pdf'],['.zip','application/zip'],['.doc','application/msword'],['.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document'],['.xls','application/vnd.ms-excel'],['.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],['.py','text/x-python'],['.ts','text/typescript'],['.sh','text/x-shellscript'],['.woff2','font/woff2'],['.ttf','font/ttf']];
-$('grid').innerHTML=common.map(([e,m])=>'<button class="ws-btn-ghost !text-left !justify-start !normal-case !tracking-normal !text-[11px] !px-3" data-ext="'+e+'">'+e+'<span class="ml-2 text-white/30">'+m+'</span></button>').join('');
-$('grid').querySelectorAll('button').forEach(b=>b.onclick=()=>{$('src').value=b.dataset.ext;run()});
+$('copyExt').onclick=function(){navigator.clipboard.writeText($('extResult').textContent);$('copyExt').classList.add('ok');setTimeout(function(){$('copyExt').classList.remove('ok')},1200)};
+$('copyMime').onclick=function(){navigator.clipboard.writeText($('mimeResult').textContent);$('copyMime').classList.add('ok');setTimeout(function(){$('copyMime').classList.remove('ok')},1200)};
+var common=[['.html','text/html'],['.css','text/css'],['.js','text/javascript'],['.json','application/json'],['.xml','application/xml'],['.txt','text/plain'],['.csv','text/csv'],['.md','text/markdown'],['.png','image/png'],['.jpg','image/jpeg'],['.gif','image/gif'],['.svg','image/svg+xml'],['.webp','image/webp'],['.mp3','audio/mpeg'],['.wav','audio/wav'],['.mp4','video/mp4'],['.webm','video/webm'],['.pdf','application/pdf'],['.zip','application/zip'],['.doc','application/msword'],['.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document'],['.xls','application/vnd.ms-excel'],['.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],['.py','text/x-python'],['.ts','text/typescript'],['.sh','text/x-shellscript'],['.woff2','font/woff2'],['.ttf','font/ttf']];
+$('grid').innerHTML=common.map(function(e){var ext=e[0],mime=e[1];return '<button class="ws-btn-ghost !text-left !justify-start !normal-case !tracking-normal !text-[11px] !px-3" data-ext="'+ext+'">'+ext+'<span class="ml-2 text-white/30">'+mime+'</span></button>'}).join('');
+$('grid').querySelectorAll('button').forEach(function(b){b.onclick=function(){$('src').value=b.dataset.ext;run()}});
 run();
 </script>
 </body>

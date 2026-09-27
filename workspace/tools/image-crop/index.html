@@ -30,6 +30,11 @@ tailwind.config = { theme: { extend: {
   .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
   .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
   .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
   .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
   .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
   .ws-btn:hover { opacity:.9 }
@@ -53,7 +58,7 @@ tailwind.config = { theme: { extend: {
       <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Image Cropper</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">IMAGE</span><span class="ws-chip">CROP</span><span class="ws-chip">HANDLE</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">IMAGE</span><span class="ws-chip">CROP</span><span class="ws-chip">CLIENT-SIDE</span></div>
         </div>
       
   <section class="ws-panel p-6">
@@ -67,22 +72,11 @@ tailwind.config = { theme: { extend: {
           <select id="ratio" class="ws-input !w-40"><option value="0">Free</option><option value="1">1:1 Square</option><option value="1.7778">16:9</option><option value="1.3333">4:3</option><option value="0.5625">9:16</option><option value="0.6667">2:3</option><option value="1.5">3:2</option></select></div>
         <div><label class="ws-label mb-2 block">Format</label>
           <select id="fmt" class="ws-input !w-32"><option value="image/png">PNG</option><option value="image/jpeg">JPEG</option><option value="image/webp">WebP</option></select></div>
-        <div class="grid grid-cols-2 gap-2">
-          <div><label class="ws-label mb-1 block">X</label><input id="nx" type="number" class="ws-input !w-20 font-mono" value="0"></div>
-          <div><label class="ws-label mb-1 block">Y</label><input id="ny" type="number" class="ws-input !w-20 font-mono" value="0"></div>
-          <div><label class="ws-label mb-1 block">W</label><input id="nw" type="number" class="ws-input !w-20 font-mono" value="100"></div>
-          <div><label class="ws-label mb-1 block">H</label><input id="nh" type="number" class="ws-input !w-20 font-mono" value="100"></div>
-        </div>
         <button id="dl" class="ws-btn">Download</button>
       </div>
-      <div class="mt-4 relative inline-block overflow-hidden rounded-xl">
-        <canvas id="cv" class="max-w-full block"></canvas>
-        <div id="cropbox" class="absolute border-2 border-accent bg-accent/10 cursor-move" style="display:none">
-          <div class="handle handle-nw absolute -top-1 -left-1 w-3 h-3 bg-accent rounded-sm cursor-nwse-resize"></div>
-          <div class="handle handle-ne absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-sm cursor-nesw-resize"></div>
-          <div class="handle handle-sw absolute -bottom-1 -left-1 w-3 h-3 bg-accent rounded-sm cursor-nesw-resize"></div>
-          <div class="handle handle-se absolute -bottom-1 -right-1 w-3 h-3 bg-accent rounded-sm cursor-nwse-resize"></div>
-        </div>
+      <div class="mt-4 relative inline-block">
+        <canvas id="cv" class="max-w-full rounded-xl border border-white/10 cursor-crosshair"></canvas>
+        <div id="cropbox" class="absolute border-2 border-accent bg-accent/10 cursor-move" style="display:none"></div>
       </div>
       <div class="mt-2 text-xs text-white/50" id="cropInfo"></div>
     </div>
@@ -97,7 +91,7 @@ tailwind.config = { theme: { extend: {
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
 let imgEl=null,cw=0,ch=0;
-let bx=0,by=0,bw=100,bh=100,dragMode=null,dragStart={x:0,y:0};
+let bx=0,by=0,bw=100,bh=100,dragging=false,dragStart={x:0,y:0};
 const cv=$('cv'),cx=cv.getContext('2d'),box=$('cropbox');
 const drop=$('drop'),file=$('file');
 drop.onclick=()=>file.click();
@@ -113,92 +107,46 @@ function handle(f){
     cv.width=w;cv.height=h;cw=w;ch=h;
     cx.drawImage(imgEl,0,0,w,h);
     bw=Math.round(w*0.6);bh=Math.round(h*0.6);bx=Math.round(w*0.2);by=Math.round(h*0.2);
-    applyRatio();updateBox();$('controls').classList.remove('hidden');
+    applyRatio();drawBox();$('controls').classList.remove('hidden');
   };imgEl.src=url;
 }
 function applyRatio(){
   const r=parseFloat($('ratio').value);
-  if(r>0){bh=Math.round(bw/r);if(by+bh>ch)bh=ch-by;if(bh<10)bh=10}
+  if(r>0){bw=Math.round(bh*r);if(bx+bw>cw)bw=cw-bx}
 }
-function updateBox(){
+function drawBox(){
   box.style.display='block';
   box.style.left=bx+'px';box.style.top=by+'px';
   box.style.width=bw+'px';box.style.height=bh+'px';
-  $('nx').value=Math.round(bx*imgEl.naturalWidth/cw);
-  $('ny').value=Math.round(by*imgEl.naturalHeight/ch);
-  $('nw').value=Math.round(bw*imgEl.naturalWidth/cw);
-  $('nh').value=Math.round(bh*imgEl.naturalHeight/ch);
-  $('cropInfo').textContent='Crop: '+Math.round(bw*imgEl.naturalWidth/cw)+' × '+Math.round(bh*imgEl.naturalHeight/ch);
+  $('cropInfo').textContent='Crop: '+bw+' × '+bh+' at ('+bx+', '+by+')';
 }
-function getPos(e){
-  const r=cv.getBoundingClientRect();
-  const cx2=e.touches?e.touches[0].clientX:e.clientX;
-  const cy2=e.touches?e.touches[0].clientY:e.clientY;
-  return{x:cx2-r.left,y:cy2-r.top};
-}
-box.addEventListener('mousedown',e=>{
-  if(e.target.classList.contains('handle')){dragMode=e.target.classList[1];e.preventDefault();return}
-  e.preventDefault();dragMode='move';dragStart=getPos(e);
-});
-box.addEventListener('touchstart',e=>{
-  if(e.target.classList.contains('handle')){dragMode=e.target.classList[1];e.preventDefault();return}
-  e.preventDefault();dragMode='move';dragStart=getPos(e);
-},{passive:false});
+box.addEventListener('mousedown',e=>{e.preventDefault();dragging=true;dragStart={x:e.clientX-bx,y:e.clientY-by}});
 document.addEventListener('mousemove',e=>{
-  if(!dragMode)return;const p=getPos(e);
-  if(dragMode==='move'){bx=Math.max(0,Math.min(cw-bw,p.x-dragStart.x));by=Math.max(0,Math.min(ch-bh,p.y-dragStart.y));}
-  else if(dragMode==='handle-se'||dragMode==='handle-nw'){
-    const dx=p.x-dragStart.x,dy=p.y-dragStart.y;
-    if(dragMode==='handle-se'){bw=Math.max(20,Math.min(cw-bx,bw+dx));bh=Math.max(20,Math.min(ch-by,bh+dy));}
-    else{const nbx=Math.max(0,bx+dx),nby=Math.max(0,by+dy);bw=Math.max(20,bw-(nbx-bx));bh=Math.max(20,bh-(nby-by));bx=nbx;by=nby;}
-    applyRatio();
-  }
-  else if(dragMode==='handle-ne'||dragMode==='handle-sw'){
-    const dx=p.x-dragStart.x,dy=p.y-dragStart.y;
-    if(dragMode==='handle-ne'){const nby=Math.max(0,by+dy);bh=Math.max(20,bh-(nby-by));by=nby;bw=Math.max(20,Math.min(cw-bx,bw+dx));}
-    else{const nbx=Math.max(0,bx+dx);bw=Math.max(20,bw-(nbx-bx));bx=nbx;bh=Math.max(20,Math.min(ch-by,bh+dy));}
-    applyRatio();
-  }
-  updateBox();
+  if(!dragging)return;
+  bx=Math.max(0,Math.min(cw-bw,e.clientX-dragStart.x));
+  by=Math.max(0,Math.min(ch-bh,e.clientY-dragStart.y));
+  drawBox();
 });
-document.addEventListener('touchmove',e=>{
-  if(!dragMode)return;e.preventDefault();const p=getPos(e);
-  if(dragMode==='move'){bx=Math.max(0,Math.min(cw-bw,p.x-dragStart.x));by=Math.max(0,Math.min(ch-bh,p.y-dragStart.y));}
-  else{
-    const dx=p.x-dragStart.x,dy=p.y-dragStart.y;
-    if(dragMode==='handle-se'){bw=Math.max(20,Math.min(cw-bx,bw+dx));bh=Math.max(20,Math.min(ch-by,bh+dy));}
-    else if(dragMode==='handle-nw'){const nbx=Math.max(0,bx+dx),nby=Math.max(0,by+dy);bw=Math.max(20,bw-(nbx-bx));bh=Math.max(20,bh-(nby-by));bx=nbx;by=nby;}
-    else if(dragMode==='handle-ne'){const nby=Math.max(0,by+dy);bh=Math.max(20,bh-(nby-by));by=nby;bw=Math.max(20,Math.min(cw-bx,bw+dx));}
-    else{const nbx=Math.max(0,bx+dx);bw=Math.max(20,bw-(nbx-bx));bx=nbx;bh=Math.max(20,Math.min(ch-by,bh+dy));}
-    applyRatio();
-  }
-  updateBox();
-},{passive:false});
-document.addEventListener('mouseup',()=>dragMode=null);
-document.addEventListener('touchend',()=>dragMode=null);
+document.addEventListener('mouseup',()=>dragging=false);
 cv.addEventListener('mousedown',e=>{
-  if(!imgEl)return;e.preventDefault();const p=getPos(e);
-  bx=p.x;by=p.y;bw=20;bh=20;dragMode='handle-se';dragStart=p;
-  const move=ev=>{const pp=getPos(ev);bw=Math.max(20,Math.min(cw-bx,pp.x-bx));bh=Math.max(20,Math.min(ch-by,pp.y-by));applyRatio();updateBox()};
-  const up=()=>{dragMode=null;document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up)};
+  if(!imgEl)return;const r=cv.getBoundingClientRect();
+  const sx=parseInt(cv.style.width||r.width)/cw,sy=parseInt(cv.style.height||r.height)/ch;
+  const x0=(e.clientX-r.left),y0=(e.clientY-r.top);
+  dragging=true;box.style.cursor='nwse-resize';
+  bx=x0;by=y0;bw=0;bh=0;dragStart={x:x0,y:y0};
+  const move=ev=>{
+    const x1=(ev.clientX-r.left),y1=(ev.clientY-r.top);
+    bx=Math.max(0,Math.min(x0,x1));by=Math.max(0,Math.min(y0,y1));
+    bw=Math.min(cw-bx,Math.abs(x1-x0));bh=Math.min(ch-by,Math.abs(y1-y0));
+    applyRatio();drawBox();
+  };
+  const up=()=>{dragging=false;box.style.cursor='move';document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up)};
   document.addEventListener('mousemove',move);document.addEventListener('mouseup',up);
 });
-$('ratio').addEventListener('change',()=>{applyRatio();updateBox()});
-['nx','ny','nw','nh'].forEach(id=>{
-  $(id).addEventListener('input',()=>{
-    if(!imgEl)return;
-    bx=parseInt($('nx').value)*cw/imgEl.naturalWidth||0;
-    by=parseInt($('ny').value)*ch/imgEl.naturalHeight||0;
-    bw=parseInt($('nw').value)*cw/imgEl.naturalWidth||20;
-    bh=parseInt($('nh').value)*ch/imgEl.naturalHeight||20;
-    if(parseFloat($('ratio').value)>0)bh=bw/parseFloat($('ratio').value);
-    updateBox();
-  });
-});
+$('ratio').addEventListener('change',()=>{applyRatio();drawBox()});
 $('dl').onclick=()=>{
-  const sx=imgEl.naturalWidth/cw,sy=imgEl.naturalHeight/ch;
-  const c=document.createElement('canvas');c.width=Math.round(bw*sx);c.height=Math.round(bh*sy);
-  c.getContext('2d').drawImage(imgEl,bx*sx,by*sy,bw*sx,bh*sy,0,0,bw*sx,bh*sy);
+  const c=document.createElement('canvas');c.width=bw;c.height=bh;
+  c.getContext('2d').drawImage(imgEl,bx*(imgEl.naturalWidth/cw),by*(imgEl.naturalHeight/ch),bw*(imgEl.naturalWidth/cw),bh*(imgEl.naturalHeight/ch),0,0,bw,bh);
   const a=document.createElement('a');a.href=c.toDataURL($('fmt').value);a.download='cropped.'+$('fmt').value.split('/')[1];a.click();
 };
 </script>

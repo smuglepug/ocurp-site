@@ -30,6 +30,11 @@ tailwind.config = { theme: { extend: {
   .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
   .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
   .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
   .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
   .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
   .ws-btn:hover { opacity:.9 }
@@ -39,8 +44,6 @@ tailwind.config = { theme: { extend: {
   .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
   .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
   .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
-  .drop-zone { border:2px dashed rgba(255,255,255,.15); transition:border-color .2s }
-  .drop-zone.dragover { border-color:#FF5F1F; background:rgba(255,95,31,.05) }
 </style>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
@@ -53,10 +56,11 @@ tailwind.config = { theme: { extend: {
     </a>
     <div class="min-w-0">
       <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">QR Scanner</h1>
-      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data &amp; Code — Client-side</p>
-    </div>
-    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">QR</span><span class="ws-chip">CAMERA</span><span class="ws-chip">CLIENT-SIDE</span></div>
-  </div>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">QR</span><span class="ws-chip">CAMERA</span><span class="ws-chip">CLIENT-SIDE</span></div>
+        </div>
+      
   <section class="ws-panel p-6">
     <div class="flex flex-wrap gap-3">
       <label class="ws-btn cursor-pointer">
@@ -66,28 +70,24 @@ tailwind.config = { theme: { extend: {
       <button id="cam" class="ws-btn-ghost">Use camera</button>
       <button id="stop" class="ws-btn-ghost">Stop</button>
     </div>
-    <div id="dropZone" class="drop-zone mt-4 grid gap-4 rounded-xl p-4 md:grid-cols-2">
+    <div class="mt-4 grid gap-4 md:grid-cols-2">
       <div>
-        <div class="text-center text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-2">Or drag an image here</div>
         <video id="video" class="hidden w-full rounded-xl bg-black" autoplay></video>
         <img id="preview" class="hidden w-full rounded-xl" alt="Upload">
         <canvas id="cv" class="hidden"></canvas>
       </div>
       <div>
         <div class="ws-label mb-2">Decoded result</div>
-        <div class="ws-panel ws-copy p-3"><div id="result" class="ws-out min-h-[60px] break-all"></div></div>
-        <div class="mt-3 flex flex-wrap gap-3">
+        <div id="result" class="ws-out min-h-[80px]"></div>
+        <div class="mt-3">
           <button id="copy" class="ws-btn">Copy</button>
-          <a id="link" class="ws-btn-ghost hidden" target="_blank">Open link</a>
+          <a id="link" class="ws-btn-ghost ml-2 hidden" target="_blank">Open link</a>
         </div>
-        <div class="mt-4">
-          <div class="ws-label mb-2">Scan history</div>
-          <div id="history" class="space-y-1 max-h-[200px] overflow-y-auto"></div>
-        </div>
-        <div class="mt-3 text-[11px] text-white/40" id="status">Loading scanner...</div>
+        <div class="mt-3 text-[11px] text-white/40" id="status">Upload an image with a QR code or use your camera.</div>
       </div>
     </div>
   </section>
+
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
@@ -96,32 +96,27 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>
 const $=id=>document.getElementById(id);
-const cv=$('cv'),ctx=cv.getContext('2d',{willReadFrequently:true});
-let stream=null,raf=null,jsqrReady=false;
-var historyArr=[];
-function addHistory(data){
-  historyArr.unshift({data,time:new Date().toLocaleTimeString()});
-  if(historyArr.length>10)historyArr.pop();
-  $('history').innerHTML=historyArr.map(h=>'<div class="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5"><span class="ws-out text-xs break-all">'+h.data+'</span><span class="text-[9px] text-white/30 flex-shrink-0">'+h.time+'</span></div>').join('');
-}
+const cv=$('cv'),ctx=cv.getContext('2d');
+let stream=null,raf=null;
+// jsQR inlined
+
+// Load jsQR from CDN
 var s=document.createElement('script');
 s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.2/dist/jsQR.js';
-s.onload=()=>{jsqrReady=true;$('status').textContent='Scanner ready — upload an image or use your camera.'};
-s.onerror=()=>{$('status').textContent='Failed to load scanner library. Check your connection.'};
+s.onload=()=>{$('status').textContent='Scanner ready — upload or camera.'};
 document.head.appendChild(s);
+
 function decode(img){
-  if(!jsqrReady){$('status').textContent='Scanner still loading...';return}
-  const w=Math.min(640,img.width),h=Math.round(w*img.height/img.width);
+  const w=400,h=Math.round(400*img.height/img.width);
   cv.width=w;cv.height=h;
   ctx.drawImage(img,0,0,w,h);
   const d=ctx.getImageData(0,0,w,h);
-  const code=jsQR(d.data,w,h,{inversionAttempts:'dontInvert'});
+  const code=jsQR(d.data,w,h);
   if(code){
     $('result').textContent=code.data;
     $('link').href=code.data.startsWith('http')?code.data:'';
     $('link').classList.toggle('hidden',!code.data.startsWith('http'));
     $('status').textContent='Decoded!';
-    addHistory(code.data);
   }else{$('status').textContent='No QR found in image.'}
 }
 $('file').onchange=e=>{
@@ -130,16 +125,6 @@ $('file').onchange=e=>{
   img.onload=()=>{$('preview').src=URL.createObjectURL(f);$('preview').classList.remove('hidden');$('video').classList.add('hidden');decode(img)};
   img.src=URL.createObjectURL(f);
 };
-// drag and drop
-const dz=$('dropZone');
-['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('dragover')}));
-['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('dragover')}));
-dz.addEventListener('drop',e=>{
-  const f=e.dataTransfer.files[0];if(!f||!f.type.startsWith('image/'))return;
-  const img=new Image();
-  img.onload=()=>{$('preview').src=URL.createObjectURL(f);$('preview').classList.remove('hidden');$('video').classList.add('hidden');decode(img)};
-  img.src=URL.createObjectURL(f);
-});
 $('cam').onclick=async()=>{
   try{
     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
@@ -147,25 +132,8 @@ $('cam').onclick=async()=>{
     $('video').classList.remove('hidden');
     $('preview').classList.add('hidden');
     $('status').textContent='Camera active — point at a QR code';
-    const v=$('video');
-    const tick=()=>{
-      if(stream&&stream.active&&jsqrReady){
-        const w=v.videoWidth||640,h=v.videoHeight||480;
-        cv.width=w;cv.height=h;
-        ctx.drawImage(v,0,0,w,h);
-        const d=ctx.getImageData(0,0,w,h);
-        const c=jsQR(d.data,w,h,{inversionAttempts:'dontInvert'});
-        if(c){
-          $('result').textContent=c.data;
-          $('link').href=c.data.startsWith('http')?c.data:'';
-          $('link').classList.toggle('hidden',!c.data.startsWith('http'));
-          $('status').textContent='Decoded!';
-          addHistory(c.data);
-        }
-        raf=requestAnimationFrame(tick);
-      }
-    };
-    raf=requestAnimationFrame(tick);
+    const tick=()=>{if(stream&&stream.active){ctx.drawImage($('video'),0,0,cv.width=400,cv.height=300);const d=ctx.getImageData(0,0,400,300);const c=jsQR(d.data,400,300);if(c){$('result').textContent=c.data;$('link').href=c.data.startsWith('http')?c.data:'';$('link').classList.toggle('hidden',!c.data.startsWith('http'));$('status').textContent='Decoded!'}raf=requestAnimationFrame(tick)}};
+    cv.width=400;cv.height=300;raf=requestAnimationFrame(tick);
   }catch(err){$('status').textContent='Camera unavailable: '+err.message}
 };
 $('stop').onclick=()=>{if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}if(raf)cancelAnimationFrame(raf);$('status').textContent='Stopped'};

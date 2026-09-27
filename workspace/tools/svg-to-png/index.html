@@ -30,6 +30,11 @@ tailwind.config = { theme: { extend: {
   .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
   .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
   .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
   .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
   .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
   .ws-btn:hover { opacity:.9 }
@@ -53,32 +58,22 @@ tailwind.config = { theme: { extend: {
       <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">SVG to PNG</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">SVG</span><span class="ws-chip">PNG</span><span class="ws-chip">DPI</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">SVG</span><span class="ws-chip">PNG</span><span class="ws-chip">CLIENT-SIDE</span></div>
         </div>
       
   <section class="ws-panel p-6">
-    <div class="flex flex-wrap gap-4 mb-4">
-      <div id="drop" class="border-2 border-dashed border-white/15 rounded-xl p-6 text-center cursor-pointer transition-colors hover:border-accent/50 flex-1 min-w-[200px]">
-        <p class="text-sm text-white/50">Drop or click to upload an SVG</p>
-      </div>
-      <input id="file" type="file" accept=".svg,image/svg+xml" class="hidden">
-      <div class="flex-1 min-w-[200px]">
-        <label class="ws-label mb-2 block">…or paste SVG code</label>
-        <textarea id="svgCode" class="ws-input h-24 font-mono text-xs resize-y" placeholder="<svg ...>…</svg>"></textarea>
-      </div>
+    <div id="drop" class="border-2 border-dashed border-white/15 rounded-xl p-8 text-center cursor-pointer transition-colors hover:border-accent/50">
+      <p class="text-sm text-white/50">Drop or click to upload an SVG</p>
     </div>
-    <div id="controls" class="mt-2 hidden">
+    <input id="file" type="file" accept=".svg,image/svg+xml" class="hidden">
+    <div id="controls" class="mt-6 hidden">
       <div class="flex flex-wrap items-end gap-4">
-        <div><label class="ws-label mb-2 block">Width (px)</label><input id="customW" type="number" placeholder="auto" class="ws-input !w-32 font-mono"></div>
-        <div><label class="ws-label mb-2 block">Height (px)</label><input id="customH" type="number" placeholder="auto" class="ws-input !w-32 font-mono"></div>
         <div><label class="ws-label mb-2 block">Scale: <span id="sv">2</span>×</label>
-          <input id="scale" type="range" min="1" max="10" value="2" step="1" class="w-32 accent-[#FF5F1F]"></div>
-        <div><label class="ws-label mb-2 block">DPI</label>
-          <select id="dpi" class="ws-input !w-24"><option value="72">72</option><option value="150">150</option><option value="300" selected>300</option><option value="600">600</option></select></div>
+          <input id="scale" type="range" min="1" max="10" value="2" step="1" class="w-40 accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Width (px, optional)</label>
+          <input id="customW" type="number" placeholder="auto" class="ws-input !w-32 font-mono"></div>
         <div><label class="ws-label mb-2 block">Format</label>
           <select id="fmt" class="ws-input !w-32"><option value="image/png">PNG</option><option value="image/jpeg">JPEG</option><option value="image/webp">WebP</option></select></div>
-        <div><label class="ws-label mb-2 block">BG (JPEG)</label>
-          <input id="bg" type="color" value="#FFFFFF" class="h-10 w-16 rounded-lg border border-white/10 bg-transparent cursor-pointer"></div>
         <button id="dl" class="ws-btn">Download</button>
       </div>
       <div class="mt-6 grid gap-4 sm:grid-cols-2">
@@ -109,55 +104,41 @@ const drop=$('drop'),file=$('file');
 drop.onclick=()=>file.click();
 drop.ondragover=e=>{e.preventDefault();drop.classList.add('border-accent')};
 drop.ondragleave=()=>drop.classList.remove('border-accent');
-drop.ondrop=e=>{e.preventDefault();drop.classList.remove('border-accent');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])};
-file.onchange=e=>{if(e.target.files[0])handleFile(e.target.files[0])};
-function handleFile(f){
-  const r=new FileReader();r.onload=()=>{svgText=r.result;showSvg()};r.readAsText(f);
-}
-$('svgCode').addEventListener('input',()=>{svgText=$('svgCode').value;if(svgText.trim())showSvg()});
-function showSvg(){
-  $('svgPreview').innerHTML=svgText;
-  const p=$('svgPreview').querySelector('svg');
-  if(p){
-    svgW=p.viewBox&&p.viewBox.baseVal&&p.viewBox.baseVal.width?p.viewBox.baseVal.width:(p.width.baseVal?p.width.baseVal.value:300);
-    svgH=p.viewBox&&p.viewBox.baseVal&&p.viewBox.baseVal.height?p.viewBox.baseVal.height:(p.height.baseVal?p.height.baseVal.value:150);
-    $('svgInfo').textContent=svgW+' × '+svgH+' (SVG)';
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('border-accent');if(e.dataTransfer.files[0])handle(e.dataTransfer.files[0])};
+file.onchange=e=>{if(e.target.files[0])handle(e.target.files[0])};
+function handle(f){
+  const r=new FileReader();r.onload=()=>{
+    svgText=r.result;
+    $('svgPreview').innerHTML=svgText;
+    const p=$('svgPreview').querySelector('svg');
+    if(p){
+      svgW=p.viewBox&&p.viewBox.baseVal&&p.viewBox.baseVal.width?p.viewBox.baseVal.width:(p.width.baseVal?p.width.baseVal.value:300);
+      svgH=p.viewBox&&p.viewBox.baseVal&&p.viewBox.baseVal.height?p.viewBox.baseVal.height:(p.height.baseVal?p.height.baseVal.value:150);
+      $('svgInfo').textContent=svgW+' × '+svgH+' (SVG)';
+    }
     $('controls').classList.remove('hidden');rasterize();
-  }
+  };r.readAsText(f);
 }
 function rasterize(){
   if(!svgText)return;
   const scale=parseInt($('scale').value);$('sv').textContent=scale;
-  const dpi=parseInt($('dpi').value);
-  const customW=parseInt($('customW').value);
-  const customH=parseInt($('customH').value);
-  // Calculate dimensions — FIXED: no more double-divide bug
-  let w,h;
-  if(customW&&customH){w=customW;h=customH}
-  else if(customW){w=customW;h=Math.round(customW*(svgH/svgW))}
-  else if(customH){h=customH;w=Math.round(customH*(svgW/svgH))}
-  else{w=svgW*scale;h=svgH*scale}
-  // DPI: treat as additional scale factor relative to 72
-  const dpiScale=dpi/72;
-  w=Math.round(w*dpiScale);h=Math.round(h*dpiScale);
+  const cw=parseInt($('customW').value);
+  const w=cw?cw:svgW*scale,h=cw?Math.round(cw*(svgH/svgW)*scale/svgW):svgH*scale;
   const blob=new Blob([svgText],{type:'image/svg+xml'});
   const url=URL.createObjectURL(blob);
   const img=new Image();img.onload=()=>{
     const c=document.createElement('canvas');c.width=w;c.height=h;
-    const ctx=c.getContext('2d');if($('fmt').value==='image/jpeg'){ctx.fillStyle=$('bg').value;ctx.fillRect(0,0,w,h)}
+    const ctx=c.getContext('2d');if($('fmt').value==='image/jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h)}
     ctx.drawImage(img,0,0,w,h);
     $('after').src=c.toDataURL($('fmt').value);
-    $('pngInfo').textContent=w+' × '+h+' ('+dpi+' DPI)';
+    $('pngInfo').textContent=w+' × '+h;
     $('dl').onclick=()=>{const a=document.createElement('a');a.href=c.toDataURL($('fmt').value);a.download='rasterized.'+$('fmt').value.split('/')[1];a.click()};
     URL.revokeObjectURL(url);
   };img.src=url;
 }
 $('scale').addEventListener('input',rasterize);
 $('customW').addEventListener('input',rasterize);
-$('customH').addEventListener('input',rasterize);
-$('dpi').addEventListener('change',rasterize);
 $('fmt').addEventListener('change',rasterize);
-$('bg').addEventListener('input',rasterize);
 </script>
 </body>
 </html>
