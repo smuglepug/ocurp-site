@@ -1,64 +1,126 @@
 <!DOCTYPE html>
 
+
+
 <html lang="en" class="scroll-smooth">
+
+
 
 <head>
 
+
+
 <meta charset="UTF-8">
+
+
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+
+
 <title>PDF to JPG | Owen's Workspace</title>
+
+
 
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 
+
+
 <script src="https://cdn.tailwindcss.com"></script>
+
+
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 
+
+
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+
+
 <script>
+
+
 
 tailwind.config = { theme: { extend: {
 
+
+
   colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+
+
 
   fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
 
+
+
 }}};
+
+
 
 </script>
 
+
+
 <style>
+
+
 
   :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
 
+
+
   body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+
+
 
   h1,h2,h3 { font-family:'Manrope',sans-serif; }
 
+
+
   .font-mono { font-family:'IBM Plex Sans',monospace; }
+
+
 
   html,body { max-width:100vw; overflow-x:hidden; }
 
+
+
   .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+
+
 
     background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 
+
+
   .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+
+
 
   @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
 
+
+
   ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+
+
 
   ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
 
+
+
   .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
 
+
+
   .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+
+
 
   .ws-input::placeholder { color:rgba(255,255,255,.3) }
   .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
@@ -68,266 +130,530 @@ tailwind.config = { theme: { extend: {
   .ws-input option { background-color:#141414 !important; color:#fff !important }
   select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
 
+
+
   .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+
+
 
   .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
 
+
+
   .ws-btn:hover { opacity:.9 }
+
+
 
   .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
 
+
+
   .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+
+
 
   .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
 
+
+
   .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+
+
 
   .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
 
+
+
   .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+
+
 
 </style>
 
+
+
 </head>
+
+
 
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 
+
+
 <div class="noise-overlay"></div>
+
+
 
 <div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
 
+
+
 <div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+
+
 
   <div class="mb-8 flex flex-wrap items-center gap-4">
 
+
+
     <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+
+
 
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
 
+
+
     </a>
+
+
 
     <div class="min-w-0">
 
+
+
       <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">PDF to JPG</h1>
+
+
 
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">PDF & Documents — Client-side</p>
 
+
+
           </div>
+
+
 
           <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">PDF</span><span class="ws-chip">JPG</span><span class="ws-chip">PNG</span><span class="ws-chip">CLIENT-SIDE</span></div>
 
+
+
         </div>
+
+
 
       
 
+
+
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+
+
 
   <script>pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";</script>
 
+
+
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+
 
   <section class="ws-panel p-6">
 
+
+
     <div id="drop" class="rounded-xl border-2 border-dashed border-white/10 p-6 text-center cursor-pointer transition-colors hover:border-white/20">
+
+
 
       <div class="text-2xl mb-1 opacity-30">PDF</div>
 
+
+
       <div class="ws-label">Drop a PDF here or click to browse</div>
+
+
 
       <input id="f" type="file" accept="application/pdf" class="hidden">
 
+
+
     </div>
+
+
 
     <div class="mt-4 flex flex-wrap items-end gap-4">
 
+
+
       <div><label class="ws-label mb-1 block">Format</label>
+
+
 
       <select id="fmt" class="ws-input !w-32"><option value="image/jpeg">JPG</option><option value="image/png">PNG</option></select></div>
 
+
+
       <div><label class="ws-label mb-1 block">Quality</label>
+
+
 
       <select id="ql" class="ws-input !w-32"><option value="0.92">High (92%)</option><option value="0.7">Medium (70%)</option><option value="0.5">Low (50%)</option></select></div>
 
+
+
       <div><label class="ws-label mb-1 block">Scale</label>
+
+
 
       <select id="scale" class="ws-input !w-32"><option value="1">1x</option><option value="2" selected>2x</option><option value="3">3x</option></select></div>
 
+
+
     </div>
+
+
 
     <div id="thumbs" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-6"></div>
 
+
+
     <div class="mt-4 flex flex-wrap gap-3">
+
+
 
       <button id="dlAll" class="ws-btn" disabled>Download all (ZIP)</button>
 
+
+
       <button id="dlSel" class="ws-btn-ghost" disabled>Download selected</button>
+
+
 
     </div>
 
+
+
     <div id="status" class="mt-3 text-[11px] font-mono text-white/50">Drop a PDF to start</div>
+
+
 
   </section>
 
 
 
+
+
+
+
   <div id="ws-more" class="mt-12"></div>
+
+
 
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
 
+
+
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+
+
 
   </div>
 
+
+
 </div>
+
+
 
 <script src="/workspace/related.js" defer></script>
 
+
+
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
+
+
 
 const $=id=>document.getElementById(id);
 
+
+
 let buf=null,pages=[],sel=new Set();
+
+
 
 function setupDrop(zone,input,onFiles){
 
+
+
   zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('!border-accent','!bg-accent/5')});
+
+
 
   zone.addEventListener('dragleave',e=>{zone.classList.remove('!border-accent','!bg-accent/5')});
 
+
+
   zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('!border-accent','!bg-accent/5');if(e.dataTransfer.files.length)onFiles(e.dataTransfer.files)});
+
+
 
   input.addEventListener('change',()=>{if(input.files.length)onFiles(input.files)});
 
+
+
 }
+
+
 
 setupDrop($('drop'),$('f'),async allFiles=>{
 
+
+
   const f=allFiles[0];if(!f||f.type!=='application/pdf')return;
+
+
 
   buf=await f.arrayBuffer();
 
+
+
   $('status').textContent='Loading '+f.name+'...';
+
+
 
   const pdf=await pdfjsLib.getDocument({data:buf.slice(0)}).promise;
 
+
+
   pages=[];sel.clear();$('thumbs').innerHTML='';
+
+
 
   const sc=parseFloat($('scale').value);
 
+
+
   for(let i=1;i<=pdf.numPages;i++){
+
+
 
     const pg=await pdf.getPage(i);
 
+
+
     const vp=pg.getViewport({scale:sc});
+
+
 
     const cv=document.createElement('canvas');
 
+
+
     cv.width=vp.width;cv.height=vp.height;
+
+
 
     const ctx=cv.getContext('2d');
 
+
+
     ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);
+
+
 
     await pg.render({canvasContext:ctx,viewport:vp}).promise;
 
+
+
     const fmt=$('fmt').value;
+
+
 
     const ql=fmt==='image/jpeg'?parseFloat($('ql').value):undefined;
 
+
+
     const url=cv.toDataURL(fmt,ql);
+
+
 
     pages.push({url,dataUrl:url,w:cv.width,h:cv.height});
 
+
+
     const div=document.createElement('div');
+
+
 
     div.className='relative rounded-lg border border-white/10 overflow-hidden cursor-pointer transition-all hover:border-accent/40';
 
+
+
     div.innerHTML='<img src="'+url+'" class="w-full"><div class="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1 text-[9px] font-mono text-white/80">Page '+i+'</div>';
+
+
 
     div.onclick=()=>{
 
+
+
       if(sel.has(i-1)){sel.delete(i-1);div.classList.remove('!border-accent');div.classList.remove('!bg-accent/10')}
+
+
 
       else{sel.add(i-1);div.classList.add('!border-accent');div.classList.add('!bg-accent/10')}
 
+
+
       $('dlSel').disabled=sel.size===0;
+
+
 
     };
 
+
+
     $('thumbs').appendChild(div);
 
+
+
   }
+
+
 
   $('status').textContent='Rendered '+pages.length+' pages. Click thumbnails to select.';
 
+
+
   $('dlAll').disabled=false;$('dlSel').disabled=true;
+
+
 
 });
 
+
+
 $('drop').onclick=()=>$('f').click();
+
+
 
 function dataUrlToBlob(dUrl){
 
+
+
   const arr=dUrl.split(','),mime=arr[0].match(/:(.*?);/)[1];
+
+
 
   const bstr=atob(arr[1]),u8=new Uint8Array(bstr.length);
 
+
+
   for(let i=0;i<bstr.length;i++)u8[i]=bstr.charCodeAt(i);
+
+
 
   return new Blob([u8],{type:mime});
 
+
+
 }
+
+
 
 $('dlAll').onclick=async()=>{
 
+
+
   if(!pages.length)return;
+
+
 
   $('status').textContent='Zipping '+pages.length+' images...';
 
+
+
   const ext=$('fmt').value==='image/png'?'png':'jpg';
+
+
 
   const zip=new JSZip();
 
+
+
   pages.forEach((p,i)=>{zip.file('page-'+String(i+1).padStart(3,'0')+'.'+ext,dataUrlToBlob(p.dataUrl))});
+
+
 
   const blob=await zip.generateAsync({type:'blob'});
 
+
+
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pdf-pages.zip';a.click();
+
+
 
   $('status').textContent='Downloaded ZIP with '+pages.length+' images';
 
+
+
 };
+
+
 
 $('dlSel').onclick=async()=>{
 
+
+
   if(!sel.size)return;
+
+
 
   const ext=$('fmt').value==='image/png'?'png':'jpg';
 
+
+
   if(sel.size===1){
+
+
 
     const idx=[...sel][0];
 
+
+
     const a=document.createElement('a');a.href=pages[idx].dataUrl;a.download='page-'+String(idx+1).padStart(3,'0')+'.'+ext;a.click();
+
+
 
   }else{
 
+
+
     const zip=new JSZip();
+
+
 
     [...sel].sort((a,b)=>a-b).forEach(idx=>{zip.file('page-'+String(idx+1).padStart(3,'0')+'.'+ext,dataUrlToBlob(pages[idx].dataUrl))});
 
+
+
     const blob=await zip.generateAsync({type:'blob'});
+
+
 
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='selected-pages.zip';a.click();
 
+
+
   }
+
+
 
   $('status').textContent='Downloaded '+sel.size+' image(s)';
 
+
+
 };
+
+
 
 </script>
 
+
+
 </body>
+
+
 
 </html>

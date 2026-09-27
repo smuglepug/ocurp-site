@@ -1,64 +1,126 @@
 <!DOCTYPE html>
 
+
+
 <html lang="en" class="scroll-smooth">
+
+
 
 <head>
 
+
+
 <meta charset="UTF-8">
+
+
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+
+
 <title>2048 | Owen's Workspace</title>
+
+
 
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 
+
+
 <script src="https://cdn.tailwindcss.com"></script>
+
+
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 
+
+
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+
+
 <script>
+
+
 
 tailwind.config = { theme: { extend: {
 
+
+
   colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+
+
 
   fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
 
+
+
 }}};
+
+
 
 </script>
 
+
+
 <style>
+
+
 
   :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
 
+
+
   body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+
+
 
   h1,h2,h3 { font-family:'Manrope',sans-serif; }
 
+
+
   .font-mono { font-family:'IBM Plex Sans',monospace; }
+
+
 
   html,body { max-width:100vw; overflow-x:hidden; }
 
+
+
   .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+
+
 
     background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 
+
+
   .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+
+
 
   @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
 
+
+
   ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+
+
 
   ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
 
+
+
   .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
 
+
+
   .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+
+
 
   .ws-input::placeholder { color:rgba(255,255,255,.3) }
   .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
@@ -68,140 +130,278 @@ tailwind.config = { theme: { extend: {
   .ws-input option { background-color:#141414 !important; color:#fff !important }
   select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
 
+
+
   .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+
+
 
   .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
 
+
+
   .ws-btn:hover { opacity:.9 }
+
+
 
   .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
 
+
+
   .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+
+
 
   .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
 
+
+
   .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+
+
 
   .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
 
+
+
   .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+
+
 
 </style>
 
+
+
 </head>
+
+
 
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 
+
+
 <div class="noise-overlay"></div>
+
+
 
 <div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
 
+
+
 <div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+
+
 
   <div class="mb-8 flex flex-wrap items-center gap-4">
 
+
+
     <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+
+
 
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
 
+
+
     </a>
+
+
 
     <div class="min-w-0">
 
+
+
       <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">2048</h1>
+
+
 
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
 
+
+
           </div>
+
+
 
           <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">PUZZLE</span><span class="ws-chip">ARROWS</span><span class="ws-chip">LOCAL BEST</span></div>
 
+
+
         </div>
+
+
 
       <section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_240px]"><div id="grid" class="mx-auto grid aspect-square w-full max-w-[420px] grid-cols-4 gap-2 rounded-2xl bg-white/[0.04] p-2"></div><div class="flex flex-col gap-4"><div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="ws-label mb-1">Score</div><div class="font-display text-3xl font-black text-accent" id="score">0</div></div><div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="ws-label mb-1">Best</div><div class="font-display text-3xl font-black text-white/60" id="best">0</div></div><button id="new" class="ws-btn">New game</button><p class="text-[10px] text-white/50 leading-relaxed">Arrow keys or WASD. Merge equal tiles to reach 2048.</p></div></div></section>
 
+
+
   <div id="ws-more" class="mt-12"></div>
+
+
 
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
 
+
+
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+
+
 
   </div>
 
+
+
 </div>
+
+
 
 <script src="/workspace/related.js" defer></script>
 
+
+
 <script>const $=id=>document.getElementById(id);
+
+
 
 let b,score,dead;
 
+
+
 const COL={2:'#4a2e18',4:'#7a4522',8:'#FF5F1F',16:'#ff7a33',32:'#ff9147',64:'#ffa65c',128:'#ffb877',256:'#ffca93',512:'#ffd9ae',1024:'#ffe6c8',2048:'#ffd166'};
+
+
 
 const best=()=>+(localStorage.getItem('ws-2048')||0);
 
+
+
 function add(){const empty=[];b.forEach((v,i)=>{if(!v)empty.push(i)});
+
+
 
   if(!empty.length)return;b[empty[Math.floor(Math.random()*empty.length)]]=Math.random()<.9?2:4}
 
+
+
 function draw(){$('grid').innerHTML=b.map(v=>'<div class="flex items-center justify-center rounded-lg font-display font-black" style="background:'+(COL[v]||'#1c1a18')+';color:'+(v>=512?'#3a1e08':'#fff')+';font-size:'+(v>512?'1.1rem':v>64?'1.6rem':'2rem')+'">'+(v||'')+'</div>').join('');
+
+
 
   $('score').textContent=score;$('best').textContent=best()}
 
+
+
 function reset(){b=Array(16).fill(0);score=0;dead=false;add();add();draw()}
+
+
 
 function slide(row){let r=row.filter(v=>v),i=0;
 
+
+
   while(i<r.length-1){if(r[i]===r[i+1]){r[i]*=2;score+=r[i];r.splice(i+1,1)}i++}
+
+
 
   while(r.length<4)r.push(0);return r}
 
+
+
 function move(dir){
+
+
 
   if(dead)return;let moved=false;
 
+
+
   for(let i=0;i<4;i++){
+
+
 
     let line;
 
+
+
     if(dir==='left'||dir==='right'){line=[0,1,2,3].map(j=>b[i*4+j]);if(dir==='right')line.reverse()}
+
+
 
     else{line=[0,1,2,3].map(j=>b[j*4+i]);if(dir==='down')line.reverse()}
 
+
+
     const n=slide(line);
+
+
 
     if(dir==='right'||dir==='down')n.reverse();
 
+
+
     for(let j=0;j<4;j++){const idx=(dir==='left'||dir==='right')?i*4+j:j*4+i;
+
+
 
       if(b[idx]!==n[j]){moved=true}b[idx]=n[j]}}
 
+
+
   if(moved){add();draw();
+
+
 
     if(score>best())localStorage.setItem('ws-2048',score);
 
+
+
     if(!canMove()){dead=true;$('score').textContent=score+' (no moves)';}}}
+
+
 
 function canMove(){if(b.some(v=>!v))return true;
 
+
+
   for(let i=0;i<4;i++)for(let j=0;j<4;j++){const v=b[i*4+j];
+
+
 
     if(j<3&&v===b[i*4+j+1])return true;if(i<3&&v===b[(i+1)*4+j])return true}return false}
 
+
+
 addEventListener('keydown',e=>{const m={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',a:'left',d:'right',w:'up',s:'down'}[e.key];
+
+
 
   if(m){e.preventDefault();move(m)}});
 
+
+
 let sx,sy;$('grid').addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+
+
 
 $('grid').addEventListener('touchend',e=>{if(sx==null)return;const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
 
+
+
   if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;
+
+
 
   move(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'))},{passive:true});
 
+
+
 $('new').onclick=reset;reset();</script>
 
+
+
 </body>
+
+
 
 </html>
