@@ -34,7 +34,7 @@
       : '<span class="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-white/35"><span class="h-1.5 w-1.5 rounded-full bg-white/30"></span>Building</span>';
     var logo = isWebsites
       ? '<div class="flex h-full w-full items-center justify-center"><span class="font-display text-5xl font-black text-white/15">' + esc(e.name.slice(0, 2).toUpperCase()) + '</span></div>'
-      : '<img src="/workspace/logos/' + esc(e.slug) + '.png" alt="' + esc(e.name) + ' logo" loading="lazy" class="h-24 w-24 rounded-2xl border border-white/10 object-cover transition-transform duration-500 group-hover:scale-[1.04]">';
+      : '<img src="/workspace/logos/' + esc(e.slug) + '.png" alt="' + esc(e.name) + ' logo" class="h-24 w-24 rounded-2xl border border-white/10 object-cover transition-transform duration-500 group-hover:scale-[1.04]">';
     var art = '<div class="relative flex h-44 items-center justify-center overflow-hidden rounded-t-2xl bg-[#0a0a0a]">'
       + '<div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/[0.07] blur-3xl"></div>'
       + logo
