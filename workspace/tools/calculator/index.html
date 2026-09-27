@@ -54,7 +54,7 @@ tailwind.config = { theme: { extend: {
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
     </div>
   </div>
-<section class="ws-panel mx-auto max-w-md p-6"><div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-right"><div id="hist" class="h-5 font-mono text-xs text-white/40"></div><div id="disp" class="truncate font-display text-4xl font-black text-white">0</div></div><div id="pad" class="mt-4 grid grid-cols-4 gap-2"></div><p class="mt-3 text-[11px] text-white/30">Type numbers and + − * / directly, or click.</p></section>
+<section class="ws-panel mx-auto max-w-md p-6"><p class="mb-3 text-[11px] text-white/40">Click the keys, or type numbers and + - * / on your keyboard.</p><div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-right"><div id="hist" class="h-5 font-mono text-xs text-white/40"></div><div id="disp" class="truncate font-display text-5xl font-black text-white">0</div></div><div id="pad" class="mt-4 grid grid-cols-4 gap-2"></div>+ − * / </section>
   <div class="mt-10 flex flex-wrap gap-2"><span class="ws-chip">MATH</span><span class="ws-chip">KEYS</span><span class="ws-chip">CLIENT-SIDE</span></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
@@ -62,16 +62,16 @@ tailwind.config = { theme: { extend: {
 </div>
 <script>const $=id=>document.getElementById(id);
 let cur='0',prev=null,op=null,fresh=true;
-const KEYS=[['AC','C'],['⌫','B'],['%','%'],['÷','/'],['7','7'],['8','8'],['9','9'],['×','*'],['4','4'],['5','5'],['6','6'],['−','-'],['1','1'],['2','2'],['3','3'],['+','+'],['0','0'],['.','.'],['=','=']];
+const KEYS=[['AC','C'],['⌫','B'],['%','%'],['÷','/'],['7','7'],['8','8'],['9','9'],['×','*'],['4','4'],['5','5'],['6','6'],['−','-'],['1','1'],['2','2'],['3','3'],['+','+'],['0','0'],['.','.'],['±','±'],['=','=']];
 $('pad').innerHTML=KEYS.map(([l,k])=>{const acc=(k==='=')?'background:#FF5F1F;color:#000;':(('+-*/%'.includes(k))?'color:#FF5F1F;':'');
  return '<button data-k="'+k+'" style="'+acc+'" class="rounded-xl border border-white/10 bg-white/[0.04] py-4 font-display text-lg font-bold hover:bg-white/[0.08]">'+l+'</button>'}).join('');
 function calc(a,b,o){a=+a;b=+b;return o==='+'?a+b:o==='-'?a-b:o==='*'?a*b:o==='/'?a/b:a%b}
 function press(k){
   if(k==='C'){cur='0';prev=null;op=null;fresh=true}
-  else if(k==='B'){cur=cur.length>1?cur.slice(0,-1):'0'}
+  else if(k==='B'){cur=cur.length>1?cur.slice(0,-1):'0'} else if(k==='±'){cur=cur.startsWith('-')?cur.slice(1):'-'+cur}
   else if('0123456789.'.includes(k)){if(fresh){cur=k==='.'?'0.':k;fresh=false}else if(!(k==='.'&&cur.includes('.')))cur+=k}
   else if('+-*/%'.includes(k)){if(op&&!fresh){cur=String(calc(prev,cur,op))}prev=cur;op=k;fresh=true}
-  else if(k==='='){if(op){const r=calc(prev,cur,op);$('hist').textContent=prev+' '+op+' '+cur+' =';cur=String(Math.round(r*1e10)/1e10);op=null;fresh=true}}
+  else if(k==='='){if(op){const r=calc(prev,cur,op);$('hist').textContent=prev+' '+op+' '+cur+' =';cur=!isFinite(r)?'Cannot divide by 0':String(Math.round(r*1e10)/1e10);op=null;fresh=true}}
   $('disp').textContent=cur}
 $('pad').querySelectorAll('button').forEach(b=>b.onclick=()=>press(b.dataset.k));
 addEventListener('keydown',e=>{const k=e.key;if('0123456789.+-*/%='.includes(k)){press(k);e.preventDefault()}else if(k==='Backspace'){press('B')}else if(k==='Escape'){press('C')}else if(k==='Enter'){press('=')}});</script>
