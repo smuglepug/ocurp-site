@@ -63,6 +63,10 @@ tailwind.config = { theme: { extend: {
 <head>
   <meta charset="UTF-8">
   <title>Test Page</title>
+  <style>
+    body { margin: 0; }
+    .btn { background: #FF5F1F; }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -73,13 +77,15 @@ tailwind.config = { theme: { extend: {
       <li>One</li>
       <li>Two</li>
     </ul>
+    <pre>  keep  spaces  </pre>
   </div>
 </body>
 </html></textarea>
     <div class="mt-3 flex flex-wrap items-end gap-3">
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="keepComments" type="checkbox" class="accent-[#FF5F1F]"> Keep comments</label>
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="collapseInline" type="checkbox" checked class="accent-[#FF5F1F]"> Collapse inline spaces</label>
       <button id="go" class="ws-btn">Minify</button>
       <button id="dl" class="ws-btn-ghost">Download .min.html</button>
-      <label class="flex items-center gap-2 text-sm text-white/70"><input id="keepComments" type="checkbox" class="accent-[#FF5F1F]"> Keep comments</label>
     </div>
     <div class="mt-4 grid grid-cols-3 gap-3">
       <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">
@@ -106,35 +112,42 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
-function minify(html, keepComments) {
-  let s = html;
-  if (!keepComments) s = s.replace(/<!--[\s\S]*?-->/g, '');
-  s = s.replace(/^\s+/, '').replace(/\s+$/, '');
-  s = s.replace(/\s+/g, ' ');
-  s = s.replace(/\s+</g, '<').replace(/<\s+/g, '<');
-  s = s.replace(/\s+>/g, '>').replace(/>\s+</g, '><');
+function minifyCSS(css) {
+  return css.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\s+/g,' ').replace(/\s*\{\s*/g,'{').replace(/\s*\}\s*/g,'}').replace(/\s*;\s*/g,';').replace(/;\}/g,'}').replace(/\s*:\s*/g,':').trim();
+}
+function minify(html, keepComments, collapseInline) {
+  let s=html;
+  if(!keepComments) s=s.replace(/<!--[\s\S]*?-->/g,'');
+  s=s.replace(/<pre[^>]*>[\s\S]*?<\/pre>/gi,m=>m.replace(/\x00/g,'').replace(/__PRE_/g,''));
+  s=s.replace(/<textarea[^>]*>[\s\S]*?<\/textarea>/gi,m=>m);
+  s=s.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi,(m,css)=>'<style>'+minifyCSS(css)+'</style>');
+  s=s.replace(/^\s+/,'').replace(/\s+$/,'');
+  s=s.replace(/\s+/g,' ');
+  s=s.replace(/\s*</g,'<').replace(/<\s+/g,'<');
+  s=s.replace(/\s*>/g,'>').replace(/\s+$/,'');
+  if(collapseInline) {
+    s=s.replace(/(<(?:span|b|i|em|strong|a|sub|sup|small)\b[^>]*>)(\s+)(\S)/g,'$1$3');
+    s=s.replace(/(\S)(\s+)(<\/(?:span|b|i|em|strong|a|sub|sup|small)>)/g,'$1$3');
+    s=s.replace(/>\s+</g,'><');
+  } else {
+    s=s.replace(/>\s+</g,'> <');
+  }
   return s.trim();
 }
 function run() {
-  const src = $('src').value;
-  const min = minify(src, $('keepComments').checked);
-  $('out').textContent = min;
-  const b = new Blob([src]).size, a = new Blob([min]).size;
-  $('before').textContent = b;
-  $('after').textContent = a;
-  $('saved').textContent = b > 0 ? Math.round((1 - a / b) * 100) + '%' : '0%';
+  const src=$('src').value;
+  const min=minify(src,$('keepComments').checked,$('collapseInline').checked);
+  $('out').textContent=min;
+  const b=new Blob([src]).size,a=new Blob([min]).size;
+  $('before').textContent=b;
+  $('after').textContent=a;
+  $('saved').textContent=b>0?Math.round((1-a/b)*100)+'%':'0%';
 }
-$('go').onclick = run;
-$('src').addEventListener('input', run);
-$('keepComments').addEventListener('change', run);
-$('dl').onclick = () => {
-  const min = $('out').textContent;
-  const b = new Blob([min], {type: 'text/html'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(b);
-  a.download = 'index.min.html';
-  a.click();
-};
+$('go').onclick=run;
+$('src').addEventListener('input',run);
+$('keepComments').addEventListener('change',run);
+$('collapseInline').addEventListener('change',run);
+$('dl').onclick=()=>{const min=$('out').textContent;if(min){const b=new Blob([min],{type:'text/html'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='index.min.html';a.click();}};
 run();
 </script>
 </body>

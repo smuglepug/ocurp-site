@@ -65,11 +65,17 @@ tailwind.config = { theme: { extend: {
       <div><label class="ws-label mb-2 block">Campaign term (utm_term)</label><input id="term" class="ws-input" placeholder="running+shoes"></div>
       <div><label class="ws-label mb-2 block">Campaign content (utm_content)</label><input id="content" class="ws-input" placeholder="logolink"></div>
     </div>
+    <div class="mt-3 text-[11px] font-mono" id="urlErr" style="color:#f87171"></div>
     <div class="mt-4 flex flex-wrap gap-3">
       <button id="copy" class="ws-btn">Copy URL</button>
       <button id="short" class="ws-btn-ghost">Shorten with is.gd</button>
+      <button id="clear" class="ws-btn-ghost">Clear all</button>
     </div>
     <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">UTM URL</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
+    <div class="mt-4">
+      <div class="ws-label mb-2">QR code</div>
+      <div id="qr" class="rounded-xl bg-white p-4 w-fit"></div>
+    </div>
     <div class="mt-3 text-[11px] font-mono text-white/40" id="shortResult"></div>
   </section>
 
@@ -82,32 +88,47 @@ tailwind.config = { theme: { extend: {
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
 function build() {
-  const url = $('url').value.trim();
-  if (!url) { $('out').textContent = ''; return ''; }
-  const p = new URLSearchParams();
-  const s = $('source').value.trim(); if (s) p.append('utm_source', s);
-  const m = $('medium').value.trim(); if (m) p.append('utm_medium', m);
-  const c = $('campaign').value.trim(); if (c) p.append('utm_campaign', c);
-  const t = $('term').value.trim(); if (t) p.append('utm_term', t);
-  const ct = $('content').value.trim(); if (ct) p.append('utm_content', ct);
-  const qs = p.toString();
-  const base = url.includes('?') ? url.split('?')[0] : url;
-  const full = qs ? base + '?' + qs : base;
-  $('out').textContent = full;
+  const url=$('url').value.trim();
+  $('urlErr').textContent='';
+  if(!url) { $('out').textContent=''; return ''; }
+  let parsed;
+  try { parsed=new URL(url); }
+  catch(e) { $('urlErr').textContent='\u2717 Invalid URL — must include protocol (https://...)'; $('out').textContent=''; return ''; }
+  const p=new URLSearchParams(parsed.searchParams);
+  const s=$('source').value.trim(); if(s) p.set('utm_source',s);
+  const m=$('medium').value.trim(); if(m) p.set('utm_medium',m);
+  const c=$('campaign').value.trim(); if(c) p.set('utm_campaign',c);
+  const t=$('term').value.trim(); if(t) p.set('utm_term',t);
+  const ct=$('content').value.trim(); if(ct) p.set('utm_content',ct);
+  const base=parsed.origin+parsed.pathname;
+  const full=base+'?'+p.toString()+parsed.hash;
+  $('out').textContent=full;
+  drawQR(full);
   return full;
 }
-['url','source','medium','campaign','term','content'].forEach(id => {
-  $(id).addEventListener('input', () => { build(); $('shortResult').textContent = ''; });
+function drawQR(text) {
+  try {
+    const qr=qrcode(0,'M');qr.addData(text);qr.make();
+    const n=qr.getModuleCount(),cell=4,pad=2,size=(n+pad*2)*cell;
+    let svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'"><rect width="'+size+'" height="'+size+'" fill="#fff"/>';
+    for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(qr.isDark(r,c)) svg+='<rect x="'+((c+pad)*cell)+'" y="'+((r+pad)*cell)+'" width="'+cell+'" height="'+cell+'" fill="#000"/>';
+    svg+='</svg>';
+    $('qr').innerHTML=svg;
+  } catch(e) { $('qr').innerHTML='<span class="text-xs text-white/40 p-4">QR: URL too long</span>'; }
+}
+['url','source','medium','campaign','term','content'].forEach(id=>{
+  $(id).addEventListener('input',()=>{build();$('shortResult').textContent='';});
 });
-$('copy').onclick = () => { const u = build(); if (u) { navigator.clipboard.writeText(u); $('copy').classList.add('ok'); setTimeout(() => $('copy').classList.remove('ok'), 1200); } };
-$('short').onclick = () => {
-  const u = build(); if (!u) return;
-  $('shortResult').textContent = 'Shortening...';
-  fetch('https://is.gd/create.php?format=json&url=' + encodeURIComponent(u))
-    .then(r => r.json())
-    .then(d => { $('shortResult').textContent = d.shorturl ? 'Short: ' + d.shorturl : 'Error: ' + (d.errormessage || 'failed'); })
-    .catch(() => { $('shortResult').textContent = 'Shortener unavailable'; });
+$('copy').onclick=()=>{const u=build();if(u){navigator.clipboard.writeText(u);$('copy').classList.add('ok');setTimeout(()=>$('copy').classList.remove('ok'),1200);}};
+$('short').onclick=()=>{
+  const u=build();if(!u)return;
+  $('shortResult').textContent='Shortening...';
+  fetch('https://is.gd/create.php?format=json&url='+encodeURIComponent(u))
+    .then(r=>r.json())
+    .then(d=>{$('shortResult').textContent=d.shorturl?'Short: '+d.shorturl:'Error: '+(d.errormessage||'failed');})
+    .catch(()=>{$('shortResult').textContent='Shortener unavailable';});
 };
+$('clear').onclick=()=>{['url','source','medium','campaign','term','content'].forEach(id=>$(id).value='');$('out').textContent='';$('qr').innerHTML='';$('shortResult').textContent='';};
 build();
 </script>
 </body>

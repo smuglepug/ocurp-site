@@ -58,11 +58,13 @@ tailwind.config = { theme: { extend: {
       
   <section class="ws-panel p-6">
     <label class="ws-label mb-2 block">CSS input</label>
-    <textarea id="src" class="ws-input min-h-[160px] font-mono" placeholder="body{margin:0}">body{margin:0;padding:0;font-family:Inter,sans-serif}.btn{background:#FF5F1F;color:#000;border-radius:8px}</textarea>
+    <textarea id="src" class="ws-input min-h-[160px] font-mono" placeholder="body{margin:0}">body{margin:0;padding:0;font-family:Inter,sans-serif}.btn{background:#FF5F1F;color:#000;border-radius:8px}@media(max-width:768px){body{font-size:14px}.btn{padding:8px}}</textarea>
     <div class="mt-3 flex flex-wrap items-end gap-3">
       <div><label class="ws-label mb-1 block">Mode</label><select id="mode" class="ws-input !w-40"><option value="pretty">Prettify</option><option value="min">Minify</option></select></div>
       <div><label class="ws-label mb-1 block">Indent</label><select id="ind" class="ws-input !w-36"><option value="2">2 spaces</option><option value="4">4 spaces</option><option value="tab">Tabs</option></select></div>
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="sort" type="checkbox" class="accent-[#FF5F1F]"> Sort props</label>
       <button id="go" class="ws-btn">Run</button>
+      <button id="dl" class="ws-btn-ghost">Download</button>
     </div>
     <div class="mt-3 text-[11px] font-mono" id="err"></div>
     <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Output</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
@@ -76,44 +78,71 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
-function prettify(css, ind) {
-  let out = '';
-  css = css.replace(/\/\*[\s\S]*?\*\//g, '').trim();
-  if (!css) return '';
-  const rules = css.split('}');
-  for (let r of rules) {
-    const idx = r.indexOf('{');
-    if (idx < 0) continue;
-    const sel = r.slice(0, idx).trim();
-    const body = r.slice(idx + 1).trim();
-    if (!sel) continue;
-    out += sel + ' {\n';
-    const props = body.split(';').filter(p => p.trim());
-    for (let p of props) {
-      const ci = p.indexOf(':');
-      if (ci < 0) continue;
-      const k = p.slice(0, ci).trim();
-      const v = p.slice(ci + 1).trim();
-      out += (ind === '\t' ? '\t' : ' '.repeat(ind)) + k + ': ' + v + ';\n';
+function tokenizeCSS(css) {
+  let tokens=[], i=0, depth=0;
+  while(i<css.length) {
+    if(css[i]==='{'||css[i]==='}') { tokens.push({type:'brace',v:css[i]}); i++; continue; }
+    if(css[i]==='@') {
+      let end=css.indexOf('{',i);
+      if(end<0) end=css.length;
+      tokens.push({type:'atrule',v:css.slice(i,end).trim()}); i=end; continue;
     }
-    out += '}\n\n';
+    let end=css.search(/[{}]/, i);
+    if(end<0) end=css.length;
+    const chunk=css.slice(i,end);
+    if(chunk.trim()) {
+      if(chunk.includes(':')&&!chunk.includes('{')) tokens.push({type:'decl',v:chunk.trim()});
+      else if(chunk.trim()) tokens.push({type:'selector',v:chunk.trim()});
+    }
+    i=end;
+  }
+  return tokens;
+}
+function prettify(css, ind, sort) {
+  css=css.replace(/\/\*[\s\S]*?\*\//g,'').trim();
+  if(!css) return '';
+  const tokens=tokenizeCSS(css);
+  let out='',depth=0;
+  const indStr=()=>(ind==='\t'?'\t':' '.repeat(ind)).repeat(depth);
+  for(let idx=0;idx<tokens.length;idx++) {
+    const tk=tokens[idx];
+    if(tk.type==='atrule') { out+=tk.v+' {\n'; depth++; continue; }
+    if(tk.type==='selector') { out+=tk.v+' {\n'; depth++; continue; }
+    if(tk.type==='decl') {
+      const ci=tk.v.indexOf(':');
+      if(ci<0) continue;
+      let k=tk.v.slice(0,ci).trim(), v=tk.v.slice(ci+1).replace(/;$/,'').trim();
+      out+=indStr()+k+': '+v+';\n';
+    }
+    if(tk.type==='brace'&&tk.v==='}') {
+      depth=Math.max(0,depth-1);
+      out=indStr()+out.trimEnd()+'\n'+out.slice(out.length);
+      out=out.slice(0,-1)+'}\n\n';
+    }
+  }
+  if(sort) {
+    out=out.split('\n').reduce((acc,l)=>{
+      if(l.includes(':')&&!l.includes('{')) {acc.decls.push(l.trim()); return acc;}
+      if(acc.decls.length) {acc.result+=acc.decls.sort().join('\n')+'\n'; acc.decls=[];}
+      acc.result+=l+'\n'; return acc;
+    },{result:'',decls:[]});
   }
   return out.trim();
 }
 function minify(css) {
-  return css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ').replace(/\s*\{\s*/g, '{').replace(/\s*\}\s*/g, '}').replace(/\s*:\s*/g, ':').replace(/\s*;\s*/g, ';').replace(/;\}/g, '}').trim();
+  return css.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\s+/g,' ').replace(/\s*\{\s*/g,'{').replace(/\s*\}\s*/g,'}').replace(/\s*;\s*/g,';').replace(/;\}/g,'}').replace(/\s*:\s*/g,':').trim();
 }
 function run() {
-  const t = $('src').value;
-  $('err').textContent = '';
-  if (!t.trim()) { $('out').textContent = ''; return; }
-  const ind = $('ind').value === 'tab' ? '\t' : parseInt($('ind').value);
-  try {
-    $('out').textContent = $('mode').value === 'pretty' ? prettify(t, ind) : minify(t);
-  } catch(e) { $('err').innerHTML = '<span style="color:#f87171">\u2717 ' + e.message + '</span>'; }
+  const t=$('src').value;
+  $('err').textContent='';
+  if(!t.trim()) { $('out').textContent=''; return; }
+  const ind=$('ind').value==='tab'?'\t':parseInt($('ind').value);
+  try { $('out').textContent=$('mode').value==='pretty'?prettify(t,ind,$('sort').checked):minify(t); }
+  catch(e) { $('err').innerHTML='<span style="color:#f87171">\u2717 '+e.message+'</span>'; }
 }
-$('go').onclick = run;
-$('src').addEventListener('input', run);
+$('go').onclick=run;
+$('dl').onclick=()=>{const txt=$('out').textContent;if(txt){const b=new Blob([txt],{type:'text/css'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=$('mode').value==='pretty'?'formatted.css':'minified.css';a.click();}};
+$('src').addEventListener('input',run);
 run();
 </script>
 </body>

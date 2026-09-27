@@ -66,10 +66,16 @@ tailwind.config = { theme: { extend: {
     <div class="mt-3 flex flex-wrap items-end gap-3">
       <div><label class="ws-label mb-1 block">Mode</label><select id="mode" class="ws-input !w-40"><option value="pretty">Prettify</option><option value="min">Minify</option></select></div>
       <div><label class="ws-label mb-1 block">Indent</label><select id="ind" class="ws-input !w-36"><option value="2">2 spaces</option><option value="4">4 spaces</option><option value="tab">Tabs</option></select></div>
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="keepComments" type="checkbox" checked class="accent-[#FF5F1F]"> Keep comments</label>
       <button id="go" class="ws-btn">Run</button>
+      <button id="dl" class="ws-btn-ghost">Download</button>
     </div>
     <div class="mt-3 text-[11px] font-mono" id="err"></div>
     <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Output</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
+    <div class="mt-4">
+      <div class="ws-label mb-2">Live preview</div>
+      <iframe id="preview" class="w-full min-h-[200px] rounded-xl border border-white/10 bg-white" sandbox="allow-same-origin"></iframe>
+    </div>
   </section>
 
   <div id="ws-more" class="mt-12"></div>
@@ -80,38 +86,57 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
-function prettify(html, ind) {
+const VOID=new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr','path','circle','rect','ellipse','line','polyline','polygon','stop','use']);
+function prettify(html, ind, keepComments) {
   let out='', depth=0;
-  const tokens = html.replace(/>(\s+)</g, '><').replace(/^\s+/, '').split(/(<[^>]*>)/).filter(Boolean);
-  for (let t of tokens) {
-    if (t.startsWith('<')) {
-      const isClose = t.startsWith('</');
-      const tagName = t.replace(/^<\/?/, '').split(/[\s>]/)[0];
-      const isSelf = t.endsWith('/>') || /^(area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)$/i.test(tagName);
-      if (isClose) depth = Math.max(0, depth - 1);
-      out += (ind === '\t' ? '\t'.repeat(depth) : ' '.repeat(ind * depth)) + t + '\n';
-      if (!isClose && !isSelf) depth++;
-    } else {
-      const s = t.trim();
-      if (s) { out += (ind === '\t' ? '\t'.repeat(depth) : ' '.repeat(ind * depth)) + s + '\n'; }
+  let i=0;
+  while(i<html.length) {
+    if(html[i]==='<') {
+      if(html.startsWith('<!--',i)) {
+        let end=html.indexOf('-->',i+4);
+        if(end<0) end=html.length; else end+=3;
+        if(keepComments) { out += (ind==='\t'?'\t'.repeat(depth):' '.repeat(ind*depth))+html.slice(i,end)+'\n'; }
+        i=end; continue;
+      }
+      let end=html.indexOf('>',i);
+      if(end<0) end=html.length; else end++;
+      const tag=html.slice(i,end);
+      const isClose=tag.startsWith('</');
+      const tagName=tag.replace(/^<\/?/, '').split(/[\s>\/>]/)[0];
+      const isSelf=tag.endsWith('/>')||VOID.has(tagName.toLowerCase());
+      if(isClose) depth=Math.max(0,depth-1);
+      out += (ind==='\t'?'\t'.repeat(depth):' '.repeat(ind*depth))+tag+'\n';
+      if(!isClose&&!isSelf) depth++;
+      i=end; continue;
     }
+    let textEnd=html.indexOf('<',i);
+    if(textEnd<0) textEnd=html.length;
+    const text=html.slice(i,textEnd).trim();
+    if(text) { out += (ind==='\t'?'\t'.repeat(depth):' '.repeat(ind*depth))+text+'\n'; }
+    i=textEnd;
   }
   return out.trim();
 }
-function minify(html) {
-  return html.replace(/<!--[\s\S]*?-->/g, '').replace(/\s+/g, ' ').replace(/\s*</g, '<').replace(/<\s+/g, '<').replace(/\s*>/g, '>').replace(/\s+$/g, '').trim();
+function minify(html, keepComments) {
+  let s=html;
+  if(!keepComments) s=s.replace(/<!--[\s\S]*?-->/g,'');
+  s=s.replace(/\s+/g,' ').replace(/\s*</g,'<').replace(/<\s+/g,'<').replace(/\s*>/g,'>').replace(/>\s+</g,'><').trim();
+  return s;
 }
 function run() {
-  const t = $('src').value.trim();
-  $('err').textContent = '';
-  if (!t) { $('out').textContent = ''; return; }
-  const ind = $('ind').value === 'tab' ? '\t' : parseInt($('ind').value);
+  const t=$('src').value.trim();
+  $('err').textContent='';
+  if(!t) { $('out').textContent=''; $('preview').srcdoc=''; return; }
+  const ind=$('ind').value==='tab'?'\t':parseInt($('ind').value);
   try {
-    $('out').textContent = $('mode').value === 'pretty' ? prettify(t, ind) : minify(t);
-  } catch(e) { $('err').innerHTML = '<span style="color:#f87171">\u2717 ' + e.message + '</span>'; }
+    const result=$('mode').value==='pretty'?prettify(t,ind,$('keepComments').checked):minify(t,$('keepComments').checked);
+    $('out').textContent=result;
+    $('preview').srcdoc=t;
+  } catch(e) { $('err').innerHTML='<span style="color:#f87171">\u2717 '+e.message+'</span>'; }
 }
-$('go').onclick = run;
-$('src').addEventListener('input', run);
+$('go').onclick=run;
+$('dl').onclick=()=>{const txt=$('out').textContent;if(txt){const b=new Blob([txt],{type:'text/html'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=$('mode').value==='pretty'?'formatted.html':'minified.html';a.click();}};
+$('src').addEventListener('input',run);
 run();
 </script>
 </body>

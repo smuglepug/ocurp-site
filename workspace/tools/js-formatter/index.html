@@ -58,11 +58,12 @@ tailwind.config = { theme: { extend: {
       
   <section class="ws-panel p-6">
     <label class="ws-label mb-2 block">JavaScript input</label>
-    <textarea id="src" class="ws-input min-h-[160px] font-mono" placeholder="const x=1;function f(){return x*2}">const x=1;function f(){return x*2}const arr=[1,2,3].map(n=>n*2);if(x>0){console.log('yes')}</textarea>
+    <textarea id="src" class="ws-input min-h-[160px] font-mono" placeholder="const x=1;function f(){return x*2}">const x=1;function f(){return x*2}const arr=[1,2,3].map(n=>n*2);if(x>0){console.log('yes')}const tmpl=`Hello ${x} world`;const re=/\d{2,4}/g;</textarea>
     <div class="mt-3 flex flex-wrap items-end gap-3">
       <div><label class="ws-label mb-1 block">Mode</label><select id="mode" class="ws-input !w-40"><option value="pretty">Prettify</option><option value="min">Minify</option></select></div>
       <div><label class="ws-label mb-1 block">Indent</label><select id="ind" class="ws-input !w-36"><option value="2">2 spaces</option><option value="4">4 spaces</option><option value="tab">Tabs</option></select></div>
       <button id="go" class="ws-btn">Run</button>
+      <button id="dl" class="ws-btn-ghost">Download</button>
     </div>
     <div class="mt-3 text-[11px] font-mono" id="err"></div>
     <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Output</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
@@ -77,62 +78,118 @@ tailwind.config = { theme: { extend: {
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
 function prettify(code, ind) {
-  let out = '', depth = 0, i = 0;
-  const isWS = c => c === ' ' || c === '\t' || c === '\n' || c === '\r';
-  const indStr = () => (ind === '\t' ? '\t' : ' '.repeat(ind)).repeat(depth);
-  while (i < code.length) {
-    const c = code[i];
-    if (c === '/' && code[i+1] === '/') {
-      let end = code.indexOf('\n', i); if (end < 0) end = code.length;
-      out += indStr() + code.slice(i, end) + '\n'; i = end; continue;
+  let out='',depth=0,i=0;
+  const isWS=c=>c===' '||c==='\t'||c==='\n'||c==='\r';
+  const indStr=()=>(ind==='\t'?'\t':' '.repeat(ind)).repeat(depth);
+  function skipString(q) {
+    let s='';
+    while(i<code.length) {
+      if(code[i]==='\\\'') { s+=code[i]+code[i+1]; i+=2; continue; }
+      if(code[i]===q) { i++; return s+q; }
+      s+=code[i]; i++;
     }
-    if (c === '/' && code[i+1] === '*') {
-      let end = code.indexOf('*/', i+2); if (end < 0) end = code.length; else end += 2;
-      out += indStr() + code.slice(i, end) + '\n'; i = end; continue;
+    return s;
+  }
+  function skipTemplate() {
+    let s='`';
+    i++;
+    while(i<code.length) {
+      if(code[i]==='`') { i++; return s+'`'; }
+      if(code[i]==='$'&&code[i+1]==='{') {
+        s+='$'+'{'; i+=2; depth++;
+        let inner='';
+        while(i<code.length&&code[i]!=='}') { inner+=code[i]; i++; }
+        if(code[i]==='}') { depth--; s+=inner+'}'; i++; }
+        else s+=inner;
+        continue;
+      }
+      if(code[i]==='\\') { s+=code[i]+(code[i+1]||''); i+=2; continue; }
+      s+=code[i]; i++;
     }
-    if (c === '{') {
-      out += ' {\n'; depth++; i++;
-      while (i < code.length && isWS(code[i])) i++; continue;
+    return s;
+  }
+  function skipRegex() {
+    let s='/';
+    i++;
+    while(i<code.length) {
+      if(code[i]==='\\') { s+=code[i]+(code[i+1]||''); i+=2; continue; }
+      if(code[i]==='/') { i++; s+='/'; while(i<code.length&&/[gimsuy]/.test(code[i])) s+=code[i++]; return s; }
+      if(code[i]==='\n') return s;
+      s+=code[i]; i++;
     }
-    if (c === '}') {
-      depth = Math.max(0, depth - 1);
-      if (out.endsWith('\n')) out = out.slice(0, -1);
-      out += '\n' + indStr() + '}'; i++;
-      if (code[i] === ';') { out += ';'; i++; }
-      out += '\n';
-      while (i < code.length && isWS(code[i])) i++; continue;
+    return s;
+  }
+  while(i<code.length) {
+    const c=code[i];
+    if(c==='/'&&code[i+1]==='/') {
+      let end=code.indexOf('\n',i); if(end<0) end=code.length;
+      out+=indStr()+code.slice(i,end)+'\n'; i=end; continue;
     }
-    if (c === ';') {
-      out += ';\n'; i++;
-      while (i < code.length && isWS(code[i])) i++;
-      if (i < code.length && code[i] !== '}') out += indStr();
+    if(c==='/'&&code[i+1]==='*') {
+      let end=code.indexOf('*/',i+2); if(end<0) end=code.length; else end+=2;
+      out+=indStr()+code.slice(i,end)+'\n'; i=end; continue;
+    }
+    if(c==='"'||c==="'") {
+      if(out&&!isWS(out[out.length-1])&&out[out.length-1]!=='.') {}
+      out+=c+skipString(c); continue;
+    }
+    if(c==='`') { out+=skipTemplate(); continue; }
+    if(c==='/'&&(i>0&&!isWS(code[i-1])&&code[i-1]!==')')) { out+=skipRegex(); continue; }
+    if(c==='{') { out+=' {\n'; depth++; i++; while(i<code.length&&isWS(code[i])) i++; continue; }
+    if(c==='}') {
+      depth=Math.max(0,depth-1);
+      if(out.endsWith('\n')) out=out.slice(0,-1);
+      out+='\n'+indStr()+'}'; i++;
+      if(code[i]===';') { out+=';'; i++; }
+      out+='\n';
+      while(i<code.length&&isWS(code[i])) i++; continue;
+    }
+    if(c===';') {
+      out+=';\n'; i++;
+      while(i<code.length&&isWS(code[i])) i++;
+      if(i<code.length&&code[i]!=='}') out+=indStr();
       continue;
     }
-    if (isWS(c)) {
-      if (out === '' || out.endsWith(' ') || out.endsWith('\n')) { i++; continue; }
-      if (i > 0 && !isWS(code[i-1])) out += ' ';
-      i++; continue;
+    if(isWS(c)) {
+      if(out===''||isWS(out[out.length-1])) { i++; continue; }
+      if(i>0&&!isWS(code[i-1])) out+=' '; i++; continue;
     }
-    out += c; i++;
+    out+=c; i++;
   }
-  return out.replace(/\n\s*\n/g, '\n').trim();
+  return out.replace(/\n\s*\n/g,'\n').trim();
 }
 function minify(code) {
-  let s = code.replace(/\/\/[\s\S]*?\n/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
-  s = s.replace(/\s+/g, ' ').replace(/\s*([{};:,=<>+\-*/%&|!])\s*/g, (m, c) => c);
-  return s.trim();
+  let s=code.replace(/\/\/[\s\S]*?\n/g,'').replace(/\/\*[\s\S]*?\*\//g,'');
+  let out='',i=0;
+  const isWS=c=>c===' '||c==='\t'||c==='\n'||c==='\r';
+  while(i<s.length) {
+    const c=s[i];
+    if(c==='"'||c==="'") {
+      let q=c; out+=q; i++;
+      while(i<s.length) { if(s[i]==='\\') { out+=s[i]+(s[i+1]||''); i+=2; continue; } if(s[i]===q) { out+=q; i++; break; } out+=s[i]; i++; }
+      continue;
+    }
+    if(c==='`') {
+      out+='`'; i++;
+      while(i<s.length) { if(s[i]==='`') { out+='`'; i++; break; } if(s[i]==='\\') { out+=s[i]+(s[i+1]||''); i+=2; continue; } out+=s[i]; i++; }
+      continue;
+    }
+    if(isWS(c)) { i++; continue; }
+    out+=c; i++;
+  }
+  return out;
 }
 function run() {
-  const t = $('src').value;
-  $('err').textContent = '';
-  if (!t.trim()) { $('out').textContent = ''; return; }
-  const ind = $('ind').value === 'tab' ? '\t' : parseInt($('ind').value);
-  try {
-    $('out').textContent = $('mode').value === 'pretty' ? prettify(t, ind) : minify(t);
-  } catch(e) { $('err').innerHTML = '<span style="color:#f87171">\u2717 ' + e.message + '</span>'; }
+  const t=$('src').value;
+  $('err').textContent='';
+  if(!t.trim()) { $('out').textContent=''; return; }
+  const ind=$('ind').value==='tab'?'\t':parseInt($('ind').value);
+  try { $('out').textContent=$('mode').value==='pretty'?prettify(t,ind):minify(t); }
+  catch(e) { $('err').innerHTML='<span style="color:#f87171">\u2717 '+e.message+'</span>'; }
 }
-$('go').onclick = run;
-$('src').addEventListener('input', run);
+$('go').onclick=run;
+$('dl').onclick=()=>{const txt=$('out').textContent;if(txt){const b=new Blob([txt],{type:'text/javascript'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=$('mode').value==='pretty'?'formatted.js':'minified.js';a.click();}};
+$('src').addEventListener('input',run);
 run();
 </script>
 </body>
