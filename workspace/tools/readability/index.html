@@ -69,23 +69,28 @@ tailwind.config = { theme: { extend: {
   </div>
 </div>
 <script src="/workspace/related.js" defer></script>
-<script>
+<script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
 function countS(s){return (s.match(/[.!?]+(\s|$)/g)||[]).length||1}
-function countW(s){return (s.match(/\w+/g)||[]).length||1}
+function countW(s){return (s.match(/\b\w+\b/g)||[]).length||1}
 function countSy(w){w=w.toLowerCase().replace(/[^a-z]/g,'');if(w.length<=3)return 1;let c=0;const v='aeiouy';for(let i=0;i<w.length;i++)if(v.includes(w[i])&&!(i>0&&v.includes(w[i-1])))c++;return w.endsWith('e')?Math.max(1,c-1):Math.max(1,c)}
-function countTotalSy(s){const w=(s.match(/\w+/g)||[]);return w.reduce((a,x)=>a+countSy(x),0)||1}
-function complexWords(s){const w=(s.toLowerCase().match(/\w+/g)||[]);return w.filter(x=>countSy(x)>=3).length}
+function countTotalSy(s){const w=(s.match(/\b\w+\b/g)||[]);return w.reduce((a,x)=>a+countSy(x),0)||1}
+function complexWords(s){const w=(s.toLowerCase().match(/\b\w+\b/g)||[]);return w.filter(x=>countSy(x)>=3).length}
 function run(){
   const s=$('src').value;
   if(!s.trim()){$('scores').innerHTML='<div class="text-white/40 text-sm">Enter text to see readability scores.</div>';return}
   const sent=countS(s),words=countW(s),syllables=countTotalSy(s),cw=complexWords(s);
+  const charsNoSpace=s.replace(/\s/g,'').length;
   const fkre=206.835-1.015*(words/sent)-84.6*(syllables/words);
   const fk=0.39*(words/sent)+11.8*(syllables/words)-15.59;
-  const fog=0.4*(words/sent+100*(cw/words));
-  const smog=Math.sqrt(cw*(30/sent+1))+3.1291;
-  const chars=(s.match(/[a-zA-Z]/g)||[]).length;
-  const ari=4.71*(chars/words)+0.5*(words/sent)-21.43;
+  const fog=0.4*((words/sent)+100*(cw/words));
+  const smog=1.0430*Math.sqrt(cw*(30/sent))+3.1291;
+  const ari=4.71*(charsNoSpace/words)+0.5*(words/sent)-21.43;
+  const coleman=5.89*(charsNoSpace/words)-0.3*(words/sent)-15.8;
+  const linsearNum=function(){let n=0;const w=s.match(/\b\w+\b/g)||[];w.forEach((word,i)=>{const sy=countSy(word);if(sy<3)n+=1;else n+=3});return n/w.length}();
+  const linsear=linsearNum<=20?Math.max(1,Math.round(linsearNum/2)):Math.round(linsearNum/2);
+  const grades=[fk,fog,smog,ari,coleman,linsear].map(g=>Math.max(1,Math.round(g)));
+  const consensus=Math.round(grades.reduce((a,b)=>a+b,0)/grades.length);
   const label=re=>re<30?'Very difficult':re<50?'Difficult':re<60?'Fairly difficult':re<70?'Standard':re<80?'Fairly easy':re<90?'Easy':'Very easy';
   const rows=[
     ['Flesch Reading Ease',fkre.toFixed(1),label(fkre),'Higher = easier (0–100)'],
@@ -93,9 +98,12 @@ function run(){
     ['Gunning Fog',fog.toFixed(1),'Grade '+Math.round(fog),'Years of education'],
     ['SMOG Index',smog.toFixed(1),'Grade '+Math.round(smog),'Simple Measure'],
     ['Auto Readability',ari.toFixed(1),'Grade '+Math.round(ari),'Character-based'],
+    ['Coleman-Liau',coleman.toFixed(1),'Grade '+Math.round(coleman),'Char + word based'],
+    ['Linsear Write',linsear.toFixed(1),'Grade '+linsear,'Adaptive formula'],
+    ['Consensus Grade',consensus.toFixed(1),'Grade '+consensus,'Average of all'],
   ];
   $('scores').innerHTML=rows.map(([n,v,b,desc])=>
-    '<div class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.04] p-4"><div><div class="ws-label mb-1">'+n+'</div><div class="text-[10px] text-white/30">'+desc+'</div></div><div class="text-right"><div class="font-display text-2xl font-black text-accent">'+v+'</div><div class="text-[10px] font-bold text-white/50 uppercase tracking-wider mt-1">'+b+'</div></div></div>'
+    '<div class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.04] p-4"><div><div class="ws-label mb-1">'+n+'</div><div class="text-[11px] text-white/40">'+desc+'</div></div><div class="text-right"><div class="font-display text-xl font-black text-accent">'+v+'</div><div class="text-xs text-white/60">'+b+'</div></div></div>'
   ).join('');
 }
 $('src').addEventListener('input',run);

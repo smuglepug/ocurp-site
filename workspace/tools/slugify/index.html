@@ -64,6 +64,10 @@ tailwind.config = { theme: { extend: {
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="lc" type="checkbox" checked class="accent-[#FF5F1F]"> Lowercase</label>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="strip" type="checkbox" checked class="accent-[#FF5F1F]"> Strip diacritics</label>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="strict" type="checkbox" checked class="accent-[#FF5F1F]"> Strict (a-z0-9 only)</label>
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="cc" type="checkbox" class="accent-[#FF5F1F]"> Split camelCase</label>
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="stop" type="checkbox" class="accent-[#FF5F1F]"> Remove stop words</label>
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="batch" type="checkbox" class="accent-[#FF5F1F]"> Batch (1 per line)</label>
+      <div><label class="ws-label mb-1 block">Max length</label><input id="maxlen" type="number" min="0" value="0" class="ws-input !w-24"></div>
     </div>
     <div class="mt-4 space-y-3" id="rows"></div>
   </section>
@@ -76,25 +80,41 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
-function slugify(s,sep,lc,strip,strict){
-  if(strip)s=s.normalize('NFKD').replace(/[̀-ͯ]/g,'');
+const STOP=new Set(['a','an','the','is','at','which','on','of','and','or','in','to','for','with','by','from','as','at','be','but','by','if','not','so','than','that','this','these','those']);
+function slugifyOne(s,sep,lc,strip,strict,cc,stop,maxlen){
+  if(strip)s=s.normalize('NFKD').replace(/[\u0300-\u036f]/g,'');
+  if(cc)s=s.replace(/([a-z])([A-Z])/g,'$1 $2');
   if(lc)s=s.toLowerCase();
   s=s.replace(/[^a-zA-Z0-9\s_-]/g,'');
   if(strict)s=s.replace(/[^a-zA-Z0-9_-]/g,'');
-  s=s.trim().replace(/[\s_-]+/g,sep);
+  if(stop){s=s.split(/[\s_-]+/).filter(w=>w&&!STOP.has(w.toLowerCase())).join(sep)}
+  else{s=s.trim().replace(/[\s_-]+/g,sep)}
+  if(maxlen>0&&s.length>maxlen){const cut=s.lastIndexOf(sep,maxlen);s=s.slice(0,cut>0?cut:maxlen)}
   return s;
 }
 function run(){
   const s=$('src').value, sep=$('sep').value, lc=$('lc').checked, strip=$('strip').checked, strict=$('strict').checked;
-  const r=slugify(s,sep,lc,strip,strict);
-  $('rows').innerHTML='<div class="ws-panel ws-copy p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Slug</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp2(this)">Copy</button></div><pre id="out" class="ws-out">'+r+'</pre></div>';
+  const cc=$('cc')?$('cc').checked:false, stop=$('stop')?$('stop').checked:false, batch=$('batch')?$('batch').checked:false;
+  const maxlen=parseInt($('maxlen')?$('maxlen').value:0)||0;
+  if(batch){
+    const lines=s.split('\n').filter(l=>l.trim());
+    const slugs=lines.map(l=>slugifyOne(l,sep,lc,strip,strict,cc,stop,maxlen));
+    $('rows').innerHTML=slugs.map((r,i)=>'<div class="ws-panel ws-copy p-3 mb-2"><div class="flex items-center justify-between"><span class="text-xs text-white/40 flex-shrink-0 mr-3">'+(i+1)+'</span><pre class="ws-out flex-1">'+r+'</pre><button class="ws-btn-ghost !px-2 !py-1 ml-2" onclick="cp2(this)">Copy</button></div></div>').join('');
+  }else{
+    const r=slugifyOne(s,sep,lc,strip,strict,cc,stop,maxlen);
+    $('rows').innerHTML='<div class="ws-panel ws-copy p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Slug</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp2(this)">Copy</button></div><pre id="out" class="ws-out">'+r+'</pre></div>';
+  }
 }
-function cp2(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
+function cp2(b){const t=b.closest('.ws-copy').querySelector('pre').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 $('src').addEventListener('input',run);
 $('sep').addEventListener('change',run);
 $('lc').addEventListener('change',run);
 $('strip').addEventListener('change',run);
 $('strict').addEventListener('change',run);
+if($('cc'))$('cc').addEventListener('change',run);
+if($('stop'))$('stop').addEventListener('change',run);
+if($('batch'))$('batch').addEventListener('change',run);
+if($('maxlen'))$('maxlen').addEventListener('input',run);
 run();
 </script>
 </body>

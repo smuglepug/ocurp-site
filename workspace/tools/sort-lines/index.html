@@ -74,7 +74,9 @@ elderberry</textarea>
       </select></div>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="dedupe" type="checkbox" checked class="accent-[#FF5F1F]"> Remove dupes</label>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="ci" type="checkbox" class="accent-[#FF5F1F]"> Case-insensitive</label>
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="rev" type="checkbox" class="accent-[#FF5F1F]"> Reverse</label>
       <button id="go" class="ws-btn">Sort</button>
+      <button id="dl" class="ws-btn-ghost">Download</button>
     </div>
     <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Sorted lines</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
     <div class="mt-3 text-[11px] font-mono text-white/40" id="cnt"></div>
@@ -90,7 +92,7 @@ elderberry</textarea>
 const $=id=>document.getElementById(id);
 function run(){
   let lines=$('src').value.split('\n');
-  const mode=$('mode').value, dedupe=$('dedupe').checked, ci=$('ci').checked;
+  const mode=$('mode').value, dedupe=$('dedupe').checked, ci=$('ci').checked, rev=$('rev').checked;
   if(dedupe){
     const seen=new Set();
     lines=lines.filter(l=>{const k=ci?l.toLowerCase():l;return seen.has(k)?false:(seen.add(k),true)});
@@ -99,11 +101,13 @@ function run(){
   else if(mode==='num'){lines.sort((a,b)=>(parseFloat(a)||0)-(parseFloat(b)||0))}
   else if(mode==='len'){lines.sort((a,b)=>a.length-b.length)}
   else{lines.sort((a,b)=>{const x=ci?a.toLowerCase():a,y=ci?b.toLowerCase():b;return mode==='desc'?y.localeCompare(x):x.localeCompare(y)})}
+  if(rev&&mode!=='shuffle')lines.reverse();
   $('out').textContent=lines.join('\n');
   $('cnt').textContent=lines.length+' lines';
 }
 $('go').onclick=run;
 $('src').addEventListener('input',run);
+$('dl').onclick=()=>{const b=new Blob([$('out').textContent],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='sorted.txt';a.click()};
 run();
 </script>
 </body>
