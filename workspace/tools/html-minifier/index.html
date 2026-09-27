@@ -67,6 +67,12 @@ tailwind.config = { theme: { extend: {
     body { margin: 0; }
     .btn { background: #FF5F1F; }
   </style>
+  <script>
+    function greet(name) {
+      return 'Hello ' + name;
+    }
+    console.log(greet('World'));
+  </script>
 </head>
 <body>
   <div class="container">
@@ -84,6 +90,7 @@ tailwind.config = { theme: { extend: {
     <div class="mt-3 flex flex-wrap items-end gap-3">
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="keepComments" type="checkbox" class="accent-[#FF5F1F]"> Keep comments</label>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="collapseInline" type="checkbox" checked class="accent-[#FF5F1F]"> Collapse inline spaces</label>
+      <label class="flex items-center gap-2 text-sm text-white/70"><input id="minifyJS" type="checkbox" checked class="accent-[#FF5F1F]"> Minify inline JS</label>
       <button id="go" class="ws-btn">Minify</button>
       <button id="dl" class="ws-btn-ghost">Download .min.html</button>
     </div>
@@ -115,13 +122,33 @@ const $=id=>document.getElementById(id);
 function minifyCSS(css) {
   return css.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\s+/g,' ').replace(/\s*\{\s*/g,'{').replace(/\s*\}\s*/g,'}').replace(/\s*;\s*/g,';').replace(/;\}/g,'}').replace(/\s*:\s*/g,':').trim();
 }
-function minify(html, keepComments, collapseInline) {
+function minifyJS(code) {
+  let out='', i=0;
+  const isWS=c=>c===' '||c==='\t'||c==='\n'||c==='\r';
+  function skipStr(q){let s=q;i++;while(i<code.length){if(code[i]==='\\'){s+=code[i]+(code[i+1]||'');i+=2;continue;}if(code[i]===q){s+=q;i++;return s;}s+=code[i];i++;}return s;}
+  function skipTmpl(){let s='`';i++;while(i<code.length){if(code[i]==='\\'){s+=code[i]+(code[i+1]||'');i+=2;continue;}if(code[i]==='`'){s+='`';i++;return s;}if(code[i]==='$'&&code[i+1]==='{'){s+='$'+'{';i+=2;let d=1;while(i<code.length&&d>0){if(code[i]==='{')d++;else if(code[i]==='}')d--;if(d===0){s+='}';i++;break;}s+=code[i];i++;}continue;}s+=code[i];i++;}return s;}
+  while(i<code.length){
+    const c=code[i];
+    if(c==='/'&&code[i+1]==='/'){let e=code.indexOf('\n',i);if(e<0)e=code.length;i=e;continue;}
+    if(c==='/'&&code[i+1]==='*'){let e=code.indexOf('*/',i+2);if(e<0)e=code.length;else e+=2;i=e;continue;}
+    if(c==='"'||c==="'"){out+=skipStr(c);continue;}
+    if(c==='`'){out+=skipTmpl();continue;}
+    if(isWS(c)){i++;continue;}
+    out+=c;i++;
+  }
+  return out;
+}
+var SCR_CLOSE='<\\/'+'script'+'>';
+function minify(html, keepComments, collapseInline, minifyJSFlag) {
   let s = html;
   if (!keepComments) s = s.replace(/<!--[\s\S]*?-->/g, '');
-  s = s.replace(/<style([^>]*)>([\s\S]*?)<\/style>/gi, (m, attr, css) => '<style' + attr + '>' + minifyCSS(css) + '</style>');
+  s = s.replace(/<style([^>]*)>([\s\S]*?)<\/style>/gi, (m, attr, css) => '<style' + attr + '>' + minifyCSS(css) + '<\/style>');
+  if (minifyJSFlag) {
+    s = s.replace(/<script([^>]*)>([\s\S]*?)<\/script>/gi, (m, attr, js) => '<script' + attr + '>' + minifyJS(js) + '<\\/script>');
+  }
   const prot = [];
   s = s.replace(/<(pre|textarea)\b[^>]*>[\s\S]*?<\/\1>/gi, m => { prot.push(m); return '\uE000' + (prot.length - 1) + '\uE000'; });
-  s = s.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, m => { prot.push(m); return '\uE000' + (prot.length - 1) + '\uE000'; });
+  if (!minifyJSFlag) s = s.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, m => { prot.push(m); return '\uE000' + (prot.length - 1) + '\uE000'; });
   s = s.replace(/^\s+/, '').replace(/\s+$/, '');
   s = s.replace(/\s+/g, ' ');
   s = s.replace(/\s*</g, '<').replace(/<\s+/g, '<').replace(/\s*>/g, '>').replace(/\s+$/, '');
@@ -132,7 +159,7 @@ function minify(html, keepComments, collapseInline) {
 }
 function run() {
   const src = $('src').value;
-  const min = minify(src, $('keepComments').checked, $('collapseInline').checked);
+  const min = minify(src, $('keepComments').checked, $('collapseInline').checked, $('minifyJS').checked);
   $('out').textContent = min;
   const b = new Blob([src]).size, a = new Blob([min]).size;
   $('before').textContent = b;
@@ -143,6 +170,7 @@ $('go').onclick = run;
 $('src').addEventListener('input', run);
 $('keepComments').addEventListener('change', run);
 $('collapseInline').addEventListener('change', run);
+$('minifyJS').addEventListener('change', run);
 $('dl').onclick = () => { const min = $('out').textContent; if (min) { const b = new Blob([min], { type: 'text/html' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'index.min.html'; a.click(); } };
 run();
 </script>
