@@ -95,4 +95,10 @@ const RAW = [
   {slug:"text-stats",name:"Text Statistics",cat:"data",blurb:"Chars, words, sentences, reading time and character frequency.",tags:["TEXT","STATS","FREQUENCY","CLIENT-SIDE"],ready:true},
   {slug:"readability",name:"Readability Score",cat:"data",blurb:"Flesch, Flesch-Kincaid, Gunning Fog, SMOG and ARI scores.",tags:["READABILITY","FLESCH","FOG","SMOG","CLIENT-SIDE"],ready:true},
   {slug:"slugify",name:"Slug Generator",cat:"data",blurb:"SEO-friendly URL slugs with separator and diacritic options.",tags:["SLUG","SEO","URL","CLIENT-SIDE"],ready:true},
+  {slug:"reverse-text",name:"Reverse Text",cat:"data",blurb:"Reverse characters, word order or line order in one click.",tags:["TEXT","REVERSE","CLIENT-SIDE"],ready:true},
+  {slug:"add-line-numbers",name:"Add Line Numbers",cat:"data",blurb:"Prefix each line with a configurable number, padding and separator.",tags:["TEXT","LINES","NUMBERING","CLIENT-SIDE"],ready:true},
+  {slug:"text-to-emoji",name:"Text to Emoji",cat:"data",blurb:"Convert letters to regional flags, bold, monospace or squared emoji.",tags:["TEXT","EMOJI","UNICODE","CLIENT-SIDE"],ready:true},
+  {slug:"zalgo",name:"Zalgo Text",cat:"data",blurb:"Corrupt text with combining diacritical marks at adjustable intensity.",tags:["TEXT","ZALGO","UNICODE","CLIENT-SIDE"],ready:true},
+  {slug:"morse-code",name:"Morse Code",cat:"data",blurb:"Translate text to Morse and back with audio playback.",tags:["MORSE","AUDIO","ENCODE","DECODE","CLIENT-SIDE"],ready:true},
+  {slug:"title-case",name:"Title Case Converter",cat:"data",blurb:"Title, AP, Chicago, sentence, camel, snake and kebab in one tool.",tags:["TEXT","TITLE CASE","AP","CHICAGO","CLIENT-SIDE"],ready:true},
   ];

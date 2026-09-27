@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Readability Score | Owen's Workspace</title>
+<title>Morse Code | Owen's Workspace</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,17 +50,32 @@ tailwind.config = { theme: { extend: {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Readability Score</h1>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Morse Code</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">READABILITY</span><span class="ws-chip">FLESCH</span><span class="ws-chip">FOG</span><span class="ws-chip">SMOG</span><span class="ws-chip">CLIENT-SIDE</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">MORSE</span><span class="ws-chip">AUDIO</span><span class="ws-chip">ENCODE</span><span class="ws-chip">DECODE</span><span class="ws-chip">CLIENT-SIDE</span></div>
         </div>
       
   <section class="ws-panel p-6">
-    <label class="ws-label mb-2 block">Text to score</label>
-    <textarea id="src" class="ws-input min-h-[160px]" placeholder="Paste a paragraph or article">The cat sat on the mat. It was a sunny day. The cat was happy. It purred and slept. Children played in the garden. They ran and jumped. The sun was warm. Everyone smiled. It was a good day.</textarea>
-    <div id="scores" class="mt-4 space-y-3"></div>
-    <div class="mt-4 text-[11px] text-white/40">Scores use standard formulas: Flesch Reading Ease, Flesch-Kincaid Grade, Gunning Fog, SMOG, and Automated Readability Index.</div>
+    <div class="flex flex-wrap items-end gap-3 mb-4">
+      <div><label class="ws-label mb-1 block">Direction</label><select id="dir" class="ws-input !w-40">
+        <option value="enc">Text to Morse</option>
+        <option value="dec">Morse to Text</option>
+      </select></div>
+      <div><label class="ws-label mb-1 block">Separator</label><select id="sep" class="ws-input !w-32">
+        <option value="slash">Slash ( / )</option>
+        <option value="space">Space</option>
+        <option value="pipe">Pipe ( | )</option>
+      </select></div>
+    </div>
+    <label class="ws-label mb-2 block">Input</label>
+    <textarea id="src" class="ws-input min-h-[80px]" placeholder="SOS or .... .. ..."></textarea>
+    <div class="mt-3 flex flex-wrap items-end gap-3">
+      <button id="go" class="ws-btn">Convert</button>
+      <button id="play" class="ws-btn-ghost">Play sound</button>
+      <button id="clr" class="ws-btn-ghost">Clear</button>
+    </div>
+    <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Output</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
   </section>
 
   <div id="ws-more" class="mt-12"></div>
@@ -69,36 +84,74 @@ tailwind.config = { theme: { extend: {
   </div>
 </div>
 <script src="/workspace/related.js" defer></script>
-<script>
+<script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
-function countS(s){return (s.match(/[.!?]+(\s|$)/g)||[]).length||1}
-function countW(s){return (s.match(/\w+/g)||[]).length||1}
-function countSy(w){w=w.toLowerCase().replace(/[^a-z]/g,'');if(w.length<=3)return 1;let c=0;const v='aeiouy';for(let i=0;i<w.length;i++)if(v.includes(w[i])&&!(i>0&&v.includes(w[i-1])))c++;return w.endsWith('e')?Math.max(1,c-1):Math.max(1,c)}
-function countTotalSy(s){const w=(s.match(/\w+/g)||[]);return w.reduce((a,x)=>a+countSy(x),0)||1}
-function complexWords(s){const w=(s.toLowerCase().match(/\w+/g)||[]);return w.filter(x=>countSy(x)>=3).length}
-function run(){
-  const s=$('src').value;
-  if(!s.trim()){$('scores').innerHTML='<div class="text-white/40 text-sm">Enter text to see readability scores.</div>';return}
-  const sent=countS(s),words=countW(s),syllables=countTotalSy(s),cw=complexWords(s);
-  const fkre=206.835-1.015*(words/sent)-84.6*(syllables/words);
-  const fk=0.39*(words/sent)+11.8*(syllables/words)-15.59;
-  const fog=0.4*(words/sent+100*(cw/words));
-  const smog=Math.sqrt(cw*(30/sent+1))+3.1291;
-  const chars=(s.match(/[a-zA-Z]/g)||[]).length;
-  const ari=4.71*(chars/words)+0.5*(words/sent)-21.43;
-  const label=re=>re<30?'Very difficult':re<50?'Difficult':re<60?'Fairly difficult':re<70?'Standard':re<80?'Fairly easy':re<90?'Easy':'Very easy';
-  const rows=[
-    ['Flesch Reading Ease',fkre.toFixed(1),label(fkre),'Higher = easier (0–100)'],
-    ['Flesch-Kincaid Grade',fk.toFixed(1),'Grade '+Math.round(fk),'US grade level'],
-    ['Gunning Fog',fog.toFixed(1),'Grade '+Math.round(fog),'Years of education'],
-    ['SMOG Index',smog.toFixed(1),'Grade '+Math.round(smog),'Simple Measure'],
-    ['Auto Readability',ari.toFixed(1),'Grade '+Math.round(ari),'Character-based'],
-  ];
-  $('scores').innerHTML=rows.map(([n,v,b,desc])=>
-    '<div class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.04] p-4"><div><div class="ws-label mb-1">'+n+'</div><div class="text-[10px] text-white/30">'+desc+'</div></div><div class="text-right"><div class="font-display text-2xl font-black text-accent">'+v+'</div><div class="text-[10px] font-bold text-white/50 uppercase tracking-wider mt-1">'+b+'</div></div></div>'
-  ).join('');
+const M={A:'.-',B:'-...',C:'-.-.',D:'-..',E:'.',F:'..-.',G:'--.',H:'....',I:'..',J:'.---',K:'-.-',L:'.-..',M:'--',N:'-.',O:'---',P:'.--.',Q:'--.-',R:'.-.',S:'...',T:'-',U:'..-',V:'...-',W:'.--',X:'-..-',Y:'-.--',Z:'--..',
+'0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.',
+'.':'.-.-.-',',':'--..--','?':'..--..',"'":'.----.','!':'-.-.--','/':'-..-.','(':'-.--.',')':'-.--.-','&':'.-...',':':'---...',';':'-.-.-.','=':'-...-','+':'.-.-.','-':'-....-','_':'..--.-','"':'.-..-.','@':'.--.-.'};
+const RM={};
+for(const k in M)RM[M[k]]=k;
+function getSep(){const s=$('sep').value;return s==='slash'?' / ':s==='space'?' ':s==='pipe'?' | ':' '}
+function encode(s){
+  const sep=getSep();
+  return s.toUpperCase().split('').map(ch=>{
+    if(ch===' ')return sep.trim();
+    return M[ch]||'';
+  }).filter(Boolean).join(sep);
 }
+function decode(s){
+  const sep=getSep().trim();
+  const parts=s.split(/\s*[\/\|]\s*|\s+/).filter(Boolean);
+  let out=[];
+  let prevWasSpace=false;
+  for(const p of parts){
+    if(RM[p])out.push(RM[p]);
+    else if(p===''){}
+  }
+  // handle word separators
+  const raw=s.split(/[\/\|]/);
+  if(raw.length>1){
+    return raw.map(w=>w.trim().split(/\s+/).filter(Boolean).map(c=>RM[c]||'').join('')).join(' ').trim();
+  }
+  return parts.map(p=>RM[p]||'').join('');
+}
+function run(){
+  const d=$('dir').value;
+  if(d==='enc') $('out').textContent=encode($('src').value);
+  else $('out').textContent=decode($('src').value);
+}
+$('go').onclick=run;
+$('dir').addEventListener('change',()=>{
+  const d=$('dir').value;
+  $('src').placeholder=d==='enc'?'SOS':'.... .. ...';
+  $('src').value=d==='enc'?'SOS':'.... / --- / ...';
+  run();
+});
 $('src').addEventListener('input',run);
+$('sep').addEventListener('change',run);
+$('clr').onclick=()=>{$('src').value='';$('out').textContent=''};
+let audioCtx=null;
+$('play').onclick=()=>{
+  const d=$('dir').value;
+  const morse=d==='enc'?encode($('src').value):$('src').value;
+  if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  const dot=0.08,dash=0.24,gap=0.08,letterGap=0.24;
+  let t=audioCtx.currentTime;
+  for(const ch of morse){
+    if(ch==='.'||ch==='\u2022'){
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.frequency.value=600;o.connect(g);g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0.3,t);g.gain.setValueAtTime(0,t+dot);
+      o.start(t);o.stop(t+dot);t+=dot+gap;
+    }else if(ch==='-'){
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.frequency.value=600;o.connect(g);g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0.3,t);g.gain.setValueAtTime(0,t+dash);
+      o.start(t);o.stop(t+dash);t+=dash+gap;
+    }else if(ch===' '||ch==='/'){t+=letterGap}
+  }
+};
+$('src').value='SOS';
 run();
 </script>
 </body>

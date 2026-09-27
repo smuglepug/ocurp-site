@@ -69,19 +69,12 @@ keeps the doctor away</textarea></div>
     <div class="mt-3 flex gap-3">
       <button id="go" class="ws-btn">Compare</button>
       <button id="swap" class="ws-btn-ghost">Swap</button>
-      <button id="view" class="ws-btn-ghost">Side-by-side</button>
-      <label class="flex items-center gap-2 text-sm text-white/70"><input id="hideEq" type="checkbox" class="accent-[#FF5F1F]"> Hide unchanged</label>
-      <label class="flex items-center gap-2 text-sm text-white/70"><input id="igWs" type="checkbox" class="accent-[#FF5F1F]"> Ignore whitespace</label>
-      <label class="flex items-center gap-2 text-sm text-white/70"><input id="igCase" type="checkbox" class="accent-[#FF5F1F]"> Ignore case</label>
-      <button class="ws-btn-ghost" onclick="cp(this)">Copy</button>
-      
     </div>
     <div class="mt-4 ws-panel p-4">
       <div class="mb-2 flex items-center justify-between"><span class="ws-label">Diff</span>
         <div class="flex gap-3 text-[9px] font-black tracking-wider"><span class="text-red-400">REMOVED</span><span class="text-green-400">ADDED</span></div>
       </div>
       <div id="diff" class="ws-out min-h-[100px]"></div>
-      <div class="mt-2"><span id="stats" class="text-xs text-white/50"></span></div>
     </div>
   </section>
 
@@ -91,9 +84,8 @@ keeps the doctor away</textarea></div>
   </div>
 </div>
 <script src="/workspace/related.js" defer></script>
-<script>function cp(b){const t=document.getElementById('diff').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
+<script>
 const $=id=>document.getElementById(id);
-let sideBySide=false;
 function lcs(a,b){
   const m=a.length,n=b.length,dp=Array.from({length:m+1},()=>Array(n+1).fill(0));
   for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]+1:Math.max(dp[i-1][j],dp[i][j-1]);
@@ -103,83 +95,19 @@ function lcs(a,b){
   return res;
 }
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-function wordDiff(a,b){
-  const wa=a.split(/(\s+)/),wb=b.split(/(\s+)/);
-  const d=lcs(wa,wb);
-  let h='';
-  d.forEach(op=>{
-    if(op.t==='eq')h+=esc(op.v);
-    else if(op.t==='del')h+='<span style="background:rgba(239,68,68,.3);color:#fca5a5;border-radius:2px;padding:0 1px">'+esc(op.v)+'</span>';
-    else h+='<span style="background:rgba(34,197,94,.3);color:#86efac;border-radius:2px;padding:0 1px">'+esc(op.v)+'</span>';
-  });
-  return h;
-}
-function ln(n){return '<span style="color:rgba(255,255,255,.2);user-select:none;display:inline-block;width:2.5em;text-align:right;margin-right:8px">'+n+'</span>'}
 function run(){
-  let a=$('a').value,b=$('b').value;
-  const hideEq=$('hideEq')&&$('hideEq').checked;
-  const igWs=$('igWs')&&$('igWs').checked;
-  const igCase=$('igCase')&&$('igCase').checked;
-  let la=a.split('\n'),lb=b.split('\n');
-  if(igWs){la=la.map(l=>l.trim());lb=lb.map(l=>l.trim())}
-  if(igCase){la=la.map(l=>l.toLowerCase());lb=lb.map(l=>l.toLowerCase())}
-  const d=lcs(la,lb);
-  let adds=0,dels=0;
-  d.forEach(op=>{if(op.t==='del')dels++;if(op.t==='ins')adds++});
-  $('stats').textContent=dels+' removed, '+adds+' added';
-  let n=1;
-  if(sideBySide){
-    let left='',right='';
-    for(let k=0;k<d.length;k++){
-      const op=d[k];
-      if(op.t==='eq'){
-        if(!hideEq){left+='<div style="color:rgba(255,255,255,.4);padding:1px 8px">'+ln(n)+esc(op.v)+'</div>';right+='<div style="color:rgba(255,255,255,.4);padding:1px 8px">'+ln(n)+esc(op.v)+'</div>';n++}
-      }else if(op.t==='del'){
-        const next=d[k+1];
-        if(next&&next.t==='ins'){
-          const wd=wordDiff(op.v,next.v);
-          left+='<div style="background:rgba(239,68,68,.12);border-left:3px solid #ef4444;padding:1px 8px">'+ln(n)+'- '+wd+'</div>';
-          right+='<div style="background:rgba(34,197,94,.12);border-left:3px solid #22c55e;padding:1px 8px">'+ln(n)+'+ '+wd+'</div>';
-          k++;n++;
-        }else{
-          left+='<div style="background:rgba(239,68,68,.12);color:#f87171;border-left:3px solid #ef4444;padding:1px 8px">'+ln(n)+'- '+esc(op.v)+'</div>';
-          right+='<div style="opacity:.15;padding:1px 8px">&nbsp;</div>';
-        }
-      }else{
-        left+='<div style="opacity:.15;padding:1px 8px">&nbsp;</div>';
-        right+='<div style="background:rgba(34,197,94,.12);color:#4ade80;border-left:3px solid #22c55e;padding:1px 8px">'+ln(n)+'+ '+esc(op.v)+'</div>';n++;
-      }
-    }
-    $('diff').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:0"><div style="border-right:1px solid rgba(255,255,255,.1);padding-right:12px">'+left+'</div><div style="padding-left:12px">'+right+'</div></div>';
-  }else{
-    let h='';
-    for(let k=0;k<d.length;k++){
-      const op=d[k];
-      if(op.t==='eq'){if(!hideEq)h+='<div style="color:rgba(255,255,255,.4);padding:1px 8px">'+ln(n)+esc(op.v)+'</div>';n++}
-      else if(op.t==='del'){
-        const next=d[k+1];
-        if(next&&next.t==='ins'){
-          h+='<div style="background:rgba(239,68,68,.08);border-left:3px solid #ef4444;padding:1px 8px">'+ln(n)+'- '+wordDiff(op.v,next.v)+'</div>';
-          h+='<div style="background:rgba(34,197,94,.08);border-left:3px solid #22c55e;padding:1px 8px">'+ln(n)+'+ '+wordDiff(op.v,next.v)+'</div>';
-          k++;n++;
-        }else{
-          h+='<div style="background:rgba(239,68,68,.12);color:#f87171;border-left:3px solid #ef4444;padding:1px 8px">'+ln(n)+'- '+esc(op.v)+'</div>';
-        }
-      }else{
-        h+='<div style="background:rgba(34,197,94,.12);color:#4ade80;border-left:3px solid #22c55e;padding:1px 8px">'+ln(n)+'+ '+esc(op.v)+'</div>';n++;
-      }
-    }
-    $('diff').innerHTML=h;
-  }
+  const a=$('a').value.split('\n'),b=$('b').value.split('\n');
+  const d=lcs(a,b);
+  let html='';
+  d.forEach(op=>{
+    if(op.t==='eq')html+='<div style="color:rgba(255,255,255,.4)">'+esc(op.v)+'</div>';
+    else if(op.t==='del')html+='<div style="background:rgba(239,68,68,.15);color:#f87171;border-left:3px solid #ef4444;padding-left:8px">- '+esc(op.v)+'</div>';
+    else html+='<div style="background:rgba(34,197,94,.15);color:#4ade80;border-left:3px solid #22c55e;padding-left:8px">+ '+esc(op.v)+'</div>';
+  });
+  $('diff').innerHTML=html;
 }
 $('go').onclick=run;
 $('swap').onclick=()=>{const t=$('a').value;$('a').value=$('b').value;$('b').value=t;run()};
-$('view').onclick=()=>{sideBySide=!sideBySide;$('view').textContent=sideBySide?'Unified':'Side-by-side';run()};
-$('a').addEventListener('input',run);
-$('b').addEventListener('input',run);
-if($('hideEq'))$('hideEq').addEventListener('change',run);
-if($('igWs'))$('igWs').addEventListener('change',run);
-if($('igCase'))$('igCase').addEventListener('change',run);
 run();
 </script>
 </body>

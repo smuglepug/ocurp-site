@@ -61,7 +61,7 @@ tailwind.config = { theme: { extend: {
     <textarea id="src" class="ws-input min-h-[160px]" placeholder="Paste any text to analyse">The quick brown fox jumps over the lazy dog. This is a sample sentence for analysis. It contains multiple words and punctuation marks! How long does it take to read? Let us find out together.</textarea>
     <div id="stats" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
     <div class="mt-4 ws-panel p-4">
-      <div class="ws-label mb-3">Word frequency (top 15)</div>
+      <div class="ws-label mb-3">Character frequency (top 12)</div>
       <div id="freq" class="flex flex-wrap gap-2"></div>
     </div>
   </section>
@@ -72,19 +72,17 @@ tailwind.config = { theme: { extend: {
   </div>
 </div>
 <script src="/workspace/related.js" defer></script>
-<script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
+<script>
 const $=id=>document.getElementById(id);
 const STATS=[
   ['Characters',s=>s.length],
-  ['Chars (no spaces)',s=>s.replace(/\s/g,'').length],
   ['Words',s=>s.trim()?s.trim().split(/\s+/).length:0],
-  ['Unique words',s=>{const w=s.toLowerCase().match(/\b\w+\b/g)||[];return new Set(w).size}],
   ['Sentences',s=>(s.match(/[.!?]+(\s|$)/g)||[]).length||1],
   ['Paragraphs',s=>s.split(/\n\s*\n/).filter(p=>p.trim()).length||1],
   ['Lines',s=>s.split('\n').length],
-  ['Avg word length',s=>{const w=s.match(/\b\w+\b/g)||[];return w.length?(w.reduce((a,x)=>a+x.length,0)/w.length).toFixed(2):'0'}],
+  ['Unique words',s=>{const w=s.toLowerCase().match(/\w+/g)||[];return new Set(w).size}],
+  ['Avg word length',s=>{const w=s.match(/\w+/g)||[];return w.length?(w.reduce((a,x)=>a+x.length,0)/w.length).toFixed(2):'0'}],
   ['Reading time',s=>{const w=s.trim()?s.trim().split(/\s+/).length:0;return w?Math.max(1,Math.round(w/200))+'m':'0m'}],
-  ['Speaking time',s=>{const w=s.trim()?s.trim().split(/\s+/).length:0;return w?Math.max(1,Math.round(w/130))+'m':'0m'}],
 ];
 function run(){
   const s=$('src').value;
@@ -92,11 +90,9 @@ function run(){
     '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="font-display text-2xl font-black text-accent">'+f(s)+'</div><div class="ws-label mt-1">'+n+'</div></div>'
   ).join('');
   const freq={};
-  const words=s.toLowerCase().match(/\b\w+\b/g)||[];
-  words.forEach(w=>freq[w]=(freq[w]||0)+1);
-  const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,15);
-  $('freq').innerHTML=sorted.length?sorted.map(([w,n])=>'<div class="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5"><span class="font-display text-lg font-black text-accent">'+w+'</span><span class="text-xs text-white/50">'+n+'x</span><div style="width:'+Math.min(n*8,120)+'px;height:4px;background:#FF5F1F;border-radius:2px"></div></div>').join(''):'<span class="text-white/30 text-sm">No words</span>';
-
+  for(const ch of s.toLowerCase())if(/[a-z]/.test(ch))freq[ch]=(freq[ch]||0)+1;
+  const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  $('freq').innerHTML=sorted.map(([c,n])=>'<div class="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5"><span class="font-display text-lg font-black text-accent uppercase">'+c+'</span><span class="text-xs text-white/50">'+n+'</span></div>').join('');
 }
 $('src').addEventListener('input',run);
 run();

@@ -67,8 +67,6 @@ tailwind.config = { theme: { extend: {
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="re" type="checkbox" class="accent-[#FF5F1F]"> Regex</label>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="ci" type="checkbox" class="accent-[#FF5F1F]"> Case-insensitive</label>
       <label class="flex items-center gap-2 text-sm text-white/70"><input id="gl" type="checkbox" checked class="accent-[#FF5F1F]"> Replace all</label>
-      <label class="flex items-center gap-2 text-sm text-white/70"><input id="ml" type="checkbox" class="accent-[#FF5F1F]"> Multiline</label>
-      <label class="flex items-center gap-2 text-sm text-white/70"><input id="dt" type="checkbox" class="accent-[#FF5F1F]"> Dot-all</label>
       <button id="go" class="ws-btn">Replace</button>
     </div>
     <div class="mt-3 text-[11px] font-mono" id="cnt"></div>
@@ -86,22 +84,18 @@ const $=id=>document.getElementById(id);
 function run(){
   const src=$('src').value, find=$('find').value, rep=$('rep').value;
   const useRe=$('re').checked, ci=$('ci').checked, all=$('gl').checked;
-  const ml=$('ml')?$('ml').checked:false, dt=$('dt')?$('dt').checked:false;
   if(!find){$('out').textContent=src;$('cnt').textContent='0 replacements';return}
   let count=0,result;
   if(useRe){
     try{
-      let flags=all?'g':'';
-      if(ci)flags+='i';if(ml)flags+='m';if(dt)flags+='s';
-      const re=new RegExp(find,flags);
-      result=src.replace(re,function(){count++;return rep.replace(/\$0/g,arguments[0]).replace(/\$(\d+)/g,(m,n)=>{const i=parseInt(n);return i<arguments.length-2?arguments[i]||'':m})});
-    }catch(e){$('out').textContent='\u2717 '+e.message;$('cnt').textContent='';return}
+      const flags=ci?'gi':'g';
+      const re=new RegExp(find,all?flags:ci?'i':'');
+      result=src.replace(re,m=>{count++;return rep});
+    }catch(e){$('out').textContent='✗ '+e.message;$('cnt').textContent='';return}
   } else {
     const esc=s=>{const codes=[46,45,42,43,63,94,36,123,125,40,41,124,91,93,92];let r='';for(const c of s){if(codes.includes(c.charCodeAt(0)))r+=String.fromCharCode(92);r+=c}return r}
-    let flags2=all?'g':'';
-    if(ci)flags2+='i';
-    const re2=new RegExp(esc(find),flags2);
-    result=src.replace(re2,m=>{count++;return rep});
+    const re=new RegExp(esc(find),all?(ci?'gi':'g'):(ci?'i':''));
+    result=src.replace(re,m=>{count++;return rep});
   }
   $('out').textContent=result;
   $('cnt').textContent=count+' replacement'+(count!==1?'s':'');
