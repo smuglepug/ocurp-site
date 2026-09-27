@@ -52,4 +52,10 @@ const RAW = [
   {slug:"kanban",name:"Kanban Board",cat:"study",blurb:"Drag-and-drop tasks saved in this browser.",tags:["TASKS"],ready:true},
     {slug:"background-remover",name:"Background Remover",cat:"design",blurb:"Cut the background off a photo in your browser — no upload, no watermark.",tags:["IMAGE","PNG"],ready:true},
     {slug:"element-mixer",name:"Element Mixer",cat:"study",blurb:"All 118 elements — tap two to see the compound they form.",tags:["CHEMISTRY","TABLE"],ready:true},
+  {slug:"pdf-to-word",name:"PDF to Word",cat:"document",blurb:"Extract text from any PDF into a Word-compatible .doc download.",tags:["PDF","WORD"],ready:true},
+  {slug:"word-to-pdf",name:"Word to PDF",cat:"document",blurb:"Paste text, pick a page size, export a clean paginated PDF.",tags:["PDF","EXPORT"],ready:true},
+  {slug:"merge-pdf",name:"Merge PDF",cat:"document",blurb:"Join several PDFs in your chosen order, download one file.",tags:["PDF","MERGE"],ready:true},
+  {slug:"split-pdf",name:"Split PDF",cat:"document",blurb:"Split every N pages or by custom ranges, download each part.",tags:["PDF","SPLIT"],ready:true},
+  {slug:"organize-pdf",name:"Organise PDF Pages",cat:"document",blurb:"Delete, rotate and reorder pages, then download the result.",tags:["PDF","ROTATE"],ready:true},
+  {slug:"compress-pdf",name:"Compress PDF",cat:"document",blurb:"Re-save with object streams and show before/after file size.",tags:["PDF","COMPRESS"],ready:true},
   ];
