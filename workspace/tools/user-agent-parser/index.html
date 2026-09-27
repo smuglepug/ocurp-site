@@ -51,11 +51,10 @@ tailwind.config = { theme: { extend: {
     </a>
     <div class="min-w-0">
       <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">User Agent Parser</h1>
-      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
-          </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">UA</span><span class="ws-chip">BROWSER</span><span class="ws-chip">CLIENT-SIDE</span></div>
-        </div>
-      
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data &amp; Code — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">UA</span><span class="ws-chip">BROWSER</span><span class="ws-chip">CLIENT-SIDE</span></div>
+  </div>
   <section class="ws-panel p-6">
     <div>
       <label class="ws-label mb-2 block">User-Agent string</label>
@@ -68,10 +67,15 @@ tailwind.config = { theme: { extend: {
       <button id="firefox" class="ws-btn-ghost">Firefox</button>
       <button id="iphone" class="ws-btn-ghost">iPhone</button>
       <button id="android" class="ws-btn-ghost">Android</button>
+      <button id="edge" class="ws-btn-ghost">Edge</button>
+      <button id="bot" class="ws-btn-ghost">Bot</button>
     </div>
     <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" id="grid"></div>
+    <div class="mt-4 flex flex-wrap gap-3">
+      <button id="copyJson" class="ws-btn">Copy as JSON</button>
+      <button id="copyText" class="ws-btn-ghost">Copy summary</button>
+    </div>
   </section>
-
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
@@ -85,32 +89,46 @@ const SAMPLES={
   safari:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
   firefox:'Mozilla/5.0 (X11; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0',
   iphone:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
-  android:'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36'
+  android:'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+  edge:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Edg/124.0.0.0',
+  bot:'Mozilla/5.0 (compatible; Googlebot/2.1; +https://www.google.com/bot.html)'
 };
+var lastResult=null;
 function parse(ua){
-  const r={browser:'Unknown',version:'—',engine:'—',os:'Unknown',osVersion:'—',device:'Desktop',deviceType:'desktop'};
-  if(/Edg\//.test(ua)){r.browser='Edge';r.version=(ua.match(/Edg\/([\d.]+)/)||[])[1]||'—';r.engine='Blink'}
-  else if(/OPR\//.test(ua)){r.browser='Opera';r.version=(ua.match(/OPR\/([\d.]+)/)||[])[1]||'—';r.engine='Blink'}
-  else if(/Firefox\//.test(ua)){r.browser='Firefox';r.version=(ua.match(/Firefox\/([\d.]+)/)||[])[1]||'—';r.engine='Gecko'}
-  else if(/Chrome\//.test(ua)){r.browser='Chrome';r.version=(ua.match(/Chrome\/([\d.]+)/)||[])[1]||'—';r.engine='Blink'}
-  else if(/Safari\//.test(ua)&&!/Chrome/.test(ua)){r.browser='Safari';r.version=(ua.match(/Version\/([\d.]+)/)||[])[1]||'—';r.engine='WebKit'}
-  if(/Windows NT ([\d.]+)/.test(ua)){r.os='Windows';r.osVersion=(ua.match(/Windows NT ([\d.]+)/)||[])[1]||'';r.osVersion={'10.0':'10/11','6.3':'8.1','6.2':'8'}[r.osVersion]||r.osVersion}
+  var r={browser:'Unknown',version:'\u2014',engine:'\u2014',engineVersion:'\u2014',os:'Unknown',osVersion:'\u2014',device:'Desktop',deviceType:'desktop',model:'\u2014',bot:false};
+  if(/Edg\//.test(ua)){r.browser='Edge';r.version=(ua.match(/Edg\/([\d.]+)/)||[])[1]||'\u2014';r.engine='Blink'}
+  else if(/OPR\//.test(ua)){r.browser='Opera';r.version=(ua.match(/OPR\/([\d.]+)/)||[])[1]||'\u2014';r.engine='Blink'}
+  else if(/Vivaldi\//.test(ua)){r.browser='Vivaldi';r.version=(ua.match(/Vivaldi\/([\d.]+)/)||[])[1]||'\u2014';r.engine='Blink'}
+  else if(/SamsungBrowser\//.test(ua)){r.browser='Samsung Internet';r.version=(ua.match(/SamsungBrowser\/([\d.]+)/)||[])[1]||'\u2014';r.engine='Blink'}
+  else if(/UCBrowser\//.test(ua)){r.browser='UC Browser';r.version=(ua.match(/UCBrowser\/([\d.]+)/)||[])[1]||'\u2014';r.engine='Blink'}
+  else if(/YaBrowser\//.test(ua)){r.browser='Yandex';r.version=(ua.match(/YaBrowser\/([\d.]+)/)||[])[1]||'\u2014';r.engine='Blink'}
+  else if(/Firefox\//.test(ua)){r.browser='Firefox';r.version=(ua.match(/Firefox\/([\d.]+)/)||[])[1]||'\u2014';r.engine='Gecko'}
+  else if(/Chrome\//.test(ua)){r.browser='Chrome';r.version=(ua.match(/Chrome\/([\d.]+)/)||[])[1]||'\u2014';r.engine='Blink'}
+  else if(/Safari\//.test(ua)&&!/Chrome/.test(ua)){r.browser='Safari';r.version=(ua.match(/Version\/([\d.]+)/)||[])[1]||'\u2014';r.engine='WebKit'}
+  var ek=(ua.match(/AppleWebKit\/([\d.]+)/)||[])[1];if(ek)r.engineVersion=ek;
+  if(/bot|crawler|spider|slurp|baidu|bingbot|googlebot|duckduckbot|facebookexternalhit|twitterbot|linkedinbot|telegrambot|whatsapp|discord/i.test(ua)){r.bot=true;r.device='Bot';r.deviceType='bot';r.browser=(ua.match(/([A-Za-z]+bot)/i)||[])[1]||'Bot'}
+  if(/Windows NT ([\d.]+)/.test(ua)){r.os='Windows';r.osVersion=(ua.match(/Windows NT ([\d.]+)/)||[])[1]||'';r.osVersion={'10.0':'10/11','6.3':'8.1','6.2':'8','6.1':'7'}[r.osVersion]||r.osVersion}
   else if(/Mac OS X ([\d_]+)/.test(ua)){r.os='macOS';r.osVersion=(ua.match(/Mac OS X ([\d_]+)/)||[])[1].replace(/_/g,'.')||''}
-  else if(/iPhone OS ([\d_]+)/.test(ua)){r.os='iOS';r.osVersion=(ua.match(/iPhone OS ([\d_]+)/)||[])[1].replace(/_/g,'.')||'';r.deviceType='mobile';r.device='iPhone'}
-  else if(/Android ([\d]+)/.test(ua)){r.os='Android';r.osVersion=(ua.match(/Android ([\d.]+)/)||[])[1]||'';r.deviceType='mobile';r.device='Android'}
+  else if(/iPhone OS ([\d_]+)/.test(ua)){r.os='iOS';r.osVersion=(ua.match(/iPhone OS ([\d_]+)/)||[])[1].replace(/_/g,'.')||'';r.deviceType='mobile';r.device='iPhone';var im=(ua.match(/iPhone(\d+)/i)||[])[1];if(im)r.model='iPhone '+im}
+  else if(/Android ([\d.]+)/.test(ua)){r.os='Android';r.osVersion=(ua.match(/Android ([\d.]+)/)||[])[1]||'';r.deviceType='mobile';r.device='Android';var am=(ua.match(/;\s*([^;)]+)\)/)||[])[1];if(am)r.model=am.trim()}
   else if(/Linux/.test(ua)){r.os='Linux'}
-  if(/iPad/.test(ua)){r.device='iPad';r.deviceType='tablet'}
-  if(/Mobile/.test(ua)&&r.device==='Desktop')r.device='Mobile';
+  if(/iPad/.test(ua)){r.device='iPad';r.deviceType='tablet';r.os='iPadOS'}
+  if(/Mobile|mobi/i.test(ua)&&r.device==='Desktop')r.device='Mobile';
+  if(/CrOS/.test(ua)){r.os='ChromeOS';r.device='Chromebook'}
+  if(/Win64|x64|WOW64/.test(ua)&&r.os==='Windows')r.arch='64-bit';
   return r;
 }
 function run(){
-  const ua=$('src').value.trim();
-  if(!ua){$('grid').innerHTML='<div class="ws-label">Paste a UA above</div>';return}
-  const p=parse(ua);
-  $('grid').innerHTML=[
-    ['Browser',p.browser+' '+p.version],['Engine',p.engine],['OS',p.os+(p.osVersion&&p.osVersion!=='—'?' '+p.osVersion:'')],
-    ['Device',p.device],['Type',p.deviceType],['Parsed',p.browser+'/'+p.os]
-  ].map(([k,v])=>'<div class="ws-panel p-4"><div class="ws-label mb-1">'+k+'</div><div class="ws-out text-white text-sm">'+v+'</div></div>').join('');
+  var ua=$('src').value.trim();
+  if(!ua){$('grid').innerHTML='<div class="ws-label">Paste a UA above</div>';lastResult=null;return}
+  var p=parse(ua);lastResult=p;
+  var items=[
+    ['Browser',p.bot?('Bot: '+p.browser):p.browser+' '+p.version],['Engine',p.engine+(p.engineVersion&&p.engineVersion!=='\u2014'?' '+p.engineVersion:'')],
+    ['OS',p.os+(p.osVersion&&p.osVersion!=='\u2014'?' '+p.osVersion:'')],
+    ['Device',p.device+(p.model&&p.model!=='\u2014'?' ('+p.model+')':'')],
+    ['Type',p.deviceType],['Architecture',p.arch||'\u2014']
+  ];
+  $('grid').innerHTML=items.map(([k,v])=>'<div class="ws-panel p-4"><div class="ws-label mb-1">'+k+'</div><div class="ws-out text-white text-sm">'+v+'</div></div>').join('');
 }
 $('src').addEventListener('input',run);
 $('mine').onclick=()=>{$('src').value=navigator.userAgent;run()};
@@ -119,6 +137,10 @@ $('safari').onclick=()=>{$('src').value=SAMPLES.safari;run()};
 $('firefox').onclick=()=>{$('src').value=SAMPLES.firefox;run()};
 $('iphone').onclick=()=>{$('src').value=SAMPLES.iphone;run()};
 $('android').onclick=()=>{$('src').value=SAMPLES.android;run()};
+$('edge').onclick=()=>{$('src').value=SAMPLES.edge;run()};
+$('bot').onclick=()=>{$('src').value=SAMPLES.bot;run()};
+$('copyJson').onclick=()=>{if(lastResult){navigator.clipboard.writeText(JSON.stringify(lastResult,null,2));$('copyJson').classList.add('ok');setTimeout(()=>$('copyJson').classList.remove('ok'),1200)}};
+$('copyText').onclick=()=>{if(lastResult){var t=lastResult.browser+'/'+lastResult.os;navigator.clipboard.writeText(t);$('copyText').classList.add('ok');setTimeout(()=>$('copyText').classList.remove('ok'),1200)}};
 $('src').value=navigator.userAgent;run();
 </script>
 </body>

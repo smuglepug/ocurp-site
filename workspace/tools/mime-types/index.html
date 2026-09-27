@@ -51,32 +51,30 @@ tailwind.config = { theme: { extend: {
     </a>
     <div class="min-w-0">
       <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">MIME Types</h1>
-      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
-          </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">MIME</span><span class="ws-chip">FILE</span><span class="ws-chip">CLIENT-SIDE</span></div>
-        </div>
-      
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data &amp; Code — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">MIME</span><span class="ws-chip">FILE</span><span class="ws-chip">CLIENT-SIDE</span></div>
+  </div>
   <section class="ws-panel p-6">
     <div class="mb-4">
       <label class="ws-label mb-2 block">Search extension or MIME type</label>
-      <input id="src" class="ws-input" placeholder=".json / application/pdf" value="application/json">
+      <input id="src" class="ws-input" placeholder=".json / application/pdf / json" value=".json">
     </div>
     <div class="mt-4 grid gap-4 md:grid-cols-2">
-      <div class="ws-panel p-4">
-        <div class="ws-label mb-2">Extension → MIME</div>
+      <div class="ws-panel ws-copy p-4">
+        <div class="mb-2 flex items-center justify-between"><span class="ws-label">Extension &rarr; MIME</span><button id="copyExt" class="ws-btn-ghost !px-3 !py-1.5">Copy</button></div>
         <div id="extResult" class="ws-out"></div>
       </div>
-      <div class="ws-panel p-4">
-        <div class="ws-label mb-2">MIME → Extensions</div>
+      <div class="ws-panel ws-copy p-4">
+        <div class="mb-2 flex items-center justify-between"><span class="ws-label">MIME &rarr; Extensions</span><button id="copyMime" class="ws-btn-ghost !px-3 !py-1.5">Copy</button></div>
         <div id="mimeResult" class="ws-out"></div>
       </div>
     </div>
     <div class="mt-4">
-      <div class="ws-label mb-2">Common types</div>
+      <div class="ws-label mb-2">Common types — click to look up</div>
       <div id="grid" class="grid gap-2 sm:grid-cols-2 md:grid-cols-3"></div>
     </div>
   </section>
-
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
@@ -85,28 +83,55 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>
 const $=id=>document.getElementById(id);
-const DB={".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".xml": "application/xml", ".txt": "text/plain", ".csv": "text/csv", ".md": "text/markdown", ".yaml": "text/yaml", ".yml": "text/yaml", ".pdf": "application/pdf", ".zip": "application/zip", ".gz": "application/gzip", ".tar": "application/x-tar", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif", ".svg": "image/svg+xml", ".webp": "image/webp", ".avif": "image/avif", ".bmp": "image/bmp", ".ico": "image/x-icon", ".tiff": "image/tiff", ".heic": "image/heic", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".ogg": "audio/ogg", ".flac": "audio/flac", ".m4a": "audio/mp4", ".mp4": "video/mp4", ".webm": "video/webm", ".avi": "video/x-msvideo", ".mov": "video/quicktime", ".mkv": "video/x-matroska", ".doc": "application/msword", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".xls": "application/vnd.ms-excel", ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".ppt": "application/vnd.ms-powerpoint", ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation", ".woff2": "font/woff2", ".ttf": "font/ttf", ".otf": "font/otf", ".wasm": "application/wasm", ".7z": "application/x-7z-compressed", ".rar": "application/vnd.rar", ".bz2": "application/x-bzip2", ".epub": "application/epub+zip", ".mobi": "application/x-mobipocket-ebook", ".swf": "application/x-shockwave-flash", ".sqlite3": "application/vnd.sqlite3", ".db": "application/vnd.sqlite3", ".jar": "application/java-archive", ".class": "application/java-vm", ".dex": "application/vnd.android.dex", ".apk": "application/vnd.android.package-archive", ".rtf": "application/rtf", ".exe": "application/x-msdownload", ".dll": "application/x-msdownload", ".so": "application/octet-stream", ".dylib": "application/octet-stream", ".obj": "application/octet-stream", ".bin": "application/octet-stream", ".ps1": "text/plain", ".sh": "text/x-shellscript", ".bash": "text/x-shellscript", ".zsh": "text/x-shellscript", ".py": "text/x-python", ".rb": "text/x-ruby", ".php": "text/x-php", ".java": "text/x-java", ".c": "text/x-c", ".cpp": "text/x-c++", ".cs": "text/x-csharp", ".go": "text/x-go", ".rs": "text/rust", ".ts": "application/octet-stream", ".jsx": "text/jsx", ".tsx": "text/jsx", ".vue": "text/x-vue", ".svelte": "text/x-svelte", ".sql": "application/sql", ".graphql": "application/graphql", ".toml": "text/x-toml", ".ini": "text/plain", ".conf": "text/plain", ".env": "text/plain", ".lock": "text/plain", ".log": "text/plain", ".aac": "audio/aac", ".aiff": "audio/x-aiff", ".opus": "audio/opus", ".mid": "audio/midi", ".midi": "audio/midi", ".m3u": "application/vnd.apple.mpegurl", ".m3u8": "application/vnd.apple.mpegurl", ".3gp": "video/3gpp", ".3g2": "video/3g2", ".oga": "audio/ogg", ".ogv": "video/ogg", ".tga": "image/tga", ".raw": "image/raw", ".cr2": "image/x-canon-cr2", ".nef": "image/x-nikon-nef", ".arw": "image/x-sony-arw", ".dng": "image/x-adobe-dng", ".raf": "image/x-fuji-raf", ".rw2": "image/x-panasonic-rw2", ".torrent": "application/x-bittorrent", ".glb": "model/gltf-binary", ".gltf": "model/gltf+json", ".fbx": "model/fbx", ".obj2": "model/obj", ".stl": "model/stl", ".dae": "model/vnd.collada+xml", ".3ds": "model/x3ds", ".blend": "model/blend", ".usdz": "model/usd", ".usda": "model/usd"};
-const REV={"text/html": ".html", "text/css": ".css", "text/javascript": ".js", "application/json": ".json", "application/xml": ".xml", "text/plain": ".txt", "text/csv": ".csv", "text/markdown": ".md", "text/yaml": ".yaml", "application/pdf": ".pdf", "application/zip": ".zip", "application/gzip": ".gz", "application/x-tar": ".tar", "image/png": ".png", "image/jpeg": ".jpg", "image/gif": ".gif", "image/svg+xml": ".svg", "image/webp": ".webp", "image/avif": ".avif", "image/bmp": ".bmp", "image/x-icon": ".ico", "image/tiff": ".tiff", "image/heic": ".heic", "audio/mpeg": ".mp3", "audio/wav": ".wav", "audio/ogg": ".ogg", "audio/flac": ".flac", "audio/mp4": ".m4a", "video/mp4": ".mp4", "video/webm": ".webm", "video/x-msvideo": ".avi", "video/quicktime": ".mov", "video/x-matroska": ".mkv", "application/msword": ".doc", "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx", "application/vnd.ms-excel": ".xls", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx", "application/vnd.ms-powerpoint": ".ppt", "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx", "font/woff2": ".woff2", "font/ttf": ".ttf", "font/otf": ".otf", "application/wasm": ".wasm", "application/x-7z-compressed": ".7z", "application/vnd.rar": ".rar", "application/x-bzip2": ".bz2", "application/epub+zip": ".epub", "application/x-mobipocket-ebook": ".mobi", "application/x-shockwave-flash": ".swf", "application/vnd.sqlite3": ".sqlite3", "application/java-archive": ".jar", "application/java-vm": ".class", "application/vnd.android.dex": ".dex", "application/vnd.android.package-archive": ".apk", "application/rtf": ".rtf", "application/x-msdownload": ".exe", "application/octet-stream": ".so", "text/x-shellscript": ".sh", "text/x-python": ".py", "text/x-ruby": ".rb", "text/x-php": ".php", "text/x-java": ".java", "text/x-c": ".c", "text/x-c++": ".cpp", "text/x-csharp": ".cs", "text/x-go": ".go", "text/rust": ".rs", "text/jsx": ".jsx", "text/x-vue": ".vue", "text/x-svelte": ".svelte", "application/sql": ".sql", "application/graphql": ".graphql", "text/x-toml": ".toml", "audio/aac": ".aac", "audio/x-aiff": ".aiff", "audio/opus": ".opus", "audio/midi": ".mid", "application/vnd.apple.mpegurl": ".m3u", "video/3gpp": ".3gp", "video/3g2": ".3g2", "video/ogg": ".ogv", "image/tga": ".tga", "image/raw": ".raw", "image/x-canon-cr2": ".cr2", "image/x-nikon-nef": ".nef", "image/x-sony-arw": ".arw", "image/x-adobe-dng": ".dng", "image/x-fuji-raf": ".raf", "image/x-panasonic-rw2": ".rw2", "application/x-bittorrent": ".torrent", "model/gltf-binary": ".glb", "model/gltf+json": ".gltf", "model/fbx": ".fbx", "model/obj": ".obj2", "model/stl": ".stl", "model/vnd.collada+xml": ".dae", "model/x3ds": ".3ds", "model/blend": ".blend", "model/usd": ".usdz"};
+const DB={
+".html":"text/html",".htm":"text/html",".css":"text/css",".js":"text/javascript",".mjs":"text/javascript",".json":"application/json",".xml":"application/xml",".txt":"text/plain",".csv":"text/csv",".md":"text/markdown",".yaml":"text/yaml",".yml":"text/yaml",".toml":"text/x-toml",
+".pdf":"application/pdf",".zip":"application/zip",".gz":"application/gzip",".tar":"application/x-tar",".7z":"application/x-7z-compressed",".rar":"application/vnd.rar",".bz2":"application/x-bzip2",
+".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",".gif":"image/gif",".svg":"image/svg+xml",".webp":"image/webp",".avif":"image/avif",".bmp":"image/bmp",".ico":"image/x-icon",".tiff":"image/tiff",".heic":"image/heic",".heif":"image/heif",
+".mp3":"audio/mpeg",".wav":"audio/wav",".ogg":"audio/ogg",".flac":"audio/flac",".m4a":"audio/mp4",".aac":"audio/aac",".opus":"audio/opus",".aiff":"audio/x-aiff",".mid":"audio/midi",".midi":"audio/midi",
+".mp4":"video/mp4",".webm":"video/webm",".avi":"video/x-msvideo",".mov":"video/quicktime",".mkv":"video/x-matroska",".3gp":"video/3gpp",".3g2":"video/3g2",".ogv":"video/ogg",".m3u8":"application/vnd.apple.mpegurl",
+".doc":"application/msword",".docx":"application/vnd.openxmlformats-officedocument.wordprocessingml.document",".xls":"application/vnd.ms-excel",".xlsx":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",".ppt":"application/vnd.ms-powerpoint",".pptx":"application/vnd.openxmlformats-officedocument.presentationml.presentation",
+".woff":"font/woff",".woff2":"font/woff2",".ttf":"font/ttf",".otf":"font/otf",
+".wasm":"application/wasm",".epub":"application/epub+zip",".mobi":"application/x-mobipocket-ebook",".swf":"application/x-shockwave-flash",".torrent":"application/x-bittorrent",
+".sqlite3":"application/vnd.sqlite3",".db":"application/vnd.sqlite3",".jar":"application/java-archive",".class":"application/java-vm",".dex":"application/vnd.android.dex",".apk":"application/vnd.android.package-archive",
+".rtf":"application/rtf",".exe":"application/x-msdownload",".dll":"application/x-msdownload",".so":"application/octet-stream",".dylib":"application/octet-stream",".obj":"application/octet-stream",".bin":"application/octet-stream",
+".ps1":"text/plain",".sh":"text/x-shellscript",".bash":"text/x-shellscript",".zsh":"text/x-shellscript",
+".py":"text/x-python",".rb":"text/x-ruby",".php":"text/x-php",".java":"text/x-java",".c":"text/x-c",".cpp":"text/x-c++",".cs":"text/x-csharp",".go":"text/x-go",".rs":"text/rust",".ts":"text/typescript",".tsx":"text/jsx",".jsx":"text/jsx",".vue":"text/x-vue",".svelte":"text/x-svelte",".kt":"text/x-kotlin",".swift":"text/x-swift",".scala":"text/x-scala",".pl":"text/x-perl",".lua":"text/x-lua",".r":"text/x-r",".jl":"text/x-julia",".dart":"text/x-dart",".elm":"text/x-elm",".clj":"text/x-clojure",".ex":"text/x-elixir",".exs":"text/x-elixir",".erl":"text/x-erlang",".hrl":"text/x-erlang",".fs":"text/x-fsharp",".ml":"text/x-ocaml",".nim":"text/x-nim",".v":"text/x-verilog",".sv":"text/x-systemverilog",
+".sql":"application/sql",".graphql":"application/graphql",".gql":"application/graphql",".proto":"text/x-protobuf",".thrift":"text/x-thrift",
+".ini":"text/plain",".conf":"text/plain",".env":"text/plain",".lock":"text/plain",".log":"text/plain",".properties":"text/plain",".cfg":"text/plain",
+".glb":"model/gltf-binary",".gltf":"model/gltf+json",".fbx":"model/fbx",".stl":"model/stl",".obj2":"model/obj",".dae":"model/vnd.collada+xml",".3ds":"model/x3ds",".blend":"model/blend",".usdz":"model/usd",
+".html":"text/html"
+};
+var REV={};
+for(var ext in DB){var m=DB[ext];if(!REV[m])REV[m]=[];REV[m].push(ext)}
+
 function run(){
-  const v=$('src').value.trim().toLowerCase();
-  if(!v){$('extResult').textContent='';$('mimeResult').textContent='';return;}
+  var v=$('src').value.trim().toLowerCase();
+  if(!v){$('extResult').textContent='';$('mimeResult').textContent='';return}
+  var extV,mimeV;
   if(v.startsWith('.')){
-    const m=DB[v];
-    $('extResult').textContent=m||'(unknown)';
-    $('mimeResult').textContent=m?(REV[m]||v):'';
-  } else if(v.includes('/')){
-    const exts=REV[v];
-    $('extResult').textContent=exts?('.'.$exts):'(unknown)';
-    $('mimeResult').textContent=v in REV?v:'(not found)';
-  } else {
-    $('extResult').textContent='?';
-    $('mimeResult').textContent='Enter .ext or type/subtype';
+    var m=DB[v];extV=m||'(unknown)';mimeV=m?REV[m].join(', '):'(no match)';}
+  else if(v.includes('/')){
+    var exts=REV[v];extV=exts?exts.join(', '):'(unknown)';mimeV=v in REV?v:'(not found)';}
+  else{
+    var dot='.'+v;var m2=DB[dot];
+    if(m2){extV=m2;mimeV=REV[m2].join(', ');}
+    else{
+      var matches=Object.keys(DB).filter(e=>DB[e]===v||DB[e].includes(v));
+      if(matches.length){extV=matches.join(', ');mimeV=DB[matches[0]];}
+      else{var fuzzy=Object.keys(DB).filter(e=>e.slice(1).includes(v));
+        if(fuzzy.length){extV=fuzzy.slice(0,5).map(f=>f+' '+DB[f]).join('\n');mimeV=fuzzy.slice(0,5).map(f=>DB[f]).join(', ');}
+        else{extV='(no match)';mimeV='Type .'+v+' or type/subtype';}
+      }
+    }
   }
+  $('extResult').textContent=extV;
+  $('mimeResult').textContent=mimeV;
 }
 $('src').addEventListener('input',run);
-// grid
+$('copyExt').onclick=()=>{navigator.clipboard.writeText($('extResult').textContent);$('copyExt').classList.add('ok');setTimeout(()=>$('copyExt').classList.remove('ok'),1200)};
+$('copyMime').onclick=()=>{navigator.clipboard.writeText($('mimeResult').textContent);$('copyMime').classList.add('ok');setTimeout(()=>$('copyMime').classList.remove('ok'),1200)};
 const common=[['.html','text/html'],['.css','text/css'],['.js','text/javascript'],['.json','application/json'],['.xml','application/xml'],['.txt','text/plain'],['.csv','text/csv'],['.md','text/markdown'],['.png','image/png'],['.jpg','image/jpeg'],['.gif','image/gif'],['.svg','image/svg+xml'],['.webp','image/webp'],['.mp3','audio/mpeg'],['.wav','audio/wav'],['.mp4','video/mp4'],['.webm','video/webm'],['.pdf','application/pdf'],['.zip','application/zip'],['.doc','application/msword'],['.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document'],['.xls','application/vnd.ms-excel'],['.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],['.py','text/x-python'],['.ts','text/typescript'],['.sh','text/x-shellscript'],['.woff2','font/woff2'],['.ttf','font/ttf']];
-$('grid').innerHTML=common.map(([e,m])=>'<button class="ws-btn-ghost !text-left !justify-start !normal-case !tracking-normal !text-[11px]" data-ext="'+e+'">'+e+'<span class="ml-2 text-white/30">'+m+'</span></button>').join('');
+$('grid').innerHTML=common.map(([e,m])=>'<button class="ws-btn-ghost !text-left !justify-start !normal-case !tracking-normal !text-[11px] !px-3" data-ext="'+e+'">'+e+'<span class="ml-2 text-white/30">'+m+'</span></button>').join('');
 $('grid').querySelectorAll('button').forEach(b=>b.onclick=()=>{$('src').value=b.dataset.ext;run()});
 run();
 </script>
