@@ -78,26 +78,68 @@ tailwind.config = { theme: { extend: {
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
 function prettify(code, ind) {
-  let out='', depth=0, i=0;
+  let tokens=[], i=0;
   const isWS=c=>c===' '||c==='\t'||c==='\n'||c==='\r';
   const isIdent=c=>/[a-zA-Z0-9_$]/.test(c);
-  const indStr=()=>(ind==='\t'?'\t':' '.repeat(ind)).repeat(depth);
   function skipString(q) { let s=q; i++; while(i<code.length){if(code[i]==='\\'){s+=code[i]+(code[i+1]||'');i+=2;continue;}if(code[i]===q){s+=q;i++;return s;}s+=code[i];i++;} return s; }
   function skipTemplate() { let s='`'; i++; while(i<code.length){if(code[i]==='\\'){s+=code[i]+(code[i+1]||'');i+=2;continue;}if(code[i]==='`'){s+='`';i++;return s;}if(code[i]==='$'&&code[i+1]==='{'){s+='$'+'{';i+=2;let d=1;while(i<code.length&&d>0){if(code[i]==='{')d++;else if(code[i]==='}')d--;if(d===0){s+='}';i++;break;}s+=code[i];i++;}continue;}s+=code[i];i++;} return s; }
   function skipRegex() { let s='/'; i++; while(i<code.length){if(code[i]==='\\'){s+=code[i]+(code[i+1]||'');i+=2;continue;}if(code[i]==='/'){i++;s+='/';while(i<code.length&&/[gimsuy]/.test(code[i]))s+=code[i++];return s;}if(code[i]==='\n')return s;s+=code[i];i++;} return s; }
   while(i<code.length) {
     const c=code[i];
-    if(c==='/'&&code[i+1]==='/') { let end=code.indexOf('\n',i); if(end<0)end=code.length; out+=indStr()+code.slice(i,end).trim()+'\n'; i=end; continue; }
-    if(c==='/'&&code[i+1]==='*') { let end=code.indexOf('*/',i+2); if(end<0)end=code.length; else end+=2; out+=indStr()+code.slice(i,end)+'\n'; i=end; continue; }
-    if(c==='"'||c==="'") { out+=skipString(c); continue; }
-    if(c==='`') { out+=skipTemplate(); continue; }
-    if(c==='/'&&i>0&&!isWS(code[i-1])&&code[i-1]!==')') { out+=skipRegex(); continue; }
-    if(c==='{') { if(out&&!isWS(out[out.length-1])&&!out.endsWith('{')){} out+='{\n'; depth++; i++; while(i<code.length&&isWS(code[i]))i++; continue; }
-    if(c==='}') { depth=Math.max(0,depth-1); if(out.endsWith('\n'))out=out.slice(0,-1); out+='\n'+indStr()+'}'; i++; if(code[i]===';'){out+=';';i++;} out+='\n'; while(i<code.length&&isWS(code[i]))i++; continue; }
-    if(c===';') { out+=';\n'; i++; while(i<code.length&&isWS(code[i]))i++; if(i<code.length&&code[i]!=='}')out+=indStr(); continue; }
-    if(isWS(c)) { if(out===''||isWS(out[out.length-1])){i++;continue;} if(i>0&&!isWS(code[i-1])&&isIdent(code[i-1])&&i<code.length&&isIdent(code[i]))out+=' '; i++; continue; }
-    if(out===''&&!isWS(c)) out=indStr();
-    out+=c; i++;
+    if(isWS(c)) { i++; continue; }
+    if(c==='/'&&code[i+1]==='/') { let end=code.indexOf('\n',i); if(end<0)end=code.length; tokens.push({t:'comment',v:code.slice(i,end)}); i=end; continue; }
+    if(c==='/'&&code[i+1]==='*') { let end=code.indexOf('*/',i+2); if(end<0)end=code.length; else end+=2; tokens.push({t:'comment',v:code.slice(i,end)}); i=end; continue; }
+    if(c==='"'||c==="'") { tokens.push({t:'str',v:skipString(c)}); continue; }
+    if(c==='`') { tokens.push({t:'str',v:skipTemplate()}); continue; }
+    if(c==='/'&&tokens.length>0) { const pt=tokens[tokens.length-1]; if(!(pt.t==='ident'||pt.v===')'||pt.v===']')) { tokens.push({t:'str',v:skipRegex()}); continue; } }
+    if(c==='{') { tokens.push({t:'open',v:'{'}); i++; continue; }
+    if(c==='}') { tokens.push({t:'close',v:'}'}); i++; continue; }
+    if(c===';') { tokens.push({t:'semi',v:';'}); i++; continue; }
+    if(isIdent(c)) { let s=''; while(i<code.length&&isIdent(code[i])) s+=code[i++]; tokens.push({t:'ident',v:s}); continue; }
+    if(c==='='&&code[i+1]==='='&&code[i+2]==='=') { tokens.push({t:'op',v:'==='}); i+=3; continue; }
+    if(c==='!'&&code[i+1]==='='&&code[i+2]==='=') { tokens.push({t:'op',v:'!=='}); i+=3; continue; }
+    if(c==='='&&code[i+1]==='=') { tokens.push({t:'op',v:'=='}); i+=2; continue; }
+    if(c==='!'&&code[i+1]==='=') { tokens.push({t:'op',v:'!='}); i+=2; continue; }
+    if(c==='>'&&code[i+1]==='=') { tokens.push({t:'op',v:'>='}); i+=2; continue; }
+    if(c==='<'&&code[i+1]==='=') { tokens.push({t:'op',v:'<='}); i+=2; continue; }
+    if(c==='&'&&code[i+1]==='&') { tokens.push({t:'op',v:'&&'}); i+=2; continue; }
+    if(c==='|'&&code[i+1]==='|') { tokens.push({t:'op',v:'||'}); i+=2; continue; }
+    if(c==='='&&code[i+1]==='>') { tokens.push({t:'op',v:'=>'}); i+=2; continue; }
+    tokens.push({t:'op',v:c}); i++;
+  }
+  let out='', depth=0;
+  const indStr=()=>(ind==='\t'?'\t':' '.repeat(ind)).repeat(depth);
+  const binaryOps=['=','==','===','!=','!==','>','<','>=','<=','&&','||','+','-','*','/','%','&','|','=>'];
+  for(let j=0;j<tokens.length;j++) {
+    const tok=tokens[j];
+    if(tok.t==='comment') { if(out&&!out.endsWith('\n'))out+='\n'; out+=indStr()+tok.v+'\n'; continue; }
+    if(tok.t==='open') {
+      if(out&&!out.endsWith('\n')&&!out.endsWith(' ')) out+=' ';
+      out+='{\n'; depth++; continue;
+    }
+    if(tok.t==='close') {
+      depth=Math.max(0,depth-1);
+      if(out.endsWith('\n'))out=out.slice(0,-1);
+      out+='\n'+indStr()+'}';
+      // Add newline after } if next token is not ; or EOF
+      if(j+1<tokens.length&&tokens[j+1].t!=='semi') out+='\n';
+      continue;
+    }
+    if(tok.t==='semi') { out+=';\n'; continue; }
+    if(tok.t==='op'&&binaryOps.includes(tok.v)) {
+      if(out&&!out.endsWith('\n')&&!out.endsWith(' ')) out+=' ';
+      out+=tok.v+' ';
+      continue;
+    }
+    if(tok.t==='op'&&tok.v===',') { out+=', '; continue; }
+    if(tok.t==='ident') {
+      if(out&&!out.endsWith('\n')&&!out.endsWith(' ')&&!out.endsWith('{')&&!out.endsWith('(')&&!out.endsWith('[')&&!out.endsWith(';')&&!out.endsWith(',')&&!out.endsWith('=')&&!out.endsWith('>')) {
+        const prev=tokens[j-1];
+        if(prev&&prev.t==='ident') out+=' ';
+      }
+    }
+    if(out.endsWith('\n')) out+=indStr();
+    out+=tok.v;
   }
   let lines=out.split('\n').map(l=>l.trimEnd()).filter(l=>l.length>0);
   return lines.join('\n');
@@ -117,7 +159,6 @@ function minify(code) {
     if(c==='`') { out+=skipTemplate(); continue; }
     if(c==='/'&&i>0&&!isWS(code[i-1])&&code[i-1]!==')') { out+=skipRegex(); continue; }
     if(isWS(c)) {
-      // Keep space if both surrounding chars are identifiers (e.g. const x, return y)
       if(out.length>0&&isIdent(out[out.length-1])&&i+1<code.length&&isIdent(code[i+1])) { out+=' '; }
       i++; continue;
     }

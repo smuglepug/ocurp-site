@@ -126,33 +126,52 @@ function minifyJS(code) {
   let out='', i=0;
   const isWS=c=>c===' '||c==='\t'||c==='\n'||c==='\r';
   const isIdent=c=>/[a-zA-Z0-9_$]/.test(c);
+  // Check if we need a space between out's last char and the next non-ws char
+  function needSpaceBefore(nextChar) {
+    if(out.length===0) return false;
+    const last=out[out.length-1];
+    // Need space between ident char and ident/string/regex start
+    if(isIdent(last)&&(isIdent(nextChar)||nextChar==='"'||nextChar==="'"||nextChar==='`')) return true;
+    // Need space between ) and string (e.g. ) 'hello')
+    if(last===')'&&(nextChar==='"'||nextChar==="'"||nextChar==='`')) return true;
+    return false;
+  }
   function skipStr(q){let s=q;i++;while(i<code.length){if(code[i]==='\\'){s+=code[i]+(code[i+1]||'');i+=2;continue;}if(code[i]===q){s+=q;i++;return s;}s+=code[i];i++;}return s;}
   function skipTmpl(){let s='`';i++;while(i<code.length){if(code[i]==='\\'){s+=code[i]+(code[i+1]||'');i+=2;continue;}if(code[i]==='`'){s+='`';i++;return s;}if(code[i]==='$'&&code[i+1]==='{'){s+='$'+'{';i+=2;let d=1;while(i<code.length&&d>0){if(code[i]==='{')d++;else if(code[i]==='}')d--;if(d===0){s+='}';i++;break;}s+=code[i];i++;}continue;}s+=code[i];i++;}return s;}
+  function skipRegex(){let s='/';i++;while(i<code.length){if(code[i]==='\\'){s+=code[i]+(code[i+1]||'');i+=2;continue;}if(code[i]==='/'){i++;s+='/';while(i<code.length&&/[gimsuy]/.test(code[i]))s+=code[i++];return s;}if(code[i]==='\n')return s;s+=code[i];i++;}return s;}
   while(i<code.length){
     const c=code[i];
     if(c==='/'&&code[i+1]==='/'){let e=code.indexOf('\n',i);if(e<0)e=code.length;i=e;continue;}
     if(c==='/'&&code[i+1]==='*'){let e=code.indexOf('*/',i+2);if(e<0)e=code.length;else e+=2;i=e;continue;}
-    if(c==='"'||c==="'"){out+=skipStr(c);continue;}
-    if(c==='`'){out+=skipTmpl();continue;}
-    if(isWS(c)){if(out.length>0&&isIdent(out[out.length-1])&&i+1<code.length&&isIdent(code[i+1])){out+=' ';}i++;continue;}
+    if(c==='"'||c==="'"){if(needSpaceBefore(c))out+=' ';out+=skipStr(c);continue;}
+    if(c==='`'){if(needSpaceBefore(c))out+=' ';out+=skipTmpl();continue;}
+    if(c==='/'&&out.length>0&&!isWS(out[out.length-1])&&out[out.length-1]!==')'){if(needSpaceBefore(c))out+=' ';out+=skipRegex();continue;}
+    if(isWS(c)){
+      // Peek next non-ws char
+      let j=i;
+      while(j<code.length&&isWS(code[j]))j++;
+      if(j<code.length&&needSpaceBefore(code[j])) out+=' ';
+      i++;continue;
+    }
     out+=c;i++;
   }
   return out;
 }
-var SCR='scr'+'ipt';
+var ST_OPEN='<scr'+'ipt';
+var ST_CLOSE='</scr'+'ipt';
 function minify(html, keepComments, collapseInline, minifyJSFlag) {
   let s = html;
   if (!keepComments) s = s.replace(/<!--[\s\S]*?-->/g, '');
   s = s.replace(/<style([^>]*)>([\s\S]*?)<\/style>/gi, (m, attr, css) => '<style' + attr + '>' + minifyCSS(css) + '<\/style>');
   if (minifyJSFlag) {
-    var scrRe=new RegExp('<'+SCR+'([^>]*)>([\\s\\S]*?)<\\/'+SCR+'>','gi');
-    s = s.replace(scrRe, (m, attr, js) => '<'+SCR+attr+'>' + minifyJS(js) + '<\\/'+SCR+'>');
+    var re = new RegExp(ST_OPEN+'([^>]*)>([\\s\\S]*?)'+ST_CLOSE, 'gi');
+    s = s.replace(re, (m, attr, js) => ST_OPEN + attr + '>' + minifyJS(js) + ST_CLOSE);
   }
   const prot = [];
   s = s.replace(/<(pre|textarea)\b[^>]*>[\s\S]*?<\/\1>/gi, m => { prot.push(m); return '\uE000' + (prot.length - 1) + '\uE000'; });
   if (!minifyJSFlag) {
-    var scrRe2=new RegExp('<'+SCR+'\\b[^>]*>[\\s\\S]*?<\\/'+SCR+'>','gi');
-    s = s.replace(scrRe2, m => { prot.push(m); return '\uE000' + (prot.length - 1) + '\uE000'; });
+    var re2 = new RegExp(ST_OPEN+'\\b[^>]*>[\\s\\S]*?'+ST_CLOSE, 'gi');
+    s = s.replace(re2, m => { prot.push(m); return '\uE000' + (prot.length - 1) + '\uE000'; });
   }
   s = s.replace(/^\s+/, '').replace(/\s+$/, '');
   s = s.replace(/\s+/g, ' ');
