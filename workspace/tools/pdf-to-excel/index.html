@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF Tables to CSV | Owen's Workspace</title>
+<title>PDF Tables to Excel | Owen's Workspace</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -77,7 +77,7 @@ tailwind.config = { theme: { extend: {
         <option value="csv">CSV</option>
         <option value="xlsx">XLSX</option>
       </select></div>
-      <label class="flex items-center gap-1 text-xs text-white/40 mt-2"><input id="keeponly" type="checkbox" checked class="accent-[#FF5F1F]"> Table rows only</label>
+      <label class="flex items-center gap-1 text-xs text-white/40 mt-2"><input id="perpage" type="checkbox" class="accent-[#FF5F1F]"> One sheet per page</label>
       <button id="go" class="ws-btn" disabled>Extract & Preview</button>
       <button id="dl" class="ws-btn-ghost" disabled>Download</button>
     </div>
@@ -156,11 +156,11 @@ $('go').onclick=async()=>{
       if(counts[delim]===0)delim=/\s{2,}|\t/;
     } else if(d==='  '){delim=/ {2,}/} else {delim=d}
     // split into columns
-    const keepOnly=$('keeponly').checked;
+    const keepOnly=true; // always keep table-like rows
     let csvRows=allRows.map(line=>{
       return (typeof delim==='string'?line.split(delim):line.split(delim)).map(c=>c.trim()).filter(c=>c);
     });
-    if(keepOnly)csvRows=csvRows.filter(r=>r.length>1);
+    csvRows=csvRows.filter(r=>r.length>1);
     csvData=csvRows.map(r=>r.map(escapeCsv).join(',')).join('\n');
     const table=csvRows.slice(0,20);
     let html='<table class="ws-out text-xs">';
@@ -189,13 +189,30 @@ $('dl').onclick=async()=>{
     try{
       const XLSX=await import('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js');
       const wb=XLSX.utils.book_new();
-      const rows=window._csvRows||[];
-      const wsData=rows.map(r=>r.map(c=>c||''));
-      const ws=XLSX.utils.aoa_to_sheet(wsData);
-      XLSX.utils.book_append_sheet(wb,ws,'Table');
+      if($('perpage').checked&&window._pageSheets){
+        const delim=window._delim||',';
+        window._pageSheets.forEach((pageRows,idx)=>{
+          const rows=pageRows.map(line=>{
+            return (typeof delim==='string'?line.split(delim):line.split(delim)).map(c=>c.trim()).filter(c=>c);
+          }).filter(r=>r.length>1);
+          if(rows.length>0){
+            const wsData=rows.map(r=>r.map(c=>c||''));
+            const ws=XLSX.utils.aoa_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb,ws,'Page '+(idx+1));
+          }
+        });
+        if(wb.SheetNames.length===0){
+          const ws=XLSX.utils.aoa_to_sheet([['No table data found']]);
+          XLSX.utils.book_append_sheet(wb,ws,'Sheet1');
+        }
+      } else {
+        const rows=window._csvRows||[];
+        const wsData=rows.map(r=>r.map(c=>c||''));
+        const ws=XLSX.utils.aoa_to_sheet(wsData);
+        XLSX.utils.book_append_sheet(wb,ws,'Table');
+      }
       XLSX.writeFile(wb,fileName+'.xlsx');
     }catch(e){
-      // fallback to CSV
       const blob=new Blob([csvData],{type:'text/csv'});
       const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fileName+'.csv';a.click();
     }

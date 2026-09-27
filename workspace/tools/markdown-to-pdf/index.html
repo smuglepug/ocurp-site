@@ -97,10 +97,11 @@ const $=id=>document.getElementById(id);
 function mdToHtml(s){
   let html='';
   const lines=s.split('\n');
-  let inList=false,inCode=false,inTable=false,tableHeader=false;
+  let inList=false,inCode=false,inTable=false,tableHeader=false,inOl=false;
   function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
   function inline(t){
     t=esc(t);
+    t=t.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1" style="max-width:100%;height:auto;margin:8px 0">');
     t=t.replace(/~~([^~]+)~~/g,'<del>$1</del>');
     t=t.replace(/`([^`]+)`/g,'<code style="background:#f0f0f0;padding:2px 4px;border-radius:3px">$1</code>');
     t=t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
@@ -137,13 +138,14 @@ function mdToHtml(s){
     else if(/^#\s+/.test(line)){if(inList){html+='</ul>';inList=false}html+='<h1>'+inline(line.replace(/^#\s+/,''))+'</h1>'}
     else if(/^>\s+/.test(line)){html+='<blockquote style="border-left:3px solid #FF5F1F;padding-left:12px;margin:8px 0;color:#666">'+inline(line.replace(/^>\s+/,''))+'</blockquote>'}
     else if(/^[-*]\s+\[[x ]\]\s+/i.test(line)){if(!inList){html+='<ul style="padding-left:20px;list-style:none">';inList=true}const checked=/^\s*[-*]\s+\[x\]/i.test(line);html+='<li style="list-style:none;padding-left:20px;text-indent:-20px">'+(checked?'☑ ':'☐ ')+inline(line.replace(/^[-*]\s+\[[x ]\]\s+/i,''))+'</li>'}
-    else if(/^[-*]\s+/.test(line)){if(!inList){html+='<ul style="padding-left:20px">';inList=true}html+='<li>'+inline(line.replace(/^[-*]\s+/,''))+'</li>'}
-    else if(/^\d+\.\s+/.test(line)){if(inList){html+='</ul>';inList=false}html+='<ol style="padding-left:20px"><li>'+inline(line.replace(/^\d+\.\s+/,''))+'</li></ol>'}
-    else if(/^---+$/.test(line.trim())){if(inList){html+='</ul>';inList=false}html+='<hr style="border:none;border-top:1px solid #ddd;margin:16px 0">'}
-    else if(!line.trim()){if(inList){html+='</ul>';inList=false}html+='<br>'}
-    else{if(inList){html+='</ul>';inList=false}html+='<p style="margin:8px 0">'+inline(line)+'</p>'}
+    else if(/^[-*]\s+/.test(line)){if(inOl){html+='</ol>';inOl=false}if(!inList){html+='<ul style="padding-left:20px">';inList=true}html+='<li>'+inline(line.replace(/^[-*]\s+/,''))+'</li>'}
+    else if(/^\d+\.\s+/.test(line)){if(inList){html+='</ul>';inList=false}if(!inOl){html+='<ol style="padding-left:20px">';inOl=true}html+='<li>'+inline(line.replace(/^\d+\.\s+/,''))+'</li>'}
+    else if(/^---+$/.test(line.trim())){if(inList){html+='</ul>';inList=false}if(inOl){html+='</ol>';inOl=false}html+='<hr style="border:none;border-top:1px solid #ddd;margin:16px 0">'}
+    else if(!line.trim()){if(inList){html+='</ul>';inList=false}if(inOl){html+='</ol>';inOl=false}html+='<br>'}
+    else{if(inList){html+='</ul>';inList=false}if(inOl){html+='</ol>';inOl=false}html+='<p style="margin:8px 0">'+inline(line)+'</p>'}
   }
   if(inList)html+='</ul>';
+  if(inOl)html+='</ol>';
   if(inTable)html+='</tbody></table>';
   if(inCode)html+='</code></pre>';
   return html;
