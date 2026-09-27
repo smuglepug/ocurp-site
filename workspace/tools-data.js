@@ -89,4 +89,10 @@ const RAW = [
   {slug:"remove-line-breaks",name:"Remove Line Breaks",cat:"data",blurb:"Strip unwanted newlines, optionally merge paragraphs.",tags:["TEXT","LINE BREAKS","CLEANUP","CLIENT-SIDE"],ready:true},
   {slug:"remove-duplicate-lines",name:"Remove Duplicate Lines",cat:"data",blurb:"Dedupe lines with case and whitespace options, keep order.",tags:["TEXT","DEDUPE","LINES","CLIENT-SIDE"],ready:true},
   {slug:"remove-extra-spaces",name:"Remove Extra Spaces",cat:"data",blurb:"Collapse runs of spaces and tabs, trim each line.",tags:["TEXT","SPACES","CLEANUP","CLIENT-SIDE"],ready:true},
+  {slug:"sort-lines",name:"Sort Lines",cat:"data",blurb:"Sort A-Z, Z-A, numeric, by length or shuffle — with dedupe.",tags:["TEXT","SORT","DEDUPE","CLIENT-SIDE"],ready:true},
+  {slug:"text-diff",name:"Text Diff",cat:"data",blurb:"Compare two blocks of text line by line with colour highlighting.",tags:["DIFF","COMPARE","LCS","CLIENT-SIDE"],ready:true},
+  {slug:"find-replace",name:"Find & Replace",cat:"data",blurb:"Plain or regex find-and-replace with live count.",tags:["TEXT","REGEX","REPLACE","CLIENT-SIDE"],ready:true},
+  {slug:"text-stats",name:"Text Statistics",cat:"data",blurb:"Chars, words, sentences, reading time and character frequency.",tags:["TEXT","STATS","FREQUENCY","CLIENT-SIDE"],ready:true},
+  {slug:"readability",name:"Readability Score",cat:"data",blurb:"Flesch, Flesch-Kincaid, Gunning Fog, SMOG and ARI scores.",tags:["READABILITY","FLESCH","FOG","SMOG","CLIENT-SIDE"],ready:true},
+  {slug:"slugify",name:"Slug Generator",cat:"data",blurb:"SEO-friendly URL slugs with separator and diacritic options.",tags:["SLUG","SEO","URL","CLIENT-SIDE"],ready:true},
   ];
