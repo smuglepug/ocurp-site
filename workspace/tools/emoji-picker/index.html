@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emoji Picker &amp; Search | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .eBtn { display:flex; align-items:center; justify-content:center; aspect-ratio:1; border-radius:.75rem; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); font-size:1.5rem; line-height:1; cursor:pointer; transition:background .15s,border-color .15s,transform .1s }
+  .eBtn:hover { background:rgba(255,95,31,.15); border-color:rgba(255,95,31,.5); transform:scale(1.06) }
+  .eBtn:active { transform:scale(.94) }
+  .cat { cursor:pointer } .cat.on { background:#FF5F1F !important; color:#000 !important; border-color:#FF5F1F !important }
+  .emoBig { font-size:4rem; line-height:1 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Emoji Picker &amp; Search</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Text &amp; Language — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">UNICODE</span><span class="ws-chip">CODES</span><span class="ws-chip">OFFLINE</span></div>
+        </div>
+
+  <section class="ws-panel p-6">
+    <label class="ws-label mb-2 block" for="q">Search emoji</label>
+    <div class="flex flex-wrap items-center gap-3">
+      <input id="q" class="ws-input" style="flex:2 1 16rem" placeholder="rocket, cat, heart, tada…" autocomplete="off">
+      <input id="skin" type="range" min="0" max="5" step="1" value="0" class="ws-input !w-40" style="flex:0 0 10rem" aria-label="Skin tone">
+      <span id="skinLab" class="ws-chip shrink-0">Default</span>
+    </div>
+    <div id="cats" class="mt-4 flex flex-wrap gap-2"></div>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex items-center justify-between gap-3">
+      <span class="ws-label" id="gridLabel">Emoji</span>
+      <div class="flex gap-2">
+        <button id="clearAll" class="ws-btn-ghost !px-3 !py-1.5">Clear selection</button>
+        <button id="copyAll" class="ws-btn">Copy selection</button>
+      </div>
+    </div>
+    <div id="grid" class="grid grid-cols-[repeat(auto-fill,minmax(3.25rem,1fr))] gap-2 max-h-[560px] overflow-y-auto pr-1"></div>
+    <p id="empty" class="mt-4 hidden text-center text-[11px] text-white/35">No emoji matches that search. Try a plain word like "star" or "face".</p>
+  </section>
+
+  <div class="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+    <div class="ws-panel ws-copy p-6">
+      <div class="mb-3 flex items-center justify-between"><span class="ws-label">Selection</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div>
+      <pre id="out" class="ws-out text-3xl leading-relaxed"></pre>
+      <div class="mt-4">
+        <div class="ws-label mb-2">Unicode detail of last click</div>
+        <div id="detail" class="space-y-2"></div>
+      </div>
+    </div>
+    <div class="ws-panel p-6">
+      <div class="ws-label mb-4">Codes for the last emoji</div>
+      <div class="text-center"><div id="bigEmoji" class="emoBig">👋</div><div id="bigName" class="mt-3 font-display text-lg font-extrabold text-white">wave</div></div>
+      <div class="mt-4 space-y-2" id="codes"></div>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="cpUnicode" class="ws-btn-ghost !px-3 !py-1.5">Copy U+</button>
+        <button id="cpShort" class="ws-btn-ghost !px-3 !py-1.5">Copy :shortcode:</button>
+        <button id="cpHtml" class="ws-btn-ghost !px-3 !py-1.5">Copy HTML entity</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ws-panel mt-4 p-6">
+    <div class="ws-label mb-4">Common combos</div>
+    <div id="combos" class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"></div>
+  </div>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(b){const t=document.getElementById('out').textContent;try{navigator.clipboard.writeText(t)}catch(e){};b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
+const $=id=>document.getElementById(id);
+const TONES=['','\u{1F3FB}','\u{1F3FC}','\u{1F3FD}','\u{1F3FE}','\u{1F3FF}'];
+const TONE_NAMES=['Default','Light','Medium-light','Medium','Dark','Dark'];
+
+const DATA=[
+['Smileys & People','😀 grinning|😃 smiley|😄 grin|😁 beaming|😆 laughing|😅 sweat smile|🤣 rofl|😂 joy|🙂 slight smile|🙃 upside down|😉 wink|😊 blush|😇 innocent|🥰 love eyes|😍 heart eyes|🤩 star struck|😘 kiss|😗 kissing|😚 kissing closed|😙 kissing smile|🥲 smile tear|😋 yum|😛 stuck out tongue|😜 winky tongue|🤪 zany|😝 squint tongue|🤑 money mouth|🤗 hugging|🤭 hand over mouth|🤫 shushing|🤔 thinking|🤐 zipper mouth|🤨 raised eyebrow|😐 neutral|😑 expressionless|😶 no mouth|😏 smirk|😒 unamused|🙄 rolling eyes|😬 grimacing|🤥 lying|😌 relieved|😔 pensive|😪 sleepy|🤤 drooling|😴 sleeping|😷 mask|🤒 thermometer face|🤕 head bandage|🥵 hot face|🥶 cold face|🥴 woozy|😵 dizzy|🤯 exploding head|🤠 cowboy|🥳 partying|😎 sunglasses|🤓 nerd|🧐 monocle|😕 confused|😟 worried|🙁 frown|😮 open mouth|😯 hushed|😲 astonished|😳 flushed|🥺 pleading|😦 frowning|😧 anguished|😨 fearful|😰 anxious|😥 sad relieved|😢 crying|😭 sob|😱 scream|😖 confounded|😣 persevere|😞 disappointed|😓 sweat|😩 weary|😫 tired|🥱 yawning|😤 triumph|😡 rage|😠 angry|🤬 cursing|😈 smiling imp|👿 imp|💀 skull|☠️ skull crossbones|💩 poop|🤡 clown|👹 ogre|👺 goblin|👻 ghost|👽 alien|👾 invader|🤖 robot','smiley|people|face|happy|sad|laugh|angry|worried'],
+['Animals & Nature','🐶 dog|🐱 cat|🐭 mouse|🐹 hamster|🐰 rabbit|🦊 fox|🐻 bear|🐼 panda|🐨 koala|🐯 tiger|🦁 lion|🐮 cow|🐷 pig|🐸 frog|🐵 monkey|🐔 chicken|🐧 penguin|🐦 bird|🐤 baby chick|🦆 duck|🦅 eagle|🦉 owl|🦇 bat|🐺 wolf|🐗 boar|🐴 horse|🦄 unicorn|🐝 bee|🐛 bug|🦋 butterfly|🐌 snail|🐞 lady beetle|🐜 ant|🕷️ spider|🦂 scorpion|🐢 turtle|🐍 snake|🦎 lizard|🦖 t-rex|🐙 octopus|🦑 squid|🦐 shrimp|🦀 crab|🐠 tropical fish|🐟 fish|🐬 dolphin|🐳 whale|🐋 whale2|🦈 shark|🐊 crocodile|🐅 tiger2|🐆 leopard|🦓 zebra|🦍 gorilla|🐘 elephant|🦛 hippo|🦒 giraffe|🐪 camel|🦏 rhino|🐃 water buffalo|🐂 ox|🐄 cow2|🐎 racehorse|🐖 pig2|🐏 ram|🐑 sheep|🐐 goat|🦌 deer|🐕 dog2|🐩 poodle|🦮 guide dog|🐈 cat2|🐓 rooster|🦃 turkey|🦚 peacock|🦜 parrot|🦢 swan|🦩 flamingo|🕊️ dove|🐇 rabbit2|🦝 raccoon|🦨 skunk|🦡 badger|🐁 mouse2|🐀 rat|🐿️ chipmunk|🦔 hedgehog|🐾 paw prints','animal|nature|pet|wild|zoo'],
+['Food & Drink','🍏 green apple|🍎 apple|🍐 pear|🍊 tangerine|🍋 lemon|🍌 banana|🍉 watermelon|🍇 grapes|🍓 strawberry|🫐 blueberries|🍈 melon|🍒 cherries|🍑 peach|🥭 mango|🍍 pineapple|🥥 coconut|🥝 kiwi|🍅 tomato|🍆 eggplant|🥑 avocado|🥦 broccoli|🥬 leafy green|🥒 cucumber|🌶️ hot pepper|🫑 bell pepper|🌽 corn|🥕 carrot|🧄 garlic|🧅 onion|🥔 potato|🍠 sweet potato|🥐 croissant|🥯 bagel|🍞 bread|🥖 baguette|🥨 pretzel|🧀 cheese|🥚 egg|🍳 cooking|🥞 pancakes|🧇 waffle|🥓 bacon|🍔 hamburger|🍟 fries|🍕 pizza|🌭 hot dog|🥪 sandwich|🌮 taco|🌯 burrito|🥙 stuffed flatbread|🧆 falafel|🥘 shallow pan|🍝 spaghetti|🍜 ramen|🍲 stew|🍛 curry|🍣 sushi|🍱 bento|🥟 dumpling|🍤 fried shrimp|🍙 rice cracker|🍚 rice|🍘 rice ball|🍥 fish cake|🥠 moon cake|🥮 mooncake|🍢 oden|🍡 dango|🍚 rice2|🍥 fish cake2|🥣 bowl|🥗 salad|🍿 popcorn|🧂 salt|🍯 honey|🧁 cupcake|🍰 cake|🎂 birthday|🍮 custard|🍭 lollipop|🍬 candy|🍫 chocolate|🍿 popcorn2|🍩 doughnut|🍪 cookie|🌰 chestnut|🥜 peanut|🍯 honey2|🥛 milk|☕ coffee|🍵 tea|🧃 beverage box|🥤 cup|🧉 mate|🧊 ice|🍾 champagne|🍸 cocktail|🥂 glasses|🍹 tropical drink|🍺 beer|🍻 beers|🥃 tumbler|🍷 wine|🥴 woozy2|🍾 bottle|🍾 popper','food|drink|coffee|cake|beer|pizza|fruit'],
+['Activity & Travel','⚽ soccer|🏀 basketball|🏈 football|⚾ baseball|🥎 softball|🎾 tennis|🏐 volleyball|🏉 rugby|🎱 8ball|🏓 ping pong|🏸 badminton|🏒 hockey|🥍 lacrosse|🏏 cricket|⛳ golf|🏹 archery|🎣 fishing|🥊 boxing|🥋 martial arts|🎽 running shirt|🛹 skateboard|🛷 sled|⛸️ ice skate|🥌 curling|🎿 ski|⛷️ skier|🏂 snowboard|🪂 parachute|🏋️ weight lifting|🤸 cartwheel|🤼 wrestling|🤺 fencing|🤾 handball|🏌️ golfing|🏇 horse racing|🧘 lotus|🏄 surfing|🏊 swimming|⛹️ basketball2|🏋️ gym|🚴 cycling|🚵 mountain bike|🏆 trophy|🥇 gold medal|🥈 silver medal|🥉 bronze medal|🏅 medal|🎖️ military medal|🎗️ ribbon|🎫 ticket|🎟️ tickets|🎪 circus|🤹 juggling|🎭 performing arts|🎨 art|🎬 clapper|🎤 microphone|🎧 headphone|🎼 musical score|🎹 piano|🥁 drum|🎷 saxophone|🎺 trumpet|🎸 guitar|🎻 violin|🎲 game die|♟️ chess pawn|🎯 dart|🎳 bowling|🎮 video game|🕹️ joystick|🎰 slot machine|🧩 puzzle|🚀 rocket|🛸 flying saucer|✈️ airplane|🛩️ small airplane|🛫 takeoff|🛬 landing|🗺️ world map|🚁 helicopter|🚂 railway|🚆 train|🚇 metro|🚊 tram|🚉 station|✈️ plane2|🚕 taxi|🚗 car|🚙 suv|🚌 bus|🚎 trolleybus|🏎️ racing car|🚓 police car|🚑 ambulance|🚒 fire engine|🚚 truck|🚛 articulated lorry|🚜 tractor|🛴 scooter|🚲 bike|🛵 motor scooter|🏍️ motorcycle|✈️ travel|🚀 space|🛶 canoe|⛵ sailboat|🚤 speedboat|🛳️ passenger ship|⛴️ ferry|🚢 ship|⚓ anchor','activity|travel|sport|game|music|vehicle|plane'],
+['Objects & Tech','⌚ watch|📱 mobile phone|💻 laptop|⌨️ keyboard|🖥️ desktop|🖨️ printer|🖱️ mouse3|💽 minidisc|💾 floppy|💿 cd|📀 dvd|🧮 abacus|🎥 movie camera|📷 camera|📸 camera flash|📹 video camera|📼 vhs|🔍 magnifier|🔎 magnifier glass|🔬 microscope|🔭 telescope|📡 satellite antenna|🕯️ candle|💡 bulb|🔦 flashlight|🏮 izakaya lantern|📔 notebook|📕 closed book|📖 open book|📚 books|📓 notebook2|📒 ledger|📃 page curl|📜 scroll|📄 page|📰 newspaper|🔖 bookmark|🔗 link|📎 paperclip|📏 ruler|📐 triangular ruler|✂️ scissors|📌 pushpin|📍 round pushpin|📎 paperclip2|📋 clipboard|📁 folder|📂 open folder|🗂️ card index|📅 calendar|📆 tear-off calendar|🗒️ spiral notepad|📇 index card|📈 chart up|📉 chart down|📊 bar chart|📈 graph|🔍 search|🔒 locked|🔓 unlocked|🔏 lock with pen|🔑 key|🗝️ old key|🔨 hammer|🪓 axe|⛏️ pick|🔧 wrench|🔩 nut and bolt|⚙️ gear|🗜️ clamp|⚖️ balance|🦯 guide|🔗 link2|⛓️ chains|🧲 magnet|🔫 water pistol|💣 bomb|🧨 firecracker|🔪 knife|🗡️ dagger|⚔️ crossed swords|🛡️ shield|🚬 smoking|⚰️ coffin|⚱️ funeral urn|🏺 amphora|🔮 crystal ball|🧿 nazar amulet|🕹️ joystick2|⚗️ alembic|🔭 telescope2|🔬 microscope2|🧪 test tube|🌡️ thermometer|🧹 broom|🧺 basket|🧻 roll|🚽 toilet|🚰 potable water|🚿 shower|🛁 bathtub|🪒 razor|🧼 soap|🪥 toothbrush|🧽 sponge|🧴 lotion|🔑 keys|🔦 torch','object|tech|phone|computer|key|lock|tool|office|search'],
+['Symbols & Nature','❤️ red heart|🧡 orange heart|💛 yellow heart|💚 green heart|💙 blue heart|💜 purple heart|🖤 black heart|🤍 white heart|🤎 brown heart|💔 broken heart|❣️ heart exclamation|💕 two hearts|💞 revolving hearts|💓 heartbeat|💗 growing heart|💖 sparkling heart|💘 cupid|💝 gift heart|💟 heart exclamation|☮️ peace|✝️ cross|☪️ star and crescent|🕉️ om|☸️ wheel of dharma|✡️ star of david|🔯 six pointed star|🕎 menorah|☯️ yin yang|☦️ orthodox cross|☰ heaven|☲ fire|☳ earth|☴ water|☵ wind|☶ mountain|⚛️ atom|☢️ radioactive|☣️ biohazard|⚠️ warning|🚸 children crossing|⛔ no entry|🚫 prohibited|🚳 no bicycles|🚭 no smoking|🚱 no drinking|🚷 no pedestrians|🚯 no littering|🔞 no one under 18|☢️ danger|☀️ sun|🌤️ sun behind cloud|⛅ sun behind small cloud|☁️ cloud|🌧️ rain|⛈️ thunder|🌩️ lightning|🌨️ snow|❄️ snowflake|💨 dash|🌪️ tornado|🌫️ fog|🌬️ wind face|🌊 wave|💧 droplet|💦 sweat|☔ umbrella|⚡ high voltage|🔥 fire|🌟 star|⭐ star2|🌠 shooting star|💫 dizzy|✨ sparkles|⚡ zap|☄️ comet|🌅 sunrise|🌄 sunrise mountains|🌇 city sunrise|🌃 night city|🌌 milky way|🌍 earth africa|🌎 earth americas|🌏 earth asia|🌕 full moon|🌙 crescent moon|🌚 new moon|🌛 first quarter|🌜 last quarter|🎑 moon viewing|🗾 map','symbol|nature|weather|space|moon|star|heart|warning']
+];
+
+let selected=[], last=null, catIdx=0;
+
+function parse(str){
+  return str.trim().split('|').filter(Boolean).map(s=>{
+    const [e,...tags]=s.split(',');
+    return {e:e.trim(), n:tags.join(' ').trim().toLowerCase(), cat:catIdx};
+  });
+}
+let ALL=[];
+DATA.forEach((d,i)=>{catIdx=i; ALL=ALL.concat(parse(d[1]))});
+const CATNAMES=DATA.map(d=>d[0]);
+const CAT_ICONS=['😀','🐶','🍕','⚽','💻','❤️'];
+const COMBOS=[
+ ['Rocket launch','🚀'],['Party time','🎉'],['Ship it','🚢'],
+ ['LGTM','👍'],['Thank you','🙏'],['Love it','❤️'],
+ ['Thinking','🤔'],['Facepalm','🤦'],['Celebration','🥳'],
+ ['Fire','🔥'],['Sparkles','✨'],['100','💯'],
+ ['Coffee','☕'],['Success','✅'],['Bug report','🐛'],
+ ['Deploy','🚀']];
+
+function score(q,it){
+  if(!q)return 1;
+  if(it.e===q)return 100;
+  if(it.n===q)return 95;
+  if(it.n.startsWith(q))return 80;
+  if(it.n.includes(q))return 60;
+  for(const w of q.split(/\s+/)) if(w&&it.n.includes(w))return 35;
+  return 0;
+}
+function search(){
+  const q=$('q').value.trim().toLowerCase();
+  const tone=parseInt($('skin').value,10);
+  let list=ALL.map(it=>{
+    const s=score(q,it);
+    let e=it.e;
+    let name=it.n;
+    if(tone&&/[\u{1F466}-\u{1F9FF}]/u.test(e)&&!/\u{1F466}|\u{1F467}|\u{1F9D1}/u.test(e)){
+      e=e+TONES[tone];
+      name=name+' '+TONE_NAMES[tone].toLowerCase()+' tone';
+    }
+    return {e:e,n:name,s:s};
+  });
+  if(q) list=list.filter(x=>x.s>0).sort((a,b)=>b.s-a.s);
+  else list=list.slice(0,1200);
+  $('grid').innerHTML=list.map(x=>'<button class="eBtn" data-e="'+x.e+'" data-n="'+x.n.replace(/"/g,'&quot;')+'" title="'+x.n.replace(/"/g,'&quot;')+'">'+x.e+'</button>').join('');
+  $('empty').classList.toggle('hidden',list.length>0);
+  $('gridLabel').textContent=q?('Matches for "'+q+'" — '+list.length):(CATNAMES[catIdx]+' · '+Math.min(1200,ALL.length)+' emoji');
+  $('grid').querySelectorAll('.eBtn').forEach(b=>b.addEventListener('click',()=>pick(b.getAttribute('data-e'),b.getAttribute('data-n'))));
+}
+function pick(e,n){
+  selected.push(e);
+  last={e:e,n:n};
+  $('bigEmoji').textContent=e;
+  $('bigName').textContent=n;
+  const cps=Array.from(e).map(c=>'U+'+c.codePointAt(0).toString(16).toUpperCase().padStart(4,'0'));
+  const hex=e.split('').map(c=>c.codePointAt(0).toString(16).toUpperCase().padStart(4,'0')).join(' ');
+  const decimal=Array.from(e).map(c=>c.codePointAt(0)).join(' + ');
+  const short=':'+n.split(/\s+/).slice(0,2).join(':')+':';
+  const html=Array.from(e).map(c=>'&#'+c.codePointAt(0)+';').join('');
+  const utf16=e.split('').map(c=>'0x'+c.charCodeAt(0).toString(16).toUpperCase()).join(' ');
+  $('codes').innerHTML=[
+    ['Unicode',cps.join(' ')],
+    ['UTF-16 hex',utf16],
+    ['Code points',decimal],
+    ['Shortcode',short],
+    ['HTML',html],
+    ['Bytes (UTF-8)',new TextEncoder().encode(e).length]
+  ].map(r=>'<div class="flex items-baseline justify-between gap-4 border-b border-white/5 pb-2 last:border-0"><span class="ws-label">'+r[0]+'</span><span class="font-mono text-[11.5px] text-accent text-right break-all">'+r[1]+'</span></div>').join('');
+  $('detail').innerHTML='<div class="flex items-center justify-between gap-4 border-b border-white/5 pb-2"><span class="font-mono text-[12px] text-white/80 break-all">'+cps.join(' ')+'</span><span class="text-2xl">'+e+'</span></div>';
+  $('out').textContent=selected.join('');
+}
+function renderCats(){
+  $('cats').innerHTML=CATNAMES.map((c,i)=>'<span class="ws-chip cat'+(i===0?' on':'')+'" data-c="'+i+'">'+CAT_ICONS[i]+' '+c+'</span>').join('')
+    +'<span class="ws-chip cat on" data-c="-1">✦ All</span>';
+  $('cats').querySelectorAll('.cat').forEach(c=>c.addEventListener('click',()=>{
+    $('cats').querySelectorAll('.cat').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on');
+    catIdx=parseInt(c.getAttribute('data-c'),10);
+    if(catIdx>=0){$('q').value='';search()} else search();
+  }));
+}
+$('q').addEventListener('input',search);
+$('skin').addEventListener('input',()=>{$('skinLab').textContent=TONE_NAMES[parseInt($('skin').value,10)];search()});
+$('clearAll').addEventListener('click',()=>{selected=[];$('out').textContent=''});
+$('copyAll').addEventListener('click',()=>{try{navigator.clipboard.writeText(selected.join(''))}catch(e){}});
+$('cpUnicode').addEventListener('click',()=>{if(!last)return;try{navigator.clipboard.writeText(Array.from(last.e).map(c=>'U+'+c.codePointAt(0).toString(16).toUpperCase().padStart(4,'0')).join(' '))}catch(e){}});
+$('cpShort').addEventListener('click',()=>{if(!last)return;try{navigator.clipboard.writeText(':'+last.n.split(/\s+/).slice(0,2).join(':')+':')}catch(e){}});
+$('cpHtml').addEventListener('click',()=>{if(!last)return;try{navigator.clipboard.writeText(Array.from(last.e).map(c=>'&#'+c.codePointAt(0)+';').join(''))}catch(e){}});
+$('combos').innerHTML=COMBOS.map(c=>'<button class="ws-btn-ghost !text-xl !tracking-normal" style="justify-content:flex-start" data-t="'+c[1]+'">'+c[1]+' <span class="ml-2 text-[9px] font-black uppercase tracking-[0.2em] text-white/40">'+c[0]+'</span></button>').join('');
+$('combos').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+  const e=b.getAttribute('data-t');
+  selected.push(e);
+  pick(e,b.textContent.trim());
+}));
+renderCats();
+$('bigEmoji').textContent='👋';
+$('bigName').textContent='wave';
+search();
+</script>
+</body>
+</html>

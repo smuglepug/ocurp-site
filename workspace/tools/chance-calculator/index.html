@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chance Calculator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .no-spin::-webkit-outer-spin-button,.no-spin::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .no-spin { -moz-appearance:textfield; appearance:textfield }
+</style>
+<meta name="description" content="Work out percentages, ratios and the odds of something happening from a set of counts. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/chance-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Chance Calculator">
+<meta property="og:description" content="Work out percentages, ratios and the odds of something happening from a set of counts. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/chance-calculator/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Chance Calculator">
+<meta name="twitter:description" content="Work out percentages, ratios and the odds of something happening from a set of counts. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Chance Calculator","url":"https://ocurp.space/workspace/tools/chance-calculator/","description":"Work out percentages, ratios and the odds of something happening from a set of counts. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Chance Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Probability — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">AT LEAST ONE</span><span class="ws-chip">EXACTLY N</span><span class="ws-chip">AT LEAST N</span></div>
+        </div>
+  <section class="ws-panel p-6">
+    <div class="mb-3 flex flex-wrap gap-2">
+      <span id="mAtLeast1" class="ws-btn-ghost ws-seg on !border-accent !bg-accent !text-black">At least one</span>
+      <span id="mExactly" class="ws-btn-ghost ws-seg !opacity-45">Exactly n</span>
+      <span id="mAtLeastN" class="ws-btn-ghost ws-seg !opacity-45">At least n</span>
+      <span id="mAtMostN" class="ws-btn-ghost ws-seg !opacity-45">At most n</span>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div><label class="ws-label mb-2 block" for="p">Success chance per trial (%)</label><input id="p" class="ws-input no-spin" type="number" min="0" max="100" step="0.1" value="10"></div>
+      <div><label class="ws-label mb-2 block" for="n">Number of trials</label><input id="n" class="ws-input no-spin" type="number" min="1" max="100000" step="1" value="10"></div>
+      <div><label class="ws-label mb-2 block" for="k">Target successes <span id="kLab" class="!text-white/20">= 1</span></label><input id="k" class="ws-input no-spin" type="number" min="0" step="1" value="1"></div>
+    </div>
+    <div class="mt-4 flex flex-wrap items-center gap-2">
+      <button id="play" class="ws-btn">Simulate</button>
+      <button id="reset" class="ws-btn-ghost">Reset</button>
+      <span class="ws-chip">Expected successes <span id="expTxt" class="ml-1 font-mono text-accent">—</span></span>
+    </div>
+    <div class="mt-5">
+      <div class="mb-2 flex items-center justify-between"><span class="ws-label">Binomial distribution</span><span class="ws-label !text-white/20" id="distNote"></span></div>
+      <div id="bars" class="space-y-1.5"></div>
+    </div>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex items-center justify-between"><span class="ws-label">Results</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div>
+    <div id="grid" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"></div>
+  </section>
+
+  <div class="mt-4 grid gap-4 lg:grid-cols-2">
+    <div class="ws-panel p-6">
+      <div class="ws-label mb-4">Trials needed for a target chance</div>
+      <div id="need" class="space-y-2"></div>
+    </div>
+    <div class="ws-panel ws-copy p-6">
+      <div class="mb-3 flex items-center justify-between"><span class="ws-label">Explanation</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div>
+      <pre id="out" class="ws-out"></pre>
+    </div>
+  </div>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(b){const t=document.getElementById('out').textContent;try{navigator.clipboard.writeText(t)}catch(e){};b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
+const $=id=>document.getElementById(id);
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="font-display text-xl font-black text-accent">'+v+'</div><div class="ws-label mt-1">'+k+'</div></div>'}
+function fact(n){let r=1;for(let i=2;i<=n;i++)r*=i;return r}
+function choose(n,k){if(k<0||k>n)return 0;return fact(n)/(fact(k)*fact(n-k))}
+function logf(n){let s=0;for(let i=2;i<=n;i++)s+=Math.log(i);return s}
+function lchoose(n,k){return logf(n)-logf(k)-logf(n-k)}
+function lp(x){return x<=0?-Infinity:Math.log(x)}
+function binomPmf(k,n,p){
+  if(k<0||k>n)return 0;
+  const lpP=p<=0?0:lp(p), lpQ=p>=1?0:lp(1-p);
+  const e=lchoose(n,k)+k*lpP+(n-k)*lpQ;
+  return e>-745?Math.exp(e):0;
+}
+// P(X < k) summed from the low end - cheap when k is small
+function binomLowTail(k,n,p){
+  if(k<=0)return 0;
+  if(k>n)return 1;
+  let s=0;
+  for(let i=0;i<k;i++)s+=binomPmf(i,n,p);
+  return Math.min(1,s);
+}
+function binomCdf(k,n,p){
+  if(k<0)return 0;
+  if(k>=n)return 1;
+  if(k+1<=n-k)return binomLowTail(k+1,n,p);
+  let s=0;
+  for(let i=0;i<=k;i++)s+=binomPmf(i,n,p);
+  return Math.min(1,s);
+}
+// P(X >= k) for k >= 1
+function binomUpper(k,n,p){
+  if(k<=0)return 1;
+  if(k>n)return 0;
+  return Math.max(0,Math.min(1,1-binomLowTail(k,n,p)));
+}
+// fewest trials m with P(X >= k) >= target, via binary search on a monotone CDF
+function fewestTrials(k,nMax,target,p){
+  if(p<=0||p>=1||k<1||k>2000)return null;
+  const hit=m=>binomUpper(k,m,p)>=target;
+  if(hit(k))return k;
+  let lo=k,hi=Math.max(k+1,k*2);
+  let guard=0;
+  while(!hit(hi)&&guard++<60){lo=hi;hi*=2;if(hi>5e7)return null}
+  if(!hit(hi))return null;
+  while(lo+1<hi){const mid=Math.floor((lo+hi)/2);if(hit(mid))hi=mid;else lo=mid}
+  return hi;
+}
+let mode='atleast1';
+
+function run(){
+  const pRaw=parseFloat($('p').value), n=Math.round(parseFloat($('n').value));
+  const errs=[];
+  if(isNaN(pRaw)||pRaw<0||pRaw>100)errs.push('chance must be 0-100%');
+  if(isNaN(n)||n<1||n>100000)errs.push('trials must be 1-100000');
+  const p=Math.min(1,Math.max(0,(isNaN(pRaw)?10:pRaw)/100));
+  const trials=isNaN(n)?1:Math.max(1,Math.min(100000,n));
+  $('k').max=String(trials);
+  let k=Math.round(parseFloat($('k').value));
+  if(mode==='atleast1')k=1;
+  else{
+    if(isNaN(k))k=1;
+    k=Math.max(0,Math.min(trials,k));
+    $('k').value=k;
+  }
+  $('kLab').textContent='= '+k;
+  $('k').disabled=mode==='atleast1';
+
+  let prob;
+  if(mode==='atleast1')prob=1-Math.pow(1-p,trials);
+  else if(mode==='exactly')prob=binomPmf(k,trials,p);
+  else if(mode==='atleastN')prob=binomUpper(k,trials,p);
+  else prob=binomCdf(k,trials,p);
+
+  const exp=trials*p;
+  const sd=Math.sqrt(trials*p*(1-p));
+  const modeK=Math.floor((trials+1)*p);
+  const trialsTo90=Math.ceil(Math.log(1-0.9)/Math.log(1-p||1e-12));
+  const trialsTo50=Math.ceil(Math.log(1-0.5)/Math.log(1-p||1e-12));
+  const trialsTo99=Math.ceil(Math.log(1-0.99)/Math.log(1-p||1e-12));
+  const fmtPct=x=>(isFinite(x)?(x*100).toFixed(3).replace(/\.?0+$/,'')+'%':'—');
+  const odds=prob>0&&prob<1?(prob/(1-prob)):Infinity;
+  const oddsTxt=odds===Infinity?'∞ (certain)':(odds>=100?Math.round(odds)+' : 1':odds>=10?odds.toFixed(2)+' : 1':'1 : '+Math.round(1/odds));
+  const fail=1-prob;
+  const oddsOfFailure=fail>0&&prob>0?(fail/prob):0;
+  const oneIn=prob>0?Math.round(1/prob):0;
+  const fewestN=k>0?fewestTrials(k,trials,prob,p):null;
+
+  $('grid').innerHTML=[
+    card('Probability',fmtPct(prob)),
+    card('Failure chance',fmtPct(fail)),
+    card('Expected successes',exp.toFixed(3)),
+    card('Std deviation',sd.toFixed(3)),
+    card('Most likely count',modeK),
+    card('Trials',trials.toLocaleString('en-US')),
+    card('Odds in favour',oddsTxt),
+    card('Odds against',fail===0?'—':(oddsOfFailure>=100?Math.round(oddsOfFailure)+' : 1':oddsOfFailure>=10?oddsOfFailure.toFixed(2)+' : 1':'1 : '+Math.round(1/oddsOfFailure))),
+    card('1 in N',oneIn?oneIn.toLocaleString('en-US'):'—'),
+    card('Trials for 50%',isFinite(trialsTo50)?trialsTo50.toLocaleString('en-US'):'never'),
+    card('Trials for 90%',isFinite(trialsTo90)?trialsTo90.toLocaleString('en-US'):'never'),
+    card('Trials for 99%',isFinite(trialsTo99)?trialsTo99.toLocaleString('en-US'):'never')
+  ].join('');
+
+  const lo=Math.max(0,modeK-6), hi=Math.min(trials,modeK+6);
+  const peak=Math.max.apply(null,Array.from({length:hi-lo+1},(_,i)=>binomPmf(lo+i,trials,p)).concat([1e-9]));
+  let bars='';
+  for(let i=lo;i<=hi;i++){
+    const pr=binomPmf(i,trials,p);
+    const hit=(mode==='exactly'&&i===k)||(mode==='atleastN'&&i===k)||(mode==='atmostN'&&i===k)||(mode==='atleast1'&&i===1);
+    bars+='<div class="flex items-center gap-3"><span class="w-8 shrink-0 text-right font-mono text-[10px] '+(hit?'text-accent':'text-white/40')+'">'+i+'</span>'
+      +'<div class="h-3.5 flex-1 rounded bg-white/5"><div class="h-3.5 rounded" style="width:'+(pr/peak*100).toFixed(3)+'%;background:'+(hit?'#FF5F1F':'rgba(255,255,255,.25)')+'"></div></div>'
+      +'<span class="w-20 shrink-0 font-mono text-[10px] '+(hit?'text-accent':'text-white/40')+'">'+(pr*100).toFixed(3)+'%</span></div>';
+  }
+  $('bars').innerHTML=bars;
+  $('distNote').textContent='P(X = k) for k = '+lo+'…'+hi;
+
+  const needs=[0.5,0.75,0.9,0.95,0.99].map(t=>[Math.round(t*100)+'%',Math.ceil(Math.log(1-t)/Math.log(1-p||1e-12))]);
+  $('need').innerHTML=needs.map(r=>'<div class="flex items-baseline justify-between gap-4 border-b border-white/5 pb-2 last:border-0"><span class="font-mono text-[12px] text-white/70">chance '+r[0]+'</span><span class="font-mono text-[12px] text-accent">'+(isFinite(r[1])&&r[1]>0?r[1].toLocaleString('en-US')+' trials':'impossible with p ≤ 1%')+'</span></div>').join('');
+
+  const label=mode==='atleast1'?('at least one success in '+trials+' trials'):(mode==='exactly'?('exactly '+k+' success'+(k===1?'':'es')+' in '+trials+' trials'):(mode==='atleastN'?('at least '+k+' success'+(k===1?'':'es')+' in '+trials+' trials'):('at most '+k+' success'+(k===1?'':'es')+' in '+trials+' trials')));
+  $('out').textContent=[
+    'Setup',
+    '  Per-trial chance   '+(p*100).toFixed(4).replace(/0+$/,'').replace(/\.$/,'')+'%',
+    '  Trials            '+trials.toLocaleString('en-US'),
+    mode==='atleast1'?'':'  Target successes   '+k,
+    '',
+    'Question: chance of '+label+'?',
+    '',
+    '  Answer             '+fmtPct(prob),
+    '  Failure chance     '+fmtPct(fail),
+    mode==='atleast1'?'  Failure = (1-p)^n = '+fail.toExponential(4):'  Binomial: C(n,k)·p^k·(1-p)^(n-k)',
+    '  Odds in favour     '+oddsTxt,
+    oneIn?'  Equivalent to      1 chance in '+oneIn.toLocaleString('en-US'):'',
+    '',
+    'Distribution',
+    '  Mean X            '+exp.toFixed(4),
+    '  Variance          '+(sd*sd).toFixed(4),
+    '  Std deviation      '+sd.toFixed(4),
+    '  Most likely count  '+modeK,
+    fewestN?'  Fewest trials to hit '+fmtPct(prob)+': '+fewestN:'  Fewest trials to hit '+fmtPct(prob)+': not reached',
+    '',
+    errs.length?'Notes: '+errs.join('; '):'Notes: X ~ Binomial(n = '+trials+', p = '+p.toFixed(4)+')'
+  ].filter(Boolean).join('\n');
+
+  $('expTxt').textContent=exp.toFixed(2);
+}
+
+function setMode(m){
+  mode=m;
+  [['mAtLeast1','atleast1'],['mExactly','exactly'],['mAtLeastN','atleastN'],['mAtMostN','atmostN']].forEach(([id,v])=>{
+    $(id).style.opacity=v===m?'1':'';
+    $(id).classList.toggle('!border-accent',v===m);
+    $(id).classList.toggle('!bg-accent',v===m);
+    $(id).classList.toggle('!text-black',v===m);
+  });
+  run();
+}
+['p','n','k'].forEach(id=>{$(id).addEventListener('input',run);$(id).addEventListener('change',run)});
+[['mAtLeast1','atleast1'],['mExactly','exactly'],['mAtLeastN','atleastN'],['mAtMostN','atmostN']].forEach(([id,v])=>$(id).addEventListener('click',()=>setMode(v)));
+
+let sim=null, simRuns=0;
+$('play').addEventListener('click',()=>{
+  const p=Math.min(1,Math.max(0,(parseFloat($('p').value)||0)/100));
+  const n=Math.max(1,Math.min(100000,Math.round(parseFloat($('n').value)||1)));
+  if(sim){clearInterval(sim);sim=null;$('play').textContent='Simulate';return}
+  $('play').textContent='Stop';
+  simRuns=0;
+  let hits=0;
+  sim=setInterval(()=>{
+    const batches=Math.max(1,Math.floor(n/200));
+    for(let b=0;b<batches;b++){
+      simRuns++;
+      for(let i=0;i<n;i++)if(Math.random()<p)hits++;
+    }
+    const observed=simRuns?(hits/simRuns*n).toFixed(0):'0';
+    $('expTxt').textContent='sim '+observed+' / '+simRuns.toLocaleString('en-US')+' runs';
+  },60);
+});
+$('reset').addEventListener('click',()=>{
+  if(sim){clearInterval(sim);sim=null;$('play').textContent='Simulate'}
+  $('p').value=10;$('n').value=10;$('k').value=1;run();
+});
+run();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calculator/">
+      <span class="ocurp-related-n">Scientific Calculator</span>
+      <span class="ocurp-related-b">Full expression evaluation in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/tools/compound-interest/">
+      <span class="ocurp-related-n">Compound Interest</span>
+      <span class="ocurp-related-b">Project savings or investments forward with optional monthly deposits.</span>
+    </a></li>
+    <li><a href="/workspace/tools/date-difference/">
+      <span class="ocurp-related-n">Date Difference</span>
+      <span class="ocurp-related-b">Days between two dates, broken down into weeks, months, years and working days.</span>
+    </a></li>
+    <li><a href="/workspace/tools/discount-calculator/">
+      <span class="ocurp-related-n">Discount Calculator</span>
+      <span class="ocurp-related-b">Apply one or two stacked discounts and see the final price and what you saved.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON to SQL Converter — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-seg { cursor:pointer; opacity:.45 } .ws-seg.on { opacity:1; background:#FF5F1F !important; color:#000 !important; border-color:#FF5F1F !important }
+</style>
+<meta name="description" content="Turn a JSON document into a CREATE TABLE statement with matching column types. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/json-to-sql/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JSON to SQL Converter">
+<meta property="og:description" content="Turn a JSON document into a CREATE TABLE statement with matching column types. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/json-to-sql/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JSON to SQL Converter">
+<meta name="twitter:description" content="Turn a JSON document into a CREATE TABLE statement with matching column types. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to SQL Converter","url":"https://ocurp.space/workspace/tools/json-to-sql/","description":"Turn a JSON document into a CREATE TABLE statement with matching column types. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">JSON to SQL Converter</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data &amp; Code — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">POSTGRES</span><span class="ws-chip">MYSQL</span><span class="ws-chip">SQLITE</span></div>
+        </div>
+  <section class="ws-panel p-6">
+    <div class="grid gap-4 md:grid-cols-[1.5fr_1fr]">
+      <div>
+        <div class="mb-2 flex items-center justify-between"><label class="ws-label" for="src">JSON array or object</label><button id="sample" class="ws-btn-ghost !px-3 !py-1">Load sample</button></div>
+        <textarea id="src" class="ws-input min-h-[280px] font-mono !text-[12.5px]" spellcheck="false"></textarea>
+      </div>
+      <div class="space-y-4">
+        <div><label class="ws-label mb-2 block" for="table">Table name</label><input id="table" class="ws-input font-mono" value="users"></div>
+        <div><label class="ws-label mb-2 block" for="pk">Primary key column</label><input id="pk" class="ws-input font-mono" value="id"></div>
+        <div><label class="ws-label mb-2 block" for="batch">Rows per INSERT</label><input id="batch" type="number" min="1" max="1000" step="1" class="ws-input" value="100"></div>
+        <div><label class="ws-label mb-2 block" for="mode">Output</label><select id="mode" class="ws-input">
+          <option value="insert">INSERT statements</option>
+          <option value="create">CREATE TABLE + INSERT</option>
+          <option value="select">SELECT statements</option></select></div>
+        <div class="flex flex-wrap gap-2 pt-1">
+          <span class="ws-chip !cursor-pointer" data-d="pg">Postgres</span>
+          <span class="ws-chip !cursor-pointer" data-d="mysql">MySQL</span>
+          <span class="ws-chip !cursor-pointer" data-d="sqlite">SQLite</span>
+        </div>
+        <div id="dialectNote" class="text-[10px] leading-relaxed text-white/30"></div>
+      </div>
+    </div>
+    <p id="err" class="mt-3 text-[11px] font-mono text-accent"></p>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex items-center justify-between"><span class="ws-label">Schema</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this,'schema')">Copy schema</button></div>
+    <pre id="schema" class="ws-out"></pre>
+  </section>
+
+  <section class="ws-panel ws-copy mt-4 p-6">
+    <div class="mb-3 flex items-center justify-between"><span class="ws-label" id="outLabel">SQL</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this,'out')">Copy SQL</button></div>
+    <pre id="out" class="ws-out max-h-[520px] overflow-auto"></pre>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex items-center justify-between"><span class="ws-label">Detected columns</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this,'report')">Copy report</button></div>
+    <div id="cols" class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"></div>
+    <pre id="report" class="ws-out mt-4"></pre>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(b,id){const t=document.getElementById(id||'out').textContent;try{navigator.clipboard.writeText(t)}catch(e){};b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
+const $=id=>document.getElementById(id);
+
+const SAMPLE=`[
+  {"id":1,"email":"ada@ocurp.space","name":"Ada Lovelace","active":true,"score":98.5,"joined":"2024-01-15","tags":["math","engines"],"meta":{"plan":"pro","seats":5}},
+  {"id":2,"email":"alan@ocurp.space","name":"Alan Turing","active":true,"score":99.2,"joined":"2024-03-02","tags":["logic"],"meta":{"plan":"free","seats":1}},
+  {"id":3,"email":"grace@ocurp.space","name":"Grace Hopper","active":false,"score":97.8,"joined":"2024-06-21","tags":[],"meta":{"plan":"pro","seats":3}}
+]`;
+let dialect='postgres';
+
+function sqlIdent(n){
+  if(dialect==='mysql') return '`'+String(n).replace(/`/g,'``')+'`';
+  return '"'+String(n).replace(/"/g,'""')+'"';
+}
+function q(s){
+  if(s===null||s===undefined) return 'NULL';
+  if(typeof s==='boolean') return s?'TRUE':'FALSE';
+  if(typeof s==='number') return Number.isFinite(s)?String(s):'NULL';
+  if(s instanceof Date) return "'"+s.toISOString().slice(0,19).replace('T',' ')+"'";
+  return "'"+String(s).replace(/'/g,"''")+"'";
+}
+function sqlType(vals,d){
+  const present=vals.filter(v=>v!==null&&v!==undefined);
+  if(!present.length) return d==='mysql'?'VARCHAR(255)':'TEXT';
+  const allBool=present.every(v=>typeof v==='boolean');
+  if(allBool) return d==='mysql'?'BOOLEAN':d==='sqlite'?'INTEGER':'BOOLEAN';
+  const allInt=present.every(v=>typeof v==='number'&&Number.isInteger(v));
+  if(allInt){
+    const min=Math.min.apply(null,present), max=Math.max.apply(null,present);
+    if(d==='mysql'&&min>=0&&max<=4294967295) return 'INT UNSIGNED';
+    if(d==='sqlite') return 'INTEGER';
+    return (min>= -2147483648&&max<=2147483647)?'INTEGER':'BIGINT';
+  }
+  if(present.every(v=>typeof v==='number')) return d==='sqlite'?'REAL':'DOUBLE PRECISION';
+  if(present.every(v=>v&&typeof v==='object'&&!Array.isArray(v))) return d==='sqlite'?'TEXT':(d==='postgres'?'JSONB':'JSON');
+  if(present.every(v=>Array.isArray(v))) return d==='sqlite'?'TEXT':(d==='postgres'?'JSONB':'JSON');
+  if(present.every(v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2})?)?/.test(v))) return 'TIMESTAMP';
+  return d==='mysql'?'VARCHAR(255)':'TEXT';
+}
+function flatten(rows){
+  const keys=new Map();
+  const walk=(obj,prefix,target)=>{
+    for(const k of Object.keys(obj)){
+      const v=obj[k], path=prefix?prefix+'.'+k:k;
+      if(v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).length){
+        walk(v,path,target);
+      }else{
+        if(!keys.has(path)) keys.set(path,[]);
+        target[path]=v;
+      }
+    }
+  };
+  const flat=rows.map(r=>{
+    const o={};
+    walk(r,'',o);
+    return o;
+  });
+  const cols=[];
+  for(const k of keys.keys()){
+    cols.push({name:k, vals:flat.map(f=>(k in f)?f[k]:null)});
+  }
+  return {flat:flat, cols:cols};
+}
+function lit(v,d){
+  if(v===undefined) return 'NULL';
+  if(v===null) return 'NULL';
+  if(typeof v==='boolean') return d==='mysql'?(v?'1':'0'):(v?'TRUE':'FALSE');
+  if(typeof v==='number') return Number.isFinite(v)?String(v):'NULL';
+  if(typeof v==='object') return q(dialect==='postgres'||dialect==='mysql'||dialect==='sqlite'?JSON.stringify(v):String(v));
+  return q(v);
+}
+
+function run(){
+  const err=$('err');
+  let data;
+  try{
+    const raw=$('src').value.trim();
+    if(!raw){err.textContent='Paste a JSON array or object.';['schema','out','report','cols'].forEach(i=>$(i).innerHTML='');return}
+    data=JSON.parse(raw);
+  }catch(e){
+    err.textContent='✗ Invalid JSON: '+e.message;
+    ['schema','out','report','cols'].forEach(i=>$(i).innerHTML='');
+    return;
+  }
+  err.textContent='';
+  let rows=Array.isArray(data)?data:[data];
+  rows=rows.filter(r=>r&&typeof r==='object'&&!Array.isArray(r));
+  if(!rows.length){
+    err.textContent='✗ Expected at least one JSON object.';
+    ['schema','out','report','cols'].forEach(i=>$(i).innerHTML='');
+    return;
+  }
+
+  const table=($('table').value.trim()||'data').replace(/[^\w]/g,'_');
+  const pk=$('pk').value.trim();
+  const modeV=$('mode').value;
+  const batch=Math.max(1,parseInt($('batch').value,10)||100);
+  const {flat,cols}=flatten(rows);
+  const ti=sqlIdent(table);
+
+  const hasPk=!!(pk&&cols.some(c=>c.name===pk));
+  const defs=cols.map(c=>{
+    let t=sqlType(c.vals,dialect);
+    const isPk=c.name===pk;
+    if(isPk){
+      if(dialect==='mysql') return '  '+sqlIdent(c.name)+' '+t+' NOT NULL AUTO_INCREMENT';
+      if(dialect==='postgres') return '  '+sqlIdent(c.name)+' SERIAL PRIMARY KEY';
+      return '  '+sqlIdent(c.name)+' '+t+' PRIMARY KEY';
+    }
+    return '  '+sqlIdent(c.name)+' '+t;
+  });
+  const seqAlt=(dialect==='postgres'&&hasPk)?['CREATE SEQUENCE IF NOT EXISTS '+table+'_id_seq;']:[];
+
+  let schema;
+  if(modeV==='create'){
+    const head=dialect==='mysql'
+      ? 'CREATE TABLE '+ti+' (\n'+defs.join(',\n')+'\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;'
+      : 'CREATE TABLE '+ti+' (\n'+defs.join(',\n')+'\n);';
+    schema=head+'\n'+(seqAlt.join('\n')||'');
+  }else{
+    schema='-- '+cols.length+' column'+(cols.length===1?'':'s')+' detected, '+rows.length+' row'+(rows.length===1?'':'s')+' available.\n-- CREATE TABLE '+ti+' (\n'+defs.map(d=>'--'+d).join(',\n')+'\n-- );';
+  }
+  $('schema').textContent=schema.trim();
+
+  let sql='';
+  if(modeV==='select'){
+    const colList=cols.map(c=>sqlIdent(c.name)).join(', ');
+    const where=[];
+    const mk=r=>{const q2=[];for(const c of cols){if(r[c.name]===undefined)continue;q2.push(sqlIdent(c.name)+' = '+lit(r[c.name],dialect))}return q2.length?' WHERE '+q2.join(' AND '):''};
+    sql='SELECT '+colList+'\n  FROM '+ti+';\n';
+    sql+='\n-- Row-by-row selects ('+rows.length+'):\n';
+    sql+='SELECT '+colList+'\n  FROM '+ti+mk(flat[0])+';';
+    for(let i=1;i<Math.min(rows.length,25);i++) sql+='\nSELECT '+colList+'\n  FROM '+ti+mk(flat[i])+';';
+    if(rows.length>25) sql+='\n-- … '+rows.length+' rows total.';
+  }else{
+    const colList=cols.map(c=>sqlIdent(c.name)).join(', ');
+    const stmt=flat.map(r=>{
+      const vals=cols.map(c=>c.name in r?lit(r[c.name],dialect):'NULL').join(', ');
+      let s='INSERT INTO '+ti+' ('+colList+') VALUES ('+vals+')';
+      if(dialect==='postgres'&&pk&&cols.some(c=>c.name===pk)&&modeV==='create') s+=' RETURNING '+sqlIdent(pk);
+      return s+';';
+    });
+    if(modeV==='create') sql=schema.replace(/\n$/,'')+'\n\n';
+    for(let i=0;i<stmt.length;i+=batch) sql+=stmt.slice(i,i+batch).join('\n')+'\n';
+    if(stmt.length>batch) sql+='\n-- '+stmt.length+' INSERTs in batches of '+batch+'.';
+  }
+  $('out').textContent=sql.trim();
+  $('outLabel').textContent=modeV==='select'?'SELECT statements':modeV==='create'?'DDL + INSERT statements':'INSERT statements';
+
+  $('cols').innerHTML=cols.map(c=>{
+    const vals=c.vals.filter(v=>v!==null);
+    const t=sqlType(c.vals,dialect);
+    const ex=c.vals.find(v=>v!==null&&v!==undefined);
+    const exs=ex&&typeof ex==='object'?JSON.stringify(ex).slice(0,28):String(ex);
+    const nulls=c.vals.length-vals.length;
+    return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-3">'
+      +'<div class="flex items-baseline justify-between gap-2"><span class="font-mono text-[12px] text-accent break-all">'+c.name.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</span><span class="ws-chip shrink-0">'+t+'</span></div>'
+      +'<div class="mt-1 truncate font-mono text-[10px] text-white/45">'+exs.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</div>'
+      +'<div class="ws-label mt-1 !text-white/20">'+vals.length+' value'+(vals.length===1?'':'s')+(nulls?' · '+nulls+' null':'')+'</div></div>';
+  }).join('');
+
+  const rep=[
+    'Source        '+rows.length+' object'+(rows.length===1?'':'s')+(Array.isArray(data)?' (array)':' (single object)'),
+    'Table         '+table,
+    'Columns       '+cols.length,
+    'Primary key   '+(pk&&cols.some(c=>c.name===pk)?pk:'(not detected)'),
+    'Dialect       '+dialect,
+    'Output        '+$('mode').value+' · batch '+batch,
+    '',
+    cols.map(c=>'  '+c.name.padEnd(24)+sqlType(c.vals,dialect)).join('\n')
+  ].join('\n');
+  $('report').textContent=rep;
+}
+
+(function(){
+  const notes={
+    postgres:'Postgres mode: JSON objects and arrays become JSONB, booleans are TRUE/FALSE, and an AUTO_INCREMENT primary key is exported as a sequence you must attach with ALTER TABLE ... OWNED BY.',
+    mysql:'MySQL mode: booleans become 1/0, JSON stays JSON, and an auto-increment primary key is inlined as INT UNSIGNED NOT NULL AUTO_INCREMENT.',
+    sqlite:'SQLite mode: everything uses its dynamic type affinity (INTEGER / REAL / TEXT), booleans become 1/0, and JSON is stored as TEXT.'
+  };
+  $('dialectNote').textContent=notes.postgres;
+})();
+
+$('src').addEventListener('input',run);
+['table','pk','batch','mode'].forEach(id=>{$(id).addEventListener('input',run);$(id).addEventListener('change',run)});
+document.querySelectorAll('[data-d]').forEach(c=>c.addEventListener('click',()=>{
+  dialect=c.getAttribute('data-d');
+  document.querySelectorAll('[data-d]').forEach(x=>{
+    x.style.borderColor=x.getAttribute('data-d')===dialect?'#FF5F1F':'';
+    x.style.color=x.getAttribute('data-d')===dialect?'#FF5F1F':'';
+  });
+  $('dialectNote').textContent={postgres:'Postgres mode: JSON objects and arrays become JSONB, booleans are TRUE/FALSE, and an auto-increment primary key is exported as a sequence you must attach with ALTER TABLE ... OWNED BY.',mysql:'MySQL mode: booleans become 1/0, JSON stays JSON, and an auto-increment primary key is inlined as INT UNSIGNED NOT NULL AUTO_INCREMENT.',sqlite:'SQLite mode: everything uses its dynamic type affinity (INTEGER / REAL / TEXT), booleans become 1/0, and JSON is stored as TEXT.'}[dialect];
+  run();
+}));
+$('sample').addEventListener('click',()=>{$('src').value=SAMPLE;run()});
+$('src').value=SAMPLE;
+run();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/csv-json/">
+      <span class="ocurp-related-n">CSV to JSON</span>
+      <span class="ocurp-related-b">Convert delimited text and JSON both ways.</span>
+    </a></li>
+    <li><a href="/workspace/tools/csv-to-json/">
+      <span class="ocurp-related-n">CSV to JSON</span>
+      <span class="ocurp-related-b">Turn CSV or TSV into clean JSON, correctly handling quoted fields, escaped quotes and blan</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-diff/">
+      <span class="ocurp-related-n">JSON Diff</span>
+      <span class="ocurp-related-b">Compare two JSON documents key by key and see exactly what was added, removed or changed.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-formatter/">
+      <span class="ocurp-related-n">JSON Prettifier</span>
+      <span class="ocurp-related-b">Format, minify and validate JSON with a live error pointer.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-minifier/">
+      <span class="ocurp-related-n">JSON Minifier &amp; Formatter</span>
+      <span class="ocurp-related-b">Strip JSON whitespace or pretty-print it, with key sort and duplicate detection.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-schema-gen/">
+      <span class="ocurp-related-n">JSON Schema Generator</span>
+      <span class="ocurp-related-b">Infer a draft 2020-12 JSON Schema from a sample document, with types and required keys.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

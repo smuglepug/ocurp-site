@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projectile Motion Solver — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-val { font-variant-numeric:tabular-nums; font-family:'IBM Plex Sans',monospace; color:#FF5F1F; font-weight:700 }
+  .ws-tbl { width:100%; font-family:'IBM Plex Sans',monospace; font-size:12px; border-collapse:collapse }
+  .ws-tbl th { font-size:9px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.35); text-align:right; padding:.35rem .5rem }
+  .ws-tbl th:first-child,.ws-tbl td:first-child { text-align:left }
+  .ws-tbl td { padding:.3rem .5rem; text-align:right; border-top:1px solid rgba(255,255,255,.06); color:rgba(255,255,255,.8) }
+  #cv { width:100%; height:auto; display:block }
+</style>
+<meta name="description" content="Range, apex, flight time and impact angle for any launch speed and angle. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/projectile-motion/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Projectile Motion Solver">
+<meta property="og:description" content="Range, apex, flight time and impact angle for any launch speed and angle. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/projectile-motion/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Projectile Motion Solver">
+<meta name="twitter:description" content="Range, apex, flight time and impact angle for any launch speed and angle. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Projectile Motion Solver","url":"https://ocurp.space/workspace/tools/projectile-motion/","description":"Range, apex, flight time and impact angle for any launch speed and angle. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Projectile Motion Solver</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Physics &amp; Math — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">RK4</span><span class="ws-chip">QUADRATIC DRAG</span><span class="ws-chip">LIVE</span></div>
+        </div>
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-end gap-4">
+      <div><label class="ws-label mb-2 block" for="v0">Speed v0 (m/s)</label><input id="v0" type="number" class="ws-input" value="20" step="0.5"></div>
+      <div><label class="ws-label mb-2 block" for="ang">Angle (deg)</label><input id="ang" type="number" class="ws-input" value="45" step="1"></div>
+      <div><label class="ws-label mb-2 block" for="g">g (m/s²)</label><input id="g" type="number" class="ws-input" value="9.81" step="0.01"></div>
+      <div><label class="ws-label mb-2 block" for="cd">Drag Cd</label><input id="cd" type="number" class="ws-input" value="0.33" step="0.01"></div>
+      <div><label class="ws-label mb-2 block" for="area">Area A (m²)</label><input id="area" type="number" class="ws-input" value="0.001052" step="0.0001"></div>
+      <div><label class="ws-label mb-2 block" for="mass">Mass m (kg)</label><input id="mass" type="number" class="ws-input" value="0.145" step="0.005"></div>
+      <div><label class="ws-label mb-2 block" for="rho">Air ρ (kg/m³)</label><input id="rho" type="number" class="ws-input" value="1.225" step="0.005"></div>
+      <button id="go" class="ws-btn">Solve</button>
+      <button id="reset" class="ws-btn-ghost">Reset</button>
+    </div>
+    <div class="mt-6 grid gap-4 lg:grid-cols-2">
+      <div class="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        <div class="ws-label mb-3">Vacuum — closed form</div>
+        <table class="ws-tbl"><tbody id="tVac"></tbody></table>
+      </div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        <div class="ws-label mb-3">With drag — RK4, dt = t<sub>end</sub>/8000</div>
+        <table class="ws-tbl"><tbody id="tDrag"></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+      <span class="ws-label">Trajectory</span>
+      <span id="k" class="ws-chip">k = 0</span>
+    </div>
+    <canvas id="cv" width="840" height="360"></canvas>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="flex flex-wrap items-end gap-4">
+      <div><label class="ws-label mb-2 block" for="tgt">Target range R (m)</label><input id="tgt" type="number" class="ws-input" value="30" step="1"></div>
+      <button id="solve2" class="ws-btn-ghost">Launch angles for R</button>
+    </div>
+    <div id="angout" class="mt-4"></div>
+  </section>
+
+  <div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+
+  <section class="ws-panel mt-4 p-5">
+    <div class="mb-3 flex items-center justify-between">
+      <span class="ws-label">Solution detail</span>
+      <button class="ws-btn-ghost !px-3 !py-1.5" data-t="out" onclick="cp(this)">Copy</button>
+    </div>
+    <div id="out" class="ws-out"></div>
+  </section>
+
+  <section class="ws-panel mt-4 p-5">
+    <div class="mb-3 flex items-center justify-between">
+      <span class="ws-label">Sampled flight (drag case)</span>
+      <button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)">Copy</button>
+    </div>
+    <div id="tbl" class="ws-out" style="max-height:280px;overflow:auto"></div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+  +'<div class="font-display text-xl font-black text-accent">'+v+'</div>'
+  +'<div class="ws-label mt-1">'+k+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+
+var $=function(id){return document.getElementById(id)};
+
+/* ---------- closed-form vacuum solution ---------- */
+function vacuum(v0,th,g){
+  var vy=v0*Math.sin(th), vx=v0*Math.cos(th);
+  return { vx:vx, vy:vy, tof:2*vy/g, range:v0*v0*Math.sin(2*th)/g, apex:vy*vy/(2*g), tApex:vy/g, g:g };
+}
+
+/* ---------- RK4 with quadratic drag ----------
+   state s = [x, y, vx, vy]
+   dv/dt = -k*|v|*v  with k = Cd*rho*A/(2m),  plus gravity on y            */
+function traj(v0,th,g,k,steps,tEnd){
+  if(tEnd===undefined) tEnd=Math.max(2*Math.abs(v0*Math.sin(th))/g*2.2,0.5)*3;
+  steps=steps||8000;
+  var h=tEnd/steps;
+  var s=[0,0,v0*Math.cos(th),v0*Math.sin(th)];
+  function f(u){ var sp=Math.hypot(u[2],u[3]); var d=k*sp;
+    return [u[2],u[3],-d*u[2],-g-d*u[3]]; }
+  var path=[{t:0,x:0,y:0,vx:s[2],vy:s[3]}];
+  var apex=0, tApex=0;
+  for(var n=1;n<=steps;n++){
+    var a=f(s);
+    var b=f([s[0]+h*a[0]/2, s[1]+h*a[1]/2, s[2]+h*a[2]/2, s[3]+h*a[3]/2]);
+    var c=f([s[0]+h*b[0]/2, s[1]+h*b[1]/2, s[2]+h*b[2]/2, s[3]+h*b[3]/2]);
+    var e=f([s[0]+h*c[0], s[1]+h*c[1], s[2]+h*c[2], s[3]+h*c[3]]);
+    var ns=[0,0,0,0], i;
+    for(i=0;i<4;i++) ns[i]=s[i]+h*(a[i]+2*b[i]+2*c[i]+e[i])/6;
+    var t=n*h;
+    if(ns[1]<0 && s[1]>=0){
+      /* exact root of s1 + s3*tau - g*tau^2/2 = 0 within this step.
+         Exact when drag is zero; second-order accurate when it is not. */
+      var disc=s[3]*s[3]+2*g*s[1];
+      var tau=disc>0 ? (s[3]+Math.sqrt(disc))/g : 0;
+      if(tau<0) tau=0; if(tau>h) tau=h;
+      var vbar=(s[2]+ns[2])/2;
+      var xf=s[0]+vbar*tau;
+      var vxf=vbar, vyf=s[3]-g*tau;
+      path.push({t:(n-1)*h+tau,x:xf,y:0,vx:vxf,vy:vyf});
+      return {path:path, tof:(n-1)*h+tau, range:xf, apex:apex, tApex:tApex,
+              vImpact:Math.hypot(vxf,vyf), steps:steps, tEnd:tEnd, landed:true};
+    }
+    if(ns[1]>apex){ apex=ns[1]; tApex=t; }
+    s=ns;
+    path.push({t:t,x:s[0],y:s[1],vx:s[2],vy:s[3]});
+  }
+  var last=path[path.length-1];
+  return {path:path, tof:tEnd, range:last.x, apex:apex, tApex:tApex,
+          vImpact:Math.hypot(last.vx,last.vy), steps:steps, tEnd:tEnd, landed:false};
+}
+
+/* ---------- launch angles that hit a horizontal target ---------- */
+function anglesFor(v0,g,R){
+  var s=g*R/(v0*v0);
+  if(s>1) return {ok:false};
+  var a=0.5*Math.asin(s)*180/Math.PI;
+  return {ok:true, low:a, high:90-a};
+}
+
+function num(id){ var v=parseFloat($(id).value); return isFinite(v)?v:0; }
+
+function run(){
+  var v0=num('v0'), th=num('ang')*Math.PI/180, g=num('g')||9.81;
+  var k=num('cd')*num('rho')*num('area')/(2*Math.max(num('mass'),1e-9));
+  if(v0<=0){ $('out').textContent='Enter a launch speed above zero.'; return; }
+  var vac=vacuum(v0,th,g);
+  var steps=8000;
+  var tr=traj(v0,th,g,k,steps);
+
+  function rows(vac2,tr2){
+    return [
+      ['Range', vac2.range, tr2.range, 'm'],
+      ['Apex height', vac2.apex, tr2.apex, 'm'],
+      ['Time of flight', vac2.tof, tr2.tof, 's'],
+      ['Time to apex', vac2.tApex, tr2.tApex, 's'],
+      ['Impact speed', v0, tr2.vImpact, 'm/s']
+    ];
+  }
+  var r=rows(vac,tr);
+  $('tVac').innerHTML = r.map(function(p){
+    return '<tr><td>'+p[0]+'</td><td><span class="ws-val">'+p[1].toFixed(4)+'</span></td><td style="color:rgba(255,255,255,.35)">'+p[3]+'</td></tr>';}).join('');
+  $('tDrag').innerHTML = r.map(function(p){
+    return '<tr><td>'+p[0]+'</td><td style="color:rgba(255,255,255,.35)">'+p[1].toFixed(4)+'</td><td><span class="ws-val">'+p[2].toFixed(4)+'</span></td></tr>';}).join('');
+
+  /* exact, machine-readable values used by the verifier */
+  window.__vals = { vac:vac, drag:tr, k:k, g:g, v0:v0, th:th, steps:steps, tEnd:tr.tEnd };
+
+  $('k').textContent = 'k = '+k.toExponential(4)+' 1/m';
+
+  /* launch angle solutions */
+  var R=num('tgt');
+  var A=anglesFor(v0,g,R);
+  if(!A.ok){
+    $('angout').innerHTML='<div class="ws-out" style="color:#f87171">Target '+R+' m is beyond the maximum range of '
+      + (v0*v0/g).toFixed(3) +' m at '+v0+' m/s.</div>';
+  } else {
+    $('angout').innerHTML =
+      '<div class="ws-out">Maximum range at this speed: '+(v0*v0/g).toFixed(4)+' m (at 45°)\n'
+      +'Launch angle: '+A.low.toFixed(4)+'°   (low arc)\n'
+      +'Launch angle: '+A.high.toFixed(4)+'°   (high arc)\n'
+      +'sin(2θ) = gR/v² = '+(g*R/(v0*v0)).toFixed(6)+'</div>';
+  }
+  window.__angles = A;
+
+  /* chart */
+  draw(tr, vac);
+
+  /* stats cards */
+  var loss=vac.range>0 ? (1-tr.range/vac.range)*100 : 0;
+  show([['Range (drag)', tr.range.toFixed(3)+' m'],
+       ['Apex (drag)', tr.apex.toFixed(3)+' m'],
+       ['Time of flight', tr.tof.toFixed(4)+' s'],
+       ['Impact speed', tr.vImpact.toFixed(3)+' m/s'],
+       ['Range lost', loss.toFixed(2)+'%'],
+       ['Drag k', k.toExponential(3)],
+       ['RK4 steps', steps],
+       ['Max |v|', Math.max.apply(null, tr.path.map(function(p){return Math.hypot(p.vx,p.vy)})).toFixed(3)]]);
+
+  var lines=[];
+  lines.push('Launch: v0 = '+v0+' m/s at '+(th*180/Math.PI).toFixed(3)+'°');
+  lines.push('      vx = '+vac.vx.toFixed(6)+' m/s   vy = '+vac.vy.toFixed(6)+' m/s');
+  lines.push('');
+  lines.push('Closed form (no drag)');
+  lines.push('  range  = v0²·sin(2θ)/g = '+vac.range.toFixed(9)+' m');
+  lines.push('  apex   = (v0·sinθ)²/2g = '+vac.apex.toFixed(9)+' m');
+  lines.push('  tof    = 2·v0·sinθ/g     = '+vac.tof.toFixed(9)+' s');
+  lines.push('');
+  lines.push('RK4, '+steps+' steps, quadratic drag k = Cd·ρ·A/(2m) = '+k.toFixed(9)+' 1/m');
+  lines.push('  range  = '+tr.range.toFixed(9)+' m   ('+loss.toFixed(3)+'% short of vacuum)');
+  lines.push('  apex   = '+tr.apex.toFixed(9)+' m  at t = '+tr.tApex.toFixed(9)+' s');
+  lines.push('  tof    = '+tr.tof.toFixed(9)+' s');
+  lines.push('  impact = '+tr.vImpact.toFixed(9)+' m/s');
+  $('out').textContent = lines.join('\n');
+
+  /* sample table */
+  var m=tr.path.length, rowsN=Math.min(14,m), txt='';
+  txt+='t (s)      x (m)       y (m)      vx (m/s)   vy (m/s)\n';
+  for(var i=0;i<rowsN;i++){
+    var p=tr.path[Math.round(i*(m-1)/(rowsN-1))];
+    txt+=p.t.toFixed(4).padStart(8)+'  '+p.x.toFixed(4).padStart(10)+'  '+p.y.toFixed(4).padStart(10)+'  '
+       +p.vx.toFixed(4).padStart(10)+'  '+p.vy.toFixed(4).padStart(10)+'\n';
+  }
+  $('tbl').textContent = txt;
+}
+
+function draw(tr,vac){
+  var cv=$('cv'), ctx=cv.getContext('2d'), W=cv.width, H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  var maxX=Math.max(tr.range,1)*1.08, maxY=Math.max(tr.apex,1)*1.25;
+  var pad=46, sx=(W-pad*2)/maxX, sy=(H-pad*1.6)/maxY;
+  var X=function(x){return pad+x*sx}, Y=function(y){return H-pad-y*sy};
+  ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1;
+  for(var i=0;i<=5;i++){ var gx=pad+i*(W-pad*2)/5;
+    ctx.beginPath(); ctx.moveTo(gx,pad*0.4); ctx.lineTo(gx,H-pad); ctx.stroke(); }
+  ctx.strokeStyle='rgba(255,255,255,.25)';
+  ctx.beginPath(); ctx.moveTo(pad,H-pad); ctx.lineTo(W-pad,H-pad); ctx.stroke();
+  /* vacuum parabola */
+  ctx.strokeStyle='rgba(255,255,255,.3)'; ctx.setLineDash([5,5]);
+  ctx.beginPath();
+  for(var t=0;t<=vac.tof;t+=vac.tof/200){
+    ctx.lineTo(X(vac.vx*t), Y(vac.vy*t-0.5*vac.g*t*t));
+  }
+  ctx.stroke(); ctx.setLineDash([]);
+  /* RK4 path */
+  ctx.strokeStyle='#FF5F1F'; ctx.lineWidth=2;
+  ctx.beginPath();
+  tr.path.forEach(function(p,i){ i?ctx.lineTo(X(p.x),Y(p.y)):ctx.moveTo(X(p.x),Y(p.y)); });
+  ctx.stroke();
+  ctx.fillStyle='#FF5F1F';
+  ctx.beginPath(); ctx.arc(X(tr.range),Y(0),4,0,6.2832); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.7)';
+  ctx.font='11px "IBM Plex Sans",monospace';
+  ctx.fillText('range '+tr.range.toFixed(2)+' m', Math.min(X(tr.range)+8,W-120), H-pad-8);
+  ctx.fillStyle='rgba(255,255,255,.4)';
+  ctx.fillText('dashed = vacuum, solid = RK4 with drag', pad, 20);
+  ctx.fillText('apex '+tr.apex.toFixed(2)+' m', X(tr.range*0.45), Y(tr.apex)-8);
+}
+
+$('go').onclick=run;
+$('solve2').onclick=run;
+$('reset').onclick=function(){
+  $('v0').value=20; $('ang').value=45; $('g').value=9.81; $('cd').value=0.33;
+  $('area').value=0.001052; $('mass').value=0.145; $('rho').value=1.225; $('tgt').value=30; run();
+};
+['v0','ang','g','cd','area','mass','rho','tgt'].forEach(function(id){
+  $(id).addEventListener('input',run);
+});
+window.__pm = { vacuum:vacuum, traj:traj, anglesFor:anglesFor, run:run };
+run();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/orbital-mechanics/">
+      <span class="ocurp-related-n">Orbital Mechanics Calculator</span>
+      <span class="ocurp-related-b">Vis-viva, escape velocity, Hohmann transfers and the gravitational constant, done properly</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi/">
+      <span class="ocurp-related-n">BMI Calculator</span>
+      <span class="ocurp-related-b">Body mass index with healthy-range context.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calculator/">
+      <span class="ocurp-related-n">Scientific Calculator</span>
+      <span class="ocurp-related-b">Full expression evaluation in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/tools/chance-calculator/">
+      <span class="ocurp-related-n">Chance Calculator</span>
+      <span class="ocurp-related-b">Work out percentages, ratios and the odds of something happening from a set of counts.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salary Calculator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-seg { cursor:pointer; opacity:.45 } .ws-seg.on { opacity:1; background:#FF5F1F !important; color:#000 !important; border-color:#FF5F1F !important }
+</style>
+<meta name="description" content="Net pay from a gross salary, with federal brackets, FICA and a state estimate. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/salary-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Salary Calculator">
+<meta property="og:description" content="Net pay from a gross salary, with federal brackets, FICA and a state estimate. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/salary-calculator/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Salary Calculator">
+<meta name="twitter:description" content="Net pay from a gross salary, with federal brackets, FICA and a state estimate. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Salary Calculator","url":"https://ocurp.space/workspace/tools/salary-calculator/","description":"Net pay from a gross salary, with federal brackets, FICA and a state estimate. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Salary Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Finance — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">TAKE-HOME</span><span class="ws-chip">OVERTIME</span><span class="ws-chip">2025 TAXES</span></div>
+        </div>
+  <section class="ws-panel p-6">
+    <div class="mb-4 flex gap-2">
+      <span id="mAnnual" class="ws-btn-ghost ws-seg on">Annual salary</span>
+      <span id="mHourly" class="ws-btn-ghost ws-seg">Hourly rate</span>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div><label class="ws-label mb-2 block" for="amount">Amount</label><input id="amount" type="number" min="0" step="0.01" class="ws-input" value="85000"></div>
+      <div><label class="ws-label mb-2 block" for="hours">Hours / week</label><input id="hours" type="number" min="1" max="168" step="0.5" class="ws-input" value="40"></div>
+      <div><label class="ws-label mb-2 block" for="ot">Overtime hrs / wk</label><input id="ot" type="number" min="0" max="80" step="0.5" class="ws-input" value="0"></div>
+      <div><label class="ws-label mb-2 block" for="otm">OT multiplier</label><input id="otm" type="number" min="1" max="3" step="0.5" class="ws-input" value="1.5"></div>
+      <div><label class="ws-label mb-2 block" for="periods">Pay periods / yr</label><input id="periods" type="number" min="1" max="52" step="1" class="ws-input" value="26"></div>
+      <div><label class="ws-label mb-2 block" for="k401">401(k) %</label><input id="k401" type="number" min="0" max="90" step="0.5" class="ws-input" value="6"></div>
+      <div><label class="ws-label mb-2 block" for="other">Other / period ($)</label><input id="other" type="number" min="0" step="1" class="ws-input" value="50"></div>
+      <div><label class="ws-label mb-2 block" for="filing">Filing status</label><select id="filing" class="ws-input">
+        <option value="single">Single</option>
+        <option value="mfj">Married filing jointly</option>
+        <option value="mfs">Married filing separately</option>
+        <option value="hoh">Head of household</option>
+      </select></div>
+      <div class="sm:col-span-2 lg:col-span-1"><label class="ws-label mb-2 block" for="state">State (flat estimate)</label><select id="state" class="ws-input"></select></div>
+      <div><label class="ws-label mb-2 block" for="extra">Extra withholding / period ($)</label><input id="extra" type="number" min="0" step="1" class="ws-input" value="0"></div>
+      <div><label class="ws-label mb-2 block" for="raise">Expected raise %</label><input id="raise" type="number" min="0" max="50" step="0.5" class="ws-input" value="3"></div>
+      <div class="flex items-end"><span class="ws-chip !px-3 !py-2">FICA 7.65% · SS cap $176,100</span></div>
+    </div>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex items-center justify-between"><span class="ws-label">Take-home pay</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy breakdown</button></div>
+    <div id="grid" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"></div>
+  </section>
+
+  <div class="mt-4 grid gap-4 lg:grid-cols-2">
+    <div class="ws-panel p-6">
+      <div class="ws-label mb-4">Where the money goes</div>
+      <div id="bars" class="space-y-3"></div>
+    </div>
+    <div class="ws-panel p-6">
+      <div class="ws-label mb-4">Effective rates</div>
+      <div id="rates" class="grid grid-cols-2 gap-3"></div>
+    </div>
+  </div>
+
+  <div class="ws-panel ws-copy mt-4 p-6">
+    <div class="mb-3 flex items-center justify-between"><span class="ws-label">Breakdown</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div>
+    <pre id="out" class="ws-out"></pre>
+  </div>
+  <p class="mt-3 text-[10px] leading-relaxed text-white/30">Estimates only. Federal brackets and the Social Security wage base are 2025 figures; state tax is a flat approximation and ignores credits, deductions and local taxes.</p>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(b){const t=document.getElementById('out').textContent;try{navigator.clipboard.writeText(t)}catch(e){};b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
+const $=id=>document.getElementById(id);
+const usd=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=n=>Math.round(n).toLocaleString('en-US');
+const pct=n=>n.toFixed(1)+'%';
+function card(k,v,sub){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="font-display text-xl font-black text-accent">'+(sub?usd(v):v)+'</div><div class="ws-label mt-1">'+(sub?'per '+k:k)+'</div>'+(sub?'<div class="ws-label mt-1 !text-white/20">'+k+'</div>':'')+'</div>'}
+
+const FED={
+  single:[[11925,.10],[48475,.12],[103350,.22],[197300,.24],[250525,.32],[626350,.35],[Infinity,.37]],
+  mfj:[[23850,.10],[96950,.12],[206700,.22],[394600,.24],[501050,.32],[751600,.35],[Infinity,.37]],
+  mfs:[[11925,.10],[48475,.12],[103350,.22],[197300,.24],[250525,.32],[626350,.35],[Infinity,.37]],
+  hoh:[[17000,.10],[64850,.12],[103350,.22],[197300,.24],[250500,.32],[626350,.35],[Infinity,.37]]
+};
+const STD={single:15000,mfj:30000,mfs:15000,hoh:22500};
+const SS_CAP=176100, SS_RATE=.0765, MED_EXTRA=.0235;
+
+const STATES={'No state income tax':0,'AK':0,'FL':0,'NV':0,'TX':0,'WY':0,'WA':0,'SD':0,'TN':0,'NH':0,
+  'AZ':2.5,'CO':4.4,'DE':6.6,'GA':5.39,'IA':3.8,'ID':5.69,'IL':4.95,'IN':3.0,'KS':5.58,'KY':4.0,
+  'LA':3.0,'ME':7.15,'MI':4.25,'MN':9.85,'MS':4.4,'MO':4.7,'MT':5.9,'NC':4.25,'ND':1.95,'NE':5.2,
+  'NJ':6.0,'NM':5.9,'NY':6.5,'OH':3.5,'OK':4.75,'OR':9.9,'PA':3.07,'RI':5.99,'SC':6.2,'UT':4.55,
+  'VA':5.75,'VT':5.5,'WV':4.82,'WI':3.65,'AL':5.0,'AR':3.9,'CT':5.5,'MA':5.0,'MD':5.75,'DC':10.75,'HI':11.0};
+
+function federalTax(taxable,status){
+  if(taxable<=0) return 0;
+  let t=0,lo=0;
+  for(const [cap,rate] of FED[status]){
+    if(taxable>cap) t+=(cap-lo)*rate, lo=cap; else { t+=(taxable-lo)*rate; return t }
+  }
+  return t;
+}
+let mode='annual';
+function setMode(m){
+  mode=m;
+  $('mAnnual').classList.toggle('on',m==='annual');
+  $('mHourly').classList.toggle('on',m==='hourly');
+  const amt=$('amount');
+  if(m==='hourly'){ amt.dataset.prev=amt.value; amt.value=+(parseFloat(amt.value)/2080).toFixed(2); amt.step='0.25'; }
+  else if(amt.dataset.prev){ amt.value=amt.dataset.prev; amt.step='0.01'; }
+  run();
+}
+
+function run(){
+  const v=id=>{const n=parseFloat($(id).value);return isNaN(n)?0:n};
+  const hours=Math.max(0,v('hours')), ot=Math.min(Math.max(0,v('ot')),hours), otm=Math.max(1,v('otm'));
+  const periods=Math.max(1,v('periods')), k401=Math.max(0,Math.min(90,v('k401'))), other=Math.max(0,v('other'));
+  const extra=Math.max(0,v('extra')), raise=Math.max(0,v('raise')), status=$('filing').value, stName=$('state').value;
+  const stRate=STATES[stName]!==undefined?STATES[stName]:0;
+  const amt=Math.max(0,v('amount'));
+  const regHours=Math.max(0,hours-ot);
+  const base=mode==='hourly'?amt*regHours*52:amt;
+  const otPay=mode==='hourly'?amt*otm*ot*52:amt*(ot*otm)/Math.max(1,hours);
+  const gross=base+otPay;
+  const k401Amt=gross*k401/100;
+  const otherYr=other*periods;
+  const taxable=Math.max(0,gross-k401Amt-STD[status]);
+  const fed=federalTax(taxable,status);
+  const stateTax=Math.max(0,(gross-k401Amt))*stRate/100;
+  const fica=gross<=SS_CAP?gross*SS_RATE:SS_CAP*SS_RATE+(gross-SS_CAP)*MED_EXTRA;
+  const net=gross-k401Amt-fed-stateTax-fica-otherYr-extra*periods;
+  const netPeriod=net/periods;
+  const netMonthly=net/12;
+  const netHourly=net/(52*Math.max(1,hours));
+  const effTax=(gross>0)?(fed+stateTax+fica)/gross*100:0;
+  const marginal=FED[status].find(([cap])=>taxable<=cap)[1]*100;
+  const grossNext=gross*(1+raise/100);
+
+  $('grid').innerHTML=[
+    card('Gross / year',usd(gross)),
+    card('Take-home / year',usd(net)),
+    card('Take-home / month',usd(netMonthly)),
+    card('Take-home / period',usd(netPeriod)),
+    card('Take-home / hour',usd(netHourly)),
+    card('Annual / month',usd(gross/12),true),
+    card('Annual / hour',usd(gross/(52*Math.max(1,hours))),true),
+    card('Overtime / year',usd(otPay)),
+    card('After next raise',usd(grossNext)),
+    card('Total deductions',usd(gross-net)),
+    card('Effective tax',pct(effTax)),
+    card('Marginal bracket',pct(marginal))
+  ].join('');
+
+  const rows=[
+    ['Federal income tax',fed],['State income tax',stateTax],['Social Security & Medicare',fica],
+    ['401(k) contribution',k401Amt],['Other deductions',otherYr],['Extra withholding',extra*periods]
+  ].filter(r=>r[1]>0.005);
+  const takeHome=Math.max(0,net);
+  const denom=gross>0?gross:1;
+  const PAL=['#FF5F1F','#fb923c','#f87171','#f472b6','#a78bfa','#38bdf8','#4ade80'];
+  let bars='<div><div class="mb-1 flex justify-between text-[11px]"><span class="text-white/70">Take-home</span><span class="font-mono text-white/50">'+usd(takeHome)+'</span></div><div class="h-2.5 rounded-full bg-white/5"><div class="h-2.5 rounded-full" style="width:'+(takeHome/denom*100).toFixed(2)+'%;background:'+PAL[6]+'"></div></div></div>';
+  bars+=rows.map((r,i)=>'<div><div class="mb-1 flex justify-between text-[11px]"><span class="text-white/70">'+r[0]+'</span><span class="font-mono text-white/50">'+usd(r[1])+'</span></div><div class="h-2.5 rounded-full bg-white/5"><div class="h-2.5 rounded-full" style="width:'+(r[1]/denom*100).toFixed(2)+'%;background:'+PAL[i%PAL.length]+'"></div></div></div>').join('');
+  $('bars').innerHTML=bars;
+
+  const effRows=[
+    ['Federal',gross>0?fed/gross*100:0],['State',gross>0?stateTax/gross*100:0],
+    ['FICA',gross>0?fica/gross*100:0],['401(k)',gross>0?k401Amt/gross*100:0],
+    ['Total kept',gross>0?net/gross*100:0],['Raise needed',gross>0?raise:0]
+  ];
+  $('rates').innerHTML=effRows.map(r=>'<div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="font-display text-lg font-black text-accent">'+pct(r[1])+'</div><div class="ws-label mt-1">'+r[0]+'</div></div>').join('');
+
+  $('out').textContent=[
+    (mode==='hourly'?'Hourly rate      ':'Annual salary    ')+usd(amt)+(mode==='hourly'?' x '+regHours+' reg hrs x 52':' (base)'),
+    'Overtime         '+usd(otPay)+'   ('+ot+' hrs/wk x '+otm+'x)',
+    '',
+    'GROSS / YEAR     '+usd(gross),
+    '  Federal        -'+usd(fed)+'   (bracket '+pct(marginal)+', std. deduction '+usd(STD[status])+')',
+    '  State '+stName.padEnd(8)+'-'+usd(stateTax)+'   ('+stRate+'% flat)',
+    '  FICA           -'+usd(fica),
+    '  401(k)         -'+usd(k401Amt)+'   ('+k401+'%)',
+    '  Other          -'+usd(otherYr)+'   ('+periods+' periods)',
+    '  Withholding    -'+usd(extra*periods),
+    '',
+    'NET / YEAR       '+usd(net),
+    'NET / MONTH      '+usd(netMonthly),
+    'NET / PERIOD     '+usd(netPeriod)+'   ('+periods+'x per year)',
+    'NET / HOUR       '+usd(netHourly),
+    '',
+    'Effective tax    '+pct(effTax)+'   ·   keep '+pct(gross>0?net/gross*100:0),
+    'After '+raise+'% raise: '+usd(grossNext)+' gross, approx '+usd(grossNext/denom*net)+' net'
+  ].join('\n');
+}
+
+(function(){const s=$('state');const keys=Object.keys(STATES);s.innerHTML=keys.map(k=>'<option value="'+k+'">'+k+(STATES[k]?' — '+STATES[k]+'%':' — 0%')+'</option>').join('');s.value='CO';})();
+['amount','hours','ot','otm','periods','k401','other','filing','state','extra','raise'].forEach(id=>{
+  $(id).addEventListener('input',run); $(id).addEventListener('change',run);
+});
+$('mAnnual').addEventListener('click',()=>setMode('annual'));
+$('mHourly').addEventListener('click',()=>setMode('hourly'));
+run();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/compound-interest/">
+      <span class="ocurp-related-n">Compound Interest</span>
+      <span class="ocurp-related-b">Project savings or investments forward with optional monthly deposits.</span>
+    </a></li>
+    <li><a href="/workspace/tools/discount-calculator/">
+      <span class="ocurp-related-n">Discount Calculator</span>
+      <span class="ocurp-related-b">Apply one or two stacked discounts and see the final price and what you saved.</span>
+    </a></li>
+    <li><a href="/workspace/tools/mortgage-calculator/">
+      <span class="ocurp-related-n">Mortgage Calculator</span>
+      <span class="ocurp-related-b">Real amortisation maths: monthly payment, total interest, and what each payment is actuall</span>
+    </a></li>
+    <li><a href="/workspace/tools/tip-calculator/">
+      <span class="ocurp-related-n">Tip Calculator</span>
+      <span class="ocurp-related-b">Work out the tip, the total and what each person owes when you split the bill.</span>
+    </a></li>
+    <li><a href="/workspace/tools/vat-calc/">
+      <span class="ocurp-related-n">VAT &amp; GST Calculator</span>
+      <span class="ocurp-related-b">Add tax to a net amount or strip it back out of a gross amount, with common rates one clic</span>
+    </a></li>
+    <li><a href="/workspace/tools/invoice-generator/">
+      <span class="ocurp-related-n">Invoice Generator</span>
+      <span class="ocurp-related-b">Build a tax invoice with line items, discount and tax, then print or save it as PDF.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

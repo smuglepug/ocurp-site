@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orbital Mechanics Calculator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-val { font-variant-numeric:tabular-nums; font-family:'IBM Plex Sans',monospace; color:#FF5F1F; font-weight:700 }
+  .ws-tbl { width:100%; font-family:'IBM Plex Sans',monospace; font-size:12px; border-collapse:collapse }
+  .ws-tbl th { font-size:9px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.35); text-align:right; padding:.35rem .5rem }
+  .ws-tbl th:first-child,.ws-tbl td:first-child { text-align:left }
+  .ws-tbl td { padding:.3rem .5rem; text-align:right; border-top:1px solid rgba(255,255,255,.06); color:rgba(255,255,255,.8) }
+  #cv { width:100%; height:auto; display:block }
+</style>
+<meta name="description" content="Vis-viva, escape velocity, Hohmann transfers and the gravitational constant, done properly. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/orbital-mechanics/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Orbital Mechanics Calculator">
+<meta property="og:description" content="Vis-viva, escape velocity, Hohmann transfers and the gravitational constant, done properly. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/orbital-mechanics/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Orbital Mechanics Calculator">
+<meta name="twitter:description" content="Vis-viva, escape velocity, Hohmann transfers and the gravitational constant, done properly. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Orbital Mechanics Calculator","url":"https://ocurp.space/workspace/tools/orbital-mechanics/","description":"Vis-viva, escape velocity, Hohmann transfers and the gravitational constant, done properly. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Orbital Mechanics Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Physics &amp; Math — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">TWO-BODY</span><span class="ws-chip">VIS-VIVA</span><span class="ws-chip">HOHMANN</span></div>
+        </div>
+
+  <section class="ws-panel p-6">
+    <label class="ws-label mb-2 block" for="body">Central body</label>
+    <select id="body" class="ws-input mb-5">
+      <option value="earth">Earth — µ = 3.986004418×10¹⁴ m³/s²</option>
+      <option value="mars">Mars — µ = 4.282837×10¹³ m³/s²</option>
+      <option value="sun">Sun — µ = 1.32712440018×10²⁰ m³/s²</option>
+      <option value="moon">Moon — µ = 4.9048695×10¹² m³/s²</option>
+    </select>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div><label class="ws-label mb-2 block" for="alt">Altitude (km)</label><input id="alt" type="number" class="ws-input" value="400"></div>
+      <div><label class="ws-label mb-2 block" for="inc">Inclination (deg)</label><input id="inc" type="number" class="ws-input" value="51.6" step="0.1"></div>
+      <div><label class="ws-label mb-2 block" for="raan">RAAN (deg)</label><input id="raan" type="number" class="ws-input" value="0" step="1"></div>
+      <div><label class="ws-label mb-2 block" for="ecc">Eccentricity</label><input id="ecc" type="number" class="ws-input" value="0" step="0.0001" min="0"></div>
+      <div><label class="ws-label mb-2 block" for="ta">True anomaly (deg)</label><input id="ta" type="number" class="ws-input" value="0" step="1"></div>
+      <div><label class="ws-label mb-2 block" for="sc">Target altitude (km)</label><input id="sc" type="number" class="ws-input" value="35786" step="1"></div>
+      <div><label class="ws-label mb-2 block" for="burn">Engine Isp (s)</label><input id="burn" type="number" class="ws-input" value="300" step="10"></div>
+      <div><label class="ws-label mb-2 block" for="m0">Start mass (kg)</label><input id="m0" type="number" class="ws-input" value="1000" step="100"></div>
+    </div>
+    <div class="mt-5 flex flex-wrap gap-3">
+      <button id="go" class="ws-btn">Compute orbit</button>
+      <button id="leo" class="ws-btn-ghost">LEO preset</button>
+      <button id="geo" class="ws-btn-ghost">GEO preset</button>
+      <button id="reset" class="ws-btn-ghost">Reset</button>
+    </div>
+  </section>
+
+  <div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="grid gap-4 lg:grid-cols-2">
+      <div class="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        <div class="ws-label mb-3">Orbital elements &amp; geometry</div>
+        <table class="ws-tbl"><tbody id="t1"></tbody></table>
+      </div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        <div class="ws-label mb-3">Velocities</div>
+        <table class="ws-tbl"><tbody id="t2"></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+      <span class="ws-label">Ground track &amp; orbit shape (ecliptic)</span>
+      <span id="chip1" class="ws-chip"></span>
+    </div>
+    <canvas id="cv" width="840" height="360"></canvas>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex items-center justify-between">
+      <span class="ws-label">Hohmann transfer &amp; delta-v budget</span>
+      <button class="ws-btn-ghost !px-3 !py-1.5" data-t="out" onclick="cp(this)">Copy</button>
+    </div>
+    <div id="out" class="ws-out"></div>
+  </section>
+
+  <section class="ws-panel mt-4 p-5">
+    <div class="mb-3 flex items-center justify-between">
+      <span class="ws-label">Reference values</span>
+      <button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)">Copy</button>
+    </div>
+    <div id="tbl" class="ws-out" style="max-height:280px;overflow:auto"></div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+  +'<div class="font-display text-xl font-black text-accent">'+v+'</div>'
+  +'<div class="ws-label mt-1">'+k+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+
+var $=function(id){return document.getElementById(id)};
+
+/* physical constants */
+var BODIES={
+  earth:{mu:3.986004418e14, R:6371e3, name:'Earth'},
+  mars: {mu:4.282837e13,  R:3389.5e3, name:'Mars'},
+  sun:  {mu:1.32712440018e20, R:695700e3, name:'Sun'},
+  moon: {mu:4.9048695e12,  R:1737.4e3, name:'Moon'}
+};
+var G=6.67430e-11;
+
+/* vis-viva: v = sqrt(mu*(2/r - 1/a)) */
+function visViva(mu,r,a){ if(a<=0) return NaN; return Math.sqrt(mu*(2/r-1/a)); }
+/* circular speed at radius r */
+function vCirc(mu,r){ return Math.sqrt(mu/r); }
+
+/* full element set from altitude + ecc + true anomaly */
+function elements(mu,R,altKm,e,taDeg){
+  var rp=R+altKm*1000;                 // periapsis radius
+  var a=rp/(1-e);                      // semi-major axis
+  var ra=a*(1+e);                      // apoapsis radius
+  var raKm=(ra-R)/1000;
+  var period=2*Math.PI*Math.sqrt(a*a*a/mu);
+  var n=Math.sqrt(mu/(a*a*a));         // mean motion
+  var Ta=taDeg*Math.PI/180;
+  var r=a*(1-e*e)/(1+e*Math.cos(Ta));
+  var h=Math.sqrt(mu*a*(1-e*e));
+  var vt=h/r, vr=mu/h*e*Math.sin(Ta);
+  var v=Math.hypot(vt,vr);
+  return {rp:rp, ra:ra, raKm:raKm, a:a, period:period, n:n, r:r, vt:vt, vr:vr,
+          v:v, p:a*(1-e*e), h:h};
+}
+
+/* Hohmann: two impulses between coplanar circular radii r1 -> r2 */
+function hohmann(mu,r1,r2){
+  var at=(r1+r2)/2;
+  var dv1=Math.sqrt(mu/r1)*(Math.sqrt(2*r2/(r1+r2))-1);
+  var dv2=Math.sqrt(mu/r2)*(1-Math.sqrt(2*r1/(r1+r2)));
+  return {at:at, dv1:Math.abs(dv1), dv2:Math.abs(dv2),
+          total:Math.abs(dv1)+Math.abs(dv2),
+          tof:Math.PI*Math.sqrt((at*at*at)/mu)};
+}
+/* Tsiolkovsky: dv = Isp*g0*ln(m0/m1) */
+function massFor(m0,dv,Isp){
+  var g0=9.80665;
+  if(dv<=0) return m0;
+  return m0/Math.exp(dv/(Isp*g0));
+}
+
+function num(id){ var v=parseFloat($(id).value); return isFinite(v)?v:0; }
+function rows(el,map){
+  return map.map(function(p){
+    return '<tr><td>'+p[0]+'</td><td><span class="ws-val">'+p[1]+'</span></td><td style="color:rgba(255,255,255,.35)">'+p[2]+'</td></tr>';}).join('');
+}
+
+function run(){
+  var B=BODIES[$('body').value]||BODIES.earth;
+  var mu=B.mu, R=B.R;
+  var e=Math.max(0,Math.min(0.999999,num('ecc')));
+  var inc=num('inc'), raan=num('raan'), ta=num('ta');
+  var el=elements(mu,R,num('alt'),e,ta);
+  if(!isFinite(el.a)||el.a<=0){ $('out').textContent='Invalid orbit. Reduce eccentricity below 1.'; return; }
+
+  /* vis-viva at the current true anomaly, cross-checked against the h-vector form */
+  var vVis=visViva(mu,el.r,el.a);
+  var vAgree=Math.abs(vVis-el.v)/el.v < 1e-9;
+
+  /* pericentre/apocentre speeds */
+  var vPeri=visViva(mu,el.rp,el.a), vApo=visViva(mu,el.ra,el.a);
+
+  $('t1').innerHTML=rows(el,[
+    ['Semi-major axis a', (el.a/1000).toFixed(3), 'km'],
+    ['Apoapsis altitude', el.raKm.toFixed(3), 'km'],
+    ['Periapsis radius', (el.rp/1000).toFixed(3), 'km'],
+    ['Semi-latus rectum p', (el.p/1000).toFixed(3), 'km'],
+    ['Specific angular mom. h', el.h.toExponential(6), 'm²/s'],
+    ['Orbital period', fmtPeriod(el.period), ''],
+    ['Mean motion n', (el.n*1e6).toFixed(6), 'rad/s'],
+    ['Current radius r', (el.r/1000).toFixed(3), 'km'],
+    ['Inclination', inc.toFixed(3), '°'],
+    ['RAAN', raan.toFixed(3), '°']
+  ]);
+  $('t2').innerHTML=[
+    ['Orbital speed (vis-viva)', vVis.toFixed(6), 'm/s'],
+    ['Circular speed here', vCirc(mu,el.r).toFixed(6), 'm/s'],
+    ['Periapsis speed', vPeri.toFixed(6), 'm/s'],
+    ['Apoapsis speed', vApo.toFixed(6), 'm/s'],
+    ['Transverse vt', el.vt.toFixed(6), 'm/s'],
+    ['Radial vr', el.vr.toFixed(6), 'm/s'],
+    ['Escape speed here', Math.sqrt(2*mu/el.r).toFixed(6), 'm/s'],
+    ['Speed / circular', (vVis/vCirc(mu,el.r)).toFixed(9), '']
+  ].map(function(p){
+    return '<tr><td>'+p[0]+'</td><td><span class="ws-val">'+p[1]+'</span></td><td style="color:rgba(255,255,255,.35)">'+p[2]+'</td></tr>';}).join('');
+
+  /* Hohmann to the target altitude */
+  var r1=el.r, r2=R+num('sc')*1000;
+  var H=hohmann(mu,r1,r2);
+  var Isp=num('burn')||300, M0=num('m0')||1000;
+  var mf=massFor(M0,H.total,Isp);
+  var dv0=visViva(mu,r1,el.a), dv1s=visViva(mu,r2,H.at);
+
+  window.__orb = { mu:mu, R:R, el:el, e:e, vVis:vVis, vAgree:vAgree,
+                   vPeri:vPeri, vApo:vApo, H:H, mf:mf, Isp:Isp, M0:M0, inc:inc };
+
+  $('chip1').textContent = B.name.toUpperCase()+' · e = '+e.toFixed(6);
+
+  show([['Period', fmtPeriod(el.period)],
+       ['Apoapsis', el.raKm.toFixed(0)+' km'],
+       ['Speed now', vVis.toFixed(0)+' m/s'],
+       ['Transfer Δv', H.total.toFixed(1)+' m/s'],
+       ['Transfer time', fmtPeriod(H.tof)],
+       ['Burns', '2'],
+       ['Final mass', mf.toFixed(2)+' kg'],
+       ['Mass ratio', (M0/mf).toFixed(6)]]);
+
+  var lines=[];
+  lines.push('Central body: '+B.name+'   mu = '+mu.toExponential(9)+' m^3/s^2   R = '+(R/1000).toFixed(1)+' km');
+  lines.push('State: alt '+(num('alt')).toFixed(1)+' km, e = '+e.toFixed(6)+', true anomaly '+ta.toFixed(2)+' deg');
+  lines.push('');
+  lines.push('Elements');
+  lines.push('  a  = rp/(1-e)            = '+(el.a/1000).toFixed(6)+' km');
+  lines.push('  ra = a(1+e)              = '+(el.ra/1000).toFixed(6)+' km  (alt '+el.raKm.toFixed(6)+' km)');
+  lines.push('  T  = 2*pi*sqrt(a^3/mu)    = '+fmtPeriod(el.period));
+  lines.push('  n  = sqrt(mu/a^3)        = '+el.n.toExponential(9)+' rad/s');
+  lines.push('');
+  lines.push('Velocity at true anomaly '+ta.toFixed(2)+' deg');
+  lines.push('  v = sqrt(mu(2/r - 1/a))  = '+vVis.toFixed(6)+' m/s');
+  lines.push('  cross-check from h: rvt  = '+el.v.toFixed(6)+' m/s   (agrees: '+vAgree+')');
+  lines.push('  v_circ = sqrt(mu/r)      = '+vCirc(mu,el.r).toFixed(6)+' m/s');
+  lines.push('  v_peri / v_apo            = '+vPeri.toFixed(6)+' / '+vApo.toFixed(6)+' m/s');
+  lines.push('');
+  lines.push('Hohmann transfer '+B.name+' r1='+(r1/1000).toFixed(1)+' km -> r2='+(r2/1000).toFixed(1)+' km');
+  lines.push('  dv1 = '+H.dv1.toFixed(6)+' m/s');
+  lines.push('  dv2 = '+H.dv2.toFixed(6)+' m/s');
+  lines.push('  total dv = '+H.total.toFixed(6)+' m/s');
+  lines.push('  time of flight = pi*sqrt(at^3/mu) = '+fmtPeriod(H.tof));
+  lines.push('  at = '+(H.at/1000).toFixed(6)+' km');
+  lines.push('');
+  lines.push('Rocket equation, Isp = '+Isp+' s (g0 = 9.80665 m/s^2)');
+  lines.push('  m_final = m0 * exp(-dv/(Isp*g0)) = '+mf.toFixed(6)+' kg  from m0 = '+M0+' kg');
+  lines.push('  mass ratio = '+(M0/mf).toFixed(6));
+  $('out').textContent=lines.join('\n');
+
+  draw(el,B,e);
+  $('tbl').textContent = referenceTable();
+}
+
+function fmtPeriod(s){
+  if(s>=86400*365) return (s/(86400*365.2425)).toFixed(4)+' yr';
+  if(s>=86400) return (s/86400).toFixed(4)+' d';
+  if(s>=3600) return (s/3600).toFixed(4)+' h';
+  if(s>=60) return (s/60).toFixed(4)+' min';
+  return s.toFixed(4)+' s';
+}
+
+function referenceTable(){
+  var rowsT=[];
+  Object.keys(BODIES).forEach(function(bk){
+    var B=BODIES[bk];
+    var r=B.R+400e3;
+    rowsT.push(pad(bk.toUpperCase(),10)+pad(fmtPeriod(2*Math.PI*Math.sqrt(r*r*r/B.mu)),16)
+      +pad((visViva(B.mu,r,r)/1000).toFixed(4),16)+pad((r/1000).toFixed(1),12));
+  });
+  var r=G*5.9722e24/1.66053906660e-27, vc=Math.sqrt(G*5.9722e24/r);
+  rowsT.push(pad('MASS/POTENTIAL',10)+pad('',16)+pad('r = GM/c^2',16)+pad((r/1000).toFixed(3),12));
+  rowsT.push(pad('Schwarzschild r at 1 M_sun',10)+pad((vc/1000).toFixed(4)+' km/s',16)
+    +pad('escape@r=AU',16)+pad((Math.sqrt(2*G*1.98892e30/1.495978707e11)/1000).toFixed(4),12));
+  return 'body      period            v_circ km/s   radius km\n'+rowsT.join('\n');
+}
+function pad(s,n){ s=String(s); while(s.length<n) s+=' '; return s; }
+
+function draw(el,B,e){
+  var cv=$('cv'), ctx=cv.getContext('2d'), W=cv.width, H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  var maxR=Math.max(el.ra,1)*1.12;
+  var cx=W/2, cy=H/2, sc=Math.min(W,H)/2/maxR;
+  var X=function(x){return cx+x*sc}, Y=function(y){return cy-y*sc};
+  /* body + surface */
+  var rp=B.R;
+  if(rp<maxR){
+    ctx.fillStyle='rgba(255,255,255,.06)';
+    ctx.beginPath(); ctx.arc(cx,cy,rp*sc,0,6.2832); ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.2)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(cx,cy,rp*sc,0,6.2832); ctx.stroke();
+  }
+  /* ellipse: focus at the centre */
+  ctx.strokeStyle='#FF5F1F'; ctx.lineWidth=2;
+  ctx.beginPath();
+  for(var t=0;t<=360;t++){
+    var Th=t*Math.PI/180, r=a_(Th);
+    var x=r*Math.cos(Th), y=r*Math.sin(Th);
+    var px=X(x-el.a*e), py=Y(y);
+    t?ctx.lineTo(px,py):ctx.moveTo(px,py);
+  }
+  ctx.stroke();
+  function a_(Th){ return el.a*(1-e*e)/(1+e*Math.cos(Th)); }
+  /* current point */
+  var Ta=num('ta')*Math.PI/180, rr=el.r;
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(X(rr*Math.cos(Ta)-el.a*e), Y(rr*Math.sin(Ta)),3.5,0,6.2832); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.5)'; ctx.font='11px "IBM Plex Sans",monospace';
+  ctx.fillText('periapsis r_p = '+(el.rp/1000).toFixed(1)+' km', 10, 18);
+  ctx.fillText('apoapsis  r_a = '+(el.ra/1000).toFixed(1)+' km', 10, 34);
+  ctx.fillText('e = '+e.toFixed(6)+'   focus at centre', 10, 50);
+  ctx.fillStyle='#FF5F1F';
+  ctx.fillText('white dot = current position at '+$('ta').value+'°', 10, H-10);
+}
+
+$('go').onclick=run;
+$('leo').onclick=function(){ $('alt').value=400; $('ecc').value=0; $('sc').value=35786; run(); };
+$('geo').onclick=function(){ $('alt').value=35786; $('ecc').value=0; $('sc').value=400; run(); };
+$('reset').onclick=function(){
+  $('body').value='earth'; $('alt').value=400; $('inc').value=51.6; $('raan').value=0;
+  $('ecc').value=0; $('ta').value=0; $('sc').value=35786; $('burn').value=300; $('m0').value=1000; run();
+};
+['alt','inc','raan','ecc','ta','sc','burn','m0'].forEach(function(id){ $(id).addEventListener('input',run); });
+$('body').addEventListener('change',run);
+window.__om = { elements:elements, hohmann:hohmann, visViva:visViva, massFor:massFor, run:run, BODIES:BODIES };
+run();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/projectile-motion/">
+      <span class="ocurp-related-n">Projectile Motion Solver</span>
+      <span class="ocurp-related-b">Range, apex, flight time and impact angle for any launch speed and angle.</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi/">
+      <span class="ocurp-related-n">BMI Calculator</span>
+      <span class="ocurp-related-b">Body mass index with healthy-range context.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calculator/">
+      <span class="ocurp-related-n">Scientific Calculator</span>
+      <span class="ocurp-related-b">Full expression evaluation in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/tools/chance-calculator/">
+      <span class="ocurp-related-n">Chance Calculator</span>
+      <span class="ocurp-related-b">Work out percentages, ratios and the odds of something happening from a set of counts.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
