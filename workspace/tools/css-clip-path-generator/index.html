@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSS Clip Path Generator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">CSS Clip Path Generator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">CSS</span><span class="ws-chip">CLIP-PATH</span><span class="ws-chip">SHAPE</span></div>
+        </div>
+      <section class="ws-panel mt-4 p-5"><div class="grid gap-5 lg:grid-cols-2"><div><div class="flex flex-wrap items-center gap-3"><button class="ws-btn-ghost" data-preset="triangle">Triangle</button><button class="ws-btn-ghost" data-preset="diamond">Diamond</button><button class="ws-btn-ghost" data-preset="pentagon">Pentagon</button><button class="ws-btn-ghost" data-preset="hexagon">Hexagon</button><button class="ws-btn-ghost" data-preset="star">Star</button><button class="ws-btn-ghost" data-preset="arrow">Arrow</button><button class="ws-btn-ghost" data-preset="message">Message</button></div><div class="mt-4 flex items-center gap-4"><div><label class="ws-label mb-1 block" for="round">Round</label><input id="round" type="range" min="0" max="50" value="0" class="w-32"></div><div><label class="ws-label mb-1 block" for="bg">Fill</label><input id="bg" type="color" value="#FF5F1F" class="h-10 w-14 cursor-pointer rounded-lg border border-white/10 bg-transparent"></div></div><div id="ptlist" class="mt-4 grid gap-2 sm:grid-cols-2"></div></div><div><div class="ws-label mb-2">Preview &mdash; drag the handles</div><div id="stage" class="relative h-64 w-full rounded-xl border border-white/10 bg-black/40"><div id="shape" class="absolute inset-0"></div></div></div></div><div class="mt-5"><div class="ws-label mb-2">CSS</div><div id="css" class="ws-out"></div></div><button id="copy" class="ws-btn-ghost mt-3">Copy CSS</button></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const PRESETS={
+  triangle:[[50,0],[0,100],[100,100]],
+  diamond:[[50,0],[100,50],[50,100],[0,50]],
+  pentagon:[[50,0],[100,38],[82,100],[18,100],[0,38]],
+  hexagon:[[25,0],[75,0],[100,50],[75,100],[25,100],[0,50]],
+  star:[[50,0],[61,35],[98,35],[68,57],[79,91],[50,70],[21,91],[32,57],[2,35],[39,35]],
+  arrow:[[0,20],[60,20],[60,0],[100,50],[60,100],[60,80],[0,80]],
+  message:[[0,0],[100,0],[100,75],[25,75],[0,100]]
+};
+let pts=PRESETS.triangle.map(p=>p.slice()), drag=-1;
+
+function css(){ return 'clip-path: polygon('+pts.map(p=>p[0].toFixed(1)+'% '+p[1].toFixed(1)+'%').join(', ')+');'; }
+function render(){
+  const r=+$('round').value;
+  const shape=$('shape');
+  shape.style.background=$('bg').value;
+  shape.style.clipPath='polygon('+pts.map(p=>p[0].toFixed(1)+'% '+p[1].toFixed(1)+'%').join(', ')+')';
+  shape.style.borderRadius=r+'px';
+  $('css').textContent=css()+'\nborder-radius: '+r+'px;';
+  // handles live inside the stage so they scroll with the page
+  const stage=$('stage');
+  stage.querySelectorAll('.clip-handle').forEach(e=>e.remove());
+  const box=stage.getBoundingClientRect();
+  pts.forEach((p,i)=>{
+    const h=document.createElement('div');
+    h.className='clip-handle';
+    h.dataset.i=i;
+    h.style.cssText='position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#FF5F1F;border:2px solid #fff;cursor:grab;z-index:5';
+    h.style.left=(box.width*p[0]/100)+'px';
+    h.style.top=(box.height*p[1]/100)+'px';
+    stage.appendChild(h);
+  });
+  $('ptlist').innerHTML=pts.map((p,i)=>
+    '<div class="flex items-center gap-2 text-xs font-mono text-white/70"><span class="ws-chip">'+i+'</span>'+p[0].toFixed(1)+'% '+p[1].toFixed(1)+'%</div>').join('');
+}
+function ptFromEvent(e){
+  const box=$('shape').getBoundingClientRect();
+  let x=(e.clientX-box.left)/box.width*100, y=(e.clientY-box.top)/box.height*100;
+  return [Math.max(0,Math.min(100,x)), Math.max(0,Math.min(100,y))];
+}
+document.addEventListener('pointerdown',e=>{
+  const h=e.target.closest('.clip-handle'); if(!h) return;
+  drag=+h.dataset.i;
+});
+document.addEventListener('pointermove',e=>{
+  if(drag<0) return;
+  pts[drag]=ptFromEvent(e); render();
+});
+window.addEventListener('pointerup',()=>{ drag=-1; });
+document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{
+  pts=PRESETS[b.dataset.preset].map(p=>p.slice()); render();
+});
+$('round').addEventListener('input',render);
+$('bg').addEventListener('input',render);
+$('copy').onclick=()=>{ navigator.clipboard.writeText(css()); };
+window.addEventListener('resize',render);
+render();
+</script>
+</body>
+</html>

@@ -2,6 +2,18 @@
 (function () {
   var m = document.getElementById('ws-more');
   if (!m) return;
+  // a missing logo tile must not render as a broken image in the strip
+  document.addEventListener('error', function (e) {
+    var t = e.target;
+    if (!t || t.tagName !== 'IMG' || t.dataset.fallback) return;
+    if (t.getAttribute('src').indexOf('/workspace/logos/') === -1) return;
+    t.dataset.fallback = '1';
+    var span = document.createElement('span');
+    span.className = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 font-display text-sm font-black text-white/20';
+    var nameEl = t.parentElement && t.parentElement.querySelector('span span');
+    span.textContent = (nameEl && nameEl.textContent ? nameEl.textContent : '?').slice(0, 2).toUpperCase();
+    t.replaceWith(span);
+  }, true);
   var isGames = location.pathname.indexOf('/workspace/games/') !== -1;
   var s = document.createElement('script');
   s.src = isGames ? '/workspace/games-data.js' : '/workspace/tools-data.js';

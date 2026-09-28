@@ -147,4 +147,10 @@ const RAW = [
   {slug:"gradient-text-generator",name:"Gradient Text Generator",cat:"design",blurb:"Build linear, radial or conic gradient text and copy the CSS or the ready-made HTML span.",tags:["CSS","GRADIENT","TYPE","CLIENT-SIDE"],ready:true},
   {slug:"timestamp-diff",name:"Timestamp Difference",cat:"math",blurb:"Difference between two Unix timestamps or dates, broken down into days, hours, weeks and years.",tags:["UNIX","TIME","DIFF","CLIENT-SIDE"],ready:true},
   {slug:"braille-translator",name:"Braille Translator",cat:"text",blurb:"Convert text to Grade 1 Unicode Braille and back, with capital and number signs handled properly.",tags:["BRAILLE","ACCESSIBILITY","TEXT","CLIENT-SIDE"],ready:true},
+  {slug:"spin-wheel",name:"Spin Wheel",cat:"math",blurb:"Draw a wheel of any size, spin it with a fair cryptographic pick and land the winner under the pointer.",tags:["RANDOM","WHEEL","PICKER","CLIENT-SIDE"],ready:true},
+  {slug:"signature-generator",name:"Signature Generator",cat:"design",blurb:"Draw a signature with mouse, pen or finger and download it as a transparent PNG.",tags:["SIGNATURE","CANVAS","PNG","CLIENT-SIDE"],ready:true},
+  {slug:"vigenere-cipher",name:"Vigenere Cipher",cat:"text",blurb:"Encrypt or decrypt with a repeating keyword, keeping case and leaving spaces and punctuation in place.",tags:["CIPHER","VIGENERE","TEXT","CLIENT-SIDE"],ready:true},
+  {slug:"base32",name:"Base32 Encoder",cat:"data",blurb:"Encode text to RFC 4648 Base32 and decode it back, with padding control and a byte count.",tags:["BASE32","RFC 4648","ENCODE","CLIENT-SIDE"],ready:true},
+  {slug:"palindrome-checker",name:"Palindrome Checker",cat:"text",blurb:"Check any phrase as a palindrome, ignoring case, accents and punctuation, and see the first mismatch.",tags:["PALINDROME","TEXT","LIVE","CLIENT-SIDE"],ready:true},
+  {slug:"css-clip-path-generator",name:"CSS Clip Path Generator",cat:"design",blurb:"Pick a shape or drag the points, then copy the exact clip-path polygon CSS.",tags:["CSS","CLIP-PATH","SHAPE","CLIENT-SIDE"],ready:true},
 ];

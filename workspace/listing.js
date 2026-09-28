@@ -19,6 +19,19 @@
     });
   }
 
+  /* A tool without a generated logo tile would otherwise render as a broken
+     image on its card, so swap any failed logo for its monogram text. */
+  document.addEventListener('error', function (e) {
+    var t = e.target;
+    if (!t || t.tagName !== 'IMG' || t.dataset.fallback) return;
+    if (t.getAttribute('src').indexOf('/workspace/logos/') === -1) return;
+    t.dataset.fallback = '1';
+    var span = document.createElement('span');
+    span.className = t.className + ' flex items-center justify-center font-display text-4xl font-black text-white/15';
+    span.textContent = (t.alt || '?').replace(' logo', '').slice(0, 2).toUpperCase();
+    t.replaceWith(span);
+  }, true);
+
   function chip(id, label) {
     var on = active === id;
     return '<button data-cat="' + esc(id) + '" class="rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all '
