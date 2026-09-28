@@ -83,10 +83,13 @@
   </section>
 
   <section class="mt-14">
-    <h2 class="text-2xl font-bold">Your projects</h2>
-    <p class="mt-2 text-sm text-white/50">Projects you create or import will be listed here.</p>
-    <div id="ownGrid" class="mt-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4"></div>
-    <div class="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-10 text-center">
+    <div class="flex items-baseline justify-between gap-3">
+          <h2 class="text-2xl font-bold">Your projects</h2>
+          <span class="ws-label" id="ownCount">0 PROJECTS</span>
+        </div>
+        <p class="mt-2 text-sm text-white/50">Projects you create or import will be listed here.</p>
+        <div id="ownGrid" class="mt-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4"></div>
+        <div id="ownEmpty" class="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-10 text-center">
       <p class="text-sm text-white/50">Nothing posted yet.</p>
       <a href="/ocurp/portfolio/createproject/" class="ws-btn mt-5">Create your first project</a>
     </div>
@@ -144,11 +147,37 @@
         + '<span class="mt-4 inline-block text-[10px] font-black uppercase tracking-[0.28em]" style="color:#FF5F1F">Open &rarr;</span>'
         + '</a>';
     }).join('');
-  }
+  /* your own projects: the Supabase table once a real session exists, otherwise
+         the drafts this page kept locally so nothing is lost before that */
+      function paintOwn(list) {
+        var n = list.length;
+        $('ownCount').textContent = n + (n === 1 ? ' PROJECT' : ' PROJECTS');
+        $('ownEmpty').style.display = n ? 'none' : '';
+        $('ownGrid').innerHTML = list.map(function (p) {
+          var link = p.url || p.repo || '';
+          var tag = (p.kind || 'project') + (p.local ? ' - draft' : '');
+          var inner = '<div class="ws-label mb-2">' + tag + '</div>'
+            + '<h3 class="text-lg font-bold">' + (p.title || 'Untitled') + '</h3>'
+            + '<p class="mt-2 text-sm text-white/50">' + (p.blurb || '') + '</p>';
+          return link
+            ? '<a href="' + link + '" target="_blank" rel="noopener" class="card block p-5">' + inner + '</a>'
+            : '<div class="card block p-5">' + inner + '</div>';
+        }).join('');
+      }
+      var localProjects = [];
+      try { localProjects = JSON.parse(localStorage.getItem('ocurp:projects') || '[]'); } catch (e) {}
+      paintOwn(localProjects);
+      var pclient = A.client ? A.client() : null;
+      var psess = A.session ? A.session() : null;
+      if (pclient && psess && psess.user) {
+        pclient.from('projects').select('*').eq('owner', psess.user.id).order('created_at', { ascending: false })
+          .then(function (r) { if (r && r.data && r.data.length) paintOwn(r.data); });
+      }
+    }
 
-  $('signout').addEventListener('click', function () { A.signOut(); render(); });
-  window.addEventListener('ocurp:auth', render);
-  window.addEventListener('ocurp:favs', render);
+      $('signout').addEventListener('click', function () { A.signOut(); render(); });
+      window.addEventListener('ocurp:auth', render);
+      window.addEventListener('ocurp:favs', render);
   render();
 
   if (!A.user()) {
