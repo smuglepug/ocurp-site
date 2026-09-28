@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Bird — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Thread the gaps. Your best score is saved on this device. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/flappy-bird/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Flappy Bird">
+<meta property="og:description" content="Thread the gaps. Your best score is saved on this device. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/flappy-bird/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Flappy Bird">
+<meta name="twitter:description" content="Thread the gaps. Your best score is saved on this device. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Flappy Bird","url":"https://ocurp.space/workspace/games/flappy-bird/","description":"Thread the gaps. Your best score is saved on this device. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Flappy Bird</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">REFLEX</span><span class="ws-chip">CANVAS</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_240px]"><div><canvas id="cv" width="340" height="460" class="mx-auto w-full max-w-[340px] rounded-lg border border-white/10 bg-[#0a0a0a]"></canvas><p class="mt-3 text-center text-[10px] leading-relaxed text-white/30">SPACE, &#8593; or tap the canvas to flap</p></div><div class="flex flex-col gap-3"><div class="flex gap-2"><button id="start" class="ws-btn flex-1">Start</button><button id="reset" class="ws-btn-ghost">Reset</button></div><div class="grid grid-cols-2 gap-3"><div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Score</div><div class="font-display text-xl font-black text-accent" id="score">0</div></div><div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Best</div><div class="font-display text-xl font-black text-white/60" id="best">0</div></div></div><div id="msg" class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Hold nothing. Tap in rhythm and the gap keeps coming.</div><p class="text-[10px] leading-relaxed text-white/30">Every pipe passed is a point. Your best is kept in this browser.</p></div></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const $=id=>document.getElementById(id);
+const cv=$('cv'),cx=cv.getContext('2d'),W=cv.width,H=cv.height,STEP=1/60;
+const GX=42,GROUND=58,PW=54,GAP=150,SPEED=2.55,FLAP=-6.3,GRAV=0.44;
+const S={W:W,H:H,bird:null,pipes:[],score:0,vy:0,over:false,running:false,flaps:0,t:0,passed:0};
+window.flappyState=S;
+let ac=null,beat=0;
+
+const best=()=>+(localStorage.getItem('ws-flappy-best')||0);
+const saveBest=()=>{if(S.score>best()){localStorage.setItem('ws-flappy-best',S.score);$('best').textContent=S.score}};
+function tone(f,dur,vol){
+  try{
+    ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    if(ac.state==='suspended')ac.resume();
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.type='square';o.frequency.value=f;g.gain.value=vol||0.035;
+    o.connect(g);g.connect(ac.destination);o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+(dur||0.09));
+    o.stop(ac.currentTime+(dur||0.09));
+  }catch(e){}
+}
+function addPipe(x,gap){
+  S.pipes.push({x:x,gap:gap,passed:false});
+}
+function reset(){
+  S.score=0;S.vy=0;S.over=false;S.running=false;S.t=0;S.flaps=0;S.passed=0;
+  S.pipes=[];S.bird={x:86,y:H/2,r:12};
+  addPipe(W+40,H/2-10);addPipe(W+40+196,H/2+30);
+  $('score').textContent='0';$('best').textContent=best();
+  $('msg').textContent='Tap to flap. Press Start.';draw();
+}
+function flap(){
+  if(S.over)return;
+  S.vy=FLAP;S.flaps++;beat=1;
+  tone(660+S.flaps%4*70,0.08,0.03);
+}
+function start(){
+  if(S.over||!S.running){reset();S.running=true;
+    $('msg').textContent='Go. One flap per pipe.'}
+}
+function gameOver(why){
+  S.over=true;S.running=false;saveBest();
+  tone(140,0.28,0.05);
+  $('msg').textContent=why+' \u2014 '+S.score+' pipes. Best '+best()+'. Press Start.';
+  $('best').textContent=best();
+}
+function update(dt){
+  S.t+=dt;beat=Math.max(0,beat-dt*3);
+  if(!S.running||S.over)return;
+  S.vy=Math.min(8.2,S.vy+GRAV);
+  S.bird.y+=S.vy;S.bird.x=86;
+  for(const p of S.pipes){
+    p.x-=SPEED;
+    if(!p.passed&&p.x+PW<S.bird.x){
+      p.passed=true;S.score++;S.passed++;
+      $('score').textContent=S.score;
+      tone(880,0.06,0.03);
+    }
+  }
+  while(S.pipes.length&&S.pipes[0].x<-PW)S.pipes.shift();
+  const last=S.pipes[S.pipes.length-1];
+  if(!last||last.x<W-196){
+    const g=H/2+(Math.random()*2-1)*105;
+    addPipe(W+18,Math.max(90+40,Math.min(H-GROUND-90-40,g)));
+  }
+  // bird circle vs pipe rectangles
+  for(const p of S.pipes){
+    if(S.bird.x+12<p.x||S.bird.x-12>p.x+PW)continue;
+    if(S.bird.y+12<p.gap-GAP/2||S.bird.y-12>p.gap+GAP/2)continue;
+    gameOver('Hit a pipe');return;
+  }
+  if(S.bird.y-S.bird.r<=0){S.bird.y=S.bird.r;gameOver('Out the top');return}
+  if(S.bird.y+S.bird.r>=H-GROUND){S.bird.y=H-GROUND-S.bird.r;gameOver('Hit the ground')}
+}
+function draw(){
+  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,W,H);
+  // pipes
+  for(const p of S.pipes){
+    cx.fillStyle='rgba(255,255,255,.16)';
+    cx.fillRect(p.x,0,PW,p.gap-GAP/2);
+    cx.fillRect(p.x,p.gap+GAP/2,PW,H-p.gap-GAP/2);
+    cx.fillStyle='rgba(255,255,255,.30)';
+    cx.fillRect(p.x,0,4,p.gap-GAP/2);
+    cx.fillRect(p.x,p.gap+GAP/2,4,H-p.gap-GAP/2);
+    cx.fillStyle='#FF5F1F';
+    cx.fillRect(p.x-5,p.gap-GAP/2-14,PW+10,14);
+    cx.fillRect(p.x-5,p.gap+GAP/2,PW+10,14);
+  }
+  // ground
+  cx.fillStyle='rgba(255,255,255,.07)';cx.fillRect(0,H-GROUND,W,GROUND);
+  cx.fillStyle='rgba(255,255,255,.22)';cx.fillRect(0,H-GROUND,W,2);
+  // bird: an accent disc with a rotating tick
+  const b=S.bird,tilt=Math.max(-0.5,Math.min(1.0,S.vy*0.09));
+  cx.save();cx.translate(b.x,b.y);cx.rotate(tilt);
+  cx.fillStyle=beat>0.1?'#fff':'#FF5F1F';
+  cx.beginPath();cx.arc(0,0,b.r,0,7);cx.fill();
+  cx.fillStyle='#0a0a0a';cx.beginPath();cx.arc(4,-3,3.4,0,7);cx.fill();
+  cx.restore();
+  if(S.over){
+    cx.fillStyle='rgba(10,10,10,.78)';cx.fillRect(0,0,W,H);
+    cx.fillStyle='#FF5F1F';cx.font='900 24px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText(S.score+' PIPES',W/2,H/2-6);
+    cx.fillStyle='rgba(255,255,255,.55)';cx.font='700 12px IBM Plex Sans,monospace';
+    cx.fillText('BEST '+best(),W/2,H/2+18);
+  }else if(!S.running){
+    cx.fillStyle='rgba(255,255,255,.45)';cx.font='900 15px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('PRESS START',W/2,H/2);
+  }
+}
+function loop(){update(STEP);draw();requestAnimationFrame(loop)}
+addEventListener('keydown',e=>{
+  if(e.key===' '||e.key==='Spacebar'||e.key==='ArrowUp'||e.key==='w'){if(!S.running)start();else flap();e.preventDefault()}
+});
+cv.addEventListener('pointerdown',e=>{e.preventDefault();if(!S.running)start();else flap()});
+$('start').onclick=start;
+$('reset').onclick=reset;
+window.__fl={step:function(n){for(let i=0;i<(n||1);i++)update(STEP);draw()},
+  reset:reset,flap:flap,addPipe:addPipe};
+$('best').textContent=best();
+reset();
+requestAnimationFrame(loop);</script>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asteroids — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Thrust, rotate, drift and split rocks with real inertia. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/asteroids/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Asteroids">
+<meta property="og:description" content="Thrust, rotate, drift and split rocks with real inertia. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/asteroids/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Asteroids">
+<meta name="twitter:description" content="Thrust, rotate, drift and split rocks with real inertia. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Asteroids","url":"https://ocurp.space/workspace/games/asteroids/","description":"Thrust, rotate, drift and split rocks with real inertia. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Asteroids</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">PHYSICS</span><span class="ws-chip">CANVAS</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_240px]"><div><canvas id="cv" width="480" height="440" class="mx-auto w-full max-w-[480px] rounded-lg border border-white/10 bg-[#0a0a0a]"></canvas><p class="mt-3 text-center text-[10px] leading-relaxed text-white/30">&#8592; &#8594; rotate &#183; &#8593; thrust &#183; SPACE fire &#183; the field wraps</p></div><div class="flex flex-col gap-3"><div class="flex gap-2"><button id="start" class="ws-btn flex-1">Start</button><button id="reset" class="ws-btn-ghost">Reset</button></div><div class="grid grid-cols-2 gap-3"><div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Score</div><div class="font-display text-xl font-black text-accent" id="score">0</div></div><div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Best</div><div class="font-display text-xl font-black text-white/60" id="best">0</div></div></div><div class="grid grid-cols-2 gap-3"><div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Lives</div><div class="font-display text-xl font-black text-white" id="lives">3</div></div><div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Rocks</div><div class="font-display text-xl font-black text-white" id="rocks">0</div></div></div><div id="msg" class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Start to launch. Momentum is everything — you coast, you do not stop.</div><p class="text-[10px] leading-relaxed text-white/30">A big rock becomes two middles, a middle becomes two pebbles. Every 500 points adds another rock to the field.</p></div></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const $=id=>document.getElementById(id);
+const cv=$('cv'),cx=cv.getContext('2d'),W=cv.width,H=cv.height,STEP=1/60;
+const RAD=[{r:38,s:3},{r:24,s:2},{r:13,s:1}],PTS=[20,50,100];
+const S={W:W,H:H,ship:null,rocks:[],bullets:[],score:0,lives:3,over:false,running:false,
+ safe:0,t:0,thrust:0,spawnIn:1.6,spawnAt:0,seed:1};
+window.asteroidsState=S;
+const K={};
+let boom=null;
+
+const best=()=>+(localStorage.getItem('ws-asteroids-best')||0);
+const saveBest=()=>{if(S.score>best()){localStorage.setItem('ws-asteroids-best',S.score);$('best').textContent=S.score}};
+
+// Deterministic per-rock outline: same seed, same silhouette, every frame.
+function outline(seed){
+  const v=[];
+  for(let i=0;i<10;i++){
+    const a=(i/10)*Math.PI*2;
+    const k=0.74+(((seed*7919+i*104729)%233280)/233280)*0.48;
+    v.push([Math.cos(a)*k,Math.sin(a)*k]);
+  }
+  return v;
+}
+function wrap(o,W2,H2){
+  W2=W2||W;H2=H2||H;
+  // True modulo, not a single conditional: a big jump (or a long frame after a
+  // background tab throttles) can cross the edge more than once.
+  o.x=((o.x%W2)+W2)%W2;
+  o.y=((o.y%H2)+H2)%H2;
+}
+function spawnRock(x,y,size,vx,vy){
+  S.seed++;
+  const R=RAD[size-1];
+  const a=vx===undefined?Math.random()*6.283:(Math.atan2(vy,vx)+(Math.random()-0.5)*1.1);
+  const sp=vx===undefined?0.5+Math.random()*0.9:Math.hypot(vx,vy);
+  return{x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:R.r,size:size,
+    a:0,va:(Math.random()-0.5)*1.5,v:outline(S.seed)};
+}
+function fire(){
+  if(S.over||!S.running||!S.ship||S.ship.dead)return;
+  if(S.bullets.length>=5)return;
+  const a=S.ship.a+Math.PI/2,sp=6.6;
+  S.bullets.push({x:S.ship.x+Math.cos(a)*14,y:S.ship.y+Math.sin(a)*14,
+    vx:S.ship.vx+Math.cos(a)*sp,vy:S.ship.vy+Math.sin(a)*sp,life:52});
+}
+function inside(px,py,rock){
+  // point in the rock polygon, in the rock's own (unrotated) frame
+  const dx=px-rock.x,dy=py-rock.y,ca=Math.cos(-rock.a),sa=Math.sin(-rock.a);
+  const lx=dx*ca-dy*sa,ly=dx*sa+dy*ca;
+  let hit=false;
+  for(let i=0,j=rock.v.length-1;i<rock.v.length;j=i++){
+    const xi=rock.v[i][0]*rock.r,yi=rock.v[i][1]*rock.r,xj=rock.v[j][0]*rock.r,yj=rock.v[j][1]*rock.r;
+    if((yi>ly)!==(yj>ly)&&lx<(xj-xi)*(ly-yi)/(yj-yi)+xi)hit=!hit;
+  }
+  return hit;
+}
+function killRock(i){
+  const k=S.rocks[i];S.rocks.splice(i,1);
+  boom={x:k.x,y:k.y,t:0};
+  if(k.size>1){
+    for(let n=0;n<2;n++){
+      const a=k.a+n*Math.PI+Math.random()*0.6;
+      const c=spawnRock(k.x,k.y,k.size-1,Math.cos(a)*1.9,Math.sin(a)*1.9);
+      c.a=Math.random()*6.28;S.rocks.push(c);
+    }
+  }
+  S.score+=PTS[k.size-1];
+  $('msg').textContent=k.size===3?'Rock split in two.':'Rock shattered.';
+  hud();
+}
+function newShip(){
+  S.ship={x:W/2,y:H/2,a:-Math.PI/2,vx:0,vy:0,dead:false};
+  S.safe=2.2;S.bullets=[];
+  S.spawnIn=1.4;
+}
+function reset(){
+  S.score=0;S.lives=3;S.over=false;S.running=false;S.t=0;S.thrust=0;S.seed=1;
+  S.rocks=[];S.bullets=[];boom=null;S.spawnAt=0;
+  for(let i=0;i<4;i++){
+    const a=(i/4)*6.283+0.4;
+    S.rocks.push(spawnRock(W/2+Math.cos(a)*110,H/2+Math.sin(a)*110,3));
+  }
+  newShip();hud();draw();
+}
+function die(){
+  S.ship.dead=true;S.lives--;S.bullets=[];boom={x:S.ship.x,y:S.ship.y,t:0};
+  if(S.lives<=0){S.over=true;S.running=false;saveBest();
+    $('msg').textContent='Game over \u2014 '+S.score+' points. Press Start.';hud()}
+  else $('msg').textContent=Math.max(0,S.lives)+' '+(S.lives===1?'life':'lives')+' left.';hud();
+}
+function update(dt){
+  S.t+=dt;if(boom){boom.t+=dt;if(boom.t>0.35)boom=null}
+  if(!S.running||S.over)return;
+  const sh=S.ship;
+  if(!sh.dead){
+    // discrete impulse on the keydown, continuous hold on top of it
+    if(K.left)sh.a-=3.7*dt;
+    if(K.right)sh.a+=3.7*dt;
+    if(K.up){
+      sh.vx+=Math.cos(sh.a)*0.20;sh.vy+=Math.sin(sh.a)*0.20;S.thrust=0.18;
+      const sp=Math.hypot(sh.vx,sh.vy);
+      if(sp>5.2){sh.vx*=5.2/sp;sh.vy*=5.2/sp}
+    }
+    S.thrust=Math.max(0,S.thrust-dt);
+    sh.x+=sh.vx*dt*60;sh.y+=sh.vy*dt*60;wrap(sh);
+    if(S.safe>0)S.safe-=dt;
+  }
+  for(const r of S.rocks){r.x+=r.vx*dt*60;r.y+=r.vy*dt*60;r.a+=r.va*dt;wrap(r)}
+  for(const b of S.bullets){
+    b.x+=b.vx*dt*60;b.y+=b.vy*dt*60;b.life-=1;wrap(b);
+    for(let i=S.rocks.length-1;i>=0;i--){
+      if(inside(b.x,b.y,S.rocks[i])){killRock(i);b.life=0;break}
+    }
+  }
+  S.bullets=S.bullets.filter(b=>b.life>0);
+  if(!sh.dead)for(const r of S.rocks){
+    if(inside(sh.x,sh.y,r)||(S.safe<=0&&inside(sh.x+6,sh.y,r))){die();break}
+  }
+  if(sh.dead&&S.lives>0&&!S.spawnAt)S.spawnAt=S.t+1.1;
+  if(S.spawnAt&&S.t>=S.spawnAt){S.spawnAt=0;newShip();
+    $('msg').textContent='Back in. Clear the field.'}
+  S.spawnIn-=dt;
+  if(S.spawnIn<=0){
+    // the field fills up as you score, and never drops below one rock per half second
+    S.spawnIn=Math.max(0.5,1.8-S.score/900);
+    const a=Math.random()*6.283,dd=90+Math.random()*60;
+    S.rocks.push(spawnRock(W/2+Math.cos(a)*dd,H/2+Math.sin(a)*dd,3));
+  }
+  hud();
+}
+function hud(){
+  $('score').textContent=S.score;$('lives').textContent=Math.max(0,S.lives);
+  $('best').textContent=best();$('rocks').textContent=S.rocks.length;
+}
+function draw(){
+  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,W,H);
+  for(const r of S.rocks){
+    cx.strokeStyle='rgba(255,255,255,'+(0.35+r.size*0.10)+')';cx.lineWidth=1.6;
+    cx.beginPath();
+    r.v.forEach((p,i)=>{const x=r.x+p[0]*r.r,y=r.y+p[1]*r.r;
+      const c=Math.cos(r.a),s=Math.sin(r.a);
+      const rx=x,ry=y;
+      if(i)cx.lineTo(rr(rx,ry,r,c,s),rt(rx,ry,r,c,s));else cx.moveTo(rr(rx,ry,r,c,s),rt(rx,ry,r,c,s))});
+    cx.closePath();cx.stroke();
+  }
+  cx.fillStyle='#FF5F1F';
+  for(const b of S.bullets)cx.fillRect(b.x-1.2,b.y-1.2,2.4,2.4);
+  const sh=S.ship;
+  if(sh&&!sh.dead&&(S.safe<=0||Math.floor(S.t*12)%2===0)){
+    const c=Math.cos(sh.a),s=Math.sin(sh.a);
+    const px=(lx,ly)=>[sh.x+lx*c-ly*s,sh.y+lx*s+ly*c];
+    const t=px(0,-11),l=px(-8,8),b2=px(0,4.5),r2=px(8,8);
+    cx.beginPath();cx.moveTo(t[0],t[1]);cx.lineTo(l[0],l[1]);cx.lineTo(b2[0],b2[1]);
+    cx.lineTo(r2[0],r2[1]);cx.closePath();cx.fill();
+    if(S.thrust>0){
+      const f1=px(-4,8),f2=px(0,8+9+Math.random()*7),f3=px(4,8);
+      cx.strokeStyle='#FF5F1F';cx.lineWidth=2;cx.beginPath();
+      cx.moveTo(f1[0],f1[1]);cx.lineTo(f2[0],f2[1]);cx.lineTo(f3[0],f3[1]);cx.stroke();
+    }
+  }
+  if(boom){
+    cx.strokeStyle='#FF5F1F';cx.lineWidth=2;cx.beginPath();
+    cx.arc(boom.x,boom.y,5+boom.t*40,0,7);cx.stroke();
+  }
+  if(S.over){
+    cx.fillStyle='rgba(10,10,10,.78)';cx.fillRect(0,0,W,H);
+    cx.fillStyle='#FF5F1F';cx.font='900 26px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('GAME OVER',W/2,H/2-6);
+    cx.fillStyle='rgba(255,255,255,.6)';cx.font='700 13px IBM Plex Sans,monospace';
+    cx.fillText(S.score+' POINTS',W/2,H/2+20);
+  }else if(!S.running){
+    cx.fillStyle='rgba(255,255,255,.45)';cx.font='900 15px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('PRESS START',W/2,H/2);
+  }
+}
+function rr(x,y,r,c,s){return r.x+(x-r.x)*c-(y-r.y)*s}
+function rt(x,y,r,c,s){return r.y+(x-r.x)*s+(y-r.y)*c}
+function loop(now){update(STEP);draw();requestAnimationFrame(loop)}
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft'||e.key==='a'){K.left=1;if(S.ship)S.ship.a-=0.09;e.preventDefault()}
+  else if(e.key==='ArrowRight'||e.key==='d'){K.right=1;if(S.ship)S.ship.a+=0.09;e.preventDefault()}
+  else if(e.key==='ArrowUp'||e.key==='w'){
+    K.up=1;
+    if(S.ship){const a=S.ship.a,sp=Math.hypot(S.ship.vx,S.ship.vy);
+      S.ship.vx+=Math.cos(a)*0.62;S.ship.vy+=Math.sin(a)*0.62;
+      const n=Math.hypot(S.ship.vx,S.ship.vy);
+      if(n>5.2){S.ship.vx*=5.2/n;S.ship.vy*=5.2/n}
+      S.thrust=0.18}
+    e.preventDefault();
+  }
+  else if(e.key===' '||e.key==='Spacebar'){fire();e.preventDefault()}
+});
+addEventListener('keyup',e=>{
+  if(e.key==='ArrowLeft'||e.key==='a')K.left=0;
+  else if(e.key==='ArrowRight'||e.key==='d')K.right=0;
+  else if(e.key==='ArrowUp'||e.key==='w')K.up=0;
+});
+cv.addEventListener('pointerdown',fire);
+$('start').onclick=()=>{if(S.over||!S.running){reset();S.running=true;
+  $('msg').textContent='Clear the field. Coasting is falling.'}};
+$('reset').onclick=()=>{S.spawnAt=0;reset()};
+window.__as={step:function(n){for(let i=0;i<(n||1);i++)update(STEP);draw()},
+  reset:function(){S.spawnAt=0;reset()},fire:fire,spawnRock:spawnRock,killRock:killRock,
+  speed:function(){return Math.hypot(S.ship.vx,S.ship.vy)}};
+$('best').textContent=best();
+reset();
+requestAnimationFrame(loop);</script>
+</body>
+</html>

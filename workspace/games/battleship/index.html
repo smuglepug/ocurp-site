@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Battleship | Owen's Workspace</title>
+<title>Battleship — Play Free in Browser | Ocurp</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,6 +51,17 @@ tailwind.config = { theme: { extend: {
   .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
   .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
 </style>
+<meta name="description" content="Sink the whole fleet. The AI hunts with real targeting logic, not luck. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/battleship/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Battleship">
+<meta property="og:description" content="Sink the whole fleet. The AI hunts with real targeting logic, not luck. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/battleship/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Battleship">
+<meta name="twitter:description" content="Sink the whole fleet. The AI hunts with real targeting logic, not luck. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Battleship","url":"https://ocurp.space/workspace/games/battleship/","description":"Sink the whole fleet. The AI hunts with real targeting logic, not luck. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -115,30 +126,29 @@ const grid=()=>Array.from({length:10},()=>Array(10).fill(''));
 const st={enemy:grid(),mine:grid(),fired:grid(),aiFired:grid(),enemyShips:[],myShips:[],
   shots:0,hits:0,sunk:0,lost:0,over:false,aiQueue:[],lastMode:'',turn:'you'};
 window.battleshipState=st;
-function fits(board,list,r0,c0,horiz,len){
+function fits(board,r0,c0,horiz,len){
   for(let i=0;i<len;i++){const r=horiz?r0:r0+i,c=horiz?c0+i:c0;
     if(r<0||r>9||c<0||c>9||board[r][c])return false}
   return true}
 function lay(board){
+  const target=(board===st.enemy)?st.enemyShips:st.myShips;
   for(const s of FLEET){
-    let ok=false;
-    for(let t=0;t<600&&!ok;t++){
+    let ok=false, cells=[];
+    for(let t=0;t<800&&!ok;t++){
       const horiz=Math.random()<.5,r=Math.floor(Math.random()*10),c=Math.floor(Math.random()*10);
-      if(!fits(board,null,r,c,horiz,s.n))continue;
-      const cells=[];
+      if(!fits(board,r,c,horiz,s.n))continue;
+      cells=[];
       for(let i=0;i<s.n;i++){const rr=horiz?r:r+i,cc=horiz?c+i:c;board[rr][cc]=s.id;cells.push([rr,cc])}
       ok=true}
-    if(!ok)return null;
-    const ship={id:s.id,len:s.n,cells:cells,alive:true};
-    (board===st.enemy?st.enemyShips:st.myShips).push(ship)}
-  return st.enemyShips.length===5&&st.myShips.length===5;
-}
+    if(!ok){target.length=0;return false}
+    target.push({id:s.id,len:s.n,cells:cells,alive:true})}
+  return target.length===5}
 function reset(){
   st.enemy=grid();st.mine=grid();st.fired=grid();st.aiFired=grid();
   st.enemyShips=[];st.myShips=[];st.shots=0;st.hits=0;st.sunk=0;st.lost=0;
   st.over=false;st.aiQueue=[];st.lastMode='';st.turn='you';
-  if(!lay(st.enemy)){st.enemyShips=[]}
-  if(!lay(st.mine)){st.myShips=[]}
+  lay(st.enemy);
+  lay(st.mine);
   $('msg').textContent='Shoot the enemy fleet. Ships are placed at random.';
   render()}
 function neighbours(cells){

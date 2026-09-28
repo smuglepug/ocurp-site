@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nim — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Two piles, optimal play. The AI always leaves you a losing position. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/nim/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Nim">
+<meta property="og:description" content="Two piles, optimal play. The AI always leaves you a losing position. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/nim/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Nim">
+<meta name="twitter:description" content="Two piles, optimal play. The AI always leaves you a losing position. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Nim","url":"https://ocurp.space/workspace/games/nim/","description":"Two piles, optimal play. The AI always leaves you a losing position. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Nim</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">MATH</span><span class="ws-chip">AI</span><span class="ws-chip">STRATEGY</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_270px]"><div class="flex flex-col gap-4"><div id="stones" class="flex flex-col gap-3"></div><div class="rounded-lg border border-white/10 bg-white/[0.04] p-4"><div class="ws-label mb-2">Position</div><pre id="math" class="ws-out min-h-[72px]"></pre></div></div><div class="flex flex-col gap-3"><div class="grid grid-cols-2 gap-3"><div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Stones</div><div class="font-display text-xl font-black text-accent" id="total">0</div></div><div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">XOR</div><div class="font-display text-xl font-black text-white/60" id="xorv">0</div></div></div><div><label class="ws-label mb-2 block">Piles</label><select id="mode" class="ws-input"><option value="1">1 pile</option><option value="2">2 piles</option><option value="3">3 piles</option></select></div><div class="flex gap-2"><button id="new" class="ws-btn flex-1">New game</button><button id="hard" class="ws-btn-ghost">Hard start</button></div><div id="msg" class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Click any stone to take that many from its pile. The AI plays the Sprague-Grundy reply, so it never hands you a losing position.</div><p class="text-[10px] leading-relaxed text-white/30">A single pile of n has Grundy value n, so the sum of piles is their XOR. XOR 0 is a losing position for whoever is on move. Take the whole pile to win.</p></div></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const $=id=>document.getElementById(id);
+const MAXP=21;
+const S={piles:[],turn:'you',over:false,winner:null,moves:[],lastMove:null,mode:2};
+window.nimState=S;
+
+// Sprague-Grundy value of a single Nim pile is its own size, so the value of
+// the disjoint sum is the bitwise XOR of the sizes.
+function xor(p){return (p||S.piles).reduce((a,b)=>a^b,0)}
+function grundy(p){return xor(p)}
+function label(p,x){
+  if(p.every(v=>v===0))return 'terminal \u2014 no stones left';
+  return x===0?'P-position (losing for the player on move)':'N-position (winning for the player on move)';
+}
+function allMoves(p){
+  const out=[];
+  for(let i=0;i<p.length;i++)for(let take=1;take<=p[i];take++)out.push({i:i,take:take});
+  return out;
+}
+// Optimal reply. If the position handed to us is an N-position, the winning
+// move is the one that zeroes the XOR. From a P-position nothing can, so we
+// play the move that leaves the smallest XOR we can reach.
+function bestMove(p){
+  p=p||S.piles;
+  const x=xor(p);
+  if(!p.some(v=>v>0))return null;
+  if(x!==0){
+    for(let i=0;i<p.length;i++){
+      const t=p[i]^x;
+      if(t<p[i])return{i:i,take:p[i]-t,zero:true};
+    }
+  }
+  let pick=null,ps=Infinity;
+  for(const m of allMoves(p)){
+    const q=p.slice();q[m.i]-=m.take;
+    const s=xor(q);
+    if(s===0&&x===0){return{i:m.i,take:m.take,zero:false}}
+    if(s<ps){ps=s;pick=m}
+  }
+  return pick?{i:pick.i,take:pick.take,zero:false}:null;
+}
+function reset(mode,hard){
+  S.mode=mode||+(+$('mode').value)||2;
+  S.over=false;S.winner=null;S.moves=[];S.lastMove=null;S.turn='you';
+  S.piles=S.mode===1?[7+Math.floor(Math.random()*10)]
+        :S.mode===2?[7+Math.floor(Math.random()*6),5+Math.floor(Math.random()*6)]
+        :[3+Math.floor(Math.random()*6),4+Math.floor(Math.random()*5),5+Math.floor(Math.random()*5)];
+  if(hard){S.piles=S.mode===1?[7]:S.mode===2?[7,5]:[3,4,5]}
+  S.piles=S.piles.map(v=>Math.max(1,Math.min(MAXP,v)));
+  $('msg').textContent='Your move. Take at least one stone from one pile.';
+  render();
+}
+function play(i,take,who){
+  if(S.over||S.piles[i]<take||take<1)return false;
+  const before=S.piles.slice();
+  S.piles[i]-=take;
+  const m={i:i,take:take,who:who,piles:before.slice()};
+  S.moves.push(m);S.lastMove=m;
+  if(S.piles.every(v=>v===0)){
+    S.over=true;S.winner=who==='you'?'you':'ai';
+    $('msg').textContent=who==='you'?'You take the last stone \u2014 you win.':'The AI takes the last stone \u2014 you lose.';
+    render();return true;
+  }
+  render();return true;
+}
+function humanPlay(i,take){
+  if(S.over||S.turn!=='you')return false;
+  if(!play(i,take,'you'))return false;
+  if(S.over)return true;
+  S.turn='ai';render();
+  setTimeout(aiTurn,300);
+  return true;
+}
+function aiTurn(){
+  if(S.over||S.turn!=='ai')return;
+  const m=bestMove(S.piles);
+  if(!m){S.over=true;S.winner='you';render();return}
+  const xBefore=xor(S.piles);
+  play(m.i,m.take,'ai');
+  const xAfter=xor(S.piles);
+  $('msg').textContent=m.zero
+    ? 'AI took '+m.take+' from pile '+(m.i+1)+'. XOR '+xBefore+' \u2192 '+xAfter+' \u2014 a losing position handed back to you.'
+    : (xBefore===0
+        ? 'That was a P-position (XOR 0): nothing could zero it, so the AI took '+m.take+' and handed you an N-position.'
+        : 'AI took '+m.take+' from pile '+(m.i+1)+'.');
+  if(S.over)return;
+  S.turn='you';render();
+}
+function render(){
+  const x=xor(S.piles);
+  $('stones').innerHTML=S.piles.map((n,i)=>{
+    const cells=[];
+    for(let k=0;k<n;k++){
+      const live=S.turn==='you'&&!S.over;
+      cells.push('<button data-p="'+i+'" data-k="'+k+'" title="Take '+(k+1)+'" '
+        +'class="h-5 w-5 rounded-lg border '+(k===n-1?'border-accent bg-accent':'border-white/25 bg-white/[0.06]')+' '
+        +(live?'hover:border-accent hover:bg-accent/40':'')+'"></button>');
+    }
+    return '<div class="rounded-lg border border-white/10 bg-white/[0.04] p-3">'
+      +'<div class="mb-2 flex items-center justify-between">'
+      +'<span class="ws-label">Pile '+(i+1)+'</span>'
+      +'<span class="font-mono text-xs text-white/70">'+n+' \u00b7 Grundy '+n+'</span></div>'
+      +'<div class="flex flex-wrap gap-1.5">'+(cells.join('')||'<span class="text-xs text-white/25">empty</span>')+'</div>'
+      +'<div class="mt-2 flex items-center gap-2">'
+      +'<input type="number" data-t="'+i+'" min="1" max="'+n+'" value="1" class="ws-input !w-24 !py-1.5 text-xs"'
+      +(S.turn==='you'&&!S.over?'':' disabled')+'>'
+      +'<button data-go="'+i+'" class="ws-btn-ghost !px-3 !py-1.5"'
+      +(S.turn==='you'&&!S.over?'':' style="opacity:.35"')+'>Take</button></div></div>';
+  }).join('');
+  $('stones').querySelectorAll('button[data-p]').forEach(el=>el.onclick=()=>{
+    if(S.turn!=='you'||S.over)return;humanPlay(+el.dataset.p,+el.dataset.k+1)});
+  $('stones').querySelectorAll('button[data-go]').forEach(el=>el.onclick=()=>{
+    if(S.turn!=='you'||S.over)return;
+    const i=+el.dataset.go,box=$('stones').querySelector('input[data-t="'+i+'"]');
+    humanPlay(i,Math.max(1,Math.min(S.piles[i],parseInt(box.value)||1)))});
+  const grundyList=S.piles.map((v,i)=>'g'+i+' = '+v).join('  ');
+  $('math').textContent=
+    'piles    ['+S.piles.join(', ')+']\n'
+    +grundyList+'\n'
+    +'XOR      '+S.piles.join(' \u2295 ')+' = '+x+'\n'
+    +'type     '+label(S.piles,x)+'\n'
+    +(S.over?('result   '+(S.winner==='you'?'you win':'the AI wins')):('to move  '+(S.turn==='you'?'you':'the AI')));
+  $('total').textContent=S.piles.reduce((a,b)=>a+b,0);
+  $('xorv').textContent=x;
+  S.xor=x;S.grundy=x;S.type=x===0?'P':'N';
+}
+$('new').onclick=()=>reset(+$('mode').value,false);
+$('hard').onclick=()=>reset(+$('mode').value,true);
+$('mode').onchange=()=>reset(+$('mode').value,false);
+window.__nim={xor:xor,grundy:grundy,bestMove:bestMove,allMoves:allMoves,play:play,
+  humanPlay:humanPlay,aiTurn:aiTurn,reset:reset,render:render,label:label};
+reset(2,false);</script>
+</body>
+</html>

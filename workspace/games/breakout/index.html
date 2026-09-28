@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Breakout | Owen's Workspace</title>
+<title>Breakout — Play Free in Browser | Ocurp</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,6 +51,17 @@ tailwind.config = { theme: { extend: {
   .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
   .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
 </style>
+<meta name="description" content="Bricks, lives and power-ups, with the pace ramping as you clear them. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/breakout/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Breakout">
+<meta property="og:description" content="Bricks, lives and power-ups, with the pace ramping as you clear them. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/breakout/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Breakout">
+<meta name="twitter:description" content="Bricks, lives and power-ups, with the pace ramping as you clear them. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Breakout","url":"https://ocurp.space/workspace/games/breakout/","description":"Bricks, lives and power-ups, with the pace ramping as you clear them. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -135,13 +146,13 @@ function hud(){
   $('pups').innerHTML=PUPS.map(p=>{
     const on=st.active[PUPS.indexOf(p)];
     return '<span class="ws-chip"'+(on?' style="color:'+p.tone+';border-color:'+p.tone+'"':'')+'>'+p.label+(on?' &check;':'')+'</span>'}).join('')}
-function brickHit(b,fromTop){
+function brickHit(b){
   b.hp--;st.hits++;
   const pts=10*st.level*(b.max||1);
   st.score+=pts;
   if(b.hp<=0){st.cleared++;st.score+=25*st.level}
   if(st.cleared>=st.bricks.length*0.12){st.cleared=0;st.level++;build();bricksLeft()}
-  hud();draw();void fromTop}
+  hud();draw();}
 function bricksLeft(){
   if(st.bricks.every(b=>b.hp<=0)){
     st.level++;
@@ -165,45 +176,56 @@ function paddle(b){
   if(Math.abs(b.vx)<1)b.vx=(b.vx<0?-1:1)*1;
   st.hits++}
 function step(dt){
-  if(!st.running||st.paused||st.over)return;
-  if(st.keys.arrowleft||st.keys.a)st.px-=6;
-  if(st.keys.arrowright||st.keys.d)st.px+=6;
-  st.px=Math.max(st.pw/2+2,Math.min(W-st.pw/2-2,st.px));
-  const ramp=1+(st.level-1)*0.18;
-  for(let i=st.balls.length-1;i>=0;i--){
-    const b=st.balls[i];
-    b.x+=b.vx*ramp;b.y+=b.vy*ramp;
-    if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx)}
-    if(b.x>W-b.r){b.x=W-b.r;b.vx=-Math.abs(b.vx)}
-    if(b.y<b.r){b.y=b.r;b.vy=Math.abs(b.vy)}
-    if(b.y>H+b.r*2){
-      st.balls.splice(i,1);
-      if(!st.balls.length){
-        st.lives--;
-        hud();
-        if(st.lives<=0){
-          st.over=true;st.running=false;
-          const bs=best();
-          if(st.score>bs){localStorage.setItem('ws-breakout-best',st.score)}
-          $('msg').textContent='Out of balls. Final score '+st.score+'. Press Start.';
-          draw();return}
-        $('msg').textContent='Ball lost — '+st.lives+' left.';newBall();
-        break}}
-      continue}
+  if(!st.running || st.paused || st.over) return;
+  if(st.keys.arrowleft || st.keys.a) st.px -= 6;
+  if(st.keys.arrowright || st.keys.d) st.px += 6;
+  st.px = Math.max(st.pw/2+2, Math.min(W-st.pw/2-2, st.px));
+  const ramp = 1 + (st.level-1)*0.18;
+  for(let i = st.balls.length-1; i >= 0; i--){
+    const b = st.balls[i];
+    b.x += b.vx*ramp;  b.y += b.vy*ramp;
+    if(b.x < b.r){ b.x = b.r; b.vx = Math.abs(b.vx); }
+    if(b.x > W-b.r){ b.x = W-b.r; b.vx = -Math.abs(b.vx); }
+    if(b.y < b.r){ b.y = b.r; b.vy = Math.abs(b.vy); }
+    if(b.y > H + b.r*2){
+      st.balls.splice(i, 1);
+      if(!st.balls.length) loseBall();
+      continue;
+    }
     paddle(b);
     for(const br of st.bricks){
-      if(br.hp<=0)continue;
-      if(b.x+bs(br)>br.x&&b.x-bs(br)<br.x+br.w&&b.y+b.r>br.y&&b.y-b.r<br.y+br.h){
-        b.vy=-b.vy;b.y=b.vy>0?br.y-b.r:br.y+br.h+b.r;
-        brickHit(br,b.vy>0);
-        if(!st.balls.length)break}}}
+      if(br.hp <= 0) continue;
+      if(b.x+b.r > br.x && b.x-b.r < br.x+br.w && b.y+b.r > br.y && b.y-b.r < br.y+br.h){
+        b.vy = -b.vy;
+        b.y = b.vy > 0 ? br.y - b.r : br.y + br.h + b.r;
+        brickHit(br);
+      }
+    }
+  }
   if(st.pup){
-    st.pup.y+=st.pup.vy;st.pup.x+=st.pup.vx;
-    if(st.pup.x<4||st.pup.x>W-4)st.pup.vx*=-1;
-    st.pupT-=dt/16;
-    if(st.pup.y>st.py-14&&st.pup.y<st.py+8&&Math.abs(st.pup.x-st.px)<st.pw/2+8){applyPup(st.pup.p);st.pup=null}
-    else if(st.pup.y>H+20||st.pupT<=0)st.pup=null}
-  if(Math.random()<0.0016&&!st.pup&&st.balls.length)dropPup(Math.random()*W)}
+    st.pup.y += st.pup.vy;
+    st.pup.x += st.pup.vx;
+    if(st.pup.x < 4 || st.pup.x > W-4) st.pup.vx *= -1;
+    st.pupT -= dt/16;
+    const caught = st.pup.y > st.py-14 && st.pup.y < st.py+8 && Math.abs(st.pup.x-st.px) < st.pw/2+8;
+    if(caught){ applyPup(st.pup.p); st.pup = null; }
+    else if(st.pup.y > H+20 || st.pupT <= 0) st.pup = null;
+  }
+  if(Math.random() < 0.0016 && !st.pup && st.balls.length) dropPup(Math.random()*W);
+}
+function loseBall(){
+  st.lives--;
+  hud();
+  if(st.lives <= 0){
+    st.over = true; st.running = false;
+    if(st.score > best()){ localStorage.setItem('ws-breakout-best', st.score); }
+    $('msg').textContent = 'Out of balls. Final score ' + st.score + '. Press Start.';
+    draw();
+    return;
+  }
+  $('msg').textContent = 'Ball lost \u2014 ' + st.lives + ' left.';
+  newBall();
+}
 function applyPup(p){
   const i=PUPS.indexOf(p);
   st.active[i]=true;

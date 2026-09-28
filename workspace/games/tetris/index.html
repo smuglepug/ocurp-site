@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tetris | Owen's Workspace</title>
+<title>Tetris — Play Free in Browser | Ocurp</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,6 +51,17 @@ tailwind.config = { theme: { extend: {
   .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
   .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
 </style>
+<meta name="description" content="Seven-bag randomiser, hold piece, next queue and rising speed. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/tetris/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Tetris">
+<meta property="og:description" content="Seven-bag randomiser, hold piece, next queue and rising speed. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/tetris/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Tetris">
+<meta name="twitter:description" content="Seven-bag randomiser, hold piece, next queue and rising speed. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Tetris","url":"https://ocurp.space/workspace/games/tetris/","description":"Seven-bag randomiser, hold piece, next queue and rising speed. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -122,10 +133,15 @@ window.tetrisState=st;
 const best=()=>parseInt(localStorage.getItem('ws-tetris-best')||'0');
 function resetBoard(){st.board=Array.from({length:ROWS},()=>Array(COLS).fill(0))}
 function bag(){const b=KEY.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=b[i];b[i]=b[j];b[j]=t}st.bags++;return b}
-function fillQueue(){while(st.next.length<5)st.next.push(bag())}
+function fillQueue(){
+  // bag() returns a whole shuffled bag (an array of 7 types). The queue must be
+  // a FLAT list of piece types, otherwise shift() returns an array and
+  // SHAPES[t] is undefined -> blank canvas + TypeError.
+  while(st.next.length<5)st.next.push(...bag())}
 function spawn(type){
-  const t=type||st.next.shift();fillQueue();
-  st.cur={t:type||t,rot:0,x:Math.floor((COLS-SHAPES[t][0].length)/2),y:-1};
+  const t=type||st.next.shift();
+  fillQueue();
+  st.cur={t:t,rot:0,x:Math.floor((COLS-SHAPES[t][0].length)/2),y:-1};
   st.drop=0;st.canHold=true;
   if(collides(st.cur.x,st.cur.y,st.cur.rot)){gameOver();return false}
   draw();return true}

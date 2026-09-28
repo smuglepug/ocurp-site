@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space Invaders — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Descending waves, destructible shields and a rising score. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/space-invaders/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Space Invaders">
+<meta property="og:description" content="Descending waves, destructible shields and a rising score. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/space-invaders/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Space Invaders">
+<meta name="twitter:description" content="Descending waves, destructible shields and a rising score. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Space Invaders","url":"https://ocurp.space/workspace/games/space-invaders/","description":"Descending waves, destructible shields and a rising score. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Space Invaders</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">CANVAS</span><span class="ws-chip">WAVES</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_240px]"><div><canvas id="cv" width="480" height="420" class="mx-auto w-full max-w-[480px] rounded-lg border border-white/10 bg-[#0a0a0a]"></canvas><p class="mt-3 text-center text-[10px] leading-relaxed text-white/30">&#8592; &#8594; move &#183; SPACE fire &#183; click the canvas to fire</p></div><div class="flex flex-col gap-3"><div class="flex gap-2"><button id="start" class="ws-btn flex-1">Start</button><button id="reset" class="ws-btn-ghost">Reset</button></div><div class="grid grid-cols-2 gap-3"><div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Score</div><div class="font-display text-xl font-black text-accent" id="score">0</div></div><div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Best</div><div class="font-display text-xl font-black text-white/60" id="best">0</div></div></div><div class="grid grid-cols-2 gap-3"><div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Lives</div><div class="font-display text-xl font-black text-white" id="lives">3</div></div><div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Wave</div><div class="font-display text-xl font-black text-white" id="wave">0</div></div></div><div id="msg" class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Press Start. Clear every wave — each one descends faster and fires more.</div><p class="text-[10px] leading-relaxed text-white/30">Four destructible bunkers. Your shots erode them from underneath, theirs from above.</p></div></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const $=id=>document.getElementById(id);
+const cv=$('cv'),cx=cv.getContext('2d'),W=cv.width,H=cv.height,STEP=1/60;
+// Cell of the invader grid. 9 columns of 40px, rows of 30px.
+const CW=40,CH=30,COLS=9;
+// Row art, 8x8 pixels each. Three silhouettes, top row gets the squid.
+const SPR=[
+ ["00111100","01111110","11111111","11011011","11111111","00100100","01011010","10100101"],
+ ["00011000","00111100","01111110","11011011","11111111","10100101","00111000","01100110"],
+ ["00011000","00111100","01111110","11011011","11111111","10011001","10100101","00111100"]];
+const PTS=[10,20,10,30];
+
+const S={W:W,H:H,ship:null,bullets:[],shots:[],foe:[],shields:[],score:0,lives:3,wave:0,
+ running:false,over:false,safe:0,t:0,foeX:0,foeY:0,dir:1,drop:0,shotsFired:0,kills:0};
+window.spaceInvadersState=S;
+const K={};
+let acc=0,last=performance.now(),foeTimer=0,shotTimer=0,clearT=0,boom=null;
+
+const best=()=>+(localStorage.getItem('ws-inv-best')||0);
+const saveBest=()=>{if(S.score>best()){localStorage.setItem('ws-inv-best',S.score);$('best').textContent=S.score}};
+
+function buildShields(){
+  S.shields=[];
+  for(let i=0;i<4;i++){
+    const g=[];
+    for(let y=0;y<6;y++)for(let x=0;x<15;x++){
+      // carve the arch: two cells of the corners on each of the top rows
+      if(y===0&&(x<=2||x>=12))continue;
+      if(y===1&&(x<=1||x>=13))continue;
+      g.push({x:x,y:y,a:1});
+    }
+    S.shields.push({x:26+i*118,y:H-88,g:g});
+  }
+}
+function newWave(){
+  S.wave++;
+  const rows=S.wave>1?5:4;
+  S.foe=[];S.foeX=(W-COLS*CW)/2;S.foeY=52;S.dir=1;S.drop=0;clearT=0;
+  for(let r=0;r<rows;r++)for(let c=0;c<COLS;c++)S.foe.push({r:r,c:c,a:1});
+  foeTimer=0.66;shotTimer=0.9;
+  $('msg').textContent='Wave '+S.wave+' \u2014 hold the line.';
+}
+function reset(){
+  S.score=0;S.lives=3;S.over=false;S.running=false;S.t=0;S.safe=0;S.kills=0;S.shotsFired=0;
+  S.bullets=[];S.shots=[];S.foe=[];S.foeX=0;S.foeY=0;S.dir=1;S.drop=0;boom=null;clearT=0;
+  S.ship={x:W/2,y:H-30};
+  buildShields();hud();draw();
+}
+function stepInterval(){
+  const live=S.foe.filter(f=>f.a).length, tot=S.foe.length||1;
+  return Math.max(0.09,0.66-S.wave*0.045-(1-live/tot)*0.44);
+}
+function fireRate(){return Math.max(0.16,0.95-S.wave*0.11)}
+function ex(f){return S.foeX+f.c*CW+CW/2}
+function ey(f){return S.foeY+f.r*CH+CH/2}
+function live(){return S.foe.filter(f=>f.a)}
+function shoot(){if(S.over||!S.running)return;S.bullets.push({x:S.ship.x,y:S.ship.y-12});S.shotsFired++}
+
+// Erase one 4px cell. Player shots bite from underneath, enemy shots from above,
+// which is what keeps your own line of fire open.
+function erode(sh,px,py,fromBelow){
+  const col=Math.floor((px-sh.x)/4);
+  if(col<0||col>14)return false;
+  const row=(py-sh.y)/4;
+  let pick=null;
+  for(const c of sh.g){
+    if(!c.a||c.x!==col)continue;
+    if(Math.abs(c.y-row)>1.2)continue;
+    if(!pick)pick=c; else pick=fromBelow?(c.y>pick.y?c:pick):(c.y<pick.y?c:pick);
+  }
+  if(!pick)return false;
+  pick.a=0;return true;
+}
+function killFoe(f){f.a=0;S.kills++;
+  const pts=PTS[Math.min(3,f.r)];
+  S.score+=pts;
+  boom={x:ex(f),y:ey(f),t:0};
+  if(!live().length){$('msg').textContent='Wave '+S.wave+' cleared.'}
+  hud();   // the score/wave readouts must track every kill, not just deaths
+}
+function hitShip(){
+  if(S.safe>0)return;
+  S.lives--;S.safe=1.6;S.bullets=[];S.shots=[];
+  boom={x:S.ship.x,y:S.ship.y,t:0};
+  if(S.lives<=0){S.over=true;S.running=false;saveBest();
+    $('msg').textContent='Game over \u2014 '+S.score+' points. Press Start.'}
+  else $('msg').textContent='Hit. '+S.lives+' '+(S.lives===1?'life':'lives')+' left.';
+  hud();
+}
+function update(dt){
+  S.t+=dt;if(S.safe>0)S.safe-=dt;if(boom){boom.t+=dt;if(boom.t>0.4)boom=null}
+  if(!S.running||S.over)return;
+  if(K.left)S.ship.x-=200*dt;
+  if(K.right)S.ship.x+=200*dt;
+  S.ship.x=Math.max(14,Math.min(W-14,S.ship.x));
+  for(const b of S.bullets){b.y-=560*dt}
+  for(const s of S.shots){s.y+=310*dt}
+  S.bullets=S.bullets.filter(b=>b.y>-8);
+  S.shots=S.shots.filter(s=>s.y<H+8);
+
+  // formation steps sideways, drops a row and reverses when it reaches an edge
+  foeTimer-=dt;
+  if(foeTimer<=0){
+    foeTimer=stepInterval();
+    const l=live();if(l.length){
+      let mn=1e9,mx=-1e9;
+      l.forEach(f=>{const x=S.foeX+f.c*CW;if(x<mn)mn=x;if(x+CW>mx)mx=x+CW});
+      if(mx+S.dir*12>W-6||mn+S.dir*12<6){S.dir*=-1;S.drop+=13}
+      else S.foeX+=S.dir*12;
+    }
+  }
+  // enemy fire, always from the front row of a random live column
+  shotTimer-=dt;
+  if(shotTimer<=0){
+    shotTimer=fireRate();
+    const l=live();
+    if(l.length){
+      let mr=0;l.forEach(f=>{if(f.r>mr)mr=f.r});
+      const front=l.filter(f=>f.r===mr);
+      const f=front[Math.floor(Math.random()*front.length)];
+      S.shots.push({x:ex(f),y:ey(f)+12});
+    }
+  }
+  // player bullets vs shields then invaders
+  for(const b of S.bullets){
+    let gone=false;
+    for(const sh of S.shields){
+      if(b.x<sh.x||b.x>sh.x+60)continue;
+      if(b.y<sh.y||b.y>sh.y+24)continue;
+      if(erode(sh,b.x,b.y,true)){gone=true;break}
+    }
+    if(gone){S.bullets=S.bullets.filter(q=>q!==b);continue}
+    for(const f of S.foe){
+      if(!f.a)continue;
+      if(Math.abs(b.x-ex(f))<=13&&Math.abs(b.y-ey(f))<=11){
+        killFoe(f);gone=true;break;
+      }
+    }
+    if(gone)S.bullets=S.bullets.filter(q=>q!==b);
+  }
+  // enemy bullets vs shields then the ship
+  for(const s of S.shots){
+    let gone=false;
+    for(const sh of S.shields){
+      if(s.x<sh.x||s.x>sh.x+60)continue;
+      if(s.y<sh.y||s.y>sh.y+24)continue;
+      if(erode(sh,s.x,s.y,false)){gone=true;break}
+    }
+    if(gone){S.shots=S.shots.filter(q=>q!==s);continue}
+    if(Math.abs(s.x-S.ship.x)<13&&s.y>S.ship.y-14&&s.y<S.ship.y+6){
+      S.shots=S.shots.filter(q=>q!==s);hitShip();if(S.over)return;continue;
+    }
+  }
+  // landing
+  for(const f of live()){
+    if(S.foeY+S.drop+f.r*CH+CH>S.ship.y-20){
+      S.over=true;S.running=false;saveBest();
+      $('msg').textContent='They landed. '+S.score+' points. Press Start.';
+      hud();return;
+    }
+  }
+  if(!live().length){
+    clearT+=dt;
+    if(clearT>1.1)newWave();
+  }
+}
+function hud(){
+  $('score').textContent=S.score;$('lives').textContent=Math.max(0,S.lives);
+  $('wave').textContent=S.wave;$('best').textContent=best();
+}
+function draw(){
+  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,W,H);
+  // ground rule
+  cx.fillStyle='rgba(255,255,255,.12)';cx.fillRect(0,H-8,W,1);
+  // bunkers
+  for(const sh of S.shields){
+    for(const c of sh.g){
+      if(!c.a)continue;
+      cx.fillStyle='rgba(255,255,255,.30)';
+      cx.fillRect(sh.x+c.x*4,sh.y+c.y*4,4,4);
+    }
+  }
+  // invaders
+  for(const f of S.foe){
+    if(!f.a)continue;
+    const art=SPR[f.r===0?0:(f.r<3?1:2)],x=ex(f)-12,y=ey(f)-12;
+    cx.fillStyle='rgba(255,255,255,'+(0.5+f.r*0.1)+')';
+    for(let gy=0;gy<8;gy++)for(let gx=0;gx<8;gx++)
+      if(art[gy][gx]==='1')cx.fillRect(x+gx*3,y+gy*3,3,3);
+  }
+  // shots
+  cx.fillStyle='rgba(255,255,255,.55)';
+  for(const s of S.shots)cx.fillRect(s.x-1,s.y,2,7);
+  cx.fillStyle='#FF5F1F';
+  for(const b of S.bullets)cx.fillRect(b.x-1,b.y,2,9);
+  // player ship
+  if(S.safe<=0||Math.floor(S.t*12)%2===0){
+    cx.fillStyle='#FF5F1F';
+    const x=S.ship.x,y=S.ship.y;
+    cx.beginPath();cx.moveTo(x,y-11);cx.lineTo(x+11,y+8);cx.lineTo(x,y+4);cx.lineTo(x-11,y+8);
+    cx.closePath();cx.fill();
+  }
+  if(boom){
+    cx.strokeStyle='#FF5F1F';cx.lineWidth=2;
+    cx.beginPath();cx.arc(boom.x,boom.y,6+boom.t*30,0,7);cx.stroke();
+  }
+  if(S.over){
+    cx.fillStyle='rgba(10,10,10,.78)';cx.fillRect(0,0,W,H);
+    cx.fillStyle='#FF5F1F';cx.font='900 26px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('GAME OVER',W/2,H/2-6);
+    cx.fillStyle='rgba(255,255,255,.6)';cx.font='700 13px IBM Plex Sans,monospace';
+    cx.fillText(S.score+' POINTS \u00b7 '+S.kills+' INVADERS',W/2,H/2+20);
+  }
+  else if(!S.running){
+    cx.fillStyle='rgba(255,255,255,.45)';cx.font='900 15px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('PRESS START',W/2,H/2);
+  }
+}
+function loop(now){
+  const d=Math.min(0.25,(now-last)/1000);last=now;acc+=d;
+  while(acc>=STEP){update(STEP);acc-=STEP}
+  draw();requestAnimationFrame(loop);
+}
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft'||e.key==='a'){K.left=1;S.ship.x-=9;e.preventDefault()}
+  else if(e.key==='ArrowRight'||e.key==='d'){K.right=1;S.ship.x+=9;e.preventDefault()}
+  else if(e.key===' '||e.key==='Spacebar'||e.key==='ArrowUp'||e.key==='w'){shoot();e.preventDefault()}
+});
+addEventListener('keyup',e=>{
+  if(e.key==='ArrowLeft'||e.key==='a')K.left=0;
+  else if(e.key==='ArrowRight'||e.key==='d')K.right=0;
+});
+cv.addEventListener('pointerdown',shoot);
+$('start').onclick=()=>{
+  if(S.over||!S.running){reset();S.running=true;newWave();
+    $('msg').textContent='Wave '+S.wave+' \u2014 hold the line.'}
+};
+$('reset').onclick=()=>{reset()};
+window.__si={step:function(n){for(let i=0;i<(n||1);i++)update(STEP);draw()},
+  reset:reset,fire:shoot,newWave:newWave,erode:erode,
+  count:function(){return live().length}};
+$('best').textContent=best();
+reset();
+requestAnimationFrame(loop);</script>
+</body>
+</html>

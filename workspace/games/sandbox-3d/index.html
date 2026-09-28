@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sandbox 3D — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="A real 3D voxel world of 92,160 cubes. Paint sand, water, lava and fire and watch density physics run. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/sandbox-3d/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Sandbox 3D">
+<meta property="og:description" content="A real 3D voxel world of 92,160 cubes. Paint sand, water, lava and fire and watch density physics run. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/sandbox-3d/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Sandbox 3D">
+<meta name="twitter:description" content="A real 3D voxel world of 92,160 cubes. Paint sand, water, lava and fire and watch density physics run. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Sandbox 3D","url":"https://ocurp.space/workspace/games/sandbox-3d/","description":"A real 3D voxel world of 92,160 cubes. Paint sand, water, lava and fire and watch density physics run. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Sandbox 3D</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">3D</span><span class="ws-chip">VOXELS</span><span class="ws-chip">PHYSICS</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <div class="min-w-[190px] flex-1">
+        <label class="ws-label mb-2 block">Material</label>
+        <input id="search" class="ws-input" placeholder="Search 20 materials...">
+      </div>
+      <div>
+        <label class="ws-label mb-2 block">Brush <span id="bs">4</span></label>
+        <input id="brush" type="range" min="1" max="10" value="4" class="w-36 accent-[#FF5F1F]">
+      </div>
+      <span class="ws-chip" id="current">SAND</span>
+    </div>
+
+    <div class="mb-4 flex flex-wrap gap-2" id="cats"></div>
+
+    <div class="grid gap-4 lg:grid-cols-[1fr_270px]">
+      <div class="min-w-0">
+        <div class="relative overflow-hidden rounded-xl border border-white/15 bg-[#0a0a0a]">
+          <canvas id="cv" class="block w-full touch-none select-none" style="aspect-ratio:16/10"></canvas>
+          <div class="pointer-events-none absolute left-3 top-3 flex flex-col gap-1">
+            <span class="ws-chip" id="hudmat">SAND</span>
+            <span class="ws-chip" id="hudhint">LEFT-DRAG PAINT &middot; RIGHT-DRAG ORBIT &middot; SCROLL BRUSH</span>
+          </div>
+          <div class="pointer-events-none absolute bottom-3 right-3">
+            <span class="ws-chip" id="hudfps">0 FPS</span>
+          </div>
+        </div>
+
+        <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6" id="stats"></div>
+
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="pause" class="ws-btn-ghost">Pause</button>
+          <button id="stepb" class="ws-btn-ghost">Step</button>
+          <button id="clear" class="ws-btn-ghost">Clear</button>
+          <button id="seedb" class="ws-btn-ghost">Scene</button>
+          <button id="rot" class="ws-btn-ghost">Rotate: right-drag</button>
+          <button id="spin" class="ws-btn-ghost">Auto-orbit: off</button>
+        </div>
+
+        <p class="mt-3 text-[11px] leading-relaxed text-white/40">
+          Left-drag paints the selected material into the world at the voxel under the cursor.
+          Right-drag orbits the camera; scroll or <span class="font-mono text-white/60">+</span> /
+          <span class="font-mono text-white/60">&minus;</span> changes brush size; arrow keys orbit;
+          <span class="font-mono text-white/60">space</span> pauses,
+          <span class="font-mono text-white/60">S</span> steps one frame,
+          <span class="font-mono text-white/60">C</span> clears.
+        </p>
+      </div>
+
+      <div class="min-w-0">
+        <div id="pal" class="max-h-[300px] overflow-y-auto rounded-xl border border-white/10 bg-white/[0.02] p-3 lg:max-h-[420px]"></div>
+        <div class="mt-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+          <div class="ws-label mb-2">Reactions</div>
+          <p class="text-[11px] leading-relaxed text-white/45">
+            Fire rises, spreads and burns wood, oil and plant down to ash.
+            Lava melts ice, ignites fuel and cools into stone where water touches it.
+            Water drowns fire to steam and sinks through oil.
+            Stone and metal sink through liquids, wood and ice float.
+            Steam condenses back to water, smoke fades out.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+/* ══ 3D VOXEL FALLING-SAND ══════════════════════════════════════════════════
+   48 x 40 x 48 voxel world, density cellular automaton, canvas 2D only.
+   Rendering: perspective projection, face culling, per-face normal shading,
+   ambient occlusion, depth fog, bucket-sorted painter's algorithm.
+   ══════════════════════════════════════════════════════════════════════════ */
+const $=id=>document.getElementById(id);
+const W=48, H=40, D=48, NV=W*H*D;
+const IX=(x,y,z)=>(y*D+z)*W+x;
+const inb=(x,y,z)=>x>=0&&x<W&&y>=0&&y<H&&z>=0&&z<D;
+
+const MATS=[{id:1,name:"Sand",cat:"Powders",col:[214,192,140],kind:"powder",dens:20,see:0,sink:0,flam:0,life:0},
+  {id:2,name:"Dirt",cat:"Powders",col:[124,92,56],kind:"powder",dens:22,see:0,sink:0,flam:0,life:0},
+  {id:3,name:"Ash",cat:"Powders",col:[116,112,108],kind:"powder",dens:8,see:0,sink:0,flam:0,life:0},
+  {id:4,name:"Salt",cat:"Powders",col:[236,238,242],kind:"powder",dens:19,see:0,sink:0,flam:0,life:0},
+  {id:5,name:"Snow",cat:"Powders",col:[238,246,255],kind:"powder",dens:9,see:0,sink:0,flam:0,life:0},
+  {id:6,name:"Water",cat:"Liquids",col:[46,112,214],kind:"liquid",dens:10,see:1,sink:0,flam:0,life:0},
+  {id:7,name:"Oil",cat:"Liquids",col:[78,62,44],kind:"liquid",dens:6,see:1,sink:0,flam:1,life:0},
+  {id:8,name:"Acid",cat:"Liquids",col:[150,228,72],kind:"liquid",dens:11,see:1,sink:0,flam:0,life:0},
+  {id:9,name:"Lava",cat:"Liquids",col:[232,96,26],kind:"liquid",dens:30,see:1,sink:0,flam:0,life:0},
+  {id:10,name:"Ice",cat:"Solids",col:[158,212,255],kind:"solid",dens:9,see:1,sink:0,flam:0,life:0},
+  {id:11,name:"Stone",cat:"Solids",col:[120,120,128],kind:"solid",dens:100,see:0,sink:1,flam:0,life:0},
+  {id:12,name:"Wood",cat:"Solids",col:[124,86,48],kind:"solid",dens:12,see:0,sink:0,flam:1,life:0},
+  {id:13,name:"Metal",cat:"Solids",col:[158,164,174],kind:"solid",dens:150,see:0,sink:1,flam:0,life:0},
+  {id:14,name:"Glass",cat:"Solids",col:[198,226,234],kind:"solid",dens:100,see:1,sink:1,flam:0,life:0},
+  {id:15,name:"Fire",cat:"Energy",col:[255,95,31],kind:"gas",dens:2,see:1,sink:0,flam:0,life:44},
+  {id:16,name:"Smoke",cat:"Energy",col:[98,98,104],kind:"gas",dens:1,see:1,sink:0,flam:0,life:96},
+  {id:17,name:"Steam",cat:"Energy",col:[208,216,228],kind:"gas",dens:2,see:1,sink:0,flam:0,life:130},
+  {id:18,name:"Plant",cat:"Life",col:[72,166,82],kind:"solid",dens:8,see:0,sink:0,flam:1,life:0},
+  {id:19,name:"Wall",cat:"Special",col:[54,54,60],kind:"solid",dens:1000,see:0,sink:0,flam:0,life:0},
+  {id:20,name:"Eraser",cat:"Special",col:[13,13,13],kind:"erase",dens:0,see:0,sink:0,flam:0,life:0}];
+/* material id 255 is the world boundary: solid, immovable, never drawn */
+const WALL=255;
+const KIND=[], DENS=new Int16Array(256), SEE=new Uint8Array(256),
+      SINK=new Uint8Array(256), FLAM=new Uint8Array(256), LMAX=new Int16Array(256),
+      RCH=new Uint8Array(256), GCH=new Uint8Array(256), BCH=new Uint8Array(256);
+KIND[0]='empty'; KIND[WALL]='solid'; DENS[WALL]=1000; RCH[WALL]=54; GCH[WALL]=54; BCH[WALL]=60;
+for(const m of MATS){
+  KIND[m.id]=m.kind; DENS[m.id]=m.dens; SEE[m.id]=m.see; SINK[m.id]=m.sink;
+  FLAM[m.id]=m.flam; LMAX[m.id]=m.life; RCH[m.id]=m.col[0]; GCH[m.id]=m.col[1]; BCH[m.id]=m.col[2];
+}
+const K={EMPTY:0,SAND:1,DIRT:2,ASH:3,SALT:4,SNOW:5,WATER:6,OIL:7,ACID:8,LAVA:9,ICE:10,
+  STONE:11,WOOD:12,METAL:13,GLASS:14,FIRE:15,SMOKE:16,STEAM:17,PLANT:18,WALL:19,ERASER:20};
+
+/* ── state ─────────────────────────────────────────────────────────────── */
+const g=new Uint8Array(NV), life=new Uint8Array(NV);
+const act=new Uint8Array(NV), moved=new Int32Array(NV);
+let frameNo=0, revX=false, revZ=false;
+
+/* surface node bookkeeping: only voxels with a visible face are ever drawn */
+const nodes=[]; const posOf=new Int32Array(NV).fill(-1);
+const matSnap=new Uint8Array(NV);
+const cand=[]; const inCand=new Uint8Array(NV);
+let structureDirty=true, camDirty=true;
+
+const NB=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+
+/* a face is drawn when the neighbour is empty, or is see-through of a
+   different type than this voxel (so you can see solids through water) */
+function faceVis(m,t){
+  if(t===0) return true;
+  if(t===WALL) return false;
+  if(SEE[t]) return (t!==m || !SEE[m]);
+  return false;
+}
+function get(x,y,z){ return inb(x,y,z) ? g[IX(x,y,z)] : WALL; }
+function nodeCheck(x,y,z){
+  const m=g[IX(x,y,z)];
+  if(m===0) return false;
+  for(let d=0;d<6;d++){ const o=NB[d];
+    if(faceVis(m,get(x+o[0],y+o[1],z+o[2]))) return true; }
+  return false;
+}
+function markNode(x,y,z){
+  if(!inb(x,y,z)) return;
+  const i=IX(x,y,z);
+  if(inCand[i]) return;
+  inCand[i]=1; cand.push(i);
+}
+function touch(x,y,z){
+  markNode(x,y,z);
+  for(let d=0;d<6;d++){ const o=NB[d]; markNode(x+o[0],y+o[1],z+o[2]); }
+}
+function flushNodes(){
+  if(!cand.length) return;
+  let p=0, guard=0;
+  while(p<cand.length && guard++<30000){
+    const i=cand[p++]; inCand[i]=0;
+    const x=i%W, z=((i/W)|0)%D, y=(i/(W*D))|0;
+    const m=g[i], want=nodeCheck(x,y,z), have=posOf[i]>=0, matCh=matSnap[i]!==m;
+    if(want!==have){
+      if(want){ posOf[i]=nodes.length; nodes.push(i); }
+      else { const k=posOf[i], last=nodes.pop();
+             if(k<nodes.length){ nodes[k]=last; posOf[last]=k; }
+             posOf[i]=-1; }
+      matSnap[i]=m; touch(x,y,z);
+    } else if(matCh){ matSnap[i]=m; touch(x,y,z); }
+  }
+  cand.length=0;
+  structureDirty=true;
+}
+function rebuildNodes(){
+  nodes.length=0; posOf.fill(-1); cand.length=0; inCand.fill(0); matSnap.fill(0);
+  for(let i=0;i<NV;i++){
+    if(!g[i]) continue;
+    const x=i%W, z=((i/W)|0)%D, y=(i/(W*D))|0;
+    if(nodeCheck(x,y,z)){ posOf[i]=nodes.length; nodes.push(i); matSnap[i]=g[i]; }
+  }
+  structureDirty=true;
+}
+
+/* ── physics ───────────────────────────────────────────────────────────── */
+function canGo(m,t){
+  if(t===0) return true;
+  if(t===WALL) return false;
+  const kt=KIND[t];
+  if(kt==='solid') return false;
+  return DENS[m] > DENS[t];
+}
+function put(x,y,z,m,lf){
+  if(!inb(x,y,z)) return;
+  const i=IX(x,y,z);
+  g[i]=m; life[i]=lf||0; touch(x,y,z);
+}
+function moveTo(x,y,z,nx,ny,nz){
+  const a=IX(x,y,z), b=IX(nx,ny,nz);
+  if(moved[b]===frameNo) return false;
+  g[b]=g[a]; life[b]=life[a]; g[a]=0; life[a]=0; moved[b]=frameNo;
+  touch(x,y,z); touch(nx,ny,nz);
+  return true;
+}
+const DISSOLVE=new Uint8Array(256);
+DISSOLVE[K.STONE]=1; DISSOLVE[K.WOOD]=1; DISSOLVE[K.METAL]=1; DISSOLVE[K.GLASS]=1; DISSOLVE[K.ICE]=1; DISSOLVE[K.PLANT]=1;
+
+function react(x,y,z,m){
+  /* returns true when this cell was consumed and must not also move */
+  const i=IX(x,y,z);
+  if(m===K.FIRE){
+    if(--life[i]<=0){
+      put(x,y,z, Math.random()<0.45?K.ASH:K.SMOKE, 90);
+      return true;
+    }
+    for(let d=0;d<6;d++){
+      const o=NB[d], nx=x+o[0], ny=y+o[1], nz=z+o[2];
+      if(!inb(nx,ny,nz)) continue;
+      const n=g[IX(nx,ny,nz)];
+      if(FLAM[n] && Math.random()<0.13) put(nx,ny,nz,K.FIRE, 40+(Math.random()*40|0));
+      else if(n===K.WATER||n===K.ACID){
+        put(nx,ny,nz,K.STEAM,110);
+        if(Math.random()<0.4){ put(x,y,z,K.SMOKE,60); return true; }
+      }
+      else if(n===K.ICE && Math.random()<0.05) put(nx,ny,nz,K.WATER,0);
+    }
+    return false;
+  }
+  if(m===K.SMOKE){ if(--life[i]<=0){ put(x,y,z,0,0); return true; } return false; }
+  if(m===K.STEAM){ if(--life[i]<=0){ put(x,y,z,K.WATER,0); return true; } return false; }
+  if(m===K.LAVA){
+    for(let d=0;d<6;d++){
+      const o=NB[d], nx=x+o[0], ny=y+o[1], nz=z+o[2];
+      if(!inb(nx,ny,nz)) continue;
+      const n=g[IX(nx,ny,nz)];
+      if(n===K.WATER){
+        put(nx,ny,nz,K.STEAM,110);
+        if(Math.random()<0.35){ put(x,y,z,K.STONE,0); return true; }
+        put(x,y,z,K.SMOKE,50); return true;
+      }
+      if(n===K.ICE||n===K.SNOW){ put(nx,ny,nz,K.WATER,0); return true; }
+      if(FLAM[n] && Math.random()<0.16) put(nx,ny,nz,K.FIRE, 40+(Math.random()*40|0));
+    }
+    if(Math.random()<0.0009){ put(x,y,z,K.STONE,0); return true; }
+    return false;
+  }
+  if(m===K.WATER){
+    for(let d=0;d<6;d++){
+      const o=NB[d], nx=x+o[0], ny=y+o[1], nz=z+o[2];
+      if(!inb(nx,ny,nz)) continue;
+      const n=g[IX(nx,ny,nz)];
+      if(n===K.LAVA){ put(nx,ny,nz,K.STEAM,120); if(Math.random()<0.3) put(x,y,z,K.STONE,0); return true; }
+      if(n===K.FIRE){ put(x,y,z,K.STEAM,110); return true; }
+    }
+    return false;
+  }
+  if(m===K.ICE){
+    for(let d=0;d<6;d++){
+      const o=NB[d], nx=x+o[0], ny=y+o[1], nz=z+o[2];
+      const n=get(nx,ny,nz);
+      if((n===K.FIRE||n===K.LAVA) && Math.random()<0.07){ put(x,y,z,K.WATER,0); return true; }
+    }
+    return false;
+  }
+  if(m===K.PLANT){
+    for(let d=0;d<6;d++){
+      const o=NB[d], nx=x+o[0], ny=y+o[1], nz=z+o[2];
+      if(get(nx,ny,nz)===K.WATER){
+        if(g[IX(x,y+1,z)]===0 && Math.random()<0.05) put(x,y+1,z,K.PLANT,0);
+        break;
+      }
+    }
+    return false;
+  }
+  if(m===K.ACID){
+    for(let d=0;d<6;d++){
+      const o=NB[d], nx=x+o[0], ny=y+o[1], nz=z+o[2];
+      if(!inb(nx,ny,nz)) continue;
+      const n=g[IX(nx,ny,nz)];
+      if(DISSOLVE[n] && Math.random()<0.22){
+        put(nx,ny,nz,K.SMOKE,45);
+        if(Math.random()<0.6){ put(x,y,z,0,0); return true; }
+      }
+    }
+    return false;
+  }
+  return false;
+}
+
+function update(x,y,z){
+  const i=IX(x,y,z), m=g[i];
+  if(m===0 || m===WALL) return;
+  if(react(x,y,z,m)) return;
+  const kind=KIND[g[IX(x,y,z)]];
+  if(kind==='empty' || kind==='solid' || kind==='erase'){
+    /* heavy solids sink through lighter liquids */
+    if(kind==='solid' && SINK[m]){
+      const b=get(x,y-1,z);
+      if(b!==0 && b!==WALL && KIND[b]==='liquid' && DENS[m]>DENS[b] && Math.random()<0.6)
+        moveTo(x,y,z,x,y-1,z);
+    }
+    return;
+  }
+  const down=get(x,y-1,z);
+  if(canGo(m,down)){ if(moveTo(x,y,z,x,y-1,z)) return; }
+  const roll=Math.random();
+  let a,b2,c2,d2;
+  if(roll<0.25){ a=1;b2=0;c2=1;d2=0; }
+  else if(roll<0.5){ a=-1;b2=0;c2=1;d2=0; }
+  else if(roll<0.75){ a=0;b2=0;c2=1;d2=1; }
+  else { a=0;b2=0;c2=-1;d2=1; }
+  if(kind==='gas'){
+    /* gases rise, then fan out sideways */
+    const up=get(x,y+1,z);
+    if(canGo(m,up)){ if(moveTo(x,y,z,x,y+1,z)) return; }
+    if(Math.random()<0.35){
+      const s1=get(x+a,y+b2,z+c2), s2=get(x+d2,y+b2,z+c2);
+      if(canGo(m,s1)){ if(moveTo(x,y,z,x+a,y+b2,z+c2)) return; }
+      if(canGo(m,s2)){ if(moveTo(x,y,z,x+d2,y+b2,z+c2)) return; }
+    }
+    return;
+  }
+  if(canGo(m,get(x+a,y-1,z+c2))){ if(moveTo(x,y,z,x+a,y-1,z+c2)) return; }
+  if(canGo(m,get(x+d2,y-1,z+c2))){ if(moveTo(x,y,z,x+d2,y-1,z+c2)) return; }
+  if(kind==='liquid'){
+    if(Math.random()>0.92) return;
+    if(canGo(m,get(x+a,y,z+c2))){ moveTo(x,y,z,x+a,y,z+c2); return; }
+    if(canGo(m,get(x+d2,y,z+c2))){ moveTo(x,y,z,x+d2,y,z+c2); return; }
+    /* water looks for a hole two cells out before giving up */
+    if(m===K.WATER){
+      const f1=get(x+a,y,z+c2), f2=get(x+d2,y,z+c2);
+      if(f1!==0 && KIND[f1]!=='solid' && canGo(m,get(x+a*2,y,z+c2*2))){ moveTo(x,y,z,x+a*2,y,z+c2*2); return; }
+      if(f2!==0 && KIND[f2]!=='solid' && canGo(m,get(x+d2*2,y,z+c2*2))){ moveTo(x,y,z,x+d2*2,y,z+c2*2); return; }
+    }
+    return;
+  }
+  /* powders creep sideways so piles form an angle of repose */
+  if((m===K.SAND||m===K.SALT||m===K.SNOW) && Math.random()<0.35){
+    if(canGo(m,get(x+a,y,z+c2))) moveTo(x,y,z,x+a,y,z+c2);
+    else if(canGo(m,get(x+d2,y,z+c2))) moveTo(x,y,z,x+d2,y,z+c2);
+  }
+}
+
+function stepSim(){
+  frameNo++;
+  revX=!revX; revZ=!revZ;
+  for(let y=0;y<H;y++){
+    for(let zz=0;zz<D;zz++){
+      const z=revZ?D-1-zz:zz;
+      const zb=y*D*W+z*W;
+      for(let xx=0;xx<W;xx++){
+        const x=revX?W-1-xx:xx;
+        const i=zb+x;
+        if(!act[i]) continue;
+        act[i]=0;
+        update(x,y,z);
+      }
+    }
+  }
+}
+
+/* ── camera + projection ────────────────────────────────────────────────── */
+let camYaw=0.66, camPitch=0.40, zoom=1.0, spin=false, rotateMode=false;
+const ctrX=W/2, ctrY=H/2, ctrZ=D/2;
+const HALF=Math.sqrt((W/2)*(W/2)+(H/2)*(H/2)+(D/2)*(D/2));
+const BASE=1.05+2*HALF;
+
+const cv=$('cv'), cx=cv.getContext('2d', {alpha:false});
+let cw=0, chh=0, focal=1, dist=0, ZNEAR=0, ZFAR=1;
+const LX=-0.42, LY=0.84, LZ=0.34;
+const ND=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+const FSH=ND.map(n=>0.30+0.70*Math.max(0, n[0]*LX+n[1]*LY+n[2]*LZ));
+const CO=[
+  [[1,0,0],[1,1,0],[1,1,1],[1,0,1]],
+  [[0,0,1],[0,1,1],[0,1,0],[0,0,0]],
+  [[0,1,0],[1,1,0],[1,1,1],[0,1,1]],
+  [[0,0,1],[1,0,1],[1,0,0],[0,0,0]],
+  [[1,0,1],[0,0,1],[0,1,1],[1,1,1]],
+  [[0,0,0],[1,0,0],[1,1,0],[0,1,0]],
+];
+const COI=CO.map(f=>f.map(c=>c[0]+2*c[1]+4*c[2]));
+const AOT=ND.map((n,d)=>{
+  const a=d>>1, o1=(a+1)%3, o2=(a+2)%3, out=[];
+  for(const [s1,s2] of [[1,1],[1,-1],[-1,1],[-1,-1]]){
+    const v=[0,0,0]; v[a]=n[a]; v[o1]=s1; v[o2]=s2; out.push(v);
+  }
+  return out;
+});
+const AOF=[1,0.87,0.74,0.62,0.52];
+/* 6 faces x 32 brightness levels per material, precomputed colour strings */
+const PALC=new Array(256*6*32);
+for(const m of MATS){
+  for(let d=0;d<6;d++) for(let lv=0;lv<32;lv++){
+    const t=(0.32+0.68*lv/31)*FSH[d];
+    PALC[(m.id*6+d)*32+lv]='rgb('+(RCH[m.id]*t|0)+','+(GCH[m.id]*t|0)+','+(BCH[m.id]*t|0)+')';
+  }
+}
+
+const MAXN=26000, MAXDRAW=2600, NBK=3072;
+const cxs=new Float32Array(MAXN*8), cys=new Float32Array(MAXN*8), czs=new Float32Array(MAXN*8);
+const nbk=new Int32Array(NBK), ordr=new Int32Array(MAXN), bst=new Int32Array(NBK+1);
+const nkey=new Int32Array(MAXN), fillArr=new Int32Array(NBK);
+
+function resize(){
+  const r=cv.getBoundingClientRect();
+  const dpr=Math.min(window.devicePixelRatio||1, 1.5);
+  const w=Math.max(320, Math.round(r.width*dpr)), h=Math.max(220, Math.round(r.height*dpr));
+  if(w===cv.width && h===cv.height) return;
+  cv.width=w; cv.height=h; cw=w; chh=h; camDirty=true;
+}
+function camUpdate(){
+  const halfW=cw/2, halfH=chh/2;
+  focal=halfW/Math.tan(0.48);
+  dist=(BASE/zoom);
+  ZNEAR=dist-HALF-2; ZFAR=dist+HALF+2;
+}
+function toView(px,py,pz){
+  const c1=Math.cos(camYaw), s1=Math.sin(camYaw), c2=Math.cos(camPitch), s2=Math.sin(camPitch);
+  const dx=px-ctrX, dy=py-ctrY, dz=pz-ctrZ;
+  const X1=dx*c1+dz*s1, Z1=-dx*s1+dz*c1, Y1=dy;
+  return [X1, Y1*c2-Z1*s2, Y1*s2+Z1*c2+dist];
+}
+function project(x,y,z){
+  camUpdate();
+  const v=toView(x+0.5,y+0.5,z+0.5);
+  return { sx: cw/2 + v[0]*focal/v[2], sy: chh/2 - v[1]*focal/v[2], depth: v[2] };
+}
+let camDX=0, camDY=0, camDZ=0;
+function camBasis(){
+  const c1=Math.cos(camYaw), s1=Math.sin(camYaw), c2=Math.cos(camPitch), s2=Math.sin(camPitch);
+  camDX=-(s1*c2); camDY=s2; camDZ=-(c1*c2);
+}
+
+let lastDrawn=0, lastTotal=0;
+function draw(){
+  camUpdate(); camBasis();
+  const W2=cw/2, H2=chh/2, F=focal, DIS=dist;
+  cx.setTransform(1,0,0,1,0,0);
+  const bg=cx.createLinearGradient(0,0,0,chh);
+  bg.addColorStop(0,'#111113'); bg.addColorStop(0.62,'#0b0b0d'); bg.addColorStop(1,'#08080a');
+  cx.fillStyle=bg; cx.fillRect(0,0,cw,chh);
+  /* world cage: a faint wireframe so the volume reads even when empty */
+  cx.lineWidth=1; cx.strokeStyle='rgba(255,255,255,0.10)';
+  cx.beginPath();
+  const CN=[[0,0,0],[W,0,0],[W,H,0],[0,H,0],[0,0,D],[W,0,D],[W,H,D],[0,H,D]];
+  const EDG=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  for(const [a,b] of EDG){
+    const p=toView(CN[a][0],CN[a][1],CN[a][2]), q=toView(CN[b][0],CN[b][1],CN[b][2]);
+    cx.moveTo(W2+p[0]*F/p[2], H2-p[1]*F/p[2]);
+    cx.lineTo(W2+q[0]*F/q[2], H2-q[1]*F/q[2]);
+  }
+  cx.stroke();
+  /* floor grid on y=0 */
+  cx.strokeStyle='rgba(255,255,255,0.05)';
+  cx.beginPath();
+  for(let k=0;k<=W;k+=6){
+    let p=toView(k,0,0), q=toView(k,0,D);
+    cx.moveTo(W2+p[0]*F/p[2], H2-p[1]*F/p[2]); cx.lineTo(W2+q[0]*F/q[2], H2-q[1]*F/q[2]);
+    p=toView(0,0,k); q=toView(W,0,k);
+    cx.moveTo(W2+p[0]*F/p[2], H2-p[1]*F/p[2]); cx.lineTo(W2+q[0]*F/q[2], H2-q[1]*F/q[2]);
+  }
+  cx.stroke();
+
+  const nn=nodes.length, lim=Math.min(nn,MAXN);
+  nbk.fill(0);
+  const c1=Math.cos(camYaw), s1=Math.sin(camYaw), c2=Math.cos(camPitch), s2=Math.sin(camPitch);
+  const bkRange=ZFAR-ZNEAR, bkMul=(NBK-1)/bkRange;
+  for(let k=0;k<lim;k++){
+    const i=nodes[k];
+    const x=i%W, z=((i/W)|0)%D, y=(i/(W*D))|0;
+    const dx=x-ctrX, dy=y-ctrY, dz=z-ctrZ;
+    const X1=dx*c1+dz*s1, Z1=-dx*s1+dz*c1;
+    const b=k*8; let mx=-1e30;
+    for(let cn=0;cn<8;cn++){
+      const ox=dx-0.5+(cn&1), oy=dy-0.5+(cn&2?1:0), oz=dz-0.5+(cn&4?1:0);
+      const ux=ox*c1+oz*s1, uz=-ox*s1+oz*c1, uy=oy;
+      const vv=uy*s2+uz*c2+DIS;
+      czs[b+cn]=vv; cxs[b+cn]=W2+ux*F/vv; cys[b+cn]=H2-(uy*c2-uz*s2)*F/vv;
+      if(vv>mx) mx=vv;
+    }
+    /* nearest-corner depth is the sort key: draw far first, so the voxel in
+       front always overpaints the one behind it */
+    let bi=((mx-ZNEAR)*bkMul)|0;
+    nkey[k]= bi<0?0:(bi>NBK-1?NBK-1:bi);
+    nbk[nkey[k]]++;
+  }
+  let acc=0;
+  for(let b=0;b<NBK;b++){ bst[b]=acc; acc+=nbk[b]; }
+  bst[NBK]=acc;
+  const fill=fillArr;
+  for(let k=0;k<lim;k++) ordr[bst[nkey[k]]+fill[nkey[k]]++]=k;
+  let drawn=0, faces=0, col='', ctx=cx;
+  for(let b=NBK-1;b>=0 && drawn<MAXDRAW;b--){
+    const s0=bst[b], s1e=bst[b+1];
+    for(let s=s0;s<s1e && drawn<MAXDRAW;s++){
+      const k=ordr[s], i=nodes[k], m=g[i];
+      if(m===0) continue;
+      const x=i%W, z=((i/W)|0)%D, y=(i/(W*D))|0;
+      const base=(m*6)*32, o8=k*8;
+      for(let d=0;d<6;d++){
+        const o=NB[d];
+        if(faceVis(m, get(x+o[0],y+o[1],z+o[2]))===false) continue;
+        const n=ND[d];
+        if(n[0]*camDX+n[1]*camDY+n[2]*camDZ <= 0.02) continue;   /* back-face cull */
+        const co=COI[d];
+        let mxz=-1e30, mnx=1e30, mxx=-1e30, mny=1e30, mxy=-1e30;
+        for(let ci=0;ci<4;ci++){
+          const v=co[ci];
+          if(czs[o8+v]>mxz) mxz=czs[o8+v];
+          const sx=cxs[o8+v], sy=cys[o8+v];
+          if(sx<mnx)mnx=sx; if(sx>mxx)mxx=sx;
+          if(sy<mny)mny=sy; if(sy>mxy)mxy=sy;
+        }
+        if(mxx<0||mnx>cw||mxy<0||mny>chh) continue;             /* offscreen */
+        const T=AOT[d]; let ao=0;
+        for(let ci=0;ci<4;ci++){
+          const q=T[ci], v=get(x+q[0],y+q[1],z+q[2]);
+          if(v!==0 && v!==WALL) ao++;
+        }
+        let t=(mxz-ZNEAR)/(ZFAR-ZNEAR); t=t<0?0:t>1?1:t;
+        const bright=AOF[ao]*(1-0.50*t);
+        let lv=(bright*31)|0; lv=lv<0?0:(lv>31?31:lv);
+        const c2s=PALC[base+d*32+lv];
+        if(c2s!==col){ ctx.fillStyle=c2s; col=c2s; }
+        const q0=co[0];
+        ctx.beginPath();
+        ctx.moveTo(cxs[o8+q0], cys[o8+q0]);
+        for(let ci=1;ci<4;ci++){ const v=co[ci]; ctx.lineTo(cxs[o8+v], cys[o8+v]); }
+        ctx.closePath(); ctx.fill();
+        faces++;
+      }
+      drawn++;
+    }
+  }
+  lastDrawn=drawn; lastTotal=nn;
+  /* brush cursor ring */
+  if(brushCell>=0 && cursorOn){
+    const bx=brushCell%W, bz=((brushCell/W)|0)%D, by=(brushCell/(W*D))|0;
+    const v=toView(bx+0.5, by+0.5, bz+0.5);
+    const rad=brush*1.0*F/v[2];
+    ctx.strokeStyle='rgba(255,95,31,0.75)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(W2+v[0]*F/v[2], H2-v[1]*F/v[2], Math.max(3,rad), 0, 6.2832); ctx.stroke();
+  }
+}
+
+/* ── palette UI ─────────────────────────────────────────────────────────── */
+let cur=K.SAND, brush=4, category='Powders';
+$('cats').innerHTML=['Powders','Liquids','Solids','Energy','Life','Special']
+  .map(c=>'<button data-cat="'+c+'" class="ws-btn-ghost !px-3 !py-2">'+c+'</button>').join('');
+function paintPalette(){
+  const q=$('search').value.trim().toLowerCase();
+  const list=MATS.filter(m=> q ? m.name.toLowerCase().includes(q) : m.cat===category);
+  $('pal').innerHTML = list.length ? list.map(m=>
+    '<button data-el="'+m.id+'" class="mb-2 mr-2 inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold '+
+    (m.id===cur?'border-accent bg-accent/10 text-white':'border-white/10 bg-white/[0.03] text-white/55')+
+    '"><span style="width:10px;height:10px;border-radius:3px;background:rgb('+m.col.join(',')+')"></span>'+m.name+
+    '</button>').join('')
+    : '<span class="text-[11px] text-white/30">No material matches.</span>';
+}
+function setCat(c){
+  category=c;
+  [...$('cats').children].forEach(b=>b.className = b.dataset.cat===c ? 'ws-btn !px-3 !py-2' : 'ws-btn-ghost !px-3 !py-2');
+  paintPalette();
+}
+$('cats').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) setCat(b.dataset.cat); });
+$('pal').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  cur=+b.dataset.el;
+  const m=MATS.find(m=>m.id===cur);
+  $('current').textContent=m.name.toUpperCase();
+  $('hudmat').textContent=m.name.toUpperCase();
+  paintPalette();
+});
+$('search').addEventListener('input',paintPalette);
+$('brush').addEventListener('input',e=>{ brush=+e.target.value; $('bs').textContent=brush; camDirty=true; });
+function setBrush(b){ brush=Math.max(1,Math.min(10,b)); $('brush').value=brush; $('bs').textContent=brush; camDirty=true; }
+
+/* ── painting ───────────────────────────────────────────────────────────── */
+let painting=false, rotating=false, lastPX=0, lastPY=0, cursorOn=false, brushCell=-1;
+function pick(px,py){
+  const ndx=(px-cw/2)/focal, ndy=-(py-chh/2)/focal;
+  const c1=Math.cos(camYaw), s1=Math.sin(camYaw), c2=Math.cos(camPitch), s2=Math.sin(camPitch);
+  const Y1=ndy*c2+1*s2, Z1=-ndy*s2+1*c2, X1=ndx;
+  let dx=X1*c1-Z1*s1, dy=Y1, dz=X1*s1+Z1*c1;
+  const L=Math.hypot(dx,dy,dz)||1; dx/=L; dy/=L; dz/=L;
+  const Fx=Math.sin(camYaw)*c2, Fy=-s2, Fz=Math.cos(camYaw)*c2;
+  let ox=ctrX-Fx*dist, oy=ctrY-Fy*dist, oz=ctrZ-Fz*dist;
+  let x=Math.floor(ox), y=Math.floor(oy), z=Math.floor(oz);
+  const stx=dx>0?1:-1, sty=dy>0?1:-1, stz=dz>0?1:-1;
+  const BIG=1e30;
+  const tdx=dx!==0?Math.abs(1/dx):BIG, tdy=dy!==0?Math.abs(1/dy):BIG, tdz=dz!==0?Math.abs(1/dz):BIG;
+  let tmx=dx!==0?(dx>0?(x+1-ox):(ox-x))*tdx:BIG;
+  let tmy=dy!==0?(dy>0?(y+1-oy):(oy-y))*tdy:BIG;
+  let tmz=dz!==0?(dz>0?(z+1-oz):(oz-z))*tdz:BIG;
+  let px_=-1, py_=-1, pz_=-1;
+  for(let s=0;s<220;s++){
+    if(x<-1||x>W||y<-1||y>H||z<-1||z>D) break;
+    if(inb(x,y,z) && g[IX(x,y,z)]!==0 && g[IX(x,y,z)]!==K.WALL) return IX(x,y,z);
+    px_=x; py_=y; pz_=z;
+    if(tmx<tmy && tmx<tmz){ x+=stx; tmx+=tdx; }
+    else if(tmy<tmz){ y+=sty; tmy+=tdy; }
+    else { z+=stz; tmz+=tdz; }
+    if(x<-2||x>W+1||y<-2||y>H+1||z<-2||z>D+1) break;
+  }
+  if(!inb(px_,py_,pz_)) return -1;
+  return IX(px_,py_,pz_);
+}
+function paintAt(px,py){
+  const cell=pick(px,py);
+  if(cell<0) return;
+  brushCell=cell; cursorOn=true;
+  const x=cell%W, z=((cell/W)|0)%D, y=(cell/(W*D))|0;
+  const m=MATS.find(mm=>mm.id===cur);
+  const r=brush, r2=r*r;
+  for(let dy=-r;dy<=r;dy++) for(let dz=-r;dz<=r;dz++) for(let dx=-r;dx<=r;dx++){
+    if(dx*dx+dy*dy+dz*dz>r2) continue;
+    const nx=x+dx, ny=y+dy, nz=z+dz;
+    if(!inb(nx,ny,nz)) continue;
+    if(ny===0 && m.id!==K.ERASER && m.kind!=='gas') continue;   /* keep the floor */
+    const i=IX(nx,ny,nz);
+    g[i] = (m.id===K.ERASER) ? 0 : m.id;
+    life[i] = (m.id===K.FIRE) ? 50 : 0;
+    act[i]=1; touch(nx,ny,nz);
+  }
+  for(let dy=-r-1;dy<=r+1;dy++) for(let dz=-r-1;dz<=r+1;dz++) for(let dx=-r-1;dx<=r+1;dx++){
+    const nx=x+dx, ny=y+dy, nz=z+dz;
+    if(!inb(nx,ny,nz)) continue;
+    if(dx*dx+dy*dy+dz*dz>(r+1)*(r+1)) continue;
+    act[IX(nx,ny,nz)]=1;
+  }
+  camDirty=true;
+}
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('pointerdown',e=>{
+  const r=cv.getBoundingClientRect(), s=cw/r.width;
+  const px=(e.clientX-r.left)*s, py=(e.clientY-r.top)*s;
+  lastPX=e.clientX; lastPY=e.clientY;
+  try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+  if(e.button===2 || (e.button===0 && rotateMode)){ rotating=true; return; }
+  painting=true; cursorOn=true; paintAt(px,py);
+});
+cv.addEventListener('pointermove',e=>{
+  const r=cv.getBoundingClientRect(), s=cw/r.width;
+  const px=(e.clientX-r.left)*s, py=(e.clientY-r.top)*s;
+  if(rotating){
+    camYaw -= (e.clientX-lastPX)*0.008;
+    camPitch = Math.max(-1.45, Math.min(1.45, camPitch + (e.clientY-lastPY)*0.006));
+    lastPX=e.clientX; lastPY=e.clientY; camDirty=true; return;
+  }
+  brushCell = pick(px,py); cursorOn=true; camDirty=true;
+  if(painting) paintAt(px,py);
+});
+function endPointer(){ painting=false; rotating=false; }
+cv.addEventListener('pointerup',endPointer);
+cv.addEventListener('pointercancel',endPointer);
+window.addEventListener('pointerup',endPointer);
+cv.addEventListener('pointerleave',()=>{ if(!painting&&!rotating){ cursorOn=false; camDirty=true; } });
+cv.addEventListener('wheel',e=>{ e.preventDefault(); setBrush(brush + (e.deltaY<0?1:-1)); }, {passive:false});
+
+/* ── controls ───────────────────────────────────────────────────────────── */
+let running=true;
+$('pause').addEventListener('click',()=>{ running=!running; $('pause').textContent=running?'Pause':'Resume'; });
+$('stepb').addEventListener('click',()=>{ runFrames(1); });
+$('clear').addEventListener('click',()=>{ clearWorld(); });
+$('seedb').addEventListener('click',()=>{ seed(); });
+$('rot').addEventListener('click',function(){
+  rotateMode=!rotateMode;
+  this.className = rotateMode ? 'ws-btn !px-3 !py-2' : 'ws-btn-ghost !px-3 !py-2';
+  this.textContent='Rotate: '+(rotateMode?'left-drag':'right-drag');
+});
+$('spin').addEventListener('click',function(){
+  spin=!spin;
+  this.className = spin ? 'ws-btn !px-3 !py-2' : 'ws-btn-ghost !px-3 !py-2';
+  this.textContent='Auto-orbit: '+(spin?'on':'off');
+});
+window.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT') return;
+  const k=e.key.toLowerCase();
+  if(k==='+'||k==='='){ setBrush(brush+1); e.preventDefault(); }
+  else if(k==='-'||k==='_'){ setBrush(brush-1); e.preventDefault(); }
+  else if(k===' '){ running=!running; $('pause').textContent=running?'Pause':'Resume'; e.preventDefault(); }
+  else if(k==='s'){ runFrames(1); }
+  else if(k==='c'){ clearWorld(); }
+  else if(e.key==='ArrowLeft'){ camYaw-=0.12; camDirty=true; e.preventDefault(); }
+  else if(e.key==='ArrowRight'){ camYaw+=0.12; camDirty=true; e.preventDefault(); }
+  else if(e.key==='ArrowUp'){ camPitch=Math.min(1.45,camPitch+0.08); camDirty=true; e.preventDefault(); }
+  else if(e.key==='ArrowDown'){ camPitch=Math.max(-1.45,camPitch-0.08); camDirty=true; e.preventDefault(); }
+});
+
+/* ── world helpers ──────────────────────────────────────────────────────── */
+function clearWorld(){
+  g.fill(0); life.fill(0); act.fill(0);
+  rebuildNodes(); camDirty=true;
+}
+function runFrames(n){
+  const t0=performance.now();
+  for(let k=0;k<n;k++){ stepSim(); flushNodes(); }
+  structureDirty=true;
+  return performance.now()-t0;
+}
+function countAll(){ let n=0; for(let i=0;i<NV;i++) if(g[i]) n++; return n; }
+function countMat(m){ let n=0; for(let i=0;i<NV;i++) if(g[i]===m) n++; return n; }
+function countBelow(m, ymax){
+  let n=0;
+  for(let y=0;y<ymax;y++) for(let z=0;z<D;z++) for(let x=0;x<W;x++) if(g[IX(x,y,z)]===m) n++;
+  return n;
+}
+function columnsOf(m){
+  const s=new Set();
+  for(let y=0;y<H;y++) for(let z=0;z<D;z++) for(let x=0;x<W;x++)
+    if(g[IX(x,y,z)]===m) s.add(z*W+x);
+  return s.size;
+}
+function paintBox(x0,y0,z0,x1,y1,z1,m){
+  for(let y=y0;y<=y1;y++) for(let z=z0;z<=z1;z++) for(let x=x0;x<=x1;x++){
+    if(!inb(x,y,z)) continue;
+    g[IX(x,y,z)]=m; life[IX(x,y,z)]=0; act[IX(x,y,z)]=1;
+  }
+  for(let y=y0-1;y<=y1+1;y++) for(let z=z0-1;z<=z1+1;z++) for(let x=x0-1;x<=x1+1;x++){
+    if(inb(x,y,z)) act[IX(x,y,z)]=1;
+  }
+  rebuildNodes();
+}
+
+/* a built scene: basin, pillars, dunes, glass, ice, hearth */
+function seed(){
+  g.fill(0); life.fill(0); act.fill(0);
+  for(let x=0;x<W;x++) for(let z=0;z<D;z++){
+    g[IX(x,0,z)]=K.STONE;
+    if((x*5+z*11)%17===0) g[IX(x,1,z)]=K.STONE;
+  }
+  const A=10,B=26,C=10,E=30, rim=6;
+  for(let x=A-1;x<=B+1;x++) for(let z=C-1;z<=E+1;z++){
+    if(x===A-1||x===B+1||z===C-1||z===E+1)
+      for(let y=1;y<=rim;y++) g[IX(x,y,z)]=K.STONE;
+  }
+  for(let x=A;x<=B;x++) for(let z=C;z<=E;z++)
+    for(let y=1;y<=3;y++) g[IX(x,y,z)]=K.WATER;
+  const P=[[5,5],[W-6,5],[5,D-6],[W-6,D-6]];
+  for(const [x,z] of P) for(let y=1;y<=22;y++) g[IX(x,y,z)]=K.WOOD;
+  for(let z=5;z<=D-6;z++){ g[IX(5,22,z)]=K.WOOD; g[IX(W-6,22,z)]=K.WOOD; }
+  for(let x=5;x<=W-6;x++){ g[IX(x,22,5)]=K.WOOD; g[IX(x,22,D-6)]=K.WOOD; }
+  for(let z=6;z<=D-7;z+=5){ g[IX(5,15,z)]=K.METAL; g[IX(W-6,15,z)]=K.METAL; }
+  for(let x=12;x<22;x++) for(let y=7;y<21;y+=3) g[IX(x,y,3)]=K.GLASS;
+  for(let x=32;x<W-3;x++) for(let z=32;z<D-3;z++){
+    const h=Math.max(0, Math.round(5*Math.sin((x-32)/5.5)*Math.cos((z-32)/5.5)));
+    for(let y=1;y<=h;y++) g[IX(x,y,z)]=K.SAND;
+  }
+  for(let x=8;x<15;x++) for(let y=1;y<5;y++) for(let z=D-13;z<D-8;z++) g[IX(x,y,z)]=K.ICE;
+  for(let x=16;x<20;x++) for(let z=8;z<14;z++){
+    g[IX(x,1,z)]=K.WALL; if((x+z)%3===0) g[IX(x,2,z)]=K.PLANT;
+  }
+  /* hearth: stone ring, wood logs, live fire */
+  for(let x=36;x<=41;x++) for(let z=8;z<=13;z++){
+    if(x===36||x===41||z===8||z===13) g[IX(x,1,z)]=K.STONE;
+  }
+  g[IX(38,1,10)]=K.WOOD; g[IX(39,1,11)]=K.WOOD; g[IX(38,2,11)]=K.WOOD;
+  g[IX(38,2,10)]=K.FIRE; g[IX(39,2,10)]=K.FIRE; g[IX(39,2,11)]=K.FIRE;
+  life[IX(38,2,10)]=60; life[IX(39,2,10)]=60; life[IX(39,2,11)]=60;
+  for(let x=20;x<30;x++) for(let z=20;z<30;z++) g[IX(x,1,z)]=K.STONE;
+  for(let i=0;i<NV;i++) act[i]=1;
+  camYaw=0.66; camPitch=0.40; zoom=1; camDirty=true;
+  rebuildNodes();
+}
+
+/* ── stats + loop ───────────────────────────────────────────────────────── */
+const STATS=[['Voxels','vox'],['FPS','fps'],['Sim','sim'],['Draw','draw'],['Drawn','drawn'],['Grid','grid']];
+$('stats').innerHTML=STATS.map(([n,id])=>
+  '<div class="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">'
+  +'<div class="ws-label">'+n+'</div><div class="font-mono text-[13px] font-bold text-white" id="st-'+id+'">—</div></div>').join('');
+
+let simMs=0, drawMs=0, fps=0, frames=0, fpsT=performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  resize();
+  if(spin && !painting && !rotating){ camYaw += 0.004; camDirty=true; }
+  if(running){
+    const a=performance.now();
+    stepSim(); flushNodes();
+    simMs = simMs*0.85 + (performance.now()-a)*0.15;
+    structureDirty = true;
+  }
+  if(running || structureDirty || camDirty){
+    const b=performance.now();
+    draw();
+    drawMs = drawMs*0.85 + (performance.now()-b)*0.15;
+    structureDirty=false; camDirty=false;
+    frames++;
+  }
+  if(now-fpsT>400){
+    fps = frames*1000/(now-fpsT); frames=0; fpsT=now;
+    $('st-vox').textContent=countAll().toLocaleString('en-US');
+    $('st-fps').textContent=fps.toFixed(0);
+    $('st-sim').textContent=simMs.toFixed(1)+'ms';
+    $('st-draw').textContent=drawMs.toFixed(1)+'ms';
+    $('st-drawn').textContent=lastDrawn.toLocaleString('en-US')+' / '+lastTotal.toLocaleString('en-US');
+    $('st-grid').textContent=W+'×'+H+'×'+D;
+    $('hudfps').textContent=fps.toFixed(0)+' FPS';
+  }
+}
+if(window.ResizeObserver) new ResizeObserver(()=>{ camDirty=true; }).observe(cv);
+window.addEventListener('resize',()=>{ camDirty=true; });
+setCat('Powders');
+resize(); camUpdate();
+seed();
+requestAnimationFrame(loop);
+
+/* ── test / console API ─────────────────────────────────────────────────── */
+window.SB3D={
+  W:W, H:H, D:D, NV:NV, MATS:MATS, K:K,
+  get:()=>g, life:()=>life, nodes:()=>nodes.length,
+  count:countAll, countMat:countMat, countBelow:countBelow, columnsOf:columnsOf,
+  clear:clearWorld, seed:seed, stepOnce:()=>runFrames(1), runFrames:runFrames,
+  setPaused:v=>{ running=!v; $('pause').textContent=running?'Pause':'Resume'; },
+  isPaused:()=>!running, setBrush:setBrush, getBrush:()=>brush,
+  select:id=>{ cur=id; const m=MATS.find(x=>x.id===id); $('current').textContent=m.name.toUpperCase(); $('hudmat').textContent=m.name.toUpperCase(); paintPalette(); },
+  put:(x,y,z,m)=>put(x,y,z,m,0), paintBox:paintBox,
+  project:project, frameNo:()=>frameNo,
+  setCam:(yaw,pitch,zz)=>{ camYaw=yaw; if(pitch!==undefined) camPitch=pitch; if(zz!==undefined) zoom=zz; camDirty=true; },
+  getCam:()=>({yaw:camYaw,pitch:camPitch,zoom:zoom}),
+  stats:()=>({fps:fps, simMs:simMs, drawMs:drawMs, drawn:lastDrawn, nodes:lastTotal,
+             voxels:countAll(), maxDraw:MAXDRAW, palette:MATS.length})
+};
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+    </a></li>
+    <li><a href="/workspace/games/breakout/">
+      <span class="ocurp-related-n">Breakout</span>
+      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
+    </a></li>
+    <li><a href="/workspace/games/breakout/">
+      <span class="ocurp-related-n">Breakout</span>
+      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
