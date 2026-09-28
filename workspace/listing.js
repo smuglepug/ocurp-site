@@ -50,7 +50,7 @@
     var target = isWebsites ? ' target="_blank" rel="noopener"' : '';
     return '<a href="' + href + '"' + target + ' class="group relative flex flex-col overflow-hidden rounded-2xl border border-white/20 bg-white/[0.06] transition-all duration-300 hover:-translate-y-1 hover:border-accent/60 hover:bg-white/[0.09]" data-card>'
       + art
-      + '<div class="flex flex-1 flex-col p-6">'
+      + '<div class="flex flex-1 flex-col p-4 md:p-6">'
       + '<div class="flex items-center justify-between gap-3"><span class="font-mono text-[9px] font-black uppercase tracking-[0.24em] text-white/55">' + esc(cat) + '</span>' + status + '</div>'
       + '<h3 class="mt-3 font-display text-2xl font-black leading-tight tracking-tight text-white transition-colors duration-300 group-hover:text-accent">' + esc(e.name) + '</h3>'
       + '<p class="mt-3 line-clamp-2 text-sm leading-relaxed text-white/60">' + esc(e.blurb) + '</p>'

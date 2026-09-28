@@ -69,6 +69,8 @@
   </div>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/workspace/supabase-config.js"></script>
 <script src="/workspace/auth.js"></script>
 <script>
 (function () {
@@ -88,19 +90,23 @@
     }
   }
 
-  $('note').textContent = A.supabaseReady()
-    ? 'You will be sent to Google and brought straight back here.'
-    : 'Google sign-in turns on once the Supabase project keys are connected. Until then the device option keeps everything saved in this browser.';
+  A.googleEnabled().then(function (on) {
+    $('note').textContent = on
+      ? 'You will be sent to Google and brought straight back to your profile.'
+      : 'Google sign-in is not switched on for this project yet — the device option below works now.';
+    if (!on) {
+      var g = $('google');
+      g.style.opacity = '.45';
+      g.style.cursor = 'not-allowed';
+    }
+  });
 
   $('google').addEventListener('click', function () {
-    if (!A.supabaseReady()) {
-      $('note').textContent = 'Not connected yet — use the device option below for now.';
+    A.googleEnabled().then(function (on) {
+      if (on) { A.signInWithGoogle(); return; }
+      $('note').textContent = 'Not switched on yet. In Supabase: Authentication \u2192 Providers \u2192 Google, then allow http://localhost:8899/** and https://ocurp.space/** as redirects.';
       $('note').style.color = 'rgba(255,95,31,.85)';
-      return;
-    }
-    var c = window.OCURP_SUPABASE;
-    location.href = c.url + '/auth/v1/authorize?provider=google&redirect_to=' +
-      encodeURIComponent(location.origin + '/ocurp/profile/');
+    });
   });
 
   $('local').addEventListener('click', function () {

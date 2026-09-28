@@ -1,15 +1,34 @@
 /* ==========================================================================
    Ocurp accounts — sign-in state, the sign-in prompt, and favourites.
 
-   Storage shape is identical whether it runs locally now or against Supabase
-   later: set window.OCURP_SUPABASE = { url, anonKey } and the Google button
-   performs a real OAuth redirect. Until then it says so plainly and offers a
-   device-local account so the rest of the flow is usable.
+   Uses Supabase (Google OAuth) when workspace/supabase-config.js is present,
+   and falls back to a device-local account otherwise so the flow still works.
+
+   Favourites are cached locally for instant UI and written through to the
+   `favourites` table when a real session exists.
    ========================================================================== */
 (function (global) {
   var USER_KEY = 'ocurp:user';
   var FAV_KEY = 'ocurp:favs';
   var listeners = [];
+  var client = null;
+  var session = null;
+
+  function cfg() { return global.OCURP_SUPABASE || {}; }
+  function supabaseReady() { var c = cfg(); return !!(c.url && c.anonKey && global.supabase && global.supabase.createClient); }
+
+  /* Google has to be switched on in the Supabase dashboard first, otherwise
+     signInWithOAuth dumps the visitor on a raw error page. Ask the project. */
+  var googleOn = null;
+  function checkGoogle() {
+    if (googleOn !== null) return Promise.resolve(googleOn);
+    var c = cfg();
+    if (!c.url || !c.anonKey) return Promise.resolve(false);
+    return fetch(c.url + '/auth/v1/settings', { headers: { apikey: c.anonKey } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { googleOn = !!(d && d.external && d.external.google); return googleOn; })
+      .catch(function () { googleOn = false; return false; });
+  }
 
   function readJSON(k, fallback) {
     try { var v = JSON.parse(localStorage.getItem(k) || 'null'); return v === null ? fallback : v; }
@@ -17,52 +36,94 @@
   }
   function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
-  function emit() { listeners.forEach(function (fn) { try { fn(current()); } catch (e) {} }); }
   function current() { return readJSON(USER_KEY, null); }
   function isSignedIn() { return !!current(); }
-  function supabaseReady() {
-    var c = global.OCURP_SUPABASE || {};
-    return !!(c.url && c.anonKey);
+  function emit() {
+    listeners.forEach(function (fn) { try { fn(current()); } catch (e) {} });
+    window.dispatchEvent(new CustomEvent('ocurp:auth'));
   }
 
-  function signIn(user) {
+  /* ---- identity ---- */
+  function userFromSession(s) {
+    if (!s || !s.user) return null;
+    var u = s.user, m = u.user_metadata || {};
+    return {
+      id: u.id,
+      name: m.full_name || m.name || (u.email ? u.email.split('@')[0] : 'Ocurp member'),
+      email: u.email || '',
+      avatar: m.avatar_url || '',
+      since: (u.created_at || '').slice(0, 10),
+      provider: 'google'
+    };
+  }
+
+  function signInLocal(user) {
     var u = user || {};
-    if (!u.name) u.name = 'Ocurp member';
-    if (!u.email) u.email = '';
+    if (!u.name) u.name = 'Device account';
     if (!u.id) u.id = 'local-' + Math.abs(hash(u.email + u.name)).toString(36);
     if (!u.since) u.since = new Date().toISOString().slice(0, 10);
     writeJSON(USER_KEY, u);
-    window.dispatchEvent(new CustomEvent('ocurp:auth'));
+    emit();
     return u;
   }
+
+  function signInWithGoogle() {
+    if (!supabaseReady()) return false;
+    var back = location.origin + location.pathname.replace(/[^/]*$/, '');
+    client.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: location.origin + '/ocurp/profile/' }
+    });
+    return true;
+  }
+
   function signOut() {
+    if (client) { try { client.auth.signOut(); } catch (e) {} }
+    session = null;
     try { localStorage.removeItem(USER_KEY); } catch (e) {}
-    window.dispatchEvent(new CustomEvent('ocurp:auth'));
+    emit();
   }
 
-  function hash(s) {
-    var h = 0;
-    for (var i = 0; i < s.length; i++) { h = (h << 5) - h + s.charCodeAt(i); h |= 0; }
-    return h;
-  }
+  function hash(s) { var h = 0; for (var i = 0; i < s.length; i++) { h = (h << 5) - h + s.charCodeAt(i); h |= 0; } return h; }
 
-  /* ---- favourites ---- */
+  /* ---- favourites (local cache + write-through) ---- */
   function allFavs() { return readJSON(FAV_KEY, {}); }
   function favKey() { var u = current(); return u ? u.id : 'anon'; }
   function listFavs() { var a = allFavs(); return a[favKey()] || []; }
+  function setLocalFavs(list) { var a = allFavs(); a[favKey()] = list; writeJSON(FAV_KEY, a); }
   function hasFav(slug) { return listFavs().indexOf(slug) !== -1; }
+
   function toggleFav(slug) {
     var u = current();
     if (!u) { promptSignIn('Sign in to save favourites to your profile.'); return false; }
-    var a = allFavs(), k = favKey(), l = a[k] || [];
-    var i = l.indexOf(slug);
-    if (i === -1) l.push(slug); else l.splice(i, 1);
-    a[k] = l; writeJSON(FAV_KEY, a);
+    var l = listFavs(), i = l.indexOf(slug), added;
+    if (i === -1) { l.push(slug); added = true; } else { l.splice(i, 1); added = false; }
+    setLocalFavs(l);
     window.dispatchEvent(new CustomEvent('ocurp:favs'));
-    return i === -1;
+    if (client && session && u.provider === 'google') {
+      var uid = session.user.id;
+      if (added) {
+        client.from('favourites').insert({ user_id: uid, slug: slug })
+          .then(function (r) { if (r && r.error) console.warn('favourite sync failed:', r.error.message); });
+      } else {
+        client.from('favourites').delete().eq('user_id', uid).eq('slug', slug)
+          .then(function (r) { if (r && r.error) console.warn('favourite sync failed:', r.error.message); });
+      }
+    }
+    return added;
   }
 
-  /* ---- sign-in prompt (small panel, dismissible) ---- */
+  function pullFavourites() {
+    if (!client || !session) return;
+    client.from('favourites').select('slug').then(function (r) {
+      if (r && r.data && !r.error) {
+        setLocalFavs(r.data.map(function (row) { return row.slug; }));
+        window.dispatchEvent(new CustomEvent('ocurp:favs'));
+      }
+    });
+  }
+
+  /* ---- sign-in prompt ---- */
   var panel = null;
   function closePanel() { if (panel) { panel.remove(); panel = null; } }
 
@@ -75,7 +136,7 @@
       '<div style="width:100%;max-width:380px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:#0d0d0d;padding:26px;position:relative;font-family:inherit">' +
         '<button id="ocurp-x" aria-label="Close" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:9999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:rgba(255,255,255,.6);font-size:15px;line-height:1;cursor:pointer">&#10005;</button>' +
         '<p style="font-size:9px;font-weight:900;letter-spacing:.34em;text-transform:uppercase;color:rgba(255,255,255,.4);margin:0 0 10px">Account</p>' +
-        '<h3 style="margin:0 0 8px;font-size:21px;font-weight:800;color:#fff;letter-spacing:-.01em">Sign in to continue</h3>' +
+        '<h3 style="margin:0 0 8px;font-size:21px;font-weight:800;color:#fff">Sign in to continue</h3>' +
         '<p id="ocurp-msg" style="margin:0 0 18px;font-size:13.5px;line-height:1.55;color:rgba(255,255,255,.55)"></p>' +
         '<div style="display:flex;flex-direction:column;gap:9px">' +
           '<button id="ocurp-google" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border-radius:9999px;background:#FF5F1F;border:0;padding:13px 18px;font-size:11px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:#000;cursor:pointer">Continue with Google</button>' +
@@ -86,37 +147,39 @@
     document.body.appendChild(panel);
     panel.querySelector('#ocurp-msg').textContent = message || 'Save projects and favourites to your profile.';
     var note = panel.querySelector('#ocurp-note');
-    var google = panel.querySelector('#ocurp-google');
-    if (supabaseReady()) {
-      note.textContent = 'You will be redirected to Google, then back here.';
-    } else {
-      note.textContent = 'Google sign-in switches on as soon as the Supabase project keys are added. Until then, a device-only account keeps your work saved in this browser.';
-    }
+    note.textContent = supabaseReady()
+      ? 'You will be sent to Google and brought straight back here.'
+      : 'Google sign-in needs the Supabase library to load. The device option keeps everything in this browser.';
     panel.querySelector('#ocurp-x').addEventListener('click', closePanel);
     panel.addEventListener('click', function (e) { if (e.target === panel) closePanel(); });
-    google.addEventListener('click', function () {
-      if (!supabaseReady()) {
-        note.textContent = 'Not connected yet — use the device-only option below for now.';
+    panel.querySelector('#ocurp-google').addEventListener('click', function () {
+      checkGoogle().then(function (on) {
+        if (on) { signInWithGoogle(); return; }
+        note.innerHTML = 'Google sign-in is not switched on for this project yet. In Supabase: <strong>Authentication &rarr; Providers &rarr; Google</strong>, then add <code>http://localhost:8899/**</code> and <code>https://ocurp.space/**</code> to the redirect list.';
         note.style.color = 'rgba(255,95,31,.85)';
-        return;
+      });
+    });
+    checkGoogle().then(function (on) {
+      if (!on) {
+        var g = panel.querySelector('#ocurp-google');
+        g.style.background = 'rgba(255,95,31,.28)';
+        g.style.color = 'rgba(0,0,0,.65)';
+        note.textContent = 'Google sign-in is not switched on for this project yet — the device option works now.';
       }
-      var c = global.OCURP_SUPABASE;
-      var back = encodeURIComponent(location.origin + '/ocurp/profile/');
-      location.href = c.url + '/auth/v1/authorize?provider=google&redirect_to=' + back;
     });
     panel.querySelector('#ocurp-local').addEventListener('click', function () {
-      signIn({ name: 'Device account', email: '', device: true });
+      signInLocal({ name: 'Device account' });
       closePanel();
     });
     return panel;
   }
 
-  /* ---- nav sync: Sign In  <->  Profile ---- */
+  /* ---- nav ---- */
   function syncNav() {
     var u = current();
     document.querySelectorAll('[data-ocurp-account]').forEach(function (el) {
       el.textContent = u ? 'Profile' : 'Sign In';
-      el.setAttribute('href', u ? '/ocurp/profile/' : '#');
+      el.setAttribute('href', u ? '/ocurp/profile/' : '/ocurp/signin/');
       el.dataset.bound = '1';
     });
     document.querySelectorAll('[data-ocurp-account-name]').forEach(function (el) {
@@ -135,18 +198,45 @@
     syncNav();
   }
 
-  window.addEventListener('ocurp:auth', function () { bindNav(); syncNav(); });
+  /* ---- boot ---- */
+  function boot() {
+    bindNav();
+    if (supabaseReady()) {
+      client = global.supabase.createClient(cfg().url, cfg().anonKey, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      });
+      client.auth.getSession().then(function (r) {
+        session = r && r.data ? r.data.session : null;
+        var u = userFromSession(session);
+        if (u) { writeJSON(USER_KEY, u); } else if (current() && current().provider === 'google') { try { localStorage.removeItem(USER_KEY); } catch (e) {} }
+        emit();
+        pullFavourites();
+      });
+      client.auth.onAuthStateChange(function (_evt, s) {
+        session = s;
+        var u = userFromSession(s);
+        if (u) writeJSON(USER_KEY, u);
+        else if (current() && current().provider === 'google') { try { localStorage.removeItem(USER_KEY); } catch (e) {} }
+        emit();
+        pullFavourites();
+      });
+    }
+  }
 
-  function boot() { bindNav(); }
+  window.addEventListener('ocurp:auth', function () { bindNav(); syncNav(); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 
   global.OcurpAuth = {
-    user: current, isSignedIn: isSignedIn, signIn: signIn, signOut: signOut,
+    user: current, isSignedIn: isSignedIn, signOut: signOut,
+    signIn: signInLocal, signInWithGoogle: signInWithGoogle,
     onChange: function (fn) { listeners.push(fn); },
     supabaseReady: supabaseReady,
+    googleEnabled: checkGoogle,
+    client: function () { return client; },
+    session: function () { return session; },
     promptSignIn: promptSignIn, closePrompt: closePanel,
-    favourites: { list: listFavs, has: hasFav, toggle: toggleFav },
+    favourites: { list: listFavs, has: hasFav, toggle: toggleFav, refresh: pullFavourites },
     syncNav: syncNav
   };
 })(window);
