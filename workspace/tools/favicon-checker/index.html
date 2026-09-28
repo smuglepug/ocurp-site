@@ -97,7 +97,7 @@ tailwind.config = { theme: { extend: {
 <script>
 const $=id=>document.getElementById(id);
 function abs(h,base){try{return new URL(h,base).href}catch(e){return null}}
-async function probe(url){
+async function fetchProbe(url){
   try{
     const c=new AbortController();
     const t=setTimeout(()=>c.abort(),8000);
@@ -112,7 +112,35 @@ async function probe(url){
     else if(head[0]===0x47&&head[1]===0x49&&head[2]===0x46) kind='GIF';
     else if(head[0]===0x3C) kind='SVG';
     return {ok:r.ok,status:r.status,size:b.byteLength,kind,ct:r.headers.get('content-type')||''};
-  }catch(e){return {ok:false,status:0,size:0,kind:null,ct:'',err:String(e.name||e.message||e)}}
+    }catch(e){return {ok:false,status:0,size:0,kind:null,ct:'',err:String(e.name||e.message||e)}}
+    }
+    // CORS blocks reading a foreign icon's bytes, so fetch() fails for most real
+    // sites - yet the browser still DISPLAYS those icons fine. The honest test is
+    // whether an <img> can actually decode it, which is not CORS-restricted. We
+    // load it, take its true intrinsic pixel size, and only use the byte-sniffing
+    // fetch() above when it happens to be same-origin.
+    function loadImg(u){
+    return new Promise(res=>{
+      const im=new Image();
+      im.referrerPolicy='no-referrer';
+      const done=(ok,info)=>res(Object.assign({ok:ok,kind:null,size:0,status:0,ct:''},info||{}));
+      const to=setTimeout(()=>done(false,{err:'timeout'}),7000);
+      im.onload=()=>{clearTimeout(to);
+        const w=im.naturalWidth,h=im.naturalHeight;
+        // a 0x0 image is not a real icon
+        done(w>0&&h>0,{w:w,h:h,kind:'image',ct:im.naturalWidth?'':'',size:0,px:true});
+      };
+      im.onerror=()=>{clearTimeout(to);done(false,{err:'not loadable'})};
+      im.src=u;
+    });
+    }
+    async function probe(u, sameOrigin){
+    const viaImg=await loadImg(u);
+    if(viaImg.ok) return viaImg;
+    // image failed: try the byte-sniffing fetch to say WHY (404 vs HTML page)
+    const f=await fetchProbe(u);
+    if(f.ok) return f;
+    return viaImg;
 }
 async function run(){
   let u=$('u').value.trim();
@@ -126,7 +154,7 @@ async function run(){
     html=await r.text();
     $('msg').textContent='Read '+(html.length/1024).toFixed(0)+' KB of HTML from '+new URL(u).origin;
   }catch(e){
-    note='Direct fetch blocked by CORS ('+(e.message||e)+'). CORS prevents reading foreign pages, so only the well-known icon paths are probed below.';
+    note='Direct fetch blocked by CORS ('+(e.message||e)+'), so the page HTML could not be parsed and only the well-known icon paths were probed. The icons below are still tested by really loading them in the browser, which CORS does not block.';
     $('msg').textContent='Could not read the page HTML.';
     $('msg').style.color='#fca5a5';
   }
@@ -148,18 +176,20 @@ async function run(){
   for(const f of all){
     if(!f.url)continue;
     const p=await probe(f.url);
-    const bad=p.ok&&(p.size===0||(p.ct&&/text\/html/i.test(p.ct)));
+    // an image the browser can decode IS a working icon, even at 16x16
+    const bad=!p.ok||(p.size===0&&!p.px)||(p.ct&&/text\/html/i.test(p.ct));
     rows.push({f,p,bad});
   }
-  const good=rows.filter(r=>r.p.ok&&!r.bad);
+  const good=rows.filter(r=>!r.bad);
   $('res').innerHTML=rows.map(r=>{
-    const cls=r.p.ok&&!r.bad?'border-emerald-500/30 bg-emerald-500/[0.06]':'border-white/10 bg-white/[0.03]';
-    const badge=r.p.ok&&!r.bad?r.p.kind:'\u2717 not usable';
-    return '<div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border '+cls+' p-4">'
+    const badge=r.bad?'\u2717 not usable':(r.p.px?(r.p.w+'\u00d7'+r.p.h+' px'):r.p.kind);
+    const sub=r.p.px?'decodes in the browser':(r.p.ok?r.p.size+' bytes \u00b7 HTTP '+r.p.status:(r.p.err||'HTTP '+r.p.status));
+    return '<div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border '+(r.bad?'border-white/10 bg-white/[0.03]':'border-emerald-500/30 bg-emerald-500/[0.06]')+' p-4">'
       +'<div class="min-w-0"><div class="font-mono text-[13px] break-all text-white">'+r.f.url+'</div>'
       +'<div class="mt-1 text-[11px] text-white/40">rel="'+r.f.rel+'"'+(r.f.sizes?' sizes="'+r.f.sizes+'"':'')+(r.f.type?' type="'+r.f.type+'"':'')+'</div></div>'
-      +'<div class="text-right"><div class="font-mono text-[12px] '+(r.p.ok&&!r.bad?'text-emerald-400':'text-red-400')+'">'+badge+'</div>'
-      +'<div class="text-[11px] text-white/40">'+(r.p.ok?r.p.size+' bytes \u00b7 HTTP '+r.p.status:(r.p.err||'HTTP '+r.p.status))+'</div></div></div>';
+      +'<div class="flex items-center gap-3 text-right"><img src="'+r.f.url+'" alt="" class="h-7 w-7 rounded border border-white/10 bg-white/5 object-contain">'
+      +'<div><div class="font-mono text-[12px] '+(r.bad?'text-red-400':'text-emerald-400')+'">'+badge+'</div>'
+      +'<div class="text-[11px] text-white/40">'+sub+'</div></div></div></div>';
   }).join('')+(good.length?'':'<div class="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-4 text-[12px] text-amber-200">No usable icon found. '+note+'</div>')
    + '<div class="mt-2 text-[11px] font-mono text-white/40">'+good.length+' usable of '+rows.length+' probed.</div>';
 }
@@ -167,6 +197,8 @@ $('go').onclick=run;
 $('u').addEventListener('keydown',e=>{if(e.key==='Enter')run()});
 run();
 </script>
+
+
 
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">
