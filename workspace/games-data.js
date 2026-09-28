@@ -66,4 +66,10 @@ const RAW = [
   {slug:"memory-sequence",name:"Memory Sequence",cat:"game",blurb:"Simon-style: watch the pads flash, repeat the order, and beat your best level on this device.",tags:["GAMES","MEMORY","ARCADE"],ready:true},
   {slug:"word-ladder",name:"Word Ladder",cat:"game",blurb:"Climb one letter at a time from one real dictionary word to another. Undo, hints and a new ladder on demand.",tags:["GAMES","WORD","PUZZLE"],ready:true},
   {slug:"word-ladder",name:"Word Ladder",cat:"game",blurb:"Climb one letter at a time from one real dictionary word to another. Undo, hints and a new ladder on demand.",tags:["GAMES","WORD","PUZZLE"],ready:true},
+  {slug:"fitts-drill",name:"Fitts Drill",cat:"game",blurb:"Fitts Drill - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"fitts-drill",name:"Fitts Drill",cat:"game",blurb:"Fitts Drill - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"reaction-time",name:"Reaction Time",cat:"game",blurb:"Reaction Time - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"reaction-time",name:"Reaction Time",cat:"game",blurb:"Reaction Time - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"tile-memory",name:"Tile Memory",cat:"game",blurb:"Tile Memory - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"tile-memory",name:"Tile Memory",cat:"game",blurb:"Tile Memory - playable in the browser.",tags:["GAMES"],ready:true},
 ];

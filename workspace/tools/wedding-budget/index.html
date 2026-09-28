@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wedding Budget Planner — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Build a wedding budget by category, track what is paid, and see what is still owed. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/wedding-budget/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Wedding Budget Planner">
+<meta property="og:description" content="Build a wedding budget by category, track what is paid, and see what is still owed. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/wedding-budget/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Wedding Budget Planner on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Wedding Budget Planner">
+<meta name="twitter:description" content="Build a wedding budget by category, track what is paid, and see what is still owed. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Wedding Budget Planner on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Wedding Budget Planner","url":"https://ocurp.space/workspace/tools/wedding-budget/","description":"Build a wedding budget by category, track what is paid, and see what is still owed. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Wedding Budget Planner</h1>
+      <div class="mt-1 text-xs text-white/40">Everyday Planning &mdash; CLIENT-SIDE</div>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Enter the total you have for the wedding, then type what you plan to spend and what you have already paid for each of twelve categories. The totals, the progress bars and the over-budget warning update as you type.</p>
+  <div class="ws-grid2">
+
+    <section class="ws-panel p-6">
+      <label class="ws-label mb-2 block" for="total">Total budget</label>
+      <input id="total" class="ws-input" type="number" min="0" step="100" value="30000">
+      <p class="mt-2 text-[11px] text-white/35">Currency is whatever you are using &mdash; figures are just numbers.</p>
+
+      <p class="ws-label mt-6 mb-3">Suggested split &mdash; click to load</p>
+      <div id="presets" class="grid grid-cols-2 gap-2"></div>
+
+      <div class="mt-5 flex flex-wrap gap-2">
+        <button id="autofill" type="button" class="ws-btn">Auto-fill guideline</button>
+        <button id="rebalance" type="button" class="ws-btn-ghost">Rebalance to budget</button>
+        <button id="clear" type="button" class="ws-btn-ghost">Clear</button>
+      </div>
+      <p id="hint" class="mt-3 text-[11px] leading-relaxed text-white/35">
+        Auto-fill uses the classic planning guideline (venue 40%, catering 33%, photography 10%&hellip;).
+        Rebalance rescales whatever you have typed, proportionally, so the planned column adds up to
+        your total budget exactly.
+      </p>
+    </section>
+
+    <section class="ws-panel p-6">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <p class="ws-label">Planned</p>
+          <p id="sum-planned" class="mt-1 font-mono text-lg text-white">&mdash;</p>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <p class="ws-label">Paid</p>
+          <p id="sum-paid" class="mt-1 font-mono text-lg text-white">&mdash;</p>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <p class="ws-label">Remaining</p>
+          <p id="sum-left" class="mt-1 font-mono text-lg text-white">&mdash;</p>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <p class="ws-label">Unallocated</p>
+          <p id="sum-free" class="mt-1 font-mono text-lg text-white">&mdash;</p>
+        </div>
+      </div>
+
+      <div class="mt-5 h-2 w-full overflow-hidden rounded-full border border-white/10 bg-white/5">
+        <div id="overall-bar" class="h-full bg-accent" style="width:0%"></div>
+      </div>
+      <p class="ws-label mt-2">Paid against planned, all categories</p>
+
+      <div id="over" class="mt-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 font-mono text-[13px] text-white/70">&mdash;</div>
+    </section>
+
+  </div>
+  <div class="mt-8">
+
+    <section class="ws-panel p-6">
+      <div class="mb-4 flex flex-wrap items-center gap-3">
+        <h2 class="font-display text-base font-bold text-white">Categories</h2>
+        <span class="ws-chip">12 lines</span>
+        <span class="ws-chip">live totals</span>
+        <span id="over-chip" class="hidden rounded-full border border-accent/50 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.15em] text-accent">Over budget</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[720px] border-collapse text-left">
+          <thead><tr class="ws-label">
+            <th class="pb-2 pr-3">Category</th>
+            <th class="pb-2 pr-3">Guide</th>
+            <th class="pb-2 pr-3">Planned</th>
+            <th class="pb-2 pr-3">Paid</th>
+            <th class="pb-2 pr-3">% of total</th>
+            <th class="pb-2 pr-3">Progress</th>
+            <th class="pb-2">Status</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+          <tfoot><tr class="font-mono text-[13px]">
+            <td class="pt-3 pr-3 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Total</td>
+            <td class="pt-3 pr-3 text-white/40">&mdash;</td>
+            <td id="f-planned" class="pt-3 pr-3 text-white">&mdash;</td>
+            <td id="f-paid" class="pt-3 pr-3 text-white">&mdash;</td>
+            <td id="f-pct" class="pt-3 pr-3 text-white">&mdash;</td>
+            <td id="f-prog" class="pt-3 pr-3 text-white">&mdash;</td>
+            <td class="pt-3">&mdash;</td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </section>
+
+<script>
+window.__errs = window.__errs || [];
+const $ = id => document.getElementById(id);
+
+// Guideline shares. Order matters: the last entry absorbs any rounding
+// remainder so the planned column always sums to the budget EXACTLY.
+const CATS = [["Venue", 40], ["Catering", 33], ["Photography", 10], ["Attire", 4], ["Florals", 3], ["Rings", 4], ["Honeymoon", 1], ["Music / Entertainment", 1], ["Decor", 1], ["Stationery", 1], ["Transport", 1], ["Misc", 1]];
+
+const state = { budget: 30000, planned: {}, paid: {} };
+CATS.forEach(c => { state.planned[c[0]] = 0; state.paid[c[0]] = 0; });
+
+function money(v) {
+  const n = Math.round(Number(v) || 0);
+  return n.toLocaleString('en-US');
+}
+function num(v) {
+  const n = Number(v);
+  return isFinite(n) ? n : 0;
+}
+function pct(part, whole) {
+  if (!whole) return 0;
+  return (part / whole) * 100;
+}
+function clampPct(v) { return Math.max(0, Math.min(100, v)); }
+
+// Proportional allocation that cannot drift: every category but the last is
+// floored, and the final category is handed the exact remainder.
+function allocate(total, weights) {
+  const w = weights.reduce(function (a, b) { return a + b; }, 0);
+  const out = {};
+  CATS.forEach(function (c, i) {
+    if (i === CATS.length - 1) return;
+    out[c[0]] = Math.floor(total * ((weights[i] || 0) / w));
+  });
+  const used = CATS.reduce(function (a, c) { return a + (out[c[0]] || 0); }, 0);
+  out[CATS[CATS.length - 1][0]] = total - used;
+  return out;
+}
+
+function renderPresets() {
+  const host = $('presets');
+  host.innerHTML = '';
+  CATS.forEach(function (c) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ws-btn-ghost justify-between';
+    b.style.width = '100%';
+    b.style.textTransform = 'none';
+    b.style.letterSpacing = '0';
+    b.style.fontSize = '12px';
+    b.innerHTML = '<span>' + c[0] + '</span><span class="font-mono text-accent">' + c[1] + '%</span>';
+    b.addEventListener('click', function () { autofill(); });
+    host.appendChild(b);
+  });
+}
+
+function renderRows() {
+  const tb = $('rows');
+  tb.innerHTML = '';
+  CATS.forEach(function (c) {
+    const name = c[0];
+    const tr = document.createElement('tr');
+    tr.className = 'border-t border-white/5 align-top';
+    tr.setAttribute('data-cat', name);
+    tr.innerHTML =
+      '<td class="py-2.5 pr-3 text-[13px] text-white/85">' + name + '</td>' +
+      '<td class="py-2.5 pr-3 font-mono text-[12px] text-white/35">' + c[1] + '%</td>' +
+      '<td class="py-2.5 pr-3"><input class="ws-input in-planned" type="number" min="0" step="50" inputmode="decimal" value="' + state.planned[name] + '"></td>' +
+      '<td class="py-2.5 pr-3"><input class="ws-input in-paid" type="number" min="0" step="50" inputmode="decimal" value="' + state.paid[name] + '"></td>' +
+      '<td class="cell-pct py-2.5 pr-3 font-mono text-[12px] text-white/60">&mdash;</td>' +
+      '<td class="py-2.5 pr-3 w-[150px]">' +
+        '<div class="h-1.5 w-full overflow-hidden rounded-full bg-white/8">' +
+          '<div class="bar-paid h-full bg-accent" style="width:0%"></div>' +
+        '</div>' +
+        '<div class="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/5">' +
+          '<div class="bar-plan h-full bg-white/30" style="width:0%"></div>' +
+        '</div>' +
+      '</td>' +
+      '<td class="cell-flag py-2.5"></td>';
+    tb.appendChild(tr);
+  });
+
+  tb.querySelectorAll('tr').forEach(function (tr) {
+    const name = tr.getAttribute('data-cat');
+    const p = tr.querySelector('.in-planned');
+    const d = tr.querySelector('.in-paid');
+    p.addEventListener('input', function () { state.planned[name] = num(p.value); render(); });
+    d.addEventListener('input', function () { state.paid[name] = num(d.value); render(); });
+  });
+}
+
+function autofill() {
+  const B = Math.max(0, Math.round(num($('total').value)));
+  state.budget = B;
+  const weights = CATS.map(function (c) { return c[1]; });
+  const alloc = allocate(B, weights);
+  CATS.forEach(function (c) {
+    state.planned[c[0]] = alloc[c[0]];
+    state.paid[c[0]] = 0;
+  });
+  render();
+}
+
+function rebalance() {
+  const B = Math.max(0, Math.round(num($('total').value)));
+  state.budget = B;
+  const cur = CATS.map(function (c) { return Math.max(0, state.planned[c[0]]); });
+  const total = cur.reduce(function (a, b) { return a + b; }, 0);
+  if (total <= 0) { autofill(); return; }
+  const alloc = allocate(B, cur);
+  CATS.forEach(function (c) { state.planned[c[0]] = alloc[c[0]]; });
+  render();
+}
+
+function render() {
+  const B = Math.max(0, Math.round(num($('total').value)));
+  state.budget = B;
+
+  let tp = 0, td = 0;
+  CATS.forEach(function (c) {
+    tp += Math.max(0, state.planned[c[0]]);
+    td += Math.max(0, state.paid[c[0]]);
+  });
+
+  $('sum-planned').textContent = money(tp);
+  $('sum-paid').textContent = money(td);
+  $('sum-left').textContent = money(tp - td);
+  $('sum-free').textContent = money(B - tp);
+
+  const overall = clampPct(pct(td, tp));
+  $('overall-bar').style.width = overall + '%';
+
+  const over = tp - B;
+  const overEl = $('over');
+  overEl.textContent = 'OVER BY ' + money(Math.max(0, over));
+  if (over > 0) {
+    overEl.className = 'mt-4 rounded-xl border border-accent/50 bg-accent/10 px-4 py-3 font-mono text-[13px] text-accent';
+  } else {
+    overEl.className = 'mt-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 font-mono text-[13px] text-white/70';
+  }
+  $('over-chip').classList.toggle('hidden', !(over > 0));
+
+  $('rows').querySelectorAll('tr').forEach(function (tr) {
+    const name = tr.getAttribute('data-cat');
+    const pl = Math.max(0, state.planned[name]);
+    const pd = Math.max(0, state.paid[name]);
+    // Keep the visible fields in step with state after any bulk change
+    // (auto-fill, rebalance, clear). While a field is being typed into its
+    // parsed value already matches state, so this never fights the user.
+    const pIn = tr.querySelector('.in-planned');
+    const dIn = tr.querySelector('.in-paid');
+    if (pIn.value !== String(pl)) pIn.value = pl;
+    if (dIn.value !== String(pd)) dIn.value = pd;
+    const share = pct(pl, B);
+    tr.querySelector('.cell-pct').textContent = (B > 0 ? share.toFixed(1) : '0.0') + '%';
+    tr.querySelector('.bar-paid').style.width = clampPct(pct(pd, pl)) + '%';
+    tr.querySelector('.bar-plan').style.width = clampPct(pct(pl, B)) + '%';
+
+    const flag = tr.querySelector('.cell-flag');
+    if (pd > pl) {
+      flag.innerHTML = '<span class="rounded-full border border-accent/50 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.15em] text-accent">overpaid</span>';
+      tr.classList.add('bg-accent/[0.07]');
+    } else if (share > 12) {
+      flag.innerHTML = '<span class="rounded-full border border-white/25 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.15em] text-white/60">heavy</span>';
+      tr.classList.remove('bg-accent/[0.07]');
+    } else {
+      flag.innerHTML = '<span class="text-[10px] text-white/25">&mdash;</span>';
+      tr.classList.remove('bg-accent/[0.07]');
+    }
+  });
+
+  $('f-planned').textContent = money(tp);
+  $('f-paid').textContent = money(td);
+  $('f-pct').textContent = (B > 0 ? pct(tp, B).toFixed(1) : '0.0') + '%';
+  $('f-prog').textContent = (tp > 0 ? pct(td, tp).toFixed(1) : '0.0') + '%';
+}
+
+$('total').addEventListener('input', function () { render(); });
+$('autofill').addEventListener('click', autofill);
+$('rebalance').addEventListener('click', rebalance);
+$('clear').addEventListener('click', function () {
+  CATS.forEach(function (c) { state.planned[c[0]] = 0; state.paid[c[0]] = 0; });
+  render();
+  $('rows').querySelectorAll('.in-planned,.in-paid').forEach(function (i) { i.value = 0; });
+});
+
+renderPresets();
+renderRows();
+render();
+</script>
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/compound-interest/">
+      <span class="ocurp-related-n">Compound Interest</span>
+      <span class="ocurp-related-b">Project savings or investments forward with optional monthly deposits.</span>
+    </a></li>
+    <li><a href="/workspace/tools/continuous-compounding/">
+      <span class="ocurp-related-n">Continuous Compounding</span>
+      <span class="ocurp-related-b">Continuous-compounding interest and the e-folding half-life that goes with it.</span>
+    </a></li>
+    <li><a href="/workspace/tools/discount-calculator/">
+      <span class="ocurp-related-n">Discount Calculator</span>
+      <span class="ocurp-related-b">Apply one or two stacked discounts and see the final price and what you saved.</span>
+    </a></li>
+    <li><a href="/workspace/tools/fuel-cost-calculator/">
+      <span class="ocurp-related-n">Fuel Cost Calculator</span>
+      <span class="ocurp-related-b">What a journey really costs at the pump, with consumption and price per litre.</span>
+    </a></li>
+    <li><a href="/workspace/tools/gst-calculator/">
+      <span class="ocurp-related-n">GST Calculator</span>
+      <span class="ocurp-related-b">Add or remove GST at any rate, with the amount and the net both shown.</span>
+    </a></li>
+    <li><a href="/workspace/tools/mortgage-calculator/">
+      <span class="ocurp-related-n">Mortgage Calculator</span>
+      <span class="ocurp-related-b">Real amortisation maths: monthly payment, total interest, and what each payment is actuall</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Set Calculator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-copy.ok { animation: none }
+</style>
+<meta name="description" content="Union, intersection, difference, symmetric difference and unique elements over two number lists, sorted ascending with a count for every result. Runs...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/set-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Set Calculator">
+<meta property="og:description" content="Union, intersection, difference, symmetric difference and unique elements over two number lists, sorted ascending with a count for every result. Runs...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/set-calculator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Set Calculator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Set Calculator">
+<meta name="twitter:description" content="Union, intersection, difference, symmetric difference and unique elements over two number lists, sorted ascending with a count for every result. Runs...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Set Calculator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Set Calculator","url":"https://ocurp.space/workspace/tools/set-calculator/","description":"Union, intersection, difference, symmetric difference and unique elements over two number lists, sorted ascending with a count for every result. Runs...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<pre id="plain" class="hidden" aria-hidden="true"></pre>
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Set Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Discrete Math &mdash; Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">SETS</span><span class="ws-chip">11 OPERATIONS</span><span class="ws-chip">CLIENT-SIDE</span></div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Union, intersection, difference, symmetric difference and unique elements over two editable number lists, sorted ascending with a count for every result.</p>
+
+  <div class="grid gap-4 lg:grid-cols-2">
+    <section class="ws-panel p-6">
+      <label class="ws-label mb-2 block" for="a">Set A</label>
+      <textarea id="a" class="ws-input font-mono" rows="3" spellcheck="false">1, 2, 2, 3, 4, 4, 5</textarea>
+      <label class="ws-label mb-2 mt-4 block" for="b">Set B</label>
+      <textarea id="b" class="ws-input font-mono" rows="3" spellcheck="false">2, 4, 4, 6</textarea>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="cp" type="button" class="ws-btn ws-copy">Copy results</button>
+        <button id="ex" type="button" class="ws-btn-ghost">Load example</button>
+      </div>
+      <p id="warn" class="mt-3 text-[11px] text-accent/80"></p>
+      <p class="mt-4 text-[11px] leading-relaxed text-white/35">
+        Duplicates are kept in the input so you can see them collapse: type the same value
+        twice and the count beside each operation tells you the set-theoretic size, not the
+        number of entries you typed. Values are sorted ascending, and 2 and 2.0 count as one
+        element.
+      </p>
+    </section>
+    <section class="ws-panel p-6">
+      <p id="meta" class="ws-label mb-3">—</p>
+      <table class="w-full border-collapse text-left">
+        <thead><tr class="ws-label">
+          <th class="pb-2 pr-3">Operation</th><th class="pb-2 pr-3">n</th><th class="pb-2">Result</th>
+        </tr></thead>
+        <tbody id="res"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+window.__errs = window.__errs || [];
+const $ = id => document.getElementById(id);
+
+// Parse a user string into an array of numbers. Accepts commas, whitespace,
+// semicolons, newlines and 'a b' style grouping. Rejects NaN entries loudly
+// rather than silently dropping them.
+function parseList(s) {
+  var out = [], bad = [];
+  var toks = String(s).split(/[^0-9eE+\-.]+/).filter(function (t) { return t.length; });
+  for (var i = 0; i < toks.length; i++) {
+    var v = Number(toks[i]);
+    if (isFinite(v)) out.push(v); else bad.push(toks[i]);
+  }
+  return { values: out, bad: bad };
+}
+
+// Number identity: 2 and 2.0 are the same element, and -0 === 0.
+function key(v) { return v === 0 ? '0' : String(v); }
+
+function uniqSorted(vals) {
+  var seen = Object.create(null), out = [];
+  for (var i = 0; i < vals.length; i++) {
+    var k = key(vals[i]);
+    if (!(k in seen)) { seen[k] = 1; out.push(vals[i]); }
+  }
+  return out.sort(function (a, b) { return a - b; });
+}
+
+function mulCounts(vals) {
+  var m = Object.create(null);
+  for (var i = 0; i < vals.length; i++) m[key(vals[i])] = (m[key(vals[i])] || 0) + 1;
+  return m;
+}
+
+function setOp(vals) { return Object.keys(mulCounts(vals)); }
+
+function fmt(vals) {
+  return '[' + vals.join(', ') + ']';
+}
+
+function compute(aRaw, bRaw) {
+  var A = parseList(aRaw), B = parseList(bRaw);
+  var a = A.values, b = B.values;
+  var sa = new Set(setOp(a)), sb = new Set(setOp(b));
+  function pick(keep) {
+    return uniqSorted(a.filter(function (v) { return keep(v); }));
+  }
+  return {
+    aCount: a.length, bCount: b.length,
+    aUnique: uniqSorted(a), bUnique: uniqSorted(b),
+    union: pick(function (v) { return sa.has(key(v)) || sb.has(key(v)); }),
+    intersection: pick(function (v) { return sa.has(key(v)) && sb.has(key(v)); }),
+    aMinusB: pick(function (v) { return sa.has(key(v)) && !sb.has(key(v)); }),
+    bMinusA: pick(function (v) { return sb.has(key(v)) && !sa.has(key(v)); }),
+    symmetric: pick(function (v) { return sa.has(key(v)) !== sb.has(key(v)); }),
+    onlyA: pick(function (v) { return sa.has(key(v)) && !sb.has(key(v)); }),
+    onlyB: pick(function (v) { return sb.has(key(v)) && !sa.has(key(v)); }),
+    both: pick(function (v) { return sa.has(key(v)) && sb.has(key(v)); }),
+    neither: uniqSorted(a.concat(b).filter(function (v) {
+      return !sa.has(key(v)) && !sb.has(key(v));
+    })),
+    badA: A.bad, badB: B.bad
+  };
+}
+
+var OPS = [
+  ['union', 'A ∪ B', 'Every element in either set. Duplicates collapse.'],
+  ['intersection', 'A ∩ B', 'Only elements present in both sets.'],
+  ['aMinusB', 'A \\ B', 'In A, not in B.'],
+  ['bMinusA', 'B \\ A', 'In B, not in A.'],
+  ['symmetric', 'A Δ B', 'In exactly one of the two sets.'],
+  ['onlyA', 'A only', 'Elements unique to A.'],
+  ['onlyB', 'B only', 'Elements unique to B.'],
+  ['both', 'A ∩ B (multiset-safe)', 'Same as the intersection, from the raw list.'],
+  ['neither', 'Neither', 'Elements of neither input set.'],
+  ['aUnique', 'Unique in A', 'A with duplicates removed.'],
+  ['bUnique', 'Unique in B', 'B with duplicates removed.']
+];
+
+function render() {
+  var r = compute($('a').value, $('b').value);
+  var rows = OPS.map(function (o) {
+    var v = r[o[0]];
+    return '<tr class="border-t border-white/5"><td class="py-2 pr-3 align-top">' +
+      '<div class="font-mono text-[11px] font-bold text-accent">' + o[1] + '</div>' +
+      '<div class="mt-0.5 text-[10px] leading-snug text-white/35">' + o[2] + '</div></td>' +
+      '<td class="py-2 pr-3 align-top"><span class="ws-val">' + v.length + '</span></td>' +
+      '<td class="py-2 align-top"><span class="ws-out inline-block">' + fmt(v) + '</span></td></tr>';
+  }).join('');
+  $('res').innerHTML = rows;
+  var warn = [];
+  if (r.badA.length) warn.push('Set A: could not read "' + r.badA.join(', ') + '"');
+  if (r.badB.length) warn.push('Set B: could not read "' + r.badB.join(', ') + '"');
+  $('warn').textContent = warn.join(' · ');
+  $('meta').textContent = 'A: ' + r.aCount + ' value' + (r.aCount === 1 ? '' : 's') +
+    ' (' + r.aUnique.length + ' distinct) · B: ' + r.bCount + ' value' + (r.bCount === 1 ? '' : 's') +
+    ' (' + r.bUnique.length + ' distinct)';
+  $('plain').textContent = OPS.filter(function (o) {
+    return ['union', 'intersection', 'aMinusB', 'bMinusA', 'symmetric'].indexOf(o[0]) >= 0;
+  }).map(function (o) { return o[1] + ' = ' + fmt(r[o[0]]); }).join('\n');
+}
+
+function copy() {
+  var t = $('plain').textContent;
+  navigator.clipboard.writeText(t).then(function () {
+    $('cp').classList.add('ok');
+    setTimeout(function () { $('cp').classList.remove('ok'); }, 1200);
+  }, function () {});
+}
+
+$('a').addEventListener('input', render);
+$('b').addEventListener('input', render);
+$('cp').addEventListener('click', copy);
+$('ex').addEventListener('click', function () {
+  $('a').value = '1, 2, 2, 3, 4, 4, 5';
+  $('b').value = '2, 4, 4, 6';
+  render();
+});
+render();
+
+window.__set = {
+  compute: compute, parseList: parseList, uniqSorted: uniqSorted,
+  fmt: fmt, OPS: OPS, render: render,
+  ops: function (a, b) {
+    var r = compute(a, b), o = {};
+    OPS.forEach(function (x) { o[x[0]] = fmt(r[x[0]]); });
+    return o;
+  }
+};
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+    </a></li>
+    <li><a href="/workspace/tools/factor-calculator/">
+      <span class="ocurp-related-n">Factor Calculator</span>
+      <span class="ocurp-related-b">Prime factorisation by trial division, every division step, the full divisor list, plus GC</span>
+    </a></li>
+    <li><a href="/workspace/tools/number-base-spreadsheet/">
+      <span class="ocurp-related-n">Number Base Spreadsheet</span>
+      <span class="ocurp-related-b">A grid calculator with a real formula engine: =A1+B2*2, =SUM(A1:B3), 16 functions, and rea</span>
+    </a></li>
+    <li><a href="/workspace/tools/scientific-calculator/">
+      <span class="ocurp-related-n">Scientific Calculator</span>
+      <span class="ocurp-related-b">A real expression parser: tokenise, shunting-yard to postfix, then evaluate, with trig, lo</span>
+    </a></li>
+    <li><a href="/workspace/tools/sequence-finder/">
+      <span class="ocurp-related-n">Sequence Finder</span>
+      <span class="ocurp-related-b">Paste a list of numbers and see whether it fits an arithmetic, geometric, Fibonacci-like o</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

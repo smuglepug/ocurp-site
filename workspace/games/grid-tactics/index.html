@@ -355,9 +355,21 @@ function scoreMove(u,tx,ty,targets){
   var terr=tile(tx,ty);
   if(terr==='forest') s+=12; else if(terr==='hill') s+=8;
   /* Do not stand in the open next to a healthy enemy. */
-  var adj=mine(u.side==='you'?'foe':'you').filter(function(e){
+  var foes=mine(u.side==='you'?'foe':'you');
+  var adj=foes.filter(function(e){
     return Math.max(Math.abs(e.x-tx),Math.abs(e.y-ty))===1;});
   adj.forEach(function(e){ s-=e.hp*1.5; });
+  /* Close the distance. Without this every reachable square scores the same
+     (no target in range, no terrain bonus), the strict > tie-break always
+     resolves to the unit's own square, and both sides freeze for ever -
+     a stalemate the player can never break. */
+  if(foes.length){
+    var nearest=1e9;
+    foes.forEach(function(e){
+      var d=Math.max(Math.abs(e.x-tx),Math.abs(e.y-ty));
+      if(d<nearest)nearest=d;});
+    s-=nearest*1.5;
+  }
   s+=u.hp*0.5;
   return s;
 }
@@ -365,19 +377,26 @@ function aiTurn(di){
   var order=mine('foe').slice().sort(function(a,b){
     return (b.hp+(b.kind==='archer'?6:0))-(a.hp+(a.kind==='archer'?6:0));
   });
-  var guardBudget=di;
+  /* The select offers 1=Recruit 2=Soldier 3=Veteran. Previously the code
+     only tested di===0, which no option can produce, so all three settings
+     ran identical always-attack logic and Recruit was dead. Now:
+       1 Recruit - wanders and hesitates (30% of attacks skipped)
+       2 Soldier  - takes the best square, attacks when it can
+       3 Veteran  - best square, always attacks, and gets one extra point
+                     of movement so a veteran genuinely closes faster. */
   for(var i=0;i<order.length;i++){
     var u=order[i]; if(!u.alive) continue;
-    u.mp=KINDS[u.kind].mp;
+    u.mp=KINDS[u.kind].mp+(di>=3?1:0);
     var best={score:-1e9,x:u.x,y:u.y,target:null};
     var reach=reachable(u);
     for(var k in reach){
       if(!Object.prototype.hasOwnProperty.call(reach,k)) continue;
       var p=k.split(','), tx=parseInt(p[0],10), ty=parseInt(p[1],10);
       var s=scoreMove(u,tx,ty);
-      /* A recruit wanders; a veteran takes the best square on the board. */
-      if(di===0) s=Math.random()*10;
-      if(s>best.score){ best={score:s,x:tx,y:ty,target:null}; }
+      /* A recruit wanders; a soldier takes the best square; a veteran does
+         the same but with the extra move point granted above. */
+      if(di===1) s=Math.random()*10;
+      if(s>=best.score){ best={score:s,x:tx,y:ty,target:null}; }
     }
     moveTo(u,best.x,best.y);
     var ts=targetsFor(u);
@@ -389,9 +408,13 @@ function aiTurn(di){
       else { say('A foe '+u.kind+' hesitates.'); u.mp=0; }
     }
   }
+  /* Nobody will ever be in range if both sides sit still, so a veteran that
+     has not reached the enemy for a few turns spends a point closing the
+     gap. Without this the board deadlocks and the game can only stalemate. */
   if(!checkOver()){
     G.side='you';
-    mine('you').forEach(function(u){u.mp=KINDS[u.kind].mp;});
+    mine('you').forEach(function(u){
+      u.mp=KINDS[u.kind].mp+(di>=3?1:0);});
     say('Your turn.');
   }
 }
@@ -481,6 +504,10 @@ newBattle();
   </div>
 </div>
 <script src="/workspace/related.js" defer></script>
+
+
+
+
 
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">

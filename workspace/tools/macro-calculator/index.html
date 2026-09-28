@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Macro Calculator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Protein, fat and carb grams for a target calorie level, with real food weights. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/macro-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Macro Calculator">
+<meta property="og:description" content="Protein, fat and carb grams for a target calorie level, with real food weights. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/macro-calculator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Macro Calculator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Macro Calculator">
+<meta name="twitter:description" content="Protein, fat and carb grams for a target calorie level, with real food weights. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Macro Calculator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Macro Calculator","url":"https://ocurp.space/workspace/tools/macro-calculator/","description":"Protein, fat and carb grams for a target calorie level, with real food weights. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Macro Calculator</h1>
+      <p class="mt-1 text-xs text-white/40">Health &amp; Fitness &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Enter your weight, height, age and how active you are, and this works out how many calories and grams of protein, fat and carbs a day, showing every step of the Mifflin-St Jeor arithmetic so you can check the number yourself.</p>
+  <div class="ws-grid2">
+
+    <section class="ws-panel p-6">
+      <p class="ws-label mb-3">About you</p>
+      <div class="ws-grid2 !grid-cols-1 sm:!grid-cols-2" style="display:grid;gap:1rem">
+        <div>
+          <label class="ws-label mb-2 block" for="w">Body weight (kg)</label>
+          <input id="w" type="number" inputmode="decimal" class="ws-input" value="70" step="0.1">
+        </div>
+        <div>
+          <label class="ws-label mb-2 block" for="h">Height (cm)</label>
+          <input id="h" type="number" inputmode="numeric" class="ws-input" value="180" step="0.5">
+        </div>
+        <div>
+          <label class="ws-label mb-2 block" for="a">Age (years)</label>
+          <input id="a" type="number" inputmode="numeric" class="ws-input" value="30" step="1">
+        </div>
+        <div>
+          <label class="ws-label mb-2 block" for="sx">Sex</label>
+          <select id="sx" class="ws-input">
+            <option value="m" selected>Male</option>
+            <option value="f">Female</option>
+          </select>
+        </div>
+      </div>
+      <label class="ws-label mb-2 mt-5 block" for="act">Activity level</label>
+      <select id="act" class="ws-input">
+        <option value="1.2">Sedentary &mdash; desk job, little exercise (x1.20)</option>
+        <option value="1.375">Lightly active &mdash; 1-3 sessions a week (x1.375)</option>
+        <option value="1.55" selected>Moderately active &mdash; 3-5 sessions a week (x1.55)</option>
+        <option value="1.725">Very active &mdash; 6-7 sessions a week (x1.725)</option>
+        <option value="1.9">Extra active &mdash; physical job or twice daily (x1.90)</option>
+      </select>
+      <label class="ws-label mb-2 mt-5 block" for="goal">Goal</label>
+      <select id="goal" class="ws-input">
+        <option value="cut" selected>Cut &mdash; lose fat (x0.80 of TDEE)</option>
+        <option value="maintain">Maintain &mdash; hold weight (x1.00 of TDEE)</option>
+        <option value="bulk">Bulk &mdash; build muscle (x1.15 of TDEE)</option>
+      </select>
+      <p id="err" class="mt-4 text-[11px] font-bold text-accent"></p>
+    </section>
+    <section class="ws-panel p-6">
+      <p class="ws-label mb-3">Daily targets</p>
+      <div id="mains" class="ws-grid2" style="display:grid;gap:.75rem"></div>
+      <p class="ws-label mb-2 mt-6">Arithmetic</p>
+      <pre id="steps" class="ws-out" style="font-family:'IBM Plex Sans',monospace"></pre>
+    </section>
+
+  </div>
+  <div class="mt-8">
+
+<section class="ws-panel mt-4 p-6">
+  <p class="ws-label mb-3">Food weight reference</p>
+  <div class="grid gap-4 lg:grid-cols-2">
+    <table class="w-full border-collapse text-left text-sm">
+      <thead><tr class="ws-label"><th class="pb-2 pr-3">Food</th>
+        <th class="pb-2 pr-3 text-right">kcal / 100 g</th>
+        <th class="pb-2 text-right">100 g =</th></tr></thead>
+      <tbody><tr class="border-t border-white/5"><td class="py-2 pr-3 text-white/70">Chicken breast, cooked</td><td class="py-2 pr-3 text-right font-mono text-white">165</td><td class="py-2 text-right text-white/35">165 g</td></tr><tr class="border-t border-white/5"><td class="py-2 pr-3 text-white/70">Salmon, cooked</td><td class="py-2 pr-3 text-right font-mono text-white">206</td><td class="py-2 text-right text-white/35">206 g</td></tr><tr class="border-t border-white/5"><td class="py-2 pr-3 text-white/70">Egg, whole, large</td><td class="py-2 pr-3 text-right font-mono text-white">155</td><td class="py-2 text-right text-white/35">155 g</td></tr><tr class="border-t border-white/5"><td class="py-2 pr-3 text-white/70">Beef mince 5%</td><td class="py-2 pr-3 text-right font-mono text-white">137</td><td class="py-2 text-right text-white/35">137 g</td></tr><tr class="border-t border-white/5"><td class="py-2 pr-3 text-white/70">Brown rice, cooked</td><td class="py-2 pr-3 text-right font-mono text-white">123</td><td class="py-2 text-right text-white/35">123 g</td></tr><tr class="border-t border-white/5"><td class="py-2 pr-3 text-white/70">Rolled oats, dry</td><td class="py-2 pr-3 text-right font-mono text-white">379</td><td class="py-2 text-right text-white/35">379 g</td></tr><tr class="border-t border-white/5"><td class="py-2 pr-3 text-white/70">Whole milk</td><td class="py-2 pr-3 text-right font-mono text-white">61</td><td class="py-2 text-right text-white/35">61 g</td></tr><tr class="border-t border-white/5"><td class="py-2 pr-3 text-white/70">Avocado</td><td class="py-2 pr-3 text-right font-mono text-white">160</td><td class="py-2 text-right text-white/35">160 g</td></tr><tr class="border-t border-white/5"><td class="py-2 pr-3 text-white/70">Broccoli</td><td class="py-2 pr-3 text-right font-mono text-white">34</td><td class="py-2 text-right text-white/35">34 g</td></tr><tr class="border-t border-white/5"><td class="py-2 pr-3 text-white/70">Banana</td><td class="py-2 pr-3 text-right font-mono text-white">89</td><td class="py-2 text-right text-white/35">89 g</td></tr></tbody>
+    </table>
+    <div>
+      <label class="ws-label mb-2 block" for="foodsel">Food</label>
+      <select id="foodsel" class="ws-input"><option value="Chicken breast, cooked">Chicken breast, cooked</option><option value="Salmon, cooked">Salmon, cooked</option><option value="Egg, whole, large">Egg, whole, large</option><option value="Beef mince 5%">Beef mince 5%</option><option value="Brown rice, cooked">Brown rice, cooked</option><option value="Rolled oats, dry">Rolled oats, dry</option><option value="Whole milk">Whole milk</option><option value="Avocado">Avocado</option><option value="Broccoli">Broccoli</option><option value="Banana">Banana</option></select>
+      <label class="ws-label mb-2 mt-4 block" for="fg">Weight (g)</label>
+      <input id="fg" type="number" inputmode="decimal" class="ws-input" value="200" step="1">
+      <p id="foodout" class="ws-out mt-4"></p>
+    </div>
+  </div>
+</section>
+
+<script>
+window.__errs = window.__errs || [];
+const $ = id => document.getElementById(id);
+
+// Mifflin-St Jeor (1990) is the standard clinical estimate of resting energy
+// expenditure; the activity multiplier is the Harris-Benedict revision.
+const GOALS = {
+  cut:      { key: 'x0.80', protein: 0.35, fat: 0.25, carb: 0.40 },
+  maintain: { key: 'x1.00', protein: 0.30, fat: 0.25, carb: 0.45 },
+  bulk:     { key: 'x1.15', protein: 0.25, fat: 0.20, carb: 0.55 }
+};
+const FOODS = [
+  ['Chicken breast, cooked', 165], ['Salmon, cooked', 206], ['Egg, whole, large', 155],
+  ['Beef mince 5%', 137], ['Brown rice, cooked', 123], ['Rolled oats, dry', 379],
+  ['Whole milk', 61], ['Avocado', 160], ['Broccoli', 34], ['Banana', 89]
+];
+
+function n1(x) { return Math.round(x * 10) / 10; }
+
+function calc() {
+  const w = parseFloat($('w').value);
+  const h = parseFloat($('h').value);
+  const a = parseFloat($('a').value);
+  const male = $('sx').value === 'm';
+  const act = parseFloat($('act').value);
+  const g = GOALS[$('goal').value];
+  const err = $('err'), steps = $('steps'), mains = $('mains');
+
+  const bad = [];
+  if (!isFinite(w) || w <= 0) bad.push('body weight must be greater than 0 kg');
+  else if (w > 400) bad.push('body weight over 400 kg is not plausible');
+  if (!isFinite(h) || h < 50 || h > 260) bad.push('height must be between 50 and 260 cm');
+  if (!isFinite(a) || a < 1 || a > 120) bad.push('age must be between 1 and 120 years');
+  if (bad.length) {
+    err.textContent = 'Check the inputs: ' + bad.join('; ') + '.';
+    mains.innerHTML = '';
+    steps.textContent = 'No targets until the numbers are valid.';
+    return;
+  }
+  err.textContent = '';
+
+  const sexTerm = male ? 5 : -161;
+  const bmr = 10 * w + 6.25 * h - 5 * a + sexTerm;
+  const tdee = bmr * act;
+  const kcal = tdee * parseFloat(g.key.slice(1));
+  const protein = kcal * g.protein / 4;
+  const fat = kcal * g.fat / 9;
+  const carb = kcal * g.carb / 4;
+  window.__lastBmr = Math.round(bmr);
+  window.__lastTdee = Math.round(tdee);
+  window.__lastKcal = Math.round(kcal);
+  window.__lastProtein = Math.round(protein);
+  window.__lastFat = Math.round(fat);
+  window.__lastCarb = Math.round(carb);
+
+  const cards = [
+    ['Calories', Math.round(kcal) + ' kcal', 'text-white'],
+    ['Protein', Math.round(protein) + ' g', 'text-accent'],
+    ['Fat', Math.round(fat) + ' g', 'text-white'],
+    ['Carbs', Math.round(carb) + ' g', 'text-white']
+  ];
+  mains.innerHTML = cards.map(function (c) {
+    return '<div class="rounded-xl border border-white/10 bg-white/[0.03] p-3">' +
+           '<p class="ws-label">' + c[0] + '</p>' +
+           '<p class="mt-1 text-lg font-extrabold ' + c[2] + '" style="font-family:\'IBM Plex Sans\',monospace">' + c[1] + '</p></div>';
+  }).join('');
+
+  const lines = [
+    'BMR (Mifflin-St Jeor 1990):',
+    '  10 x ' + w + ' + 6.25 x ' + h + ' - 5 x ' + a + (male ? ' + 5' : ' - 161'),
+    '  = ' + n1(10 * w) + ' + ' + n1(6.25 * h) + ' - ' + n1(5 * a) + (male ? ' + 5' : ' - 161'),
+    '  = ' + n1(bmr) + ' kcal at rest',
+    '',
+    'TDEE (Harris-Benedict activity multiplier x' + act + '):',
+    '  ' + n1(bmr) + ' x ' + act + ' = ' + n1(tdee) + ' kcal',
+    '',
+    'Goal ' + $('goal').value + ' (' + g.key + '):',
+    '  ' + n1(tdee) + ' x ' + g.key.slice(1) + ' = ' + n1(kcal) + ' kcal',
+    '',
+    'Split, grams from energy:',
+    '  protein  ' + Math.round(g.protein * 100) + '% x ' + n1(kcal) + ' kcal / 4 = ' + Math.round(protein) + ' g',
+    '  fat      ' + Math.round(g.fat * 100) + '% x ' + n1(kcal) + ' kcal / 9 = ' + Math.round(fat) + ' g',
+    '  carbs    ' + Math.round(g.carb * 100) + '% x ' + n1(kcal) + ' kcal / 4 = ' + Math.round(carb) + ' g',
+    '',
+    '  4 kcal per g protein, 9 per g fat, 4 per g carbohydrate'
+  ];
+  steps.textContent = lines.join('\n');
+}
+
+// Food reference: type a food and a weight, get the calories back.
+const foodOut = $('foodout');
+function kcalFor() {
+  const name = $('foodsel').value;
+  const grams = parseFloat($('fg').value);
+  const f = FOODS.filter(function (x) { return x[0] === name; })[0];
+  if (!f) { foodOut.textContent = 'Pick a food.'; return; }
+  if (!isFinite(grams) || grams < 0 || grams > 5000) {
+    foodOut.textContent = 'Enter a weight between 0 and 5000 g.';
+    return;
+  }
+  foodOut.textContent = n1(grams) + ' g of ' + f[0].toLowerCase() +
+    ' = ' + n1(grams * f[1] / 100) + ' kcal';
+  window.__lastFood = { food: f[0], per100: f[1], grams: n1(grams), kcal: n1(grams * f[1] / 100) };
+}
+
+['w','h','a','sx','act','goal'].forEach(function (id) {
+  $(id).addEventListener('input', calc);
+  $(id).addEventListener('change', calc);
+});
+$('fg').addEventListener('input', kcalFor);
+$('foodsel').addEventListener('change', kcalFor);
+calc(); kcalFor();
+window.__calc = function () {
+  return { bmr: window.__lastBmr, tdee: window.__lastTdee, kcal: window.__lastKcal,
+           protein: window.__lastProtein, fat: window.__lastFat, carb: window.__lastCarb,
+           err: $('err').textContent };
+};
+</script>
+<div id="ws-more" class="mt-12"></div>
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi/">
+      <span class="ocurp-related-n">BMI Calculator</span>
+      <span class="ocurp-related-b">Body mass index with healthy-range context.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calculator/">
+      <span class="ocurp-related-n">Scientific Calculator</span>
+      <span class="ocurp-related-b">Full expression evaluation in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calorie-calculator/">
+      <span class="ocurp-related-n">Calorie Calculator</span>
+      <span class="ocurp-related-b">Daily calories from age, weight, activity and goal, using the Mifflin-St Jeor equation.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

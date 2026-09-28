@@ -110,6 +110,21 @@ tailwind.config = { theme: { extend: {
 
   <section class="ws-panel mt-4 p-6">
     <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+      <span class="ws-label">Row reduction &mdash; every step</span>
+      <span class="ws-chip">PARTIAL PIVOTING</span>
+    </div>
+    <p class="mb-3 text-[11px] leading-relaxed text-white/35">
+      Gaussian elimination with partial pivoting: at each column the largest absolute value in
+      that column is swapped into the pivot row, then the entries below the pivot are zeroed.
+      The determinant is the sign of the swaps times the product of the diagonal of the final
+      upper-triangular form; the rank is the number of pivots found. A zero pivot means the
+      matrix is singular, so the determinant is 0 and no inverse exists.
+    </p>
+    <div id="steps" class="ws-out max-h-[40rem] overflow-y-auto"></div>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
       <span class="ws-label">Eigenvalues &amp; eigenvectors</span>
       <span id="eiginfo" class="ws-chip"></span>
     </div>
@@ -168,13 +183,24 @@ function mscale(A,s){ return A.map(function(r){return r.map(function(v){return v
 function transpose(A){ return A[0].map(function(_,j){return A.map(function(r){return r[j]})}); }
 function trace(A){ return A.reduce(function(s,r,i){return s+r[i]},0); }
 
+/* Pivot tolerance scaled to the magnitude of the entries actually present,
+   so an exactly-singular integer matrix reports 0 rather than 1e-16. */
+function epsFor(A){
+  var m=0;
+  A.forEach(function(r){ r.forEach(function(v){ var a=Math.abs(v); if(a>m) m=a; }); });
+  return m*1e-12;
+}
+
 /* determinant via LU with partial pivoting */
 function det(A){
   var n=A.length, M=clone(A), d=1;
   for(var c=0;c<n;c++){
     var piv=c, best=Math.abs(M[c][c]);
     for(var r=c+1;r<n;r++){ if(Math.abs(M[r][c])>best){ best=Math.abs(M[r][c]); piv=r; } }
-    if(best<1e-300) return 0;
+    /* The pivot threshold has to scale with the matrix. A fixed 1e-300 let a
+       singular integer matrix return 6.66e-16 instead of 0, because the
+       surviving pivot was floating-point noise rather than a real value. */
+    if(best<epsFor(A)) return 0;
     if(piv!==c){ var t=M[piv]; M[piv]=M[c]; M[c]=t; d=-d; }
     d*=M[c][c];
     for(var r2=c+1;r2<n;r2++){
@@ -183,6 +209,9 @@ function det(A){
       for(var k=c;k<n;k++) M[r2][k]-=f*M[c][k];
     }
   }
+  /* The product of the pivots accumulates rounding error; snap it to a clean
+     0 when it is within tolerance of one. */
+  if(Math.abs(d)<epsFor(A)) return 0;
   return d;
 }
 
@@ -478,7 +507,59 @@ function run(){
   });
 
   window.__mx = {A:A, det:d, inv:I, rank:rk, trace:tr, eig:e, res:res,
-                 eigr:eigr, T:T, pow2:pow2, chol:chol, n:n};
+                 eigr:eigr, T:T, pow2:pow2, chol:chol, n:n,
+                 steps:rowSteps, luSteps:luTrace};
+
+  /* ---- row-reduction trace -------------------------------------------
+     Determinant via LU with partial pivoting, recording every swap and
+     elimination so the arithmetic is auditable. Returns the step log plus
+     the product of the diagonal and the pivot count (the rank). */
+  function luTrace(A){
+    var n=A.length, M=clone(A), log=[], sign=1, singular=false, diag=[];
+    for(var c=0;c<n;c++){
+      var p=c, best=Math.abs(M[c][c]);
+      for(var r=c+1;r<n;r++) if(Math.abs(M[r][c])>best){ best=Math.abs(M[r][c]); p=r; }
+      if(best<1e-10){ singular=true; log.push({kind:'zero',col:c,rows:clone(M)}); break; }
+      if(p!==c){ var t=M[c]; M[c]=M[p]; M[p]=t; sign=-sign;
+                 log.push({kind:'swap',col:c,from:p,to:c,rows:clone(M)}); }
+      for(var r2=c+1;r2<n;r2++){
+        var f=M[r2][c]/M[c][c];
+        if(Math.abs(f)<1e-14) continue;
+        for(var k=c;k<n;k++) M[r2][k]-=f*M[c][k];
+        M[r2][c]=0;
+        log.push({kind:'elim',col:c,row:r2,factor:f,pivot:M[c][c],rows:clone(M)});
+      }
+    }
+    diag=M.map(function(r,i){return r[i]});
+    return {log:log, singular:singular, sign:sign, diag:diag,
+            det: singular?0:sign*diag.reduce(function(a,b){return a*b},1)};
+  }
+  function rowSteps(A){
+    var t=luTrace(A), out=[];
+    out.push('Start:');
+    out.push(fmtM(A));
+    if(t.log.length===0) out.push('\n(1x1: the determinant is the single entry.)');
+    t.log.forEach(function(s,i){
+      if(s.kind==='swap') out.push('\nStep '+(i+1)+': swap R'+(s.from+1)+' <-> R'+(s.to+1)+
+        '  (largest |value| in column '+(s.col+1)+')');
+      else if(s.kind==='elim') out.push('\nStep '+(i+1)+': R'+(s.row+1)+' -= '+s.factor.toFixed(6)+
+        ' * R'+(s.col+1)+'  (pivot '+s.pivot.toFixed(6)+')');
+      else out.push('\nStep '+(i+1)+': column '+(s.col+1)+
+        ' has no non-zero pivot -> matrix is singular');
+      out.push(fmtM(s.rows));
+    });
+    if(!t.singular){
+      out.push('\nUpper-triangular diagonal: ['+t.diag.map(function(v){return v.toFixed(6)}).join(', ')+']');
+      out.push('Swap parity: '+(t.sign===-1?'odd (det negated)':'even (det unchanged)'));
+      out.push('det(A) = '+t.sign+' x ('+t.diag.map(function(v){return v.toFixed(6)}).join(' x ')+
+        ') = '+t.det.toExponential(10));
+    } else {
+      out.push('\nA row of zeros remains: det(A) = 0, so A is singular and has no inverse.');
+    }
+    out.push('Pivots found: '+rank(A)+' of '+n+'  ->  rank(A) = '+rank(A));
+    return out.join('\n');
+  }
+  $('steps').textContent = rowSteps(A);
 
   $('eiginfo').textContent = n+'×'+n+' · Faddeev–LeVerrier + Durand–Kerner';
   var lines=[];
@@ -599,9 +680,14 @@ $('rand').onclick=function(){ setMatrix(randMatrix(read().length)); };
 $('size').onchange=function(){ build(parseInt($('size').value,10)); run(); };
 $('reset').onclick=function(){ $('size').value='3'; build(3); run(); };
 $('b').addEventListener('input',run);
-window.__mxc = { det:det, inv:inv, eig:eig, rank:rank, mmul:mmul, charPoly:charPolyRef, run:run, setMatrix:setMatrix };
+window.__mxc = { det:det, inv:inv, eig:eig, rank:rank, mmul:mmul, charPoly:charPolyRef, run:run, setMatrix:setMatrix,
+                 transpose:transpose, trace:trace, eye:eye, zeros:zeros, msub:msub };
 build(3); run();
 </script>
+
+
+
+
 
 
 

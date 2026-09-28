@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVG Path Builder — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-copy.ok { animation: none }
+</style>
+<meta name="description" content="Build an SVG path from move, line, curve and arc commands and preview it live. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/svg-path-builder/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="SVG Path Builder">
+<meta property="og:description" content="Build an SVG path from move, line, curve and arc commands and preview it live. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/svg-path-builder/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SVG Path Builder on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SVG Path Builder">
+<meta name="twitter:description" content="Build an SVG path from move, line, curve and arc commands and preview it live. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="SVG Path Builder on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SVG Path Builder","url":"https://ocurp.space/workspace/tools/svg-path-builder/","description":"Build an SVG path from move, line, curve and arc commands and preview it live. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">SVG Path Builder</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Vector Graphics &mdash; Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">M L H V C Q A Z</span><span class="ws-chip">5 PRESETS</span><span class="ws-chip">LIVE PREVIEW</span></div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Build an SVG path one command at a time. Add move, line, curve and arc commands, watch the shape draw itself on a 100 by 100 grid, and copy the finished d attribute straight into your markup.</p>
+
+  <div class="grid gap-4 lg:grid-cols-2">
+
+    <section class="ws-panel p-6">
+      <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <p class="ws-label">Stage</p>
+        <div class="flex items-center gap-2">
+          <span id="gridLbl" class="ws-chip">Grid 10</span>
+          <span id="errCount" class="ws-chip">0 errors</span>
+        </div>
+      </div>
+      <div class="overflow-hidden rounded-xl border border-white/10 bg-[#0a0a0a] p-3">
+        <svg id="stage" viewBox="0 0 100 100" width="100%" style="max-height:420px;display:block"
+             role="img" aria-label="Path preview">
+          <defs>
+            <pattern id="pMinor" width="10" height="10" patternUnits="userSpaceOnUse">
+              <path d="M10 0 L0 0 0 10" fill="none" stroke="rgba(255,255,255,.07)" stroke-width=".25"/>
+            </pattern>
+            <pattern id="pMajor" width="50" height="50" patternUnits="userSpaceOnUse">
+              <rect width="50" height="50" fill="url(#pMinor)"/>
+              <path d="M50 0 L0 0 0 50" fill="none" stroke="rgba(255,255,255,.16)" stroke-width=".4"/>
+            </pattern>
+          </defs>
+          <rect id="gridRect" x="0" y="0" width="100" height="100" fill="url(#pMajor)"/>
+          <g id="nodes"></g>
+          <path id="shape" d="" fill="rgba(255,95,31,.14)" stroke="#FF5F1F" stroke-width="1.1"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <label class="ws-label" for="gridStep">Grid</label>
+        <select id="gridStep" class="ws-input" style="width:auto;padding:.5rem .75rem">
+          <option value="5">5 units</option>
+          <option value="10" selected>10 units</option>
+          <option value="20">20 units</option>
+        </select>
+        <label class="ml-2 ws-label" for="strokeW">Stroke</label>
+        <input id="strokeW" class="ws-input" style="width:5rem;padding:.5rem .75rem" type="number" min="0.1" max="8" step="0.1" value="1.1">
+        <button id="copySvg" type="button" class="ws-btn ws-copy ml-auto">Copy d attribute</button>
+      </div>
+      <p class="mt-3 text-[11px] leading-relaxed text-white/35">
+        The stage is a 100 &times; 100 user-space box. Orange dots mark the point each
+        command lands on; a hollow dot marks the start of the path. A grey dash means that
+        one command was rejected and is excluded from the output.
+      </p>
+    </section>
+
+    <section class="ws-panel p-6">
+      <p class="ws-label mb-3">Output</p>
+      <pre id="d" class="ws-out min-h-[92px] whitespace-pre-wrap break-words"></pre>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button id="copyD" type="button" class="ws-btn ws-copy">Copy d</button>
+        <button id="copyTag" type="button" class="ws-btn-ghost">Copy &lt;path&gt; tag</button>
+        <button id="dl" type="button" class="ws-btn-ghost">Download .svg</button>
+      </div>
+      <div class="mt-5 border-t border-white/5 pt-4">
+        <div class="ws-kv"><span>Commands</span><span id="mCount">0</span></div>
+        <div class="ws-kv"><span>Valid</span><span id="mValid">0</span></div>
+        <div class="ws-kv"><span>Rejected</span><span id="mBad">0</span></div>
+        <div class="ws-kv"><span>Path length</span><span id="mLen">0.00</span></div>
+        <div class="ws-kv"><span>Bounding box</span><span id="mBox">—</span></div>
+      </div>
+      <p id="tip" class="mt-4 text-[11px] leading-relaxed text-white/35"></p>
+    </section>
+  </div>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <p class="ws-label">Preset shape</p>
+      <button class="ws-btn-ghost preset" data-preset="triangle" type="button">Triangle</button>
+      <button class="ws-btn-ghost preset" data-preset="star" type="button">Star</button>
+      <button class="ws-btn-ghost preset" data-preset="arrow" type="button">Arrow</button>
+      <button class="ws-btn-ghost preset" data-preset="wave" type="button">Wave</button>
+      <button class="ws-btn-ghost preset" data-preset="spiral" type="button">Spiral</button>
+    </div>
+
+    <div class="mt-5 mb-2 flex flex-wrap items-center justify-between gap-2">
+      <p class="ws-label">Command list</p>
+      <div class="flex flex-wrap gap-2">
+        <select id="addKind" class="ws-input" style="width:auto;padding:.5rem .75rem">
+          <option value="M">M &mdash; move to</option>
+          <option value="L">L &mdash; line to</option>
+          <option value="H">H &mdash; horizontal</option>
+          <option value="V">V &mdash; vertical</option>
+          <option value="C">C &mdash; cubic curve</option>
+          <option value="Q">Q &mdash; quadratic curve</option>
+          <option value="A">A &mdash; arc</option>
+          <option value="Z">Z &mdash; close</option>
+        </select>
+        <input id="addArgs" class="ws-input" style="width:13rem;padding:.5rem .75rem"
+               placeholder="args, e.g. 50 90" spellcheck="false">
+        <button id="addBtn" type="button" class="ws-btn">Add command</button>
+        <button id="clearBtn" type="button" class="ws-btn-ghost">Clear all</button>
+      </div>
+    </div>
+    <div id="rows" class="flex flex-col gap-2"></div>
+    <p class="mt-3 text-[11px] leading-relaxed text-white/35">
+      Argument counts are fixed: M/L take 2, H/V take 1, C takes 6, Q takes 4,
+      A takes 7 (rx ry rotation large-arc sweep x y), Z takes none. Arcs also reject
+      negative radii and flags other than 0 or 1. A path must open with M.
+    </p>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+window.__errs = window.__errs || [];
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- command table -----------------------------------------------------
+  // ARGS is the exact arity of each command; FLAGS marks arguments that must
+  // be 0 or 1 (the arc flags).
+  var ARGS = { M: 2, L: 2, H: 1, V: 1, C: 6, Q: 4, A: 7, Z: 0 };
+  var ORDER = ['M', 'L', 'H', 'V', 'C', 'Q', 'A', 'Z'];
+  var HINT = {
+    M: 'x y &mdash; absolute start point',
+    L: 'x y',
+    H: 'x',
+    V: 'y',
+    C: 'x1 y1 x2 y2 x y &mdash; two control points',
+    Q: 'x1 y1 x y &mdash; one control point',
+    A: 'rx ry rotation large-arc sweep x y',
+    Z: 'no arguments &mdash; straight line back to the start'
+  };
+
+  // rows: [{kind:'M'|'L'|..., args:'20 80'}]
+  var rows = [];
+
+  // ---- presets -----------------------------------------------------------
+  function fmt(n) {
+    n = Math.round(n * 100) / 100;
+    return (n === 0) ? '0' : String(n);
+  }
+  function join(cmds) {
+    var out = [];
+    for (var i = 0; i < cmds.length; i++) {
+      var c = cmds[i];
+      out.push(c[0] + (c[1].length ? ' ' + c[1].map(fmt).join(' ') : ''));
+    }
+    return out.join(' ');
+  }
+  // poly walks n points around a circle, alternating outer/inner radius, so
+  // n=10 gives the ten vertices of a five-pointed star.
+  function poly(n, cx, cy, rOut, rIn, phase) {
+    var out = [];
+    for (var k = 0; k < n; k++) {
+      var a = phase - Math.PI / 2 + k * 2 * Math.PI / n;
+      var r = (k % 2 === 0) ? rOut : rIn;
+      out.push([Math.round((cx + r * Math.cos(a)) * 100) / 100,
+                Math.round((cy + r * Math.sin(a)) * 100) / 100]);
+    }
+    return out;
+  }
+  var PRESETS = {
+    triangle: function () {
+      return [['M', [20, 80]], ['L', [50, 20]], ['L', [80, 80]], ['Z', []]];
+    },
+    star: function () {
+      // ten vertices: start at the top outer point, walk the outline, then
+      // return to the start so Z closes a single continuous subpath.
+      var p = poly(10, 50, 50, 40, 17, 0);
+      var cmds = [['M', p[0]]];
+      for (var i = 1; i < p.length; i++) cmds.push(['L', p[i]]);
+      cmds.push(['L', p[0]], ['Z', []]);
+      return cmds;
+    },
+    arrow: function () {
+      return [['M', [15, 45]], ['L', [60, 45]], ['L', [60, 25]], ['L', [90, 50]],
+              ['L', [60, 75]], ['L', [60, 55]], ['L', [15, 55]], ['Z', []]];
+    },
+    wave: function () {
+      var cmds = [['M', [10, 50]]], n = 12;
+      for (var i = 1; i <= n; i++) {
+        var x = 10 + (80 * i / n);
+        var y1 = (i % 2 === 1) ? 28 : 72;
+        var y2 = (i % 2 === 1) ? 72 : 28;
+        var xm = (10 + 80 * (i - 0.5) / n);
+        cmds.push(['C', [xm, y1, xm, y2, x, y2]]);
+      }
+      return cmds;
+    },
+    spiral: function () {
+      var cmds = [['M', [50, 50]]];
+      var steps = 40, r = 0.6, a = 0;
+      for (var i = 0; i < steps; i++) {
+        r += 0.95;
+        a += 0.62;
+        var nx = 50 + r * Math.cos(a), ny = 50 + r * Math.sin(a);
+        // quadratic control pushed along the tangent keeps the coil smooth
+        var mx = 50 + (r - 0.5) * Math.cos(a - 0.3), my = 50 + (r - 0.5) * Math.sin(a - 0.3);
+        cmds.push(['Q', [Math.round(mx * 100) / 100, Math.round(my * 100) / 100,
+                          Math.round(nx * 100) / 100, Math.round(ny * 100) / 100]]);
+        cx = nx; cy = ny;
+      }
+      return cmds;
+    }
+  };
+
+  // ---- validation --------------------------------------------------------
+  // Returns {ok:true, nums:[...]} or {ok:false, msg:'...'}. Never throws.
+  function validate(kind, raw) {
+    if (Object.prototype.hasOwnProperty.call(ARGS, kind) === false) {
+      return { ok: false, msg: 'unknown command "' + kind + '" (use M L H V C Q A Z)' };
+    }
+    var parts = String(raw === undefined || raw === null ? '' : raw)
+      .trim().split(/[\s,]+/).filter(function (t) { return t.length; });
+    var need = ARGS[kind];
+    if (parts.length !== need) {
+      return { ok: false, msg: kind + ' needs ' + need + ' value' + (need === 1 ? '' : 's') +
+              ', got ' + parts.length };
+    }
+    var nums = [];
+    for (var i = 0; i < parts.length; i++) {
+      if (!/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(parts[i])) {
+        return { ok: false, msg: 'argument ' + (i + 1) + ' "' + parts[i] + '" is not a number' };
+      }
+      var v = Number(parts[i]);
+      if (!isFinite(v)) return { ok: false, msg: 'argument ' + (i + 1) + ' is out of range' };
+      nums.push(v);
+    }
+    if (kind === 'A') {
+      if (nums[0] < 0 || nums[1] < 0) return { ok: false, msg: 'arc radii must be zero or positive' };
+      if (nums[3] !== 0 && nums[3] !== 1) return { ok: false, msg: 'large-arc flag must be 0 or 1' };
+      if (nums[4] !== 0 && nums[4] !== 1) return { ok: false, msg: 'sweep flag must be 0 or 1' };
+    }
+    return { ok: true, nums: nums };
+  }
+
+  // ---- path state --------------------------------------------------------
+  // Walks every row, tracking the pen so endpoint dots can be drawn, and
+  // collects the valid segments that make up the d attribute.
+  function compile() {
+    var out = [], nodes = [], errs = [], pen = null, start = null, started = false;
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i], v = validate(r.kind, r.args);
+      if (!v.ok) { errs.push({ i: i, msg: v.msg }); continue; }
+      var cmd = r.kind;
+      // An L/C/Q/A/V/H that is not preceded by M is treated as a M so the
+      // output is always a legal path, and the user is told about it.
+      if (!started && cmd !== 'M' && cmd !== 'Z') {
+        errs.push({ i: i, msg: 'path must open with M' });
+        continue;
+      }
+      out.push({ i: i, text: cmd + (v.nums.length ? ' ' + v.nums.map(fmt).join(' ') : '') });
+      if (cmd === 'M') { started = true; pen = [v.nums[0], v.nums[1]]; start = pen; }
+      else if (cmd === 'L') pen = [v.nums[0], v.nums[1]];
+      else if (cmd === 'H') pen = [v.nums[0], pen ? pen[1] : 0];
+      else if (cmd === 'V') pen = [pen ? pen[0] : 0, v.nums[0]];
+      else if (cmd === 'C') pen = [v.nums[4], v.nums[5]];
+      else if (cmd === 'Q') pen = [v.nums[2], v.nums[3]];
+      else if (cmd === 'A') pen = [v.nums[5], v.nums[6]];
+      else if (cmd === 'Z') { pen = start ? [start[0], start[1]] : pen; }
+      if (pen) nodes.push({ x: pen[0], y: pen[1], close: cmd === 'Z' });
+    }
+    if (!started) errs.push({ i: -1, msg: 'add an M command to start the path' });
+    return {
+      d: out.map(function (o) { return o.text; }).join(' '),
+      nodes: nodes, errs: errs,
+      valid: out.length,
+      segments: out
+    };
+  }
+
+  // ---- rendering ---------------------------------------------------------
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function render() {
+    var r = compile();
+    $('d').textContent = r.d || '(no valid commands yet)';
+    $('shape').setAttribute('d', r.d);
+
+    var n = '', i;
+    if (r.nodes.length) {
+      var p0 = r.nodes[0];
+      n += '<circle cx="' + fmt(p0.x) + '" cy="' + fmt(p0.y) + '" r="1.6" fill="none" stroke="#e0f2fe" stroke-width=".6"/>';
+    }
+    for (i = 1; i < r.nodes.length; i++) {
+      n += '<circle cx="' + fmt(r.nodes[i].x) + '" cy="' + fmt(r.nodes[i].y) +
+           '" r="1.1" fill="#FF5F1F"' +
+           (r.nodes[i].close ? ' fill-opacity=".45"' : '') + '/>';
+    }
+    $('nodes').innerHTML = n;
+
+    $('mCount').textContent = rows.length;
+    $('mValid').textContent = r.valid;
+    $('mBad').textContent = r.errs.length;
+    $('errCount').textContent = r.errs.length + (r.errs.length === 1 ? ' error' : ' errors');
+
+    var len = 0, box = null;
+    try {
+      var el = $('shape');
+      var L = el.getTotalLength ? el.getTotalLength() : 0;
+      if (isFinite(L) && L > 0) {
+        len = L;
+        var bb = el.getBBox();
+        if (bb && isFinite(bb.width)) {
+          box = fmt(bb.x) + ' ' + fmt(bb.y) + ' ' + fmt(bb.width) + ' ' + fmt(bb.height);
+        }
+      }
+    } catch (e) { len = 0; box = null; }
+    $('mLen').textContent = len ? len.toFixed(2) : '—';
+    $('mBox').textContent = box || '—';
+
+    $('tip').textContent = r.errs.length
+      ? 'Rejected: ' + r.errs.map(function (e) {
+          return 'row ' + (e.i + 1) + ' — ' + e.msg;
+        }).join(' · ')
+      : 'Every command parsed. The d attribute above is ready to paste into a <path> element.';
+
+    // per-row error text
+    var el2 = $('rows').children;
+    for (i = 0; i < el2.length; i++) {
+      var e = null;
+      for (var j = 0; j < r.errs.length; j++) if (r.errs[j].i === i) e = r.errs[j];
+      var slot = el2[i].querySelector('.row-err');
+      if (slot) {
+        slot.textContent = e ? e.msg : '';
+        slot.style.color = e ? '#FF5F1F' : 'transparent';
+      }
+      var sel = el2[i].querySelector('select');
+      if (sel) sel.style.borderColor = e ? 'rgba(255,95,31,.6)' : '';
+    }
+    return r;
+  }
+
+  // ---- rows UI -----------------------------------------------------------
+  function drawRows() {
+    var host = $('rows');
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < rows.length; i++) {
+      var wrap = document.createElement('div');
+      wrap.className = 'rounded-xl border border-white/10 bg-white/[0.02] p-3';
+      var sel = '<select class="ws-input kind" style="width:5.5rem;padding:.5rem .6rem">';
+      for (var k = 0; k < ORDER.length; k++) {
+        sel += '<option value="' + ORDER[k] + '"' + (rows[i].kind === ORDER[k] ? ' selected' : '') +
+               '>' + ORDER[k] + '</option>';
+      }
+      sel += '</select>';
+      wrap.innerHTML =
+        '<div class="flex flex-wrap items-center gap-2">' +
+        '<span class="ws-label" style="min-width:1.5rem">#' + (i + 1) + '</span>' + sel +
+        '<input class="ws-input args flex-1" style="min-width:9rem;padding:.5rem .7rem" spellcheck="false"' +
+        ' value="' + esc(rows[i].args) + '" placeholder="' + esc(HINT[rows[i].kind] || '') + '">' +
+        '<button type="button" class="ws-btn-ghost del" style="width:auto;padding:.5rem .8rem">Delete</button>' +
+        '</div>' +
+        '<p class="row-err mt-2 text-[11px]" style="color:transparent"></p>';
+      frag.appendChild(wrap);
+    }
+    host.innerHTML = '';
+    host.appendChild(frag);
+    render();
+  }
+
+  function setRows(cmds) {
+    rows = cmds.map(function (c) {
+      return { kind: c[0], args: c[1].map(fmt).join(' ') };
+    });
+    drawRows();
+  }
+
+  // ---- events ------------------------------------------------------------
+  $('rows').addEventListener('input', function (ev) {
+    var t = ev.target;
+    if (!t.classList) return;
+    var wrap = t.closest('.rounded-xl');
+    if (!wrap) return;
+    var idx = Array.prototype.indexOf.call($('rows').children, wrap);
+    if (idx < 0) return;
+    if (t.classList.contains('args')) rows[idx].args = t.value;
+    if (t.classList.contains('kind')) {
+      rows[idx].kind = t.value;
+      var ph = t.parentNode.querySelector('input.args');
+      if (ph) ph.placeholder = HINT[t.value] || '';
+    }
+    render();
+  });
+
+  $('rows').addEventListener('click', function (ev) {
+    var b = ev.target;
+    if (!b.classList || !b.classList.contains('del')) return;
+    var wrap = b.closest('.rounded-xl');
+    var idx = Array.prototype.indexOf.call($('rows').children, wrap);
+    if (idx >= 0) { rows.splice(idx, 1); drawRows(); }
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.preset'), function (btn) {
+    btn.addEventListener('click', function () {
+      var name = btn.getAttribute('data-preset');
+      if (PRESETS[name]) setRows(PRESETS[name]());
+    });
+  });
+
+  $('addBtn').addEventListener('click', function () {
+    var k = $('addKind').value;
+    var n = ARGS[k];
+    var blank = k === 'Z' ? '' : new Array(n + 1).join('0 ').trim();
+    rows.push({ kind: k, args: blank });
+    drawRows();
+    var last = $('rows').lastChild;
+    if (last) { var inp = last.querySelector('input.args'); if (inp) inp.focus(); }
+  });
+
+  $('clearBtn').addEventListener('click', function () { rows = []; drawRows(); });
+
+  $('gridStep').addEventListener('change', function () {
+    var s = Number(this.value) || 10;
+    $('pMinor').setAttribute('width', String(s));
+    $('pMinor').setAttribute('height', String(s));
+    $('pMajor').setAttribute('width', String(s * 5));
+    $('pMajor').setAttribute('height', String(s * 5));
+    $('gridLbl').textContent = 'Grid ' + s;
+  });
+
+  $('strokeW').addEventListener('input', function () {
+    var w = Number(this.value);
+    if (!isFinite(w) || w <= 0) return;
+    $('shape').setAttribute('stroke-width', String(w));
+  });
+
+  function copy(text, btn) {
+    try {
+      navigator.clipboard.writeText(text).then(function () {
+        btn.classList.add('ok');
+        setTimeout(function () { btn.classList.remove('ok'); }, 1200);
+      }, function () {});
+    } catch (e) { /* clipboard unavailable: never fatal */ }
+  }
+  $('copyD').addEventListener('click', function () { copy($('d').textContent, this); });
+  $('copySvg').addEventListener('click', function () { copy($('d').textContent, this); });
+  $('copyTag').addEventListener('click', function () {
+    copy('<path d="' + $('d').textContent + '" />', this);
+  });
+  $('dl').addEventListener('click', function () {
+    try {
+      var d = $('d').textContent;
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">' +
+        '<path d="' + d + '" fill="none" stroke="#FF5F1F" stroke-width="1.1"/></svg>';
+      var url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+      var a = document.createElement('a');
+      a.href = url; a.download = 'path.svg';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    } catch (e) { /* download unsupported */ }
+  });
+
+  // ---- boot --------------------------------------------------------------
+  setRows(PRESETS.triangle());
+
+  // Test surface: everything the harness needs, nothing it can crash on.
+  window.__pb = {
+    validate: validate,
+    compile: compile,
+    render: render,
+    setRows: setRows,
+    presets: PRESETS,
+    ARGS: ARGS,
+    d: function () { return compile().d; },
+    load: function (name) { if (PRESETS[name]) { setRows(PRESETS[name]()); return true; } return false; },
+    set: function (list) {
+      rows = (list || []).map(function (c) {
+        return { kind: String(c[0]), args: Array.isArray(c[1]) ? c[1].join(' ') : String(c[1]) };
+      });
+      drawRows();
+      return compile();
+    },
+    rows: function () { return rows.map(function (r) { return [r.kind, r.args]; }); }
+  };
+})();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/image-to-favicon/">
+      <span class="ocurp-related-n">SVG to Favicon</span>
+      <span class="ocurp-related-b">Rasterise an SVG at every favicon size and generate the link tags.</span>
+    </a></li>
+    <li><a href="/workspace/tools/qr-code-generator/">
+      <span class="ocurp-related-n">QR Code Generator</span>
+      <span class="ocurp-related-b">QR codes as SVG or PNG at any size, with no watermark and no upload.</span>
+    </a></li>
+    <li><a href="/workspace/tools/svg-to-png/">
+      <span class="ocurp-related-n">SVG to PNG</span>
+      <span class="ocurp-related-b">Rasterise an uploaded SVG at your chosen scale.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-path-finder/">
+      <span class="ocurp-related-n">JSON Path Finder</span>
+      <span class="ocurp-related-b">Point at any node in a JSON document and get the exact path to reach it.</span>
+    </a></li>
+    <li><a href="/workspace/tools/avif-to-png/">
+      <span class="ocurp-related-n">AVIF to PNG</span>
+      <span class="ocurp-related-b">Convert an AVIF picture to PNG in your browser - the file never leaves the page.</span>
+    </a></li>
+    <li><a href="/workspace/tools/background-remover/">
+      <span class="ocurp-related-n">Background Remover</span>
+      <span class="ocurp-related-b">Cut the background off a photo in your browser — no upload, no watermark.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

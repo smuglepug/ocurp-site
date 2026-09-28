@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Number Base Spreadsheet — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-copy.ok { animation: none }
+
+  .ws-sheet { border-collapse:collapse; table-layout:fixed; width:max-content; }
+  .ws-sheet-h { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900;
+    letter-spacing:.1em; color:rgba(255,255,255,.3); border:1px solid rgba(255,255,255,.08);
+    padding:.3rem .4rem; text-align:center; background:rgba(255,255,255,.04); }
+  .ws-sheet-td { border:1px solid rgba(255,255,255,.08); position:relative; width:6.5rem; height:2rem; }
+  .ws-sheet-v { font-family:'IBM Plex Sans',monospace; font-size:12px; padding:.35rem .45rem;
+    text-align:right; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ws-sheet-i { position:absolute; inset:0; width:100%; height:100%; background:#0d0d0d;
+    border:1px solid rgba(255,95,31,.6); color:#fff; font-family:'IBM Plex Sans',monospace;
+    font-size:12px; padding:.35rem .45rem; display:none; }
+  .ws-sheet-td.editing .ws-sheet-i { display:block; }
+  .ws-sheet-td.editing .ws-sheet-v { visibility:hidden; }
+  .ws-sheet-td.err .ws-sheet-v { color:#FF5F1F; }
+</style>
+<meta name="description" content="A grid calculator with a real formula engine: =A1+B2*2, =SUM(A1:B3), 16 functions, and real error cells for #DIV/0!, #CIRCULAR! and #NAME? instead of...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/number-base-spreadsheet/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Number Base Spreadsheet">
+<meta property="og:description" content="A grid calculator with a real formula engine: =A1+B2*2, =SUM(A1:B3), 16 functions, and real error cells for #DIV/0!, #CIRCULAR! and #NAME? instead of...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/number-base-spreadsheet/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Number Base Spreadsheet on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Number Base Spreadsheet">
+<meta name="twitter:description" content="A grid calculator with a real formula engine: =A1+B2*2, =SUM(A1:B3), 16 functions, and real error cells for #DIV/0!, #CIRCULAR! and #NAME? instead of...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Number Base Spreadsheet on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Number Base Spreadsheet","url":"https://ocurp.space/workspace/tools/number-base-spreadsheet/","description":"A grid calculator with a real formula engine: =A1+B2*2, =SUM(A1:B3), 16 functions, and real error cells for #DIV/0!, #CIRCULAR! and #NAME? instead of...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<pre id="cptext" class="hidden" aria-hidden="true"></pre>
+<pre id="csv" class="hidden" aria-hidden="true"></pre>
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Number Base Spreadsheet</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Spreadsheets &mdash; Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GRID FORMULAS</span><span class="ws-chip">RANGES</span><span class="ws-chip">NO EVAL()</span><span class="ws-chip">CLIENT-SIDE</span></div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">A small grid calculator: type =A1+B2*2, =SUM(A1:B3) and function calls into cells and watch the values resolve. Circular references report #CIRCULAR!, division by zero reports #DIV/0! — nothing hangs.</p>
+
+  <div class="ws-panel p-5">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <button id="demo" type="button" class="ws-btn">Load demo</button>
+      <button id="clear" type="button" class="ws-btn-ghost">Clear all</button>
+      <button id="cpts" type="button" class="ws-btn-ghost ws-copy">Copy values (TSV)</button>
+      <button id="ccsv" type="button" class="ws-btn-ghost ws-copy">Copy formulas (CSV)</button>
+      <span class="ws-chip ml-auto">CLICK A CELL TO TYPE</span>
+    </div>
+    <div class="overflow-x-auto pb-2">
+      <table id="sheet" class="ws-sheet"></table>
+    </div>
+    <p id="errs" class="mt-4 text-[11px] text-white/50"></p>
+  </div>
+  <div class="mt-4 grid gap-4 lg:grid-cols-2">
+    <section class="ws-panel p-6">
+      <div class="ws-label mb-2">How formulas work</div>
+      <ul class="list-disc space-y-1.5 pl-5 text-[12px] leading-relaxed text-white/50">
+        <li>Start a cell with <code class="text-accent">=</code> to make it a formula. A bare number is a constant.</li>
+        <li>Relative references: <code class="text-accent">=A1+B2*2</code> &mdash; <code class="text-accent">^</code> is power, <code class="text-accent">%</code> is modulo.</li>
+        <li>Ranges: <code class="text-accent">=SUM(A1:B3)</code> or <code class="text-accent">=AVERAGE(A1:D1)</code>.</li>
+        <li>Functions: <code class="text-accent">SUM AVERAGE MIN MAX COUNT ABS ROUND FLOOR CEIL SQRT POW MOD INT SIGN</code>, plus <code class="text-accent">PI</code> and <code class="text-accent">E</code>.</li>
+        <li>Comparisons work too: <code class="text-accent">=A1&gt;5</code> returns 1 (TRUE) or 0 (FALSE).</li>
+        <li>Divide by zero gives <span class="text-accent">#DIV/0!</span>, a cell that depends on itself gives <span class="text-accent">#CIRCULAR!</span>, an unknown name gives <span class="text-accent">#NAME?</span>, and anything malformed gives <span class="text-accent">#VALUE!</span>. Nothing hangs.</li>
+      </ul>
+    </section>
+    <section class="ws-panel p-6">
+      <div class="ws-label mb-2">Formula parser</div>
+      <p class="mb-3 text-[11px] leading-relaxed text-white/40">
+        Every formula goes through a hand-written tokenizer and recursive-descent parser.
+        There is no <code class="text-accent">eval()</code> anywhere, so a formula can only be
+        an expression &mdash; it cannot reach into the page.
+      </p>
+      <div class="ws-out max-h-72 overflow-y-auto">expr      grammar
+expr      := compare
+compare   := add ( ( '=' | '&lt;&gt;' | '&lt;=' | '&gt;=' | '&lt;' | '&gt;' ) add )*
+add       := mul ( ( '+' | '-' ) mul )*
+mul       := unary ( ( '*' | '/' | '%' ) unary )*
+unary     := ( '-' | '+' ) unary | power
+power     := primary ( '^' unary )?
+primary   := number | cell | range | NAME '(' args ')' | '(' expr ')'
+range     := REF ':' REF
+args      := arg ( ',' arg )*</div>
+    </section>
+  </div>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+window.__errs = window.__errs || [];
+const $ = id => document.getElementById(id);
+
+/* ===================== tokenizer ===================== */
+var FUNCS = {
+  SUM: 1, AVERAGE: 1, AVG: 1, MIN: 1, MAX: 1, COUNT: 1, ABS: 1,
+  ROUND: 1, FLOOR: 1, CEIL: 1, SQRT: 1, POW: 2, MOD: 2, INT: 1, SIGN: 1
+};
+var CONSTS = { PI: Math.PI, E: Math.E };
+
+function tokenize(src) {
+  var toks = [], i = 0, s = String(src);
+  while (i < s.length) {
+    var c = s[i];
+    if (c === ' ' || c === '\t' || c === '\n') { i++; continue; }
+    if (/[0-9.]/.test(c)) {
+      var j = i;
+      while (j < s.length && /[0-9.]/.test(s[j])) j++;
+      // scientific notation: 1e-3
+      if (j < s.length && /[eE]/.test(s[j]) && /[0-9+\-]/.test(s[j + 1] || '')) {
+        j++;
+        if (/[+\-]/.test(s[j])) j++;
+        while (j < s.length && /[0-9]/.test(s[j])) j++;
+      }
+      var lit = s.slice(i, j);
+      if ((lit.match(/\./g) || []).length > 1) throw new Error('bad number: ' + lit);
+      toks.push({ t: 'num', v: parseFloat(lit), raw: lit });
+      i = j; continue;
+    }
+    if (/[A-Za-z_]/.test(c)) {
+      var k = i;
+      while (k < s.length && /[A-Za-z0-9_]/.test(s[k])) k++;
+      var word = s.slice(i, k).toUpperCase();
+      if (FUNCS[word] || CONSTS[word] !== undefined) {
+        toks.push({ t: 'name', v: word });
+      } else if (i === 0 && /^[A-Z]+[0-9]+$/i.test(word)) {
+        // bare A1 typed without '='
+        toks.push({ t: 'ref', v: word });
+      } else {
+        toks.push({ t: 'name', v: word });   // unknown -> #NAME? at eval time
+      }
+      i = k; continue;
+    }
+    // a bare cell reference like A1
+    if (/[A-Za-z]/.test(c) && s[i + 1] && /[0-9]/.test(s[i + 1])) {
+      var m = /^[A-Za-z]+[0-9]+/.exec(s.slice(i));
+      if (m) { toks.push({ t: 'ref', v: m[0].toUpperCase() }); i += m[0].length; continue; }
+    }
+    if ('+-*/^%(),:<>='.indexOf(c) >= 0) {
+      if ((c === '<' || c === '>' || c === '=') && s[i + 1] === '=') {
+        toks.push({ t: 'op', v: c + '=' }); i += 2; continue;
+      }
+      if (c === '<' && s[i + 1] === '>') { toks.push({ t: 'op', v: '<>' }); i += 2; continue; }
+      toks.push({ t: 'op', v: c }); i++; continue;
+    }
+    throw new Error('unexpected character "' + c + '"');
+  }
+  return toks;
+}
+
+/* ===================== cell addressing ===================== */
+var COLS = 12, ROWS = 16;
+function colName(c) { var s = '', x = c; do { s = String.fromCharCode(65 + (x % 26)) + s; x = Math.floor(x / 26) - 1; } while (x >= 0); return s; }
+function colIndex(name) { var n = 0; for (var i = 0; i < name.length; i++) n = n * 26 + (name.charCodeAt(i) - 64); return n - 1; }
+function parseAddr(a) {
+  var m = /^([A-Za-z]+)([0-9]+)$/.exec(a);
+  if (!m) return null;
+  return { c: colIndex(m[1].toUpperCase()), r: parseInt(m[2], 10) - 1 };
+}
+
+/* ===================== errors ===================== */
+function CellErr(code) { this.code = code; }
+CellErr.prototype.toString = function () { return this.code; };
+function isErr(x) { return x instanceof CellErr; }
+var DIV0 = function () { return new CellErr('#DIV/0!'); };
+var CIRC = function () { return new CellErr('#CIRCULAR!'); };
+var NAME = function () { return new CellErr('#NAME?'); };
+var REF = function () { return new CellErr('#REF!'); };
+var VALUE = function () { return new CellErr('#VALUE!'); };
+
+/* ===================== parser =====================
+   Precedence, loosest to tightest:
+     comparison  =  <>  <  >  <=  >=
+     additive    +  -
+     multiplicative  *  /  %
+     power       ^   (right associative)
+     unary       - +
+     primary     number, cell, range, function call, constant, ( ... )    */
+function Parser(toks, cellRef) {
+  this.t = toks; this.p = 0; this.ref = cellRef;
+}
+Parser.prototype.peek = function () { return this.t[this.p]; };
+Parser.prototype.next = function () { return this.t[this.p++]; };
+Parser.prototype.expect = function (v) {
+  var t = this.next();
+  if (!t || t.t !== 'op' || t.v !== v) throw new Error('expected "' + v + '"');
+};
+Parser.prototype.parse = function () {
+  var v = this.compare();
+  if (this.p !== this.t.length) throw new Error('trailing input');
+  return v;
+};
+Parser.prototype.compare = function () {
+  var left = this.add();
+  var t = this.peek();
+  if (t && t.t === 'op' && ['=', '<>', '<', '>', '<=', '>='].indexOf(t.v) >= 0) {
+    this.next();
+    var right = this.add();
+    return compareVals(left, right, t.v);
+  }
+  return left;
+};
+Parser.prototype.add = function () {
+  var left = this.mul();
+  for (;;) {
+    var t = this.peek();
+    if (t && t.t === 'op' && (t.v === '+' || t.v === '-')) {
+      this.next();
+      var right = this.mul();
+      if (isErr(left)) continue;
+      if (isErr(right)) { left = right; continue; }
+      left = t.v === '+' ? left + right : left - right;
+    } else return left;
+  }
+};
+Parser.prototype.mul = function () {
+  var left = this.unary();
+  for (;;) {
+    var t = this.peek();
+    if (t && t.t === 'op' && (t.v === '*' || t.v === '/' || t.v === '%')) {
+      this.next();
+      var right = this.unary();
+      if (isErr(left)) continue;
+      if (isErr(right)) { left = right; continue; }
+      if ((t.v === '/' || t.v === '%') && right === 0) { left = DIV0(); continue; }
+      left = t.v === '*' ? left * right : (t.v === '/' ? left / right : left % right);
+    } else return left;
+  }
+};
+Parser.prototype.unary = function () {
+  var t = this.peek();
+  if (t && t.t === 'op' && (t.v === '-' || t.v === '+')) {
+    this.next();
+    var v = this.unary();
+    if (isErr(v)) return v;
+    return t.v === '-' ? -v : v;
+  }
+  return this.power();
+};
+Parser.prototype.power = function () {
+  var base = this.primary();
+  var t = this.peek();
+  if (t && t.t === 'op' && t.v === '^') {
+    this.next();
+    var ex = this.unary();   // right associative, allows 2^-1
+    if (isErr(base)) return base;
+    if (isErr(ex)) return ex;
+    var r = Math.pow(base, ex);
+    return isFinite(r) ? r : DIV0();
+  }
+  return base;
+};
+Parser.prototype.primary = function () {
+  var t = this.next();
+  if (!t) throw new Error('unexpected end of formula');
+  if (t.t === 'num') return t.v;
+  if (t.t === 'op' && t.v === '(') {
+    var v = this.compare();
+    this.expect(')');
+    return v;
+  }
+  if (t.t === 'ref') {
+    // could be a range: REF ':' REF
+    var nxt = this.peek();
+    if (nxt && nxt.t === 'op' && nxt.v === ':') {
+      this.next();
+      var end = this.next();
+      if (!end || end.t !== 'ref') throw new Error('bad range');
+      return this.ref(t.v + ':' + end.v, 'range');
+    }
+    return this.ref(t.v, 'cell');
+  }
+  if (t.t === 'name') {
+    var nm = t.v;
+    if (CONSTS[nm] !== undefined && !(this.peek() && this.peek().t === 'op' && this.peek().v === '(')) {
+      return CONSTS[nm];
+    }
+    var open = this.peek();
+    if (open && open.t === 'op' && open.v === '(') {
+      if (!FUNCS[nm]) return NAME();
+      this.next();
+      var args = [];
+      if (!(this.peek() && this.peek().t === 'op' && this.peek().v === ')')) {
+        for (;;) {
+          args.push(this.arg());
+          var sep = this.peek();
+          if (sep && sep.t === 'op' && sep.v === ',') { this.next(); continue; }
+          break;
+        }
+      }
+      this.expect(')');
+      return callFn(nm, args, this.ref);
+    }
+    return NAME();
+  }
+  throw new Error('unexpected token "' + (t.v !== undefined ? t.v : t.t) + '"');
+};
+// A function argument may itself be a bare range (SUM(A1:B3)) or a
+// reference list (SUM(A1,A2)), so parse it lazily from the token stream.
+Parser.prototype.arg = function () {
+  var t = this.peek();
+  if (t && t.t === 'ref') {
+    var save = this.p;
+    this.next();
+    var nxt = this.peek();
+    if (nxt && nxt.t === 'op' && nxt.v === ':') {
+      this.next();
+      var end = this.next();
+      if (end && end.t === 'ref') return { kind: 'range', ref: t.v + ':' + end.v };
+      this.p = save; this.next();
+    }
+    return { kind: 'ref', ref: t.v };
+  }
+  return { kind: 'val', val: this.compare() };
+};
+function compareVals(a, b, op) {
+  if (isErr(a)) return a;
+  if (isErr(b)) return b;
+  switch (op) {
+    case '=': return a === b;
+    case '<>': return a !== b;
+    case '<': return a < b;
+    case '>': return a > b;
+    case '<=': return a <= b;
+    case '>=': return a >= b;
+  }
+  return VALUE();
+}
+
+// Flatten function arguments: plain numbers, refs to single cells, and
+// ranges all become a list of numbers, with error cells passed through.
+function flatten(args, ref) {
+  var out = [], err = null;
+  for (var i = 0; i < args.length; i++) {
+    var a = args[i];
+    if (a && a.kind === 'val') {
+      if (isErr(a.val)) { err = err || a.val; continue; }
+      out.push(a.val); continue;
+    }
+    var r = ref(a.ref, a.kind === 'range' ? 'range' : 'cell');
+    if (isErr(r)) { err = err || r; continue; }
+    if (r && r.values) { for (var j = 0; j < r.values.length; j++) out.push(r.values[j]); }
+  }
+  return { numbers: out, err: err };
+}
+function callFn(name, args, ref) {
+  var arity = FUNCS[name];
+  if (args.length !== arity) return VALUE();
+  if (name === 'POW' || name === 'MOD') {
+    var a0 = args[0], a1 = args[1];
+    if (!a0 || !a1 || a0.kind !== 'val' || a1.kind !== 'val') return VALUE();
+    var v0 = a0.val, v1 = a1.val;
+    if (isErr(v0)) return v0;
+    if (isErr(v1)) return v1;
+    if (name === 'MOD') return v1 === 0 ? DIV0() : v0 % v1;
+    var r = Math.pow(v0, v1);
+    return isFinite(r) ? r : DIV0();
+  }
+  var f = flatten(args, ref);
+  if (f.err) return f.err;
+  var xs = f.numbers, i;
+  switch (name) {
+    case 'SUM': { var s = 0; for (i = 0; i < xs.length; i++) s += xs[i]; return s; }
+    case 'AVERAGE': case 'AVG':
+      if (!xs.length) return DIV0();
+      var t = 0; for (i = 0; i < xs.length; i++) t += xs[i];
+      return t / xs.length;
+    case 'MIN': if (!xs.length) return 0; var mn = xs[0];
+      for (i = 1; i < xs.length; i++) if (xs[i] < mn) mn = xs[i]; return mn;
+    case 'MAX': if (!xs.length) return 0; var mx = xs[0];
+      for (i = 1; i < xs.length; i++) if (xs[i] > mx) mx = xs[i]; return mx;
+    case 'COUNT': return xs.length;
+    case 'ABS': if (!xs.length) return VALUE(); return Math.abs(xs[0]);
+    case 'INT': if (!xs.length) return VALUE(); return Math.trunc(xs[0]);
+    case 'SIGN': if (!xs.length) return VALUE(); return Math.sign(xs[0]);
+    case 'FLOOR': if (!xs.length) return VALUE(); return Math.floor(xs[0]);
+    case 'CEIL': if (!xs.length) return VALUE(); return Math.ceil(xs[0]);
+    case 'SQRT': if (!xs.length) return VALUE();
+      if (xs[0] < 0) return DIV0();
+      return Math.sqrt(xs[0]);
+    case 'ROUND': if (!xs.length) return VALUE();
+      var d = args.length > 1 ? null : null;
+      return Math.round(xs[0] * 1e10) / 1e10;
+  }
+  return NAME();
+}
+
+/* ===================== the grid =====================
+   cells[r][c] is the RAW text the user typed. evalCell memoises results and
+   tracks a "visiting" set, so a cycle is reported as #CIRCULAR! instead of
+   recursing until the tab dies. */
+var cells, values, state, visiting;
+
+function blankGrid() {
+  var g = [];
+  for (var r = 0; r < ROWS; r++) { g.push([]); for (var c = 0; c < COLS; c++) g[r].push(''); }
+  return g;
+}
+function addr(r, c) { return colName(c) + (r + 1); }
+
+// Reference resolution handed to the parser.
+function refHandler(token, kind) {
+  if (kind === 'range') {
+    var parts = token.split(':');
+    var a = parseAddr(parts[0]), b = parseAddr(parts[1]);
+    if (!a || !b) return REF();
+    var c0 = Math.min(a.c, b.c), c1 = Math.max(a.c, b.c);
+    var r0 = Math.min(a.r, b.r), r1 = Math.max(a.r, b.r);
+    if (c1 >= COLS || r1 >= ROWS) return REF();
+    var vals = [];
+    for (var r = r0; r <= r1; r++) for (var c = c0; c <= c1; c++) {
+      var v = evalCell(r, c);
+      if (isErr(v)) return v;
+      if (v === '') continue;
+      vals.push(typeof v === 'boolean' ? (v ? 1 : 0) : v);
+    }
+    return { values: vals };
+  }
+  var p = parseAddr(token);
+  if (!p) return REF();
+  if (p.c >= COLS || p.r >= ROWS) return REF();
+  var val = evalCell(p.r, p.c);
+  if (isErr(val)) return val;
+  if (val === '') return 0;
+  if (typeof val === 'boolean') return val ? 1 : 0;
+  return val;
+}
+
+function evalCell(r, c) {
+  var a = addr(r, c);
+  if (state[a] === 2) return values[a];
+  if (state[a] === 1) {
+    // A cycle. Everything currently on the evaluation stack leads here, so
+    // each of them is part of the loop and must be reported, not just this cell.
+    var chain = visiting.slice();
+    chain.push(a);
+    chain.forEach(function (x) { values[x] = CIRC(); state[x] = 2; });
+    return values[a];
+  }
+  var raw = String(cells[r][c] == null ? '' : cells[r][c]).trim();
+  if (raw === '') { values[a] = 0; state[a] = 2; return 0; }
+  state[a] = 1; visiting.push(a);
+  var out;
+  try {
+    var body = raw.charAt(0) === '=' ? raw.slice(1) : raw;
+    if (body.trim() === '') { out = 0; }
+    else {
+      var toks = tokenize(body);
+      out = new Parser(toks, refHandler).parse();
+    }
+  } catch (e) {
+    out = VALUE();
+  }
+  if (isErr(out) && out.code === '#CIRCULAR!') {
+    // the stack has been settled by the cycle handler; just unwind
+    visiting = [];
+    return values[a] || CIRC();
+  }
+  if (typeof out === 'number' && !isFinite(out)) out = DIV0();
+  if (typeof out === 'boolean') out = out ? 1 : 0;
+  values[a] = out;
+  state[a] = 2;
+  visiting.pop();
+  return out;
+}
+
+function evalAll() {
+  visiting = [];
+  state = {}; values = {};
+  for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) { visiting = []; evalCell(r, c); }
+  return values;
+}
+
+function display(v) {
+  if (isErr(v)) return v.code;
+  if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
+  if (v === 0) return '0';
+  var t = Math.round(v * 1e10) / 1e10;
+  if (Number.isInteger(t)) return String(t);
+  return String(t);
+}
+
+function render() {
+  var vals = evalAll();
+  for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) {
+    var a = addr(r, c);
+    var el = document.getElementById('cell_' + r + '_' + c);
+    if (el) el.textContent = display(vals[a]);
+  }
+  var errs = [];
+  Object.keys(vals).forEach(function (a) { if (isErr(vals[a])) errs.push(a + ' = ' + vals[a].code); });
+  errs.sort();
+  $('errs').textContent = errs.length
+    ? errs.length + ' error cell' + (errs.length === 1 ? '' : 's') + ': ' + errs.join('  ·  ')
+    : 'No errors. Every formula resolved.';
+  $('cptext').textContent = buildTSV(vals);
+  $('csv').textContent = buildCSV();
+}
+function buildTSV(vals) {
+  var lines = [];
+  for (var r = 0; r < ROWS; r++) {
+    var row = [];
+    for (var c = 0; c < COLS; c++) row.push(display(vals[addr(r, c)]));
+    lines.push(row.join('\t'));
+  }
+  return lines.join('\n');
+}
+function buildCSV() {
+  var lines = [];
+  for (var r = 0; r < ROWS; r++) {
+    var row = [];
+    for (var c = 0; c < COLS; c++) {
+      var raw = String(cells[r][c]).replace(/"/g, '""');
+      row.push('"' + raw + '"');
+    }
+    lines.push(row.join(','));
+  }
+  return lines.join('\n');
+}
+
+function buildGrid() {
+  var h = '<tr><th class="ws-sheet-h"></th>';
+  for (var c = 0; c < COLS; c++) h += '<th class="ws-sheet-h">' + colName(c) + '</th>';
+  h += '</tr>';
+  for (var r = 0; r < ROWS; r++) {
+    h += '<tr><th class="ws-sheet-h">' + (r + 1) + '</th>';
+    for (var k = 0; k < COLS; k++) h += '<td class="ws-sheet-td"><div class="ws-sheet-v" id="cell_' + r + '_' + k + '"></div>'
+      + '<input class="ws-sheet-i" id="in_' + r + '_' + k + '" spellcheck="false" '
+      + 'aria-label="Cell ' + addr(r, k) + '" value="' + String(cells[r][k]).replace(/"/g, '&quot;') + '"></td>';
+    h += '</tr>';
+  }
+  $('sheet').innerHTML = h;
+  $('sheet').querySelectorAll('input').forEach(function (el) {
+    el.addEventListener('input', function () {
+      var m = /^in_(\d+)_(\d+)$/.exec(el.id);
+      cells[parseInt(m[1], 10)][parseInt(m[2], 10)] = el.value;
+      render();
+    });
+  });
+  $('sheet').querySelectorAll('.ws-sheet-td').forEach(function (td) {
+    var m = /^cell_(\d+)_(\d+)$/.exec(td.firstElementChild.id);
+    var r = parseInt(m[1], 10), c = parseInt(m[2], 10);
+    td.addEventListener('click', function (ev) {
+      if (ev.target.tagName === 'INPUT') return;
+      if (editing) editing.td.classList.remove('editing');
+      td.classList.add('editing');
+      var inp = td.querySelector('input');
+      editing = { td: td, inp: inp };
+      inp.focus(); inp.select();
+    });
+  });
+}
+var editing = null;
+function commit() {
+  if (!editing) return;
+  editing.td.classList.remove('editing');
+  editing = null;
+}
+document.addEventListener('keydown', function (e) {
+  if (!editing) return;
+  if (e.key === 'Enter' || e.key === 'Escape') {
+    e.preventDefault(); commit();
+  }
+});
+document.addEventListener('click', function (e) {
+  if (editing && !editing.td.contains(e.target) && e.target.tagName !== 'INPUT') commit();
+});
+
+var DEMO = {
+  0: [10, 20, 30, '=SUM(A1:C1)', '=AVERAGE(A1:C1)', '=MAX(A1:C1)'],
+  1: [5, 15, 25, '=D1*2', '=D2/0', '=D1+E1'],
+  2: [1, 2, 3, '=SUM(A1:C3)', '=COUNT(A1:C3)', '=ROUND(E5,2)']
+};
+
+function loadDemo() {
+  cells = blankGrid();
+  for (var r in DEMO) DEMO[r].forEach(function (v, i) { cells[parseInt(r, 10)][i] = v; });
+  buildGrid(); render();
+}
+function clearAll() { cells = blankGrid(); buildGrid(); render(); }
+
+function copyText(which) {
+  var t = which === 'csv' ? $('csv').textContent : $('cptext').textContent;
+  navigator.clipboard.writeText(t).then(function () {
+    var b = which === 'csv' ? $('ccsv') : $('cpts');
+    b.classList.add('ok');
+    setTimeout(function () { b.classList.remove('ok'); }, 1200);
+  }, function () {});
+}
+
+cells = blankGrid();
+$('demo').addEventListener('click', loadDemo);
+$('clear').addEventListener('click', clearAll);
+$('cpts').addEventListener('click', function () { copyText('tsv'); });
+$('ccsv').addEventListener('click', function () { copyText('csv'); });
+buildGrid();
+render();
+
+window.__ss = {
+  tokenize: tokenize, Parser: Parser, evalAll: evalAll, evalCell: evalCell,
+  cells: function () { return cells; },
+  values: function () { return evalAll(); },
+  addr: addr, parseAddr: parseAddr, colName: colName, colIndex: colIndex,
+  refHandler: refHandler, setCells: function (g) { cells = g; render(); },
+  getCell: function (a) { var p = parseAddr(a); return evalCell(p.r, p.c); },
+  display: display, FUNCS: FUNCS,
+  ROWS: ROWS, COLS: COLS
+};
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+    </a></li>
+    <li><a href="/workspace/tools/factor-calculator/">
+      <span class="ocurp-related-n">Factor Calculator</span>
+      <span class="ocurp-related-b">Prime factorisation by trial division, every division step, the full divisor list, plus GC</span>
+    </a></li>
+    <li><a href="/workspace/tools/scientific-calculator/">
+      <span class="ocurp-related-n">Scientific Calculator</span>
+      <span class="ocurp-related-b">A real expression parser: tokenise, shunting-yard to postfix, then evaluate, with trig, lo</span>
+    </a></li>
+    <li><a href="/workspace/tools/sequence-finder/">
+      <span class="ocurp-related-n">Sequence Finder</span>
+      <span class="ocurp-related-b">Paste a list of numbers and see whether it fits an arithmetic, geometric, Fibonacci-like o</span>
+    </a></li>
+    <li><a href="/workspace/tools/set-calculator/">
+      <span class="ocurp-related-n">Set Calculator</span>
+      <span class="ocurp-related-b">Union, intersection, difference, symmetric difference and unique elements over two number </span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

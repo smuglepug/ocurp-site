@@ -141,7 +141,10 @@ function pick(){
   else if(L<4){a=2+Math.floor(Math.random()*Math.min(60,10+L*10));b=2+Math.floor(Math.random()*Math.min(40,8+L*6));op='*'}
   else if(L<6){const d=2+Math.floor(Math.random()*(3+L));const m=d*(2+Math.floor(Math.random()*Math.min(30,6+L*4)));a=m;b=d;op=Math.random()<0.5?'/':'*'}
   else{a=10+Math.floor(Math.random()*Math.min(200,20+L*25));b=2+Math.floor(Math.random()*Math.min(60,6+L*8));op=roll<0.34?'+':roll<0.67?'-':'*'}
-  if(op==='-'){const t=a;a=Math.max(1,b);b=t}
+  // Order the operands so the difference is never negative. The previous
+  // form did a=Math.max(1,b) WITHOUT swapping b, so "5 - 3" could render as
+  // "3 - 5" and the answer key was -2: a question with a wrong answer.
+  if(op==='-'&&a<b){const t=a;a=b;b=t}
   const val=op==='+'?a+b:op==='-'?a-b:op==='*'?a*b:Math.round(a/b);
   return {a,b,op,val,text:a+' '+op+' '+b+' ='}}
 function next(){
@@ -203,6 +206,10 @@ window.__math={get G(){return {q,ok,bad,score,left,level,running,over,streak}},
   submit,start,end,tick,answerOf:()=>q&&q.val,tickN:n=>{for(let i=0;i<n;i++)tick()},
   type:v=>{$('ans').value=String(v)}};
 </script>
+
+
+
+
 
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">

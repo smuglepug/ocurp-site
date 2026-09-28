@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regex Builder — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Click tokens to assemble a regular expression and see a live match against your text. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/regex-builder/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Regex Builder">
+<meta property="og:description" content="Click tokens to assemble a regular expression and see a live match against your text. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/regex-builder/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Regex Builder on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Regex Builder">
+<meta name="twitter:description" content="Click tokens to assemble a regular expression and see a live match against your text. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Regex Builder on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Regex Builder","url":"https://ocurp.space/workspace/tools/regex-builder/","description":"Click tokens to assemble a regular expression and see a live match against your text. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Regex Builder</h1>
+      <p class="mt-1 text-xs text-white/40">Text &amp; Strings &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Click tokens to assemble a regular expression and watch it run against your own text. Nothing leaves the browser: the pattern is compiled with the built-in engine, every match is highlighted, and a broken pattern explains itself instead of failing.</p>
+  <div class="ws-grid2">
+
+    <section class="ws-panel p-6">
+      <p class="ws-label mb-3">Insert a token</p>
+      <div id="palette" class="flex flex-wrap gap-2"></div>
+      <label class="ws-label mb-2 mt-6 block" for="pat">Pattern</label>
+      <input id="pat" class="ws-input" style="font-family:'IBM Plex Sans',monospace"
+             value="a(b+)c" spellcheck="false" autocomplete="off">
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="cp" type="button" class="ws-btn">Copy regex</button>
+        <button id="clr" type="button" class="ws-btn-ghost">Clear</button>
+      </div>
+      <label class="ws-label mb-2 mt-6 block" for="txt">Sample text</label>
+      <textarea id="txt" class="ws-input" style="font-family:'IBM Plex Sans',monospace"
+                rows="4" spellcheck="false">xxabbbcyy</textarea>
+    </section>
+    <section class="ws-panel p-6">
+      <p id="status" class="ws-label mb-3">&mdash;</p>
+      <p class="ws-label mb-2">Result</p>
+      <div id="regex" class="ws-out break-all">/a(b+)c/</div>
+      <p class="ws-label mb-2 mt-6">Matches in sample text</p>
+      <pre id="hl" class="ws-out" style="font-family:'IBM Plex Sans',monospace"></pre>
+    </section>
+
+  </div>
+  <div class="mt-8">
+
+<script>
+window.__errs = window.__errs || [];
+const $ = id => document.getElementById(id);
+
+// Every button on the palette inserts its snippet at the caret. Each entry is
+// [label, snippet, plain-language note] so the strip doubles as a cheat sheet.
+const TOKENS = [
+  ['a',        'a',        'literal character a'],
+  ['abc',      '[a-z]',    'any lowercase letter'],
+  ['A-Z',      '[^a-z]',   'any character that is NOT a lowercase letter'],
+  ['0-9',      '\\d',      'any digit 0-9'],
+  ['a-z0-9_',  '\\w',      'any word character'],
+  ['space',    '\\s',      'any whitespace'],
+  ['^',        '^',        'start of line'],
+  ['$',        '$',        'end of line'],
+  ['*',        '*',        'zero or more'],
+  ['+',        '+',        'one or more'],
+  ['?',        '?',        'optional'],
+  ['{2,4}',    '{2,4}',    'between 2 and 4 times'],
+  ['{3}',      '{3}',      'exactly 3 times'],
+  ['( )',      '(?:)',     'group, not captured'],
+  ['(cap)',    '()',       'capturing group'],
+  ['|',        '|',        'or'],
+  ['.',        '\\.',      'a literal dot'],
+  ['\\b',      '\\b',      'word boundary']
+];
+
+const pal = $('palette');
+for (const [label, snip, note] of TOKENS) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'ws-btn-ghost';
+  b.style.width = 'auto';
+  b.style.padding = '.45rem .7rem';
+  b.title = note;
+  b.textContent = label;
+  b.addEventListener('click', () => {
+    const f = $('pat');
+    const at = f.selectionStart == null ? f.value.length : f.selectionStart;
+    const end = f.selectionEnd == null ? f.value.length : f.selectionEnd;
+    f.value = f.value.slice(0, at) + snip + f.value.slice(end);
+    const caret = at + snip.length;
+    f.focus();
+    f.setSelectionRange(caret, caret);
+    run();
+  });
+  pal.appendChild(b);
+}
+
+// Build the display form (/source/flags) and compile. Every failure path ends
+// in a readable message; nothing here is allowed to throw into the page.
+function run() {
+  const src = $('pat').value;
+  const text = $('txt').value;
+  $('regex').textContent = '/' + src + '/g';
+  const status = $('status');
+  const hl = $('hl');
+  if (src === '') {
+    status.textContent = 'empty pattern';
+    hl.textContent = '';
+    return;
+  }
+  let re;
+  try {
+    re = new RegExp(src, 'g');
+  } catch (err) {
+    status.textContent = 'invalid: ' + (err && err.message ? err.message : String(err));
+    hl.textContent = '';
+    return;
+  }
+  const found = [];
+  let m, guard = 0;
+  while ((m = re.exec(text)) !== null) {
+    found.push({ at: m.index, len: m[0].length, text: m[0] });
+    if (m[0].length === 0) re.lastIndex++;   // a zero-width match must still advance
+    if (++guard > 10000) break;
+  }
+  status.textContent = found.length + (found.length === 1 ? ' match' : ' matches');
+  if (!text.length) { hl.textContent = '(sample text is empty)'; return; }
+  // Rebuild the line with each match wrapped, escaping the source so the
+  // browser shows the literal characters the user typed.
+  let out = '', cursor = 0;
+  for (const f of found) {
+    out += esc(text.slice(cursor, f.at));
+    out += '\u001b[43m\u001b[30m' + esc(f.text) + '\u001b[0m';
+    cursor = f.at + f.len;
+  }
+  out += esc(text.slice(cursor));
+  hl.textContent = out;
+}
+function esc(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+$('pat').addEventListener('input', run);
+$('txt').addEventListener('input', run);
+$('clr').addEventListener('click', () => { $('pat').value = ''; run(); $('pat').focus(); });
+$('cp').addEventListener('click', () => {
+  const text = '/' + $('pat').value + '/g';
+  const done = () => { const b = $('cp'); b.classList.add('ok'); b.textContent = 'Copied';
+                       setTimeout(() => { b.classList.remove('ok'); b.textContent = 'Copy regex'; }, 1200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, () => { $('regex').textContent = text; done(); });
+  } else { $('regex').textContent = text; done(); }
+});
+run();
+</script>
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/find-replace/">
+      <span class="ocurp-related-n">Find &amp; Replace</span>
+      <span class="ocurp-related-b">Plain or regex find-and-replace with live count.</span>
+    </a></li>
+    <li><a href="/workspace/tools/regex-tester/">
+      <span class="ocurp-related-n">Regex Tester</span>
+      <span class="ocurp-related-b">Test patterns with live match highlighting.</span>
+    </a></li>
+    <li><a href="/workspace/tools/tile-forge/">
+      <span class="ocurp-related-n">Tile Forge</span>
+      <span class="ocurp-related-b">Seamless tiling patterns generated from simple rules, ready to export.</span>
+    </a></li>
+    <li><a href="/workspace/tools/add-line-numbers/">
+      <span class="ocurp-related-n">Add Line Numbers</span>
+      <span class="ocurp-related-b">Prefix each line with a configurable number, padding and separator.</span>
+    </a></li>
+    <li><a href="/workspace/tools/barcode-gen/">
+      <span class="ocurp-related-n">Barcode Generator</span>
+      <span class="ocurp-related-b">Generate CODE128, EAN, UPC and more barcodes as PNG.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base32/">
+      <span class="ocurp-related-n">Base32 Encoder</span>
+      <span class="ocurp-related-b">Encode text to RFC 4648 Base32 and decode it back, with padding control and a byte count.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

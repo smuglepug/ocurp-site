@@ -264,4 +264,7 @@ const RAW = [
   {slug:"regex-builder",name:"Regex Builder",cat:"data",blurb:"Click tokens to assemble a regular expression and see a live match against your text.",tags:["REGEX","PATTERN","MATCH","CLIENT-SIDE"],ready:true},
   {slug:"sprite-sheet-generator",name:"Sprite Sheet Generator",cat:"design",blurb:"Pack a folder of icons into one spritesheet with the CSS and the coordinates.",tags:["SPRITE","CSS","ICON","CLIENT-SIDE"],ready:true},
   {slug:"svg-path-builder",name:"SVG Path Builder",cat:"design",blurb:"Build an SVG path from move, line, curve and arc commands and preview it live.",tags:["SVG","PATH","VECTOR","CLIENT-SIDE"],ready:true},
+  {slug:"number-base-spreadsheet",name:"Number Base Spreadsheet",cat:"math",blurb:"A grid calculator with a real formula engine: =A1+B2*2, =SUM(A1:B3), 16 functions, and real error cells for #DIV/0!, #CIRCULAR! and #NAME? instead of hanging.",tags:["SPREADSHEET","FORMULAS","MATHS","CLIENT-SIDE"],ready:true},
+  {slug:"sequence-finder",name:"Sequence Finder",cat:"math",blurb:"Paste a list of numbers and see whether it fits an arithmetic, geometric, Fibonacci-like or polynomial rule, with the next term and an honest note on how much the fit is worth.",tags:["SEQUENCES","MATHS","PATTERNS","CLIENT-SIDE"],ready:true},
+  {slug:"set-calculator",name:"Set Calculator",cat:"math",blurb:"Union, intersection, difference, symmetric difference and unique elements over two number lists, sorted ascending with a count for every result.",tags:["SETS","MATHS","Venn","CLIENT-SIDE"],ready:true},
 ];

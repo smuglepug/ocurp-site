@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprite Sheet Generator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-copy.ok { animation: none }
+</style>
+<meta name="description" content="Pack a folder of icons into one spritesheet with the CSS and the coordinates. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/sprite-sheet-generator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Sprite Sheet Generator">
+<meta property="og:description" content="Pack a folder of icons into one spritesheet with the CSS and the coordinates. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/sprite-sheet-generator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Sprite Sheet Generator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sprite Sheet Generator">
+<meta name="twitter:description" content="Pack a folder of icons into one spritesheet with the CSS and the coordinates. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Sprite Sheet Generator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Sprite Sheet Generator","url":"https://ocurp.space/workspace/tools/sprite-sheet-generator/","description":"Pack a folder of icons into one spritesheet with the CSS and the coordinates. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Sprite Sheet Generator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Vector Graphics &mdash; Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">OFFLINE</span><span class="ws-chip">DATA URI</span><span class="ws-chip">CSS OUTPUT</span></div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Pack a set of icons onto one SVG grid and get the sheet as a data URI, with the background-position rule for every sprite and a file you can download. Draw the icons with a shape picker or paste your own SVG.</p>
+
+  <div class="grid gap-4 lg:grid-cols-2">
+
+    <section class="ws-panel p-6">
+      <p class="ws-label mb-3">Sources</p>
+      <div class="flex flex-wrap items-center gap-2">
+        <select id="kind" class="ws-input" style="width:auto;padding:.5rem .75rem">
+          <option value="square">Square</option>
+          <option value="circle">Circle</option>
+          <option value="triangle">Triangle</option>
+          <option value="diamond">Diamond</option>
+          <option value="star">Star</option>
+          <option value="cross">Cross</option>
+          <option value="ring">Ring</option>
+          <option value="bar">Bar</option>
+        </select>
+        <input id="colour" type="color" value="#FF5F1F"
+               style="width:3rem;height:2.4rem;padding:0;border:1px solid rgba(255,255,255,.12);border-radius:.6rem;background:#111">
+        <input id="name" class="ws-input" style="width:9rem;padding:.5rem .75rem" placeholder="name" value="icon">
+        <button id="addShape" type="button" class="ws-btn">Add shape</button>
+        <button id="addSix" type="button" class="ws-btn-ghost">Add 6 samples</button>
+      </div>
+
+      <label class="ws-label mb-2 mt-5 block" for="svgIn">Paste an SVG icon</label>
+      <textarea id="svgIn" class="ws-input font-mono" rows="3" spellcheck="false"
+        placeholder="&lt;svg viewBox=&quot;0 0 24 24&quot;&gt;&hellip;&lt;/svg&gt;"></textarea>
+      <div class="mt-2 flex flex-wrap items-center gap-2">
+        <button id="addSvg" type="button" class="ws-btn-ghost">Add pasted SVG</button>
+        <label class="ws-btn-ghost cursor-pointer">
+          Upload .svg<input id="file" type="file" accept=".svg,image/svg+xml" class="hidden">
+        </label>
+        <p id="svgErr" class="text-[11px] text-accent/80"></p>
+      </div>
+
+      <p class="ws-label mb-2 mt-5">Sprite list</p>
+      <div id="list" class="flex max-h-64 flex-col gap-2 overflow-y-auto pr-1"></div>
+      <button id="clearList" type="button" class="ws-btn-ghost mt-2">Clear sprites</button>
+    </section>
+
+    <section class="ws-panel p-6">
+      <p class="ws-label mb-3">Sheet settings</p>
+      <div class="flex flex-wrap gap-3">
+        <label class="block"><span class="ws-label">Cell</span>
+          <input id="cell" type="number" class="ws-input mt-1" value="64" min="8" max="512" step="1"></label>
+        <label class="block"><span class="ws-label">Spacing</span>
+          <input id="gap" type="number" class="ws-input mt-1" value="1" min="0" max="64" step="1"></label>
+        <label class="block"><span class="ws-label">Columns</span>
+          <input id="cols" type="number" class="ws-input mt-1" value="3" min="1" max="32" step="1"></label>
+      </div>
+      <div class="mt-5 border-t border-white/5 pt-3">
+        <div class="ws-kv"><span>Sprites</span><span id="sCount">0</span></div>
+        <div class="ws-kv"><span>Grid</span><span id="sGrid">—</span></div>
+        <div class="ws-kv"><span>Sheet size (px)</span><span id="sSize">—</span></div>
+        <div class="ws-kv"><span>data URI</span><span id="sUri">—</span></div>
+      </div>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="copyCss" type="button" class="ws-btn ws-copy">Copy CSS</button>
+        <button id="copyUri" type="button" class="ws-btn-ghost">Copy data URI</button>
+        <button id="download" type="button" class="ws-btn-ghost">Download sheet.svg</button>
+      </div>
+      <p class="mt-4 text-[11px] leading-relaxed text-white/35">
+        Everything runs in this tab. Nothing is uploaded; the sheet is built as a
+        string and handed to a Blob or a data URI when you ask for it.
+      </p>
+    </section>
+  </div>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+      <p class="ws-label">Packed sheet preview</p>
+      <span class="ws-chip" id="prevScale">1&times;</span>
+    </div>
+    <div class="overflow-x-auto rounded-xl border border-white/10 bg-[#0a0a0a] p-4">
+      <svg id="prev" width="0" height="0" viewBox="0 0 0 0" role="img" aria-label="Packed spritesheet"></svg>
+    </div>
+    <p class="ws-label mb-2 mt-5">Sprite table</p>
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-left">
+        <thead><tr class="ws-label">
+          <th class="pb-2 pr-3">#</th><th class="pb-2 pr-3">Name</th>
+          <th class="pb-2 pr-3">x</th><th class="pb-2 pr-3">y</th>
+          <th class="pb-2 pr-3">w</th><th class="pb-2 pr-3">h</th>
+          <th class="pb-2 pr-3">background-position</th><th class="pb-2"></th>
+        </tr></thead>
+        <tbody id="tbl"></tbody>
+      </table>
+    </div>
+    <p class="ws-label mb-2 mt-5">CSS output</p>
+    <pre id="cssOut" class="ws-out max-h-80 overflow-auto"></pre>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+window.__errs = window.__errs || [];
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+
+  // items: [{name, kind, colour, raw?}]
+  //   kind 'svg' items carry raw = {viewBox:'minX minY w h', inner:'<g ...>'}
+  var items = [];
+
+  function f2(n) {
+    n = Math.round(n * 100) / 100;
+    if (!isFinite(n)) return 0;
+    return (n === 0) ? 0 : n;
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function slug(s) {
+    var t = String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return t || 'sprite';
+  }
+
+  // ---- shape library -----------------------------------------------------
+  // Every shape is generated from the cell size, so the same sprite scales
+  // when the cell changes and the sheet stays exactly cell-sized.
+  var SHAPES = {
+    square: function (c, col) {
+      var p = f2(c * 0.2), s = f2(c * 0.6);
+      return '<rect x="' + p + '" y="' + p + '" width="' + s + '" height="' + s +
+             '" rx="' + f2(c * 0.08) + '" fill="' + col + '"/>';
+    },
+    circle: function (c, col) {
+      return '<circle cx="' + f2(c / 2) + '" cy="' + f2(c / 2) + '" r="' + f2(c * 0.35) +
+             '" fill="' + col + '"/>';
+    },
+    triangle: function (c, col) {
+      return '<polygon points="' + f2(c / 2) + ',' + f2(c * 0.15) + ' ' +
+             f2(c * 0.85) + ',' + f2(c * 0.85) + ' ' + f2(c * 0.15) + ',' + f2(c * 0.85) +
+             '" fill="' + col + '"/>';
+    },
+    diamond: function (c, col) {
+      var h = f2(c / 2);
+      return '<polygon points="' + h + ',' + f2(c * 0.08) + ' ' + f2(c * 0.92) + ',' + h +
+             ' ' + h + ',' + f2(c * 0.92) + ' ' + f2(c * 0.08) + ',' + h +
+             '" fill="' + col + '"/>';
+    },
+    star: function (c, col) {
+      var cx = c / 2, cy = c / 2, ro = c * 0.42, ri = c * 0.18, pts = [];
+      for (var k = 0; k < 10; k++) {
+        var a = -Math.PI / 2 + k * Math.PI / 5;
+        var r = (k % 2 === 0) ? ro : ri;
+        pts.push(f2(cx + r * Math.cos(a)) + ',' + f2(cy + r * Math.sin(a)));
+      }
+      return '<polygon points="' + pts.join(' ') + '" fill="' + col + '"/>';
+    },
+    cross: function (c, col) {
+      var t = f2(c * 0.24), o = f2(c * 0.12);
+      return '<path d="M' + o + ' ' + t + 'H' + f2(c - t) + 'V' + f2(c - o) + 'H' + f2(c - t) +
+             'V' + f2(c - t) + 'H' + o + 'V' + f2(c - o) + 'H' + o + 'V' + f2(c - t) + 'H' + t +
+             'V' + o + 'H' + f2(c - t) + 'V' + o + 'H' + t + 'Z" fill="' + col + '"/>';
+    },
+    ring: function (c, col) {
+      return '<circle cx="' + f2(c / 2) + '" cy="' + f2(c / 2) + '" r="' + f2(c * 0.32) +
+             '" fill="none" stroke="' + col + '" stroke-width="' + f2(c * 0.1) + '"/>';
+    },
+    bar: function (c, col) {
+      return '<rect x="' + f2(c * 0.1) + '" y="' + f2(c * 0.38) + '" width="' + f2(c * 0.8) +
+             '" height="' + f2(c * 0.24) + '" rx="' + f2(c * 0.12) + '" fill="' + col + '"/>';
+    }
+  };
+
+  // Wrap a parsed <svg> body so it fills exactly one cell, preserving aspect
+  // ratio. Anything unparseable is rejected by the caller before we get here.
+  function rawMarkup(raw, c) {
+    var vb = String(raw.viewBox).trim().split(/[\s,]+/).map(Number);
+    var w = vb[2], h = vb[3];
+    if (!isFinite(w) || !isFinite(h) || w <= 0 || h <= 0) {
+      w = 24; h = 24; raw.minX = 0; raw.minY = 0;
+    } else {
+      raw.minX = isFinite(vb[0]) ? vb[0] : 0;
+      raw.minY = isFinite(vb[1]) ? vb[1] : 0;
+    }
+    var s = Math.min(c / w, c / h);
+    var dw = f2(w * s), dh = f2(h * s);
+    var dx = f2((c - dw) / 2 - raw.minX * s);
+    var dy = f2((c - dh) / 2 - raw.minY * s);
+    return '<g transform="translate(' + dx + ' ' + dy + ') scale(' + f2(s) + ')">' +
+           String(raw.inner) + '</g>';
+  }
+
+  // ---- SVG ingest --------------------------------------------------------
+  // Returns {ok:true, item} or {ok:false, msg}. DOMParser never throws, but
+  // the result is still checked before anything is trusted.
+  function ingest(text, name) {
+    var src = String(text || '').trim();
+    if (!src) return { ok: false, msg: 'nothing to read' };
+    if (src.length > 200000) return { ok: false, msg: 'input over 200 kB' };
+    var doc;
+    try { doc = new DOMParser().parseFromString(src, 'image/svg+xml'); }
+    catch (e) { return { ok: false, msg: 'could not parse as SVG' }; }
+    if (!doc || !doc.documentElement) return { ok: false, msg: 'could not parse as SVG' };
+    var root = doc.documentElement;
+    if (String(root.nodeName).toLowerCase().indexOf('svg') === -1) {
+      return { ok: false, msg: 'root element is <' + root.nodeName + '>, not <svg>' };
+    }
+    if (doc.getElementsByTagName('parsererror').length) {
+      return { ok: false, msg: 'malformed XML' };
+    }
+    var vb = root.getAttribute('viewBox') ||
+             root.getAttribute('viewbox') || '0 0 24 24';
+    var inner = '';
+    for (var i = 0; i < root.childNodes.length; i++) {
+      inner += root.childNodes[i].cloneNode(true).toString();
+    }
+    inner = inner.replace(/\swidth\s*=\s*"[^"]*"/gi, '').replace(/\sheight\s*=\s*"[^"]*"/gi, '');
+    if (!inner.replace(/\s/g, '').length) return { ok: false, msg: '<svg> has no drawable content' };
+    return { ok: true, item: { name: name || 'svg-icon', kind: 'svg', raw: { viewBox: vb, inner: inner } } };
+  }
+
+  // ---- packing -----------------------------------------------------------
+  function settings() {
+    var cell = Math.round(Number($('cell').value));
+    var gap = Math.round(Number($('gap').value));
+    var cols = Math.round(Number($('cols').value));
+    if (!isFinite(cell) || cell < 1) cell = 64;
+    if (cell > 512) cell = 512;
+    if (!isFinite(gap) || gap < 0) gap = 0;
+    if (gap > 64) gap = 64;
+    if (!isFinite(cols) || cols < 1) cols = 1;
+    if (cols > 32) cols = 32;
+    // Never allocate a column or row that holds nothing: shrink cols to the
+    // sprite count so a 1-sprite sheet is exactly one cell.
+    if (items.length && cols > items.length) cols = items.length;
+    return { cell: cell, gap: gap, cols: cols };
+  }
+
+  function pack() {
+    var s = settings();
+    var n = items.length;
+    var rows = n ? Math.ceil(n / s.cols) : 0;
+    var W = n ? s.cols * s.cell + (s.cols - 1) * s.gap : 0;
+    var H = n ? rows * s.cell + (rows - 1) * s.gap : 0;
+    var step = s.cell + s.gap;
+    var sprites = [];
+    for (var i = 0; i < n; i++) {
+      var x = (i % s.cols) * step;
+      var y = Math.floor(i / s.cols) * step;
+      sprites.push({
+        index: i, name: items[i].name, cls: slug(items[i].name),
+        x: x, y: y, w: s.cell, h: s.cell,
+        bg: '-' + x + 'px -' + y + 'px'
+      });
+    }
+    return { cell: s.cell, gap: s.gap, cols: s.cols, rows: rows, W: W, H: H, sprites: sprites };
+  }
+
+  function markupFor(item, c) {
+    try {
+      if (item.kind === 'svg' && item.raw) return rawMarkup(item.raw, c);
+      if (SHAPES[item.kind]) return SHAPES[item.kind](c, item.colour || '#FF5F1F');
+    } catch (e) { /* fall through to the safe blank */ }
+    return '<rect x="0" y="0" width="' + c + '" height="' + c + '" fill="none"/>';
+  }
+
+  // The one spritesheet string. Every sprite is placed by a translate, so a
+  // sprite can never paint outside its own cell.
+  function sheetSVG(p) {
+    if (!p.sprites.length) return '';
+    var out = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + p.W + '" height="' + p.H +
+               '" viewBox="0 0 ' + p.W + ' ' + p.H + '">'];
+    for (var i = 0; i < p.sprites.length; i++) {
+      var sp = p.sprites[i];
+      out.push('<g transform="translate(' + sp.x + ' ' + sp.y + ')" data-name="' +
+               esc(sp.name) + '">' + markupFor(items[i], p.cell) + '</g>');
+    }
+    out.push('</svg>');
+    return out.join('');
+  }
+
+  function toDataURI(svg) {
+    try { return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg))); }
+    catch (e) { return 'data:image/svg+xml,' + encodeURIComponent(svg); }
+  }
+
+  function cssFor(p, uri) {
+    var L = ['/* sprite sheet: ' + p.sprites.length + ' sprite(s), ' + p.cols + 'x' + p.rows +
+             ', cell ' + p.cell + 'px, ' + p.gap + 'px gap */'];
+    L.push('.sprite-sheet {');
+    L.push('  width: ' + p.cell + 'px; height: ' + p.cell + 'px;');
+    L.push('  background-image: url("' + uri + '");');
+    L.push('  background-repeat: no-repeat;');
+    L.push('}');
+    for (var i = 0; i < p.sprites.length; i++) {
+      var sp = p.sprites[i];
+      L.push('.sprite-' + sp.cls + ' { background-position: ' + sp.bg + '; }');
+    }
+    return L.join('\n');
+  }
+
+  // ---- rendering ---------------------------------------------------------
+  function render() {
+    var p = pack();
+    var uri = p.sprites.length ? toDataURI(sheetSVG(p)) : '';
+    var css = p.sprites.length ? cssFor(p, uri) : '/* add a sprite to generate CSS */';
+
+    $('sCount').textContent = items.length;
+    $('sGrid').textContent = p.sprites.length ? (p.cols + ' \u00d7 ' + p.rows + ' cells') : '\u2014';
+    $('sSize').textContent = p.sprites.length ? (p.W + ' \u00d7 ' + p.H) : '\u2014';
+    $('sUri').textContent = uri ? (Math.round(uri.length / 1024 * 10) / 10 + ' kB') : '\u2014';
+    $('cssOut').textContent = css;
+
+    // sprite list
+    var lst = $('list');
+    lst.innerHTML = '';
+    for (var i = 0; i < items.length; i++) {
+      var row = document.createElement('div');
+      row.className = 'flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] p-2';
+      var sw = document.createElement('span');
+      sw.className = 'inline-block h-4 w-4 shrink-0 rounded';
+      sw.style.background = items[i].kind === 'svg' ? '#e0f2fe' : (items[i].colour || '#FF5F1F');
+      var nm = document.createElement('span');
+      nm.className = 'font-mono text-[11px] text-white/70';
+      nm.textContent = items[i].name + '  \u00b7  ' + items[i].kind;
+      var rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'ws-btn-ghost ml-auto';
+      rm.style.cssText = 'width:auto;padding:.25rem .6rem;font-size:8px';
+      rm.textContent = 'Remove';
+      rm.addEventListener('click', (function (idx) {
+        return function () { items.splice(idx, 1); render(); };
+      })(i));
+      row.appendChild(sw); row.appendChild(nm); row.appendChild(rm);
+      lst.appendChild(row);
+    }
+
+    // table
+    var tb = '';
+    for (var j = 0; j < p.sprites.length; j++) {
+      var sp = p.sprites[j];
+      tb += '<tr class="border-t border-white/5 font-mono text-[11px]">' +
+        '<td class="py-1.5 pr-3 text-white/40">' + sp.index + '</td>' +
+        '<td class="py-1.5 pr-3 text-accent">' + esc(sp.name) + '</td>' +
+        '<td class="py-1.5 pr-3">' + sp.x + '</td>' +
+        '<td class="py-1.5 pr-3">' + sp.y + '</td>' +
+        '<td class="py-1.5 pr-3">' + sp.w + '</td>' +
+        '<td class="py-1.5 pr-3">' + sp.h + '</td>' +
+        '<td class="py-1.5 pr-3" data-bg="' + esc(sp.bg) + '">' + esc(sp.bg) + '</td>' +
+        '<td class="py-1.5"></td></tr>';
+    }
+    $('tbl').innerHTML = tb;
+
+    // preview: labelled cells drawn to scale, in the sheet's own coordinates
+    var pv = $('prev');
+    var scale = Math.min(1, 460 / Math.max(1, p.W));
+    var dispW = Math.round(p.W * scale), dispH = Math.round(p.H * scale);
+    if (!p.sprites.length) {
+      pv.setAttribute('width', '260'); pv.setAttribute('height', '80');
+      pv.setAttribute('viewBox', '0 0 260 80');
+      pv.innerHTML = '<text x="130" y="44" text-anchor="middle" fill="rgba(255,255,255,.3)" ' +
+        'font-size="12" font-family="IBM Plex Sans,monospace">no sprites yet</text>';
+      $('prevScale').textContent = '1\u00d7';
+    } else {
+      pv.setAttribute('width', String(dispW));
+      pv.setAttribute('height', String(dispH));
+      pv.setAttribute('viewBox', '0 0 ' + p.W + ' ' + p.H);
+      var g = [];
+      for (var k = 0; k < p.sprites.length; k++) {
+        var s2 = p.sprites[k];
+        g.push('<rect x="' + s2.x + '" y="' + s2.y + '" width="' + s2.w + '" height="' + s2.h +
+          '" fill="rgba(255,255,255,.025)" stroke="rgba(255,255,255,.14)" stroke-width=".5" ' +
+          'stroke-dasharray="1.5 1.5"/>');
+        g.push('<g transform="translate(' + s2.x + ' ' + s2.y + ')" opacity=".95">' +
+          markupFor(items[k], p.cell) + '</g>');
+        // label bar: index + name, scaled back to legible text size
+        var lb = 3.2;
+        g.push('<rect x="' + s2.x + '" y="' + (s2.y + s2.h - lb * 2) + '" width="' + s2.w +
+          '" height="' + (lb * 2) + '" fill="rgba(5,5,5,.72)"/>');
+        g.push('<text x="' + (s2.x + 2) + '" y="' + (s2.y + s2.h - lb * 0.7) +
+          '" fill="#FF5F1F" font-size="' + (lb * 0.95) +
+          '" font-family="IBM Plex Sans,monospace">' + s2.index + '</text>');
+        g.push('<text x="' + (s2.x + lb * 3.4) + '" y="' + (s2.y + s2.h - lb * 0.7) +
+          '" fill="rgba(255,255,255,.8)" font-size="' + (lb * 0.95) +
+          '" font-family="IBM Plex Sans,monospace">' + esc(s2.name.slice(0, 9)) + '</text>');
+        g.push('<text x="' + (s2.x + 2) + '" y="' + (s2.y + 4) +
+          '" fill="rgba(255,255,255,.45)" font-size="' + (lb * 0.85) +
+          '" font-family="IBM Plex Sans,monospace">' + s2.x + ',' + s2.y + ' ' + s2.w + '\u00d7' + s2.h + '</text>');
+      }
+      pv.innerHTML = g.join('');
+      $('prevScale').textContent = f2(scale) + '\u00d7';
+    }
+
+    window.__sheet = p;
+    window.__uri = uri;
+    window.__css = css;
+    window.__svg = p.sprites.length ? sheetSVG(p) : '';
+    return p;
+  }
+
+  // ---- events ------------------------------------------------------------
+  $('addShape').addEventListener('click', function () {
+    var k = $('kind').value;
+    var base = ($('name').value || 'icon').replace(/\s+/g, '-');
+    items.push({ name: base + '-' + (items.length + 1), kind: k, colour: $('colour').value });
+    render();
+  });
+
+  $('addSix').addEventListener('click', function () {
+    var kinds = ['square', 'circle', 'triangle', 'diamond', 'star', 'ring'];
+    var cols = ['#FF5F1F', '#e0f2fe', '#4ade80', '#facc15', '#f472b6', '#60a5fa'];
+    for (var i = 0; i < kinds.length; i++) {
+      items.push({ name: kinds[i] + '-' + (i + 1), kind: kinds[i], colour: cols[i] });
+    }
+    render();
+  });
+
+  $('addSvg').addEventListener('click', function () {
+    var r = ingest($('svgIn').value, ($('name').value || 'svg') + '-pasted');
+    if (!r.ok) { $('svgErr').textContent = 'Rejected: ' + r.msg; return; }
+    $('svgErr').textContent = '';
+    items.push(r.item);
+    $('svgIn').value = '';
+    render();
+  });
+
+  $('file').addEventListener('change', function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    var fr = new FileReader();
+    fr.onload = function () {
+      var r = ingest(String(fr.result || ''), f.name.replace(/\.svg$/i, ''));
+      if (!r.ok) { $('svgErr').textContent = 'Rejected ' + f.name + ': ' + r.msg; return; }
+      $('svgErr').textContent = '';
+      items.push(r.item);
+      render();
+    };
+    fr.onerror = function () { $('svgErr').textContent = 'Could not read ' + f.name; };
+    try { fr.readAsText(f); } catch (e) { $('svgErr').textContent = 'Could not read ' + f.name; }
+    this.value = '';
+  });
+
+  $('clearList').addEventListener('click', function () { items = []; $('svgErr').textContent = ''; render(); });
+  ['cell', 'gap', 'cols'].forEach(function (id) {
+    $(id).addEventListener('input', render);
+    $(id).addEventListener('change', render);
+  });
+
+  function copy(text, btn) {
+    try {
+      navigator.clipboard.writeText(text).then(function () {
+        btn.classList.add('ok');
+        setTimeout(function () { btn.classList.remove('ok'); }, 1200);
+      }, function () {});
+    } catch (e) { /* clipboard unavailable: never fatal */ }
+  }
+  $('copyCss').addEventListener('click', function () { copy(window.__css, this); });
+  $('copyUri').addEventListener('click', function () { copy(window.__uri, this); });
+  $('download').addEventListener('click', function () {
+    try {
+      var blob = new Blob([window.__svg], { type: 'image/svg+xml' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'spritesheet.svg';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    } catch (e) { /* download unsupported */ }
+  });
+
+  // ---- test surface ------------------------------------------------------
+  window.__ss = {
+    ingest: ingest, pack: pack, render: render, settings: settings,
+    sheetSVG: sheetSVG, toDataURI: toDataURI, cssFor: cssFor, SHAPES: SHAPES,
+    add: function (list) {
+      (list || []).forEach(function (it) { items.push(it); });
+      return render();
+    },
+    set: function (cell, gap, cols) {
+      $('cell').value = cell; $('gap').value = gap; $('cols').value = cols;
+      return render();
+    },
+    clear: function () { items = []; return render(); },
+    items: function () { return items.map(function (i) { return { name: i.name, kind: i.kind }; }); },
+    result: function () {
+      return {
+        W: window.__sheet.W, H: window.__sheet.H,
+        cols: window.__sheet.cols, rows: window.__sheet.rows,
+        cell: window.__sheet.cell, gap: window.__sheet.gap,
+        sprites: window.__sheet.sprites.map(function (s) {
+          return { index: s.index, name: s.name, cls: s.cls, x: s.x, y: s.y, w: s.w, h: s.h, bg: s.bg };
+        }),
+        uriPrefix: window.__uri.slice(0, 30),
+        uriLen: window.__uri.length,
+        svgHead: window.__svg.slice(0, 120),
+        css: window.__css.replace(/url\("data:[^"]*"\)/, 'url("<data-uri>")'),
+        errs: (window.__errs || []).slice()
+      };
+    }
+  };
+
+  // boot with the six samples so the tool is useful on arrival
+  $('addSix').click();
+})();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/box-shadow/">
+      <span class="ocurp-related-n">Box Shadow Generator</span>
+      <span class="ocurp-related-b">Layer shadows visually and copy the CSS.</span>
+    </a></li>
+    <li><a href="/workspace/tools/button-maker/">
+      <span class="ocurp-related-n">Button Maker</span>
+      <span class="ocurp-related-b">Design a button&#x27;s colours, padding, radius, border and shadow with a live preview, and get</span>
+    </a></li>
+    <li><a href="/workspace/tools/css-border-radius-generator/">
+      <span class="ocurp-related-n">Border Radius Generator</span>
+      <span class="ocurp-related-b">Dial in all eight corner radii, watch the shape change and copy the exact CSS.</span>
+    </a></li>
+    <li><a href="/workspace/tools/css-clip-path-generator/">
+      <span class="ocurp-related-n">CSS Clip Path Generator</span>
+      <span class="ocurp-related-b">Pick a shape or drag the points, then copy the exact clip-path polygon CSS.</span>
+    </a></li>
+    <li><a href="/workspace/tools/css-glassmorphism-generator/">
+      <span class="ocurp-related-n">Glassmorphism CSS Generator</span>
+      <span class="ocurp-related-b">Dial the blur, tint, saturation and border, watch a live preview, and copy the exact backd</span>
+    </a></li>
+    <li><a href="/workspace/tools/css-gradient/">
+      <span class="ocurp-related-n">CSS Gradient Builder</span>
+      <span class="ocurp-related-b">Build a linear, radial or conic gradient stop by stop with position sliders, then copy the</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
