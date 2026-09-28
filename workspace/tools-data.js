@@ -1,5 +1,5 @@
 // TOOLS — one line per entry
-const CATS = {"data": "DATA & CODE", "document": "PDF & DOCS", "audio": "AUDIO & SPEECH", "design": "DESIGN & COLOUR", "math": "MATH & CONVERSION", "web": "NETWORK & WEB", "study": "STUDY & CAREER"};
+const CATS = {"data": "DATA & CODE", "document": "PDF & DOCS", "audio": "AUDIO & SPEECH", "design": "DESIGN & COLOUR", "math": "MATH & CONVERSION", "web": "NETWORK & WEB", "study": "STUDY & CAREER", "text": "WRITING & TEXT"};
 const RAW = [
   {slug:"json-formatter",name:"JSON Prettifier",cat:"data",blurb:"Format, minify and validate JSON with a live error pointer.",tags:["JSON","CLIENT-SIDE"],ready:true},
   {slug:"base64",name:"Base64 Encoder",cat:"data",blurb:"Encode and decode Base64 text or files, UTF-8 safe.",tags:["BASE64","CLIENT-SIDE"],ready:true},
@@ -121,4 +121,7 @@ const RAW = [
   {slug:"url-parser",name:"URL Parser",cat:"data",blurb:"Break any URL into protocol, host, port, path, query and hash.",tags:["URL","PARSE","CLIENT-SIDE"],ready:true},
   {slug:"qr-scanner",name:"QR Scanner",cat:"data",blurb:"Decode QR codes from a camera or uploaded image.",tags:["QR","CAMERA","CLIENT-SIDE"],ready:true},
   {slug:"barcode-gen",name:"Barcode Generator",cat:"data",blurb:"Generate CODE128, EAN, UPC and more barcodes as PNG.",tags:["BARCODE","CODE128","EAN","CLIENT-SIDE"],ready:true},
+  {slug:"humanizer",name:"Humanizer",cat:"text",blurb:"Spot the AI tells in a draft and auto-fix the safe ones. Scores human-likeness.",tags:["WRITING","AI-TELLS","CLIENT-SIDE"],ready:true},
+  {slug:"prompt-compiler",name:"AI Prompt Compiler",cat:"text",blurb:"Turn a rough ask into a structured prompt with role, task, format, length and rules.",tags:["PROMPT","WRITING","CLIENT-SIDE"],ready:true},
+  {slug:"sentence-corrector",name:"Sentence Corrector",cat:"text",blurb:"Capitals, spacing, common misspellings, a/an and missing full stops - with a change log.",tags:["GRAMMAR","CLIENT-SIDE"],ready:true},
 ];
