@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ODE Solver — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-val { font-variant-numeric:tabular-nums; font-family:'IBM Plex Sans',monospace; color:#FF5F1F; font-weight:700 }
+  .ws-tbl { width:100%; font-family:'IBM Plex Sans',monospace; font-size:12px; border-collapse:collapse }
+  .ws-tbl th { font-size:9px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.35); text-align:right; padding:.4rem .5rem; border-bottom:1px solid rgba(255,255,255,.08) }
+  .ws-tbl th:first-child,.ws-tbl td:first-child { text-align:left }
+  .ws-tbl td { padding:.32rem .5rem; text-align:right; border-top:1px solid rgba(255,255,255,.06); color:rgba(255,255,255,.8); font-variant-numeric:tabular-nums }
+  #cv { width:100%; height:auto; display:block }
+</style>
+<meta name="description" content="Runge-Kutta 4 and Euler on a differential equation, with a step-size comparison. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/ode-solver/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ODE Solver">
+<meta property="og:description" content="Runge-Kutta 4 and Euler on a differential equation, with a step-size comparison. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/ode-solver/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ODE Solver">
+<meta name="twitter:description" content="Runge-Kutta 4 and Euler on a differential equation, with a step-size comparison. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"ODE Solver","url":"https://ocurp.space/workspace/tools/ode-solver/","description":"Runge-Kutta 4 and Euler on a differential equation, with a step-size comparison. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">ODE Solver & Integrator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Physics &amp; Math — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">RK4</span><span class="ws-chip">N-SYSTEM</span><span class="ws-chip">CONVERGENCE</span></div>
+  </div>
+
+  <section class="ws-panel p-6">
+    <div class="grid gap-5 lg:grid-cols-2">
+      <div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="ws-label mb-2 block" for="sys">System — one equation per line: dvar/dt = expr</label>
+            <textarea id="sys" rows="4" class="ws-input font-mono !text-left" style="min-height:7rem;resize:vertical">dx/dt = v
+dy/dt = -9.81</textarea>
+          </div>
+        </div>
+        <p class="mt-2 text-[10px] leading-relaxed text-white/35">Variables t and the names declared on the left are in scope. Functions: sin cos tan asin acos atan sinh cosh tanh exp log ln log2 log10 sqrt abs floor ceil round min max pow atan2.</p>
+        <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div><label class="ws-label mb-2 block" for="y0">Initial y</label><input id="y0" class="ws-input" value="0, 10"></div>
+          <div><label class="ws-label mb-2 block" for="t0">t start</label><input id="t0" type="number" class="ws-input" value="0" step="0.1"></div>
+          <div><label class="ws-label mb-2 block" for="t1">t end</label><input id="t1" type="number" class="ws-input" value="5" step="0.1"></div>
+          <div><label class="ws-label mb-2 block" for="n">Steps</label><input id="n" type="number" class="ws-input" value="2000" min="1" step="500"></div>
+        </div>
+        <div class="mt-5 flex flex-wrap gap-3">
+          <button id="go" class="ws-btn">Integrate</button>
+          <button id="projectile" class="ws-btn-ghost">Projectile</button>
+          <button id="lotka" class="ws-btn-ghost">Lotka–Volterra</button>
+          <button id="cauchy" class="ws-btn-ghost">Cauchy shock</button>
+          <button id="reset" class="ws-btn-ghost">Reset</button>
+        </div>
+      </div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        <div class="ws-label mb-3">Order of accuracy check</div>
+        <table class="ws-tbl">
+          <thead><tr><th>Method</th><th>y(t_end)</th><th>vs finest</th></tr></thead>
+          <tbody id="acc"></tbody>
+        </table>
+        <p class="mt-3 text-[10px] leading-relaxed text-white/30">Halving the step should cut the error by 2 (Euler), 4 (RK2) or 16 (RK4). The final column is measured against RK4 at 16× the step count.</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+      <span class="ws-label">Solution curve</span>
+      <span id="chip1" class="ws-chip"></span>
+    </div>
+    <canvas id="cv" width="840" height="340"></canvas>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex flex-wrap items-center gap-3">
+      <span class="ws-label">State vs time</span>
+      <button class="ws-btn-ghost !px-3 !py-1.5" data-t="tab" onclick="cp(this)">Copy</button>
+    </div>
+    <div id="tab" class="ws-out" style="max-height:300px;overflow:auto"></div>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+      <span class="ws-label">Full report</span>
+      <button class="ws-btn-ghost !px-3 !py-1.5" data-t="out" onclick="cp(this)">Copy</button>
+    </div>
+    <div id="out" class="ws-out"></div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+  +'<div class="font-display text-xl font-black text-accent break-all">'+v+'</div>'
+  +'<div class="ws-label mt-1">'+k+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+var $=function(id){return document.getElementById(id)};
+/* ---------------- expression compiler (closure tree over named vars) ---------------- */
+var FUNCS={sin:1,cos:1,tan:1,asin:1,acos:1,atan:1,sinh:1,cosh:1,tanh:1,exp:1,log:1,log2:1,log10:1,sqrt:1,abs:1,floor:1,ceil:1,round:1,min:2,max:2,pow:2,atan2:2};
+function applyFn(name,a){
+  switch(name){
+    case 'sin': return Math.sin(a[0]); case 'cos': return Math.cos(a[0]);
+    case 'tan': return Math.tan(a[0]); case 'asin': return Math.asin(a[0]);
+    case 'acos': return Math.acos(a[0]); case 'atan': return Math.atan(a[0]);
+    case 'sinh': return Math.sinh(a[0]); case 'cosh': return Math.cosh(a[0]);
+    case 'tanh': return Math.tanh(a[0]); case 'exp': return Math.exp(a[0]);
+    case 'log': case 'ln': return Math.log(a[0]); case 'log2': return Math.log2(a[0]);
+    case 'log10': return Math.log10(a[0]); case 'sqrt': return Math.sqrt(a[0]);
+    case 'abs': return Math.abs(a[0]); case 'floor': return Math.floor(a[0]);
+    case 'ceil': return Math.ceil(a[0]); case 'round': return Math.round(a[0]);
+    case 'min': return Math.min(a[0],a[1]); case 'max': return Math.max(a[0],a[1]);
+    case 'pow': return Math.pow(a[0],a[1]); case 'atan2': return Math.atan2(a[0],a[1]);
+  }
+  throw new Error('Unknown function '+name);
+}
+function tokenize(src){
+  var t=[],i=0;
+  src=src.replace(/\s+/g,'').replace(/(\d)\s*([a-zA-Z_])/g,'$1*$2');
+  while(i<src.length){
+    var c=src[i];
+    if(/[0-9.]/.test(c)){ var j=i; while(j<src.length&&/[0-9.]/.test(src[j])) j++; t.push({k:'n',v:parseFloat(src.slice(i,j))}); i=j; continue; }
+    if(/[a-zA-Z_]/.test(c)){ var j2=i; while(j2<src.length&&/[a-zA-Z0-9_]/.test(src[j2])) j2++;
+      t.push({k:'id',v:src.slice(i,j2)}); i=j2; continue; }
+    if('+-*/^(),'.indexOf(c)>=0){ t.push({k:c}); i++; continue; }
+    throw new Error('Unexpected character "'+c+'"');
+  }
+  return t;
+}
+/* compile a token stream to a closure of a flat numeric state array */
+function compileExpr(src, names){
+  var t=tokenize(src), pos=0;
+  function idx(id){
+    var k=names.indexOf(id);
+    return k;
+  }
+  function expr(){
+    var v=term();
+    while(t[pos]&&(t[pos].k==='+'||t[pos].k==='-')){ var op=t[pos].k; pos++; var w=term();
+      v=(op==='+')?function(s){return v(s)+w(s)}:function(s){return v(s)-w(s)}; }
+    return v;
+  }
+  function term(){
+    var v=power();
+    while(t[pos]&&(t[pos].k==='*'||t[pos].k==='/')){ var op=t[pos].k; pos++; var w=power();
+      v=(op==='*')?function(s){return v(s)*w(s)}:function(s){return v(s)/w(s)}; }
+    return v;
+  }
+  function power(){
+    var b=unary();
+    if(t[pos]&&t[pos].k==='^'){ pos++; var e=power(); return function(s){return Math.pow(b(s),e(s))}; }
+    return b;
+  }
+  function unary(){
+    if(t[pos]&&t[pos].k==='-'){ pos++; var u=unary(); return function(s){return -u(s)}; }
+    if(t[pos]&&t[pos].k==='+'){ pos++; return unary(); }
+    return atom();
+  }
+  function atom(){
+    var tk=t[pos];
+    if(!tk) throw new Error('Unexpected end of expression');
+    if(tk.k==='n'){ pos++; var c=tk.v; return function(){return c}; }
+    if(tk.k==='('){ pos++; var v=expr(); if(!t[pos]||t[pos].k!==')') throw new Error('Missing )'); pos++; return v; }
+    if(tk.k==='id'){
+      pos++; var name=tk.v;
+      if(FUNCS[name]){
+        var ar=FUNCS[name], args=[];
+        if(t[pos]&&t[pos].k==='('){
+          pos++; args.push(expr());
+          while(t[pos]&&t[pos].k===','){ pos++; args.push(expr()); }
+          if(!t[pos]||t[pos].k!==')') throw new Error('Missing )');
+          pos++;
+        } else args.push(unary());
+        if(args.length!==ar) throw new Error(name+'() expects '+ar+' argument'+(ar>1?'s':''));
+        var gs=args.map(function(g){return g});
+        return function(s){ var a=new Array(gs.length), i; for(i=0;i<gs.length;i++) a[i]=gs[i](s); return applyFn(name,a); };
+      }
+      if(name==='t'){ return function(s){ return s.t; }; }
+      var k=idx(name);
+      if(k<0) throw new Error('Unknown variable "'+name+'"');
+      return function(s){ return s.y[k]; };
+    }
+    throw new Error('Unexpected token "'+(tk.v||tk.k)+'"');
+  }
+  var r=expr();
+  if(pos!==t.length) throw new Error('Trailing input at position '+pos);
+  return r;
+}
+
+/* ---------------- system parsing: dNAME/dt = expr ---------------- */
+function parseSystem(src){
+  var lines=src.split('\n').map(function(l){return l.trim()}).filter(function(l){return l.length>0});
+  if(!lines.length) throw new Error('Enter at least one equation');
+  var eqs=lines.map(function(l){
+    var m=l.match(/^d\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\/\s*dt\s*=\s*(.+)$/);
+    if(!m) throw new Error('Line "'+l+'" is not of the form dvar/dt = expression');
+    return {name:m[1], rhs:m[2]};
+  });
+  var names=eqs.map(function(e){return e.name});
+  for(var i=0;i<names.length;i++) for(var j=0;j<names.length;j++)
+    if(i!==j&&names[i]===names[j]) throw new Error('Variable "'+names[i]+'" is declared twice');
+  var fns=eqs.map(function(e){ return compileExpr(e.rhs, names); });
+  return {names:names, fns:fns};
+}
+
+/* ---------------- integrators: state = {t, y[]} ---------------- */
+function deriv(sys, s){
+  var out=new Array(sys.names.length);
+  for(var i=0;i<sys.fns.length;i++) out[i]=sys.fns[i](s);
+  return out;
+}
+function euler(sys, s, h){
+  var d=deriv(sys,s), y=s.y.slice(), i;
+  for(i=0;i<y.length;i++) y[i]+=h*d[i];
+  return {t:s.t+h, y:y};
+}
+function rk2(sys, s, h){   /* midpoint */
+  var d1=deriv(sys,s), i, ym=s.y.slice();
+  for(i=0;i<ym.length;i++) ym[i]+=h*d1[i]/2;
+  var d2=deriv(sys,{t:s.t+h/2, y:ym}), y=s.y.slice();
+  for(i=0;i<y.length;i++) y[i]+=h*d2[i];
+  return {t:s.t+h, y:y};
+}
+function rk4(sys, s, h){
+  var d1=deriv(sys,s), i, n=s.y.length;
+  var t2=s.y.slice(), t3=s.y.slice(), t4=s.y.slice();
+  for(i=0;i<n;i++){
+    t2[i]=s.y[i]+h*d1[i]/2;
+    t3[i]=s.y[i]+h*d1[i]/2;
+    t4[i]=s.y[i]+h*d1[i];
+  }
+  var d2=deriv(sys,{t:s.t+h/2, y:t2});
+  for(i=0;i<n;i++) t3[i]=s.y[i]+h*d2[i]/2;
+  var d3=deriv(sys,{t:s.t+h/2, y:t3});
+  for(i=0;i<n;i++) t4[i]=s.y[i]+h*d3[i];
+  var d4=deriv(sys,{t:s.t+h, y:t4});
+  var y=s.y.slice();
+  for(i=0;i<n;i++) y[i]+=h*(d1[i]+2*d2[i]+2*d3[i]+d4[i])/6;
+  return {t:s.t+h, y:y};
+}
+var METHODS={euler:euler, rk2:rk2, rk4:rk4};
+function integrate(sys, y0, t0, t1, n, method){
+  var f=METHODS[method]||rk4;
+  var h=(t1-t0)/n;
+  var s={t:t0, y:y0.slice()};
+  var path=[{t:s.t, y:s.y.slice()}];
+  for(var i=1;i<=n;i++){ s=f(sys,s,h); path.push({t:s.t, y:s.y.slice()}); }
+  return {path:path, h:h, n:n, method:method};
+}
+
+/* ---------------- presets with known analytic solutions ---------------- */
+var PRESETS={
+  projectile:{sys:'dx/dt = v\ndy/dt = -9.81', y0:'0, 10', t0:'0', t1:'5',
+    exact:function(t,y0){ return {x:y0[0]+y0[1]*t, y:y0[1]*t-4.905*t*t}; }},
+  lotka:{sys:'dx/dt = 0.5*x - 0.05*x*y\ndy/dt = -0.1*y + 0.02*x*y', y0:'4, 8', t0:'0', t1:'25',
+    exact:null},
+  cauchy:{sys:'dx/dt = -1.5*x^2', y0:'1', t0:'0', t1:'2',
+    exact:function(t,y0){ return y0[0]/(1+1.5*y0[0]*t); }},
+  decay:{sys:'dx/dt = -0.7*x', y0:'3', t0:'0', t1:'10',
+    exact:function(t,y0){ return y0[0]*Math.exp(-0.7*t); }}
+};
+
+var last=null;
+function run(){
+  var sys, y0;
+  try{ sys=parseSystem($('sys').value); }
+  catch(e){ $('out').textContent='Parse error: '+e.message; $('acc').innerHTML=''; return; }
+  y0=$('y0').value.split(',').map(function(s){ var v=parseFloat(s.trim()); return isFinite(v)?v:0; });
+  if(y0.length!==sys.names.length){
+    $('out').textContent='This system has '+sys.names.length+' variable'+(sys.names.length>1?'s':'')
+      +' ('+sys.names.join(', ')+') but you gave '+y0.length+' initial value'
+      +(y0.length>1?'s':'')+'.';
+    $('acc').innerHTML=''; return;
+  }
+  var t0=parseFloat($('t0').value), t1=parseFloat($('t1').value);
+  var n=Math.max(1,Math.round(parseFloat($('n').value)||1000));
+  if(!isFinite(t0)||!isFinite(t1)){ $('out').textContent='Enter finite start and end times.'; return; }
+  if(t1===t0){ $('out').textContent='Start and end time are equal, so the solution is constant.'; return; }
+
+  var main=integrate(sys,y0,t0,t1,n,'rk4');
+  var fine=integrate(sys,y0,t0,t1,n*16,'rk4');
+  var eu=integrate(sys,y0,t0,t1,n,'euler');
+  var r2=integrate(sys,y0,t0,t1,n,'rk2');
+  var lastY=main.path[main.path.length-1].y, fineY=fine.path[fine.path.length-1].y;
+
+  function vsFine(v){ return Math.max.apply(null, v.map(function(x,i){ return Math.abs(x-fineY[i]); })); }
+  var dE=vsFine(eu.path[eu.path.length-1].y), d2=vsFine(r2.path[r2.path.length-1].y), d4=vsFine(lastY);
+  $('acc').innerHTML=[
+    ['Euler', eu.path[eu.path.length-1].y, dE],
+    ['RK2 (midpoint)', r2.path[r2.path.length-1].y, d2],
+    ['RK4', lastY, d4]
+  ].map(function(p){
+    return '<tr><td>'+p[0]+'</td><td><span class="ws-val">'+p[1].map(function(v){return v.toPrecision(10)}).join(', ')+'</span></td>'
+      +'<td>'+p[2].toExponential(3)+'</td></tr>';
+  }).join('');
+
+  /* exact solution when the preset matches */
+  var exact=null;
+  for(var k in PRESETS){
+    if(PRESETS[k].sys===trimLines($('sys').value)&&PRESETS[k].exact&&PRESETS[k].y0===normY(y0)){
+      exact=PRESETS[k].exact; break;
+    }
+  }
+  window.__ode = { sys:sys, y0:y0, t0:t0, t1:t1, n:n, main:main, fine:fine,
+                   euler:eu, rk2:r2, dE:dE, d2:d2, d4:d4, hasExact:!!exact, integrate:integrate };
+
+  show([['t end', main.path[main.path.length-1].y.map(function(v){return v.toPrecision(8)}).join(', ')],
+       ['Steps', n],
+       ['h', main.h.toExponential(3)],
+       ['RK4 err', d4.toExponential(2)],
+       ['Euler err', dE.toExponential(2)],
+       ['RK2 err', d2.toExponential(2)],
+       ['Variables', sys.names.join(', ')],
+       ['Exact form', exact?'available':'no']]);
+  $('chip1').textContent=sys.names.length+'D · RK4 · n='+n;
+
+  /* table of samples */
+  var cols=Math.min(main.path.length, 40), step=Math.max(1,Math.floor(main.path.length/cols));
+  var rowsT=[];
+  for(var i=0;i<main.path.length;i+=step){
+    var p=main.path[i];
+    rowsT.push([p.t.toPrecision(10)].concat(p.y.map(function(v){return v.toPrecision(10)})));
+  }
+  var lastRow=main.path[main.path.length-1];
+  rowsT.push([lastRow.t.toPrecision(10)].concat(lastRow.y.map(function(v){return v.toPrecision(10)})));
+  $('tab').textContent=rowsT.map(function(r){
+    return r.map(function(c,i){ s=String(c); while(s.length<(i?21:13)) s+=' '; return s; }).join('');
+  }).join('\n');
+
+  var L=[];
+  L.push('System');
+  sys.names.forEach(function(nm,i){ L.push('  d'+nm+'/dt = '+esc($('sys').value.split('\n')[i].split('=')[1].trim())); });
+  L.push('  initial state: '+sys.names.map(function(nm,i){ return nm+'('+t0+') = '+y0[i]; }).join(', '));
+  L.push('  interval ['+t0+', '+t1+']   steps = '+n+'   h = '+main.h.toPrecision(10));
+  L.push('');
+  L.push('State at t = '+t1.toPrecision(10));
+  sys.names.forEach(function(nm,i){ L.push('  '+nm+' = '+lastY[i].toPrecision(14)); });
+  L.push('');
+  L.push('Self-convergence (errors vs RK4 at 16x the steps, i.e. h/16):');
+  L.push('  Euler   err = '+dE.toExponential(6));
+  L.push('  RK2     err = '+d2.toExponential(6));
+  L.push('  RK4     err = '+d4.toExponential(6));
+  if(d2>0&&dE>0) L.push('  observed ratio Euler/RK2 = '+(dE/d2).toFixed(3)+'  (expected ~2 for orders 1 vs 2)');
+  if(d4>0&&d2>0) L.push('  observed ratio RK2/RK4   = '+(d2/d4).toFixed(3)+'  (expected ~4 for orders 2 vs 4)');
+  if(exact){
+    L.push('');
+    L.push('Against the closed-form solution:');
+    for(i=0;i<sys.names.length;i++){
+      var ex=exact(main.path[main.path.length-1].t, y0);
+      L.push('  '+sys.names[i]+': RK4 = '+lastY[i].toPrecision(14)
+        +'   exact = '+ex[i].toPrecision(14)
+        +'   |Δ| = '+Math.abs(lastY[i]-ex[i]).toExponential(6));
+    }
+    var eEu=exact(eu.path[eu.path.length-1].t, y0);
+    L.push('  Euler  |Δ| = '+Math.max.apply(null, eu.path[eu.path.length-1].y.map(function(v,i){return Math.abs(v-eEu[i])}))
+      .toExponential(6)+'  (far larger, as expected for a 1st-order method)');
+  }
+  $('out').textContent=L.join('\n');
+  draw(main.path, sys.names, t0, t1, exact);
+}
+function trimLines(s){ return s.split('\n').map(function(l){return l.trim()}).filter(function(l){return l}).join('\n'); }
+function normY(a){ return a.join(', '); }
+
+function draw(path, names, t0, t1, exact){
+  var cv=$('cv'), ctx=cv.getContext('2d'), W=cv.width, H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  var pad=34, lo=Infinity, hi=-Infinity, i, j;
+  path.forEach(function(p){ p.y.forEach(function(v){ if(isFinite(v)){ lo=Math.min(lo,v); hi=Math.max(hi,v); } }); });
+  if(!isFinite(lo)||!isFinite(hi)){ lo=0; hi=1; }
+  if(hi-lo<1e-12){ hi=lo+1; }
+  var mrg=(hi-lo)*0.12; lo-=mrg; hi+=mrg;
+  var X=function(t){ return pad+(t-t0)/(t1-t0)*(W-2*pad) };
+  var Y=function(v){ return H-pad-(v-lo)/(hi-lo)*(H-2*pad) };
+  /* grid */
+  ctx.strokeStyle='rgba(255,255,255,.07)'; ctx.lineWidth=1;
+  for(i=0;i<=10;i++){ var gx=pad+i/10*(W-2*pad);
+    ctx.beginPath(); ctx.moveTo(gx,pad/2); ctx.lineTo(gx,H-pad/2); ctx.stroke(); }
+  for(i=0;i<=6;i++){ var gy=pad/2+i/6*(H-pad);
+    ctx.beginPath(); ctx.moveTo(pad,gy); ctx.lineTo(W-pad,gy); ctx.stroke(); }
+  /* exact solution, if known */
+  var COLORS=['#FF5F1F','#7dd3fc','#4ade80','#f472b6','#fbbf24'];
+  if(exact){
+    for(j=0;j<names.length;j++){
+      ctx.strokeStyle='rgba(255,255,255,.45)'; ctx.setLineDash([4,4]); ctx.lineWidth=1.2;
+      ctx.beginPath();
+      for(i=0;i<=400;i++){
+        var tt=t0+(t1-t0)*i/400, ev=exact(tt, y0Global);
+        if(!isFinite(ev[j])) continue;
+        i?ctx.lineTo(X(tt),Y(ev[j])):ctx.moveTo(X(tt),Y(ev[j]));
+      }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+  /* RK4 curves */
+  for(j=0;j<names.length;j++){
+    ctx.strokeStyle=COLORS[j%COLORS.length]; ctx.lineWidth=2;
+    ctx.beginPath();
+    for(i=0;i<path.length;i++){
+      if(!isFinite(path[i].y[j])) continue;
+      i?ctx.lineTo(X(path[i].t),Y(path[i].y[j])):ctx.moveTo(X(path[i].t),Y(path[i].y[j]));
+    }
+    ctx.stroke();
+  }
+  /* legend */
+  ctx.font='11px "IBM Plex Sans",monospace';
+  for(j=0;j<names.length;j++){
+    ctx.fillStyle=COLORS[j%COLORS.length];
+    ctx.fillRect(12, 12+j*15, 10, 3);
+    ctx.fillStyle='rgba(255,255,255,.7)';
+    ctx.fillText(names[j], 28, 18+j*15);
+  }
+  ctx.fillStyle='rgba(255,255,255,.45)';
+  ctx.fillText('dashed = closed-form solution', 12, 16+names.length*15);
+  /* axis labels */
+  ctx.fillStyle='rgba(255,255,255,.4)';
+  ctx.fillText('t = '+t0, pad, H-10);
+  var s1='t = '+t1; ctx.fillText(s1, W-pad-ctx.measureText(s1).width, H-10);
+  ctx.fillText(hi.toPrecision(6), 4, pad/2+10);
+  ctx.fillText(lo.toPrecision(6), 4, H-pad/2);
+}
+var y0Global=[0,10];
+
+function loadPreset(k){
+  var P=PRESETS[k]; if(!P) return;
+  $('sys').value=P.sys; $('y0').value=P.y0; $('t0').value=P.t0; $('t1').value=P.t1;
+  y0Global=P.y0.split(',').map(function(s){return parseFloat(s.trim())});
+  $('n').value = k==='lotka'?8000:2000;
+  run();
+}
+$('go').onclick=run;
+$('projectile').onclick=function(){ loadPreset('projectile'); };
+$('lotka').onclick=function(){ loadPreset('lotka'); };
+$('cauchy').onclick=function(){ loadPreset('cauchy'); };
+$('reset').onclick=function(){ loadPreset('projectile'); };
+['t0','t1','n','y0','sys'].forEach(function(id){ $(id).addEventListener('input',function(){
+  y0Global=$('y0').value.split(',').map(function(s){return parseFloat(s.trim())}); run();
+}); });
+window.__odes = { parseSystem:parseSystem, integrate:integrate, rk4:rk4, euler:euler, rk2:rk2, run:run };
+loadPreset('projectile');
+
+</script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calculator/">
+      <span class="ocurp-related-n">Scientific Calculator</span>
+      <span class="ocurp-related-b">Full expression evaluation in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calorie-calculator/">
+      <span class="ocurp-related-n">Calorie Calculator</span>
+      <span class="ocurp-related-b">Daily calories from age, weight, activity and goal, using the Mifflin-St Jeor equation.</span>
+    </a></li>
+    <li><a href="/workspace/tools/chance-calculator/">
+      <span class="ocurp-related-n">Chance Calculator</span>
+      <span class="ocurp-related-b">Work out percentages, ratios and the odds of something happening from a set of counts.</span>
+    </a></li>
+    <li><a href="/workspace/tools/compound-interest/">
+      <span class="ocurp-related-n">Compound Interest</span>
+      <span class="ocurp-related-b">Project savings or investments forward with optional monthly deposits.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

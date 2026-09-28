@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Numerical Integration — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-val { font-variant-numeric:tabular-nums; font-family:'IBM Plex Sans',monospace; color:#FF5F1F; font-weight:700 }
+  .ws-tbl { width:100%; font-family:'IBM Plex Sans',monospace; font-size:12px; border-collapse:collapse }
+  .ws-tbl th { font-size:9px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.35); text-align:right; padding:.4rem .5rem; border-bottom:1px solid rgba(255,255,255,.08) }
+  .ws-tbl th:first-child,.ws-tbl td:first-child { text-align:left }
+  .ws-tbl td { padding:.32rem .5rem; text-align:right; border-top:1px solid rgba(255,255,255,.06); color:rgba(255,255,255,.8); font-variant-numeric:tabular-nums }
+  #cv { width:100%; height:auto; display:block }
+</style>
+<meta name="description" content="Simpson&#x27;s rule, trapezoid and midpoint on any function, with the error estimate. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/numerical-integration/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Numerical Integration">
+<meta property="og:description" content="Simpson&#x27;s rule, trapezoid and midpoint on any function, with the error estimate. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/numerical-integration/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Numerical Integration">
+<meta name="twitter:description" content="Simpson&#x27;s rule, trapezoid and midpoint on any function, with the error estimate. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Numerical Integration","url":"https://ocurp.space/workspace/tools/numerical-integration/","description":"Simpson's rule, trapezoid and midpoint on any function, with the error estimate. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Numerical Integration Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Physics &amp; Math — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">SIMPSON</span><span class="ws-chip">GAUSS-LEGENDRE</span><span class="ws-chip">RICHARDSON</span></div>
+  </div>
+
+  <section class="ws-panel p-6">
+    <div class="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+      <div>
+        <label class="ws-label mb-2 block" for="f">Integrand f(x)</label>
+        <input id="f" class="ws-input font-mono" value="sin(x)*exp(-x)">
+        <p class="mt-2 text-[10px] leading-relaxed text-white/35">Supported: + - * / ^ ( ) and the functions sin cos tan asin acos atan sinh cosh tanh exp log ln log2 log10 sqrt abs floor ceil round min max pow atan2. Implicit multiplication (2x) works. Press Evaluate.</p>
+        <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div><label class="ws-label mb-2 block" for="a">Lower a</label><input id="a" type="number" class="ws-input" value="0" step="0.5"></div>
+          <div><label class="ws-label mb-2 block" for="b">Upper b</label><input id="b" type="number" class="ws-input" value="10" step="0.5"></div>
+          <div><label class="ws-label mb-2 block" for="n">Subdivisions</label><input id="n" type="number" class="ws-input" value="200" min="2" step="2"></div>
+          <div><label class="ws-label mb-2 block" for="prec">Digits shown</label><input id="prec" type="number" class="ws-input" value="10" min="2" max="15"></div>
+        </div>
+        <div class="mt-5 flex flex-wrap gap-3">
+          <button id="go" class="ws-btn">Evaluate</button>
+          <button id="half" class="ws-btn-ghost">Halve step</button>
+          <button id="dbl" class="ws-btn-ghost">Double step</button>
+          <button id="exact" class="ws-btn-ghost">Closed form</button>
+          <button id="reset" class="ws-btn-ghost">Reset</button>
+        </div>
+      </div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        <div class="ws-label mb-3">Quadrature rules</div>
+        <table class="ws-tbl">
+          <thead><tr><th>Rule</th><th>Value</th><th>Rel. err</th></tr></thead>
+          <tbody id="qt"></tbody>
+        </table>
+        <p class="mt-3 text-[10px] leading-relaxed text-white/30">Error columns compare against the Richardson-extrapolated limit, which is the standard way to estimate a true value without a closed form.</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+      <span class="ws-label">Convergence of composite Simpson's rule</span>
+      <span id="chip1" class="ws-chip"></span>
+    </div>
+    <canvas id="cv" width="840" height="300"></canvas>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex flex-wrap items-center gap-3">
+      <span class="ws-label">Step refinement</span>
+      <button class="ws-btn-ghost !px-3 !py-1.5" data-t="conv" onclick="cp(this)">Copy</button>
+    </div>
+    <div id="conv" class="ws-out" style="max-height:300px;overflow:auto"></div>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+      <span class="ws-label">Full report</span>
+      <button class="ws-btn-ghost !px-3 !py-1.5" data-t="out" onclick="cp(this)">Copy</button>
+    </div>
+    <div id="out" class="ws-out"></div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+  +'<div class="font-display text-xl font-black text-accent break-all">'+v+'</div>'
+  +'<div class="ws-label mt-1">'+k+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+var $=function(id){return document.getElementById(id)};
+/* ---------------- expression parser + evaluator (shunting yard) ---------------- */
+var FUNCS={sin:1,cos:1,tan:1,asin:1,acos:1,atan:1,sinh:1,cosh:1,tanh:1,exp:1,log:1,log2:1,log10:1,sqrt:1,abs:1,floor:1,ceil:1,round:1,min:2,max:2,pow:2,atan2:2};
+function tokenize(src){
+  var t=[],i=0;
+  src=src.replace(/\s+/g,'').replace(/(\d)\s*[xX]\s*(\d)/g,'$1*$2').replace(/(\d)\s*\((\d)/g,'$1*($2');
+  while(i<src.length){
+    var c=src[i];
+    if(/[0-9.]/.test(c)){ var j=i; while(j<src.length&&/[0-9.]/.test(src[j])) j++; t.push({k:'n',v:parseFloat(src.slice(i,j))}); i=j; continue; }
+    if(/[a-zA-Z]/.test(c)){ var j2=i; while(j2<src.length&&/[a-zA-Z0-9]/.test(src[j2])) j2++;
+      t.push({k:'f',v:src.slice(i,j2).toLowerCase()}); i=j2; continue; }
+    if('+-*/^(),'.indexOf(c)>=0){ t.push({k:c}); i++; continue; }
+    throw new Error('Unexpected character "'+c+'"');
+  }
+  return t;
+}
+function parse(src){
+  var t=tokenize(src), pos=0, r;
+  function peek(){ return t[pos]; }
+  function expr(){
+    var v=term();
+    while(peek()&&(peek().k==='+'||peek().k==='-')){ var op=peek().k; pos++; var w=term(); v=(op==='+')?v+w:v-w; }
+    return v;
+  }
+  function term(){
+    var v=power();
+    while(peek()&&(peek().k==='*'||peek().k==='/')){ var op=peek().k; pos++; var w=power(); v=(op==='*')?v*w:v/w; }
+    return v;
+  }
+  function power(){
+    var b=unary();
+    if(peek()&&peek().k==='^'){ pos++; var e=power(); return Math.pow(b,e); }
+    return b;
+  }
+  function unary(){
+    if(peek()&&peek().k==='-'){ pos++; return -unary(); }
+    if(peek()&&peek().k==='+'){ pos++; return unary(); }
+    return atom();
+  }
+  function atom(){
+    var tk=peek();
+    if(!tk) throw new Error('Unexpected end of expression');
+    if(tk.k==='n'){ pos++; return tk.v; }
+    if(tk.k==='('){ pos++; var v=expr(); if(!peek()||peek().k!==')') throw new Error('Missing )'); pos++; return v; }
+    if(tk.k==='f'){
+      pos++;
+      var ar=FUNCS[tk.v];
+      if(!ar) throw new Error('Unknown function "'+tk.v+'"');
+      var args=[];
+      if(peek()&&peek().k==='('){
+        pos++; args.push(expr());
+        while(peek()&&peek().k===','){ pos++; args.push(expr()); }
+        if(!peek()||peek().k!==')') throw new Error('Missing )');
+        pos++;
+      } else {
+        args.push(unary());
+      }
+      if(args.length!==ar) throw new Error(tk.v+'() expects '+ar+' argument'+(ar>1?'s':''));
+      return applyFn(tk.v,args);
+    }
+    throw new Error('Unexpected token "'+tk.v+'"');
+  }
+  r=expr();
+  if(pos!==t.length) throw new Error('Trailing input at position '+pos);
+  return r;
+}
+function applyFn(name,a){
+  switch(name){
+    case 'sin': return Math.sin(a[0]); case 'cos': return Math.cos(a[0]);
+    case 'tan': return Math.tan(a[0]); case 'asin': return Math.asin(a[0]);
+    case 'acos': return Math.acos(a[0]); case 'atan': return Math.atan(a[0]);
+    case 'sinh': return Math.sinh(a[0]); case 'cosh': return Math.cosh(a[0]);
+    case 'tanh': return Math.tanh(a[0]); case 'exp': return Math.exp(a[0]);
+    case 'log': case 'ln': return Math.log(a[0]); case 'log2': return Math.log2(a[0]);
+    case 'log10': return Math.log10(a[0]); case 'sqrt': return Math.sqrt(a[0]);
+    case 'abs': return Math.abs(a[0]); case 'floor': return Math.floor(a[0]);
+    case 'ceil': return Math.ceil(a[0]); case 'round': return Math.round(a[0]);
+    case 'min': return Math.min(a[0],a[1]); case 'max': return Math.max(a[0],a[1]);
+    case 'pow': return Math.pow(a[0],a[1]);
+    case 'atan2': return Math.atan2(a[0],a[1]);
+  }
+  throw new Error('Unknown function '+name);
+}
+/* compile() turns the expression into a closure f(x) so the hot loop in the
+   quadrature rules costs one function call per node and no re-parsing. */
+function compile(src){
+  var t=tokenize(src), pos=0;
+  function expr(){
+    var v=term();
+    while(t[pos]&&(t[pos].k==='+'||t[pos].k==='-')){ var op=t[pos].k; pos++; var w=term();
+      v=(op==='+')?function(x){return v(x)+w(x)}:function(x){return v(x)-w(x)}; }
+    return v;
+  }
+  function term(){
+    var v=power();
+    while(t[pos]&&(t[pos].k==='*'||t[pos].k==='/')){ var op=t[pos].k; pos++; var w=power();
+      v=(op==='*')?function(x){return v(x)*w(x)}:function(x){return v(x)/w(x)}; }
+    return v;
+  }
+  function power(){
+    var b=unary();
+    if(t[pos]&&t[pos].k==='^'){ pos++; var e=power(); return function(x){return Math.pow(b(x),e(x))}; }
+    return b;
+  }
+  function unary(){
+    if(t[pos]&&t[pos].k==='-'){ pos++; var u=unary(); return function(x){return -u(x)}; }
+    if(t[pos]&&t[pos].k==='+'){ pos++; return unary(); }
+    return atom();
+  }
+  function atom(){
+    var tk=t[pos];
+    if(!tk) throw new Error('Unexpected end of expression');
+    if(tk.k==='n'){ pos++; var c=tk.v; return function(){return c}; }
+    if(tk.k==='x'){ pos++; return function(x){return x}; }
+    if(tk.k==='('){ pos++; var v=expr(); if(!t[pos]||t[pos].k!==')') throw new Error('Missing )'); pos++; return v; }
+    if(tk.k==='f'){
+      pos++;
+      var ar=FUNCS[tk.v];
+      if(!ar) throw new Error('Unknown function "'+tk.v+'"');
+      var args=[];
+      if(t[pos]&&t[pos].k==='('){
+        pos++; args.push(expr());
+        while(t[pos]&&t[pos].k===','){ pos++; args.push(expr()); }
+        if(!t[pos]||t[pos].k!==')') throw new Error('Missing )');
+        pos++;
+      } else args.push(unary());
+      if(args.length!==ar) throw new Error(tk.v+'() expects '+ar+' argument'+(ar>1?'s':''));
+      var nm=tk.v;
+      return function(x){ var a=args.map(function(g){return g(x)}); return applyFn(nm,a); };
+    }
+    throw new Error('Unexpected token "'+tk.v+'"');
+  }
+  var r=expr();
+  if(pos!==t.length) throw new Error('Trailing input at position '+pos);
+  return r;
+}
+
+/* ---------------- quadrature rules ---------------- */
+/* composite Simpson: weights 1,4,2,4,...,4,1 */
+function simpson(f,a,b,n){
+  n=(n%2===1)?n+1:n;
+  var h=(b-a)/n, s=f(a)+f(b), i;
+  for(i=1;i<n;i++) s+=(i%2?4:2)*f(a+i*h);
+  return s*h/3;
+}
+/* composite trapezoid */
+function trap(f,a,b,n){ var h=(b-a)/n,s=0,i; for(i=0;i<=n;i++) s+=f(a+i*h)*(i===0||i===n?1:2); return s*h/2; }
+/* composite midpoint */
+function midp(f,a,b,n){ var h=(b-a)/n,s=0,i; for(i=0;i<n;i++) s+=f(a+(i+0.5)*h); return s*h; }
+/* Gauss-Legendre on [a,b] with n nodes (nodes/weights up to 16, tabulated) */
+var GLX={2:[[-0.5773502691896257,1],[0.5773502691896257,1]],
+ 4:[[-0.8611363115940526,0.3478548451374538],[-0.3399810435848563,0.6521451548625461],
+    [0.3399810435848563,0.6521451548625461],[0.8611363115940526,0.3478548451374538]],
+ 6:[[-0.9324695142031521,0.1713244923791704],[-0.6612093864662645,0.3607615730481386],
+    [-0.2386191860831969,0.4679139345726910],[0.2386191860831969,0.4679139345726910],
+    [0.6612093864662645,0.3607615730481386],[0.9324695142031521,0.1713244923791704]],
+ 8:[[-0.9602898564975363,0.1012285362903763],[-0.7966664774136267,0.2223810344533745],
+    [-0.5255324099163290,0.3137066458778873],[-0.1834346424956498,0.3626837833783620],
+    [0.1834346424956498,0.3626837833783620],[0.5255324099163290,0.3137066458778873],
+    [0.7966664774136267,0.2223810344533745],[0.9602898564975363,0.1012285362903763]]};
+function gauss(f,a,b,order){
+  var q=GLX[order]; if(!q) throw new Error('Gauss-Legendre supports 2, 4, 6 or 8 nodes');
+  var c=(a+b)/2, h=(b-a)/2, s=0;
+  for(var i=0;i<q.length;i++) s+=q[i][1]*f(c+h*q[i][0]);
+  return s*h;
+}
+/* Richardson extrapolation of Simpson: I ~= (16*I(2n) - I(n))/15 */
+function richardson(f,a,b,n){ return (16*simpson(f,a,b,2*n)-simpson(f,a,b,n))/15; }
+
+/* known closed forms, matched on the literal integrand text */
+var EXACT={
+  'sin(x)*exp(-x)':function(a,b){ var F=function(x){return -0.5*Math.exp(-x)*(Math.sin(x)+Math.cos(x))}; return F(b)-F(a); },
+  'cos(x)':function(a,b){ return Math.sin(b)-Math.sin(a); },
+  'x^2':function(a,b){ return (b*b*b-a*a*a)/3; },
+  '1/x':function(a,b){ return Math.log(b)-Math.log(a); },
+  'exp(x)':function(a,b){ return Math.exp(b)-Math.exp(a); },
+  'sqrt(x)':function(a,b){ return (2/3)*(Math.pow(b,1.5)-Math.pow(a,1.5)); },
+  '1/(1+x^2)':function(a,b){ return Math.atan(b)-Math.atan(a); }
+};
+
+var gCur=null;
+function run(){
+  var a=parseFloat($('a').value), b=parseFloat($('b').value);
+  var n=Math.max(2,Math.round(parseFloat($('n').value)||100));
+  var P=Math.max(2,Math.min(15,parseFloat($('prec').value)||10));
+  if(!(isFinite(a)&&isFinite(b))){ $('out').textContent='Enter finite limits a and b.'; return; }
+  if(a===b){ $('out').textContent='The limits are equal, so the integral is 0.'; $('qt').innerHTML=''; return; }
+  if(b<a){ var t=a; a=b; b=t; }
+  n=n%2?n+1:n;
+  var fn;
+  try{ fn=compile($('f').value); }
+  catch(err){ $('out').textContent='Expression error: '+err.message; return; }
+  /* smoke-test the endpoints so NaN shows up immediately */
+  if(!isFinite(fn(a))||!isFinite(fn(b))){
+    $('out').textContent='The integrand is not finite at the endpoints ('+fn(a)+', '+fn(b)+').'; return;
+  }
+  gCur=fn;
+
+  var S=simpson(fn,a,b,n);
+  var T=trap(fn,a,b,n);
+  var M=midp(fn,a,b,n);
+  var S2=simpson(fn,a,b,2*n);
+  var R=richardson(fn,a,b,n);
+  var ex=EXACT[$('f').value.trim()];
+  var exact=(ex&&a>=0)?ex(a,b):null;
+
+  /* best available reference: closed form if known, else the Richardson limit */
+  var ref = (exact!==null&&isFinite(exact)) ? exact : R;
+
+  function rel(v){ return ref===0?(v===0?0:Infinity):Math.abs((v-ref)/ref); }
+  function fv(v){ return (Math.abs(v)<1e-12&&v!==0)?v.toExponential(4):v.toFixed(P); }
+  function rv(v){ var e=rel(v); return isFinite(e)?e.toExponential(2):'—'; }
+
+  var rowsQ=[
+    ['Simpson (n='+n+')', S],
+    ['Simpson (n='+(2*n)+')', S2],
+    ['Trapezoid', T],
+    ['Midpoint', M],
+    ['Gauss–Legendre 8', gauss(fn,a,b,8)],
+    ['Gauss–Legendre 4', gauss(fn,a,b,4)],
+    ['Richardson limit', R]
+  ];
+  $('qt').innerHTML=rowsQ.map(function(p){
+    var isRef=(exact!==null&&isFinite(exact))&&p[0].indexOf('Richardson')===0;
+    return '<tr'+(isRef?' style="color:rgba(255,255,255,.5)"':'')+'><td>'+p[0]+'</td>'
+      +'<td><span class="ws-val">'+fv(p[1])+'</span></td><td>'+rv(p[1])+'</td></tr>';
+  }).join('');
+
+  show([['Simpson', fv(S)],['Trapezoid', fv(T)],['Gauss 8', fv(gauss(fn,a,b,8))],
+       ['Rel. err', rv(S)],['Subdivisions', n],['Interval', '['+a+', '+b+']'],
+       ['Exact form', (exact!==null&&isFinite(exact))?'available':'no'],
+       ['Converged', rel(S)<1e-10?'yes':'refine']]);
+  $('chip1').textContent=(exact!==null&&isFinite(exact))?'ERROR VS CLOSED FORM':'ERROR VS RICHARDSON LIMIT';
+
+  /* step-doubling table: proves the O(h^4) Simpson convergence */
+  var conv=[], nn=n, prev=null, i;
+  for(i=0;i<9;i++){
+    var v=simpson(fn,a,b,nn);
+    conv.push([nn, v, prev===null?null:Math.abs(v-prev),
+      (exact!==null&&isFinite(exact))?Math.abs(v-exact):Math.abs(v-R)]);
+    prev=v; nn*=2;
+  }
+  $('conv').textContent=conv.map(function(r,i){
+    return padS(String(r[0]),7)+padS(fv(r[1]),26)
+      +padS(r[2]===null?'—':r[2].toExponential(3),14)+padS(r[3].toExponential(3),14);
+  }).join('\n');
+
+  var L=[];
+  L.push('Integral of  f(x) = '+esc($('f').value)+'   over ['+a+', '+b+']');
+  L.push('');
+  L.push('  Simpson  n='+n+'   = '+fv(S));
+  L.push('  Simpson  n='+(2*n)+'  = '+fv(S2));
+  L.push('  Trapezoid n='+n+'   = '+fv(T));
+  L.push('  Midpoint n='+n+'   = '+fv(M));
+  L.push('  Gauss-Legendre 8    = '+fv(gauss(fn,a,b,8)));
+  L.push('  Gauss-Legendre 4    = '+fv(gauss(fn,a,b,4)));
+  L.push('  Richardson limit    = '+fv(R)+'   ( (16·S(2n) − S(n))/15 )');
+  if(exact!==null&&isFinite(exact)){
+    L.push('');
+    L.push('  closed form         = '+exact.toFixed(Math.max(P,12)));
+    L.push('  |Simpson − exact|   = '+Math.abs(S-exact).toExponential(6));
+  }
+  L.push('');
+  L.push('  interval length     = '+(b-a));
+  L.push('  step h              = '+((b-a)/n));
+  L.push('');
+  L.push('Step doubling (Simpson is 4th order, so |Δ| should fall ~16x per doubling):');
+  conv.forEach(function(r,i){
+    L.push('  n='+padS(r[0],6)+' value = '+fv(r[1])+'   |Δ| = '+(r[2]===null?'   —    ':r[2].toExponential(3)));
+  });
+  $('out').textContent=L.join('\n');
+  draw(fn,a,b,S,exact!==null&&isFinite(exact)?exact:R);
+}
+function padS(s,n){ s=String(s); while(s.length<n) s+=' '; return s; }
+
+function draw(fn,a,b,val,ref){
+  var cv=$('cv'), ctx=cv.getContext('2d'), W=cv.width, H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  /* sample the curve */
+  var N=600, i, ys=[], mx=0;
+  for(i=0;i<=N;i++){ var y=fn(a+(b-a)*i/N); if(!isFinite(y)) y=0; ys.push(y); mx=Math.max(mx,Math.abs(y)); }
+  if(mx===0) mx=1;
+  var pad=26, X=function(x){return pad+(x-a)/(b-a)*(W-2*pad)}, Y=function(y){return H/2-y/(mx*1.25)*(H/2-pad)};
+  /* grid */
+  ctx.strokeStyle='rgba(255,255,255,.07)'; ctx.lineWidth=1;
+  for(i=0;i<=10;i++){ var gx=pad+i/10*(W-2*pad);
+    ctx.beginPath(); ctx.moveTo(gx,pad/2); ctx.lineTo(gx,H-pad/2); ctx.stroke(); }
+  for(i=0;i<=8;i++){ var gy=pad/2+i/8*(H-pad);
+    ctx.beginPath(); ctx.moveTo(pad,gy); ctx.lineTo(W-pad,gy); ctx.stroke(); }
+  /* axes */
+  ctx.strokeStyle='rgba(255,255,255,.25)';
+  ctx.beginPath(); ctx.moveTo(pad,Y(0)); ctx.lineTo(W-pad,Y(0)); ctx.stroke();
+  /* filled area under f */
+  ctx.beginPath(); ctx.moveTo(X(a),Y(0));
+  for(i=0;i<=N;i++) ctx.lineTo(X(a+(b-a)*i/N), Y(ys[i]));
+  ctx.lineTo(X(b),Y(0)); ctx.closePath();
+  ctx.fillStyle='rgba(255,95,31,.14)'; ctx.fill();
+  /* the curve */
+  ctx.beginPath();
+  for(i=0;i<=N;i++){ var px=X(a+(b-a)*i/N), py=Y(ys[i]); i?ctx.lineTo(px,py):ctx.moveTo(px,py); }
+  ctx.strokeStyle='#FF5F1F'; ctx.lineWidth=1.8; ctx.stroke();
+  /* Simpson parabolas through the current subdivision nodes */
+  var n=Math.max(2,Math.round(parseFloat($('n').value)||100)); n=n%2?n+1:n;
+  var h=(b-a)/n, kk;
+  ctx.strokeStyle='rgba(255,255,255,.22)'; ctx.lineWidth=1;
+  for(kk=0;kk<n;kk+=2){
+    var x0=a+kk*h, x1=a+(kk+1)*h, x2=a+(kk+2)*h;
+    var y0=fn(x0), y1=fn(x1), y2=fn(x2);
+    var L2=((x-x1)*(x-x2))/((x0-x1)*(x0-x2));
+    var L1=((x-x0)*(x-x2))/((x1-x0)*(x1-x2));
+    var L0=((x-x0)*(x-x1))/((x2-x0)*(x2-x1));
+    ctx.beginPath();
+    for(var s=0;s<=12;s++){
+      var x=x0+(x1-x0)*s/12;
+      var y=y0*L2(x)+y1*L1(x)+y2*L0(x);
+      var qx=X(x), qy=Y(y);
+      s?ctx.lineTo(qx,qy):ctx.moveTo(qx,qy);
+    }
+    ctx.stroke();
+  }
+  /* nodes */
+  ctx.fillStyle='rgba(255,255,255,.6)';
+  for(kk=0;kk<=n;kk++){ var xn=a+kk*h; ctx.beginPath(); ctx.arc(X(xn),Y(fn(xn)),1.8,0,6.2832); ctx.fill(); }
+  ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='11px "IBM Plex Sans",monospace';
+  ctx.fillText('f(x) = '+esc($('f').value), 10, 16);
+  ctx.fillText('a = '+a+'   b = '+b+'   n = '+n, 10, 32);
+  ctx.fillStyle='#FF5F1F';
+  ctx.fillText('integral = '+val.toPrecision(10), 10, H-8);
+}
+
+$('go').onclick=run;
+$('half').onclick=function(){ $('n').value=Math.max(2,Math.round(parseFloat($('n').value)/2)); run(); };
+$('dbl').onclick=function(){ $('n').value=Math.round(parseFloat($('n').value)*2); run(); };
+$('exact').onclick=function(){
+  var k=Object.keys(EXACT);
+  var cur=$('f').value.trim();
+  var i=k.indexOf(cur);
+  $('f').value = k[(i+1)%k.length]; run();
+};
+$('reset').onclick=function(){ $('f').value='sin(x)*exp(-x)'; $('a').value=0; $('b').value=10; $('n').value=200; $('prec').value=10; run(); };
+$('f').addEventListener('keydown',function(e){ if(e.key==='Enter') run(); });
+$('a').addEventListener('input',run);
+$('b').addEventListener('input',run);
+$('n').addEventListener('input',run);
+window.__int = { simpson:simpson, trap:trap, midp:midp, gauss:gauss, richardson:richardson,
+                 compile:compile, parse:parse, run:run, EXACT:EXACT };
+run();
+
+</script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calculator/">
+      <span class="ocurp-related-n">Scientific Calculator</span>
+      <span class="ocurp-related-b">Full expression evaluation in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calorie-calculator/">
+      <span class="ocurp-related-n">Calorie Calculator</span>
+      <span class="ocurp-related-b">Daily calories from age, weight, activity and goal, using the Mifflin-St Jeor equation.</span>
+    </a></li>
+    <li><a href="/workspace/tools/chance-calculator/">
+      <span class="ocurp-related-n">Chance Calculator</span>
+      <span class="ocurp-related-b">Work out percentages, ratios and the odds of something happening from a set of counts.</span>
+    </a></li>
+    <li><a href="/workspace/tools/compound-interest/">
+      <span class="ocurp-related-n">Compound Interest</span>
+      <span class="ocurp-related-b">Project savings or investments forward with optional monthly deposits.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

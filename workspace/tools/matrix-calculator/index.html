@@ -285,17 +285,20 @@ function durandKerner(c, iters){
     }
     if(moved<1e-15*Math.max(1,R)) break;
   }
-  /* sort: real roots first by value, then complex pairs by -imag */
+  /* sort: real roots first by value, then complex pairs by imaginary part */
   roots.sort(function(a,b){
-    var ra=cabs(a[1])<1e-9, rb=cabs(b[1])<1e-9;
+    var ra=Math.abs(a[1])<1e-9, rb=Math.abs(b[1])<1e-9;
     if(ra&&rb) return a[0]-b[0];
     if(ra) return -1;
     if(rb) return 1;
     if(Math.abs(a[1]-b[1])>1e-12) return a[1]-b[1];
     return a[0]-b[0];
   });
-  /* snap near-real to exactly real, and pair each complex root with its conjugate */
-  for(i=0;i<n;i++) if(cabs(roots[i][1])<1e-9*Math.max(1,cabs(roots[i][0]))) roots[i]=[roots[i][0],0];
+  /* snap the vanishing imaginary parts so real eigenvalues print as real */
+  for(i=0;i<n;i++){
+    var sc2=Math.max(1,Math.abs(roots[i][0]));
+    if(Math.abs(roots[i][1])<1e-9*sc2) roots[i]=[roots[i][0],0];
+  }
   return roots;
 }
 /* nullspace of (A - lambda I) over the complex numbers, via Gauss-Jordan.
@@ -449,16 +452,21 @@ function run(){
     return s+r.reduce(function(t,v){return t+Math.abs(v)},0); },0);
 
   /* eigenvector residuals: ||A·v − λ·v||∞, over the complex numbers.
-     cmatvec handles both real (number) and complex ([re,im]) eigenvectors. */
+     cmatvec returns a real vector for a real eigenvector and pairs otherwise. */
   var eigr=e.pairs.map(function(pr){
     if(!pr.vector) return NaN;
     var v=pr.vector, Ax=cmatvec(A,v), m=0, j;
     for(j=0;j<v.length;j++){
-      var d = typeof v[j]==='number'
-        ? {re: Ax[j].re - pr.value[0]*v[j], im: pr.value[1]*v[j]}
-        : {re: Ax[j][0] - (pr.value[0]*v[j][0] - pr.value[1]*v[j][1]),
-           im: Ax[j][1] - (pr.value[0]*v[j][1] + pr.value[1]*v[j][0])};
-      m=Math.max(m, Math.sqrt(d.re*d.re+d.im*d.im));
+      var d;
+      if(typeof v[j]==='number'){
+        d = Ax[j] - (pr.value[0]*v[j] + pr.value[1]*0);
+      } else {
+        var p1=cmul(pr.value, v[j]);
+        d = Ax[j][0]-p1[0];
+        d = d*d + (Ax[j][1]-p1[1])*(Ax[j][1]-p1[1]);
+        m=Math.max(m,Math.sqrt(d)); continue;
+      }
+      m=Math.max(m, Math.abs(d));
     }
     return m;
   });
@@ -497,12 +505,14 @@ function run(){
   var bstr=$('b').value;
   var b=bstr.split(',').map(function(s){ var v=parseFloat(s); return isFinite(v)?v:0; });
   if(b.length!==n){ $('sol').textContent='Enter '+n+' comma-separated values for b.'; }
-  else if(!I){ $('sol').textContent='A is singular — no unique unique solution.'; }
+  else if(!I){ $('sol').textContent='A is singular — no unique solution.'; }
   else {
-  /* column vectors must be n x 1, so wrap each scalar in its own row */
+  /* column vectors must be n x 1, so wrap each scalar in its own row;
+     mmul of n x n by n x 1 already yields n x 1, so do not index a row off it */
   var B=b.map(function(v){return [v]});
-  var x=mmul(I,B)[0];
-  var resv=mmul(A,x.map(function(v){return [v]}))[0].map(function(v,i){ return v-b[i]; });
+  var xc=mmul(I,B);
+  var x=xc.map(function(r){return r[0]});
+  var resv=mmul(A,xc)[0].map(function(v,i){ return v-b[i]; });
   var rn=Math.max.apply(null,resv.map(Math.abs));
     $('sol').textContent='b = ['+b.join(', ')+']\n'
       +'x = A⁻¹b = ['+x.map(function(v){return v.toFixed(9)}).join(', ')+']\n'
@@ -587,6 +597,10 @@ window.__mxc = { det:det, inv:inv, eig:eig, rank:rank, mmul:mmul, charPoly:charP
 build(3); run();
 </script>
 
+
+
+
+
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
@@ -603,6 +617,10 @@ build(3); run();
       <span class="ocurp-related-n">Scientific Calculator</span>
       <span class="ocurp-related-b">Full expression evaluation in the browser.</span>
     </a></li>
+    <li><a href="/workspace/tools/calorie-calculator/">
+      <span class="ocurp-related-n">Calorie Calculator</span>
+      <span class="ocurp-related-b">Daily calories from age, weight, activity and goal, using the Mifflin-St Jeor equation.</span>
+    </a></li>
     <li><a href="/workspace/tools/chance-calculator/">
       <span class="ocurp-related-n">Chance Calculator</span>
       <span class="ocurp-related-b">Work out percentages, ratios and the odds of something happening from a set of counts.</span>
@@ -610,10 +628,6 @@ build(3); run();
     <li><a href="/workspace/tools/compound-interest/">
       <span class="ocurp-related-n">Compound Interest</span>
       <span class="ocurp-related-b">Project savings or investments forward with optional monthly deposits.</span>
-    </a></li>
-    <li><a href="/workspace/tools/date-difference/">
-      <span class="ocurp-related-n">Date Difference</span>
-      <span class="ocurp-related-b">Days between two dates, broken down into weeks, months, years and working days.</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/tools/">See all tools →</a>
