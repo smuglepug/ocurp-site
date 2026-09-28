@@ -136,10 +136,17 @@
     var logo = isWebsites
       ? '<div class="flex h-full w-full items-center justify-center"><span class="font-display text-5xl font-black text-white/15">' + esc(e.name.slice(0, 2).toUpperCase()) + '</span></div>'
       : '<img src="/workspace/logos/' + esc(e.slug) + '.png" alt="' + esc(e.name) + ' logo" class="h-24 w-24 rounded-2xl border border-white/10 object-cover transition-transform duration-500 group-hover:scale-[1.04]">';
+    var isFav = !!(window.OcurpAuth && OcurpAuth.favourites && OcurpAuth.favourites.has(e.slug));
+    var favBtn = '<button data-fav="' + esc(e.slug) + '" title="' + (isFav ? 'Remove from your profile' : 'Save to your profile') + '"'
+      + ' aria-label="Save to profile" aria-pressed="' + (isFav ? 'true' : 'false') + '"'
+      + ' class="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border bg-black/55 text-base leading-none backdrop-blur transition-all '
+      + (isFav ? 'border-accent text-accent' : 'border-white/20 text-white/55 hover:border-accent hover:text-accent')
+      + '">' + (isFav ? '\u2605' : '\u2606') + '</button>';
     var art = '<div class="relative flex h-44 items-center justify-center overflow-hidden rounded-t-2xl bg-[#0a0a0a]">'
       + coverArt(e)
       + '<div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a]/75 via-transparent to-transparent"></div>'
       + '<div class="relative">' + logo + '</div>'
+      + favBtn
       + '</div>';
     var tags = e.tags.filter(function (t) { return String(t).toUpperCase() !== 'CLIENT-SIDE'; }).slice(0, 3).map(function (t) {
       return '<span class="rounded-full border border-white/15 bg-white/[0.05] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white/65">' + esc(t) + '</span>';
@@ -176,7 +183,23 @@
     cats.querySelectorAll('[data-cat]').forEach(function (b) {
       b.addEventListener('click', function () { active = b.getAttribute('data-cat'); render(); });
     });
+    /* star: save to the profile. Inside the card link, so stop the navigation. */
+    grid.querySelectorAll('[data-fav]').forEach(function (b) {
+      b.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (!window.OcurpAuth || !OcurpAuth.favourites) return;
+        OcurpAuth.favourites.toggle(b.getAttribute('data-fav'));  /* prompts sign-in when logged out */
+        render();
+      });
+    });
   }
+
+  /* re-render when sign-in state changes, so stars reflect the new account */
+  if (window.OcurpAuth && OcurpAuth.onChange) OcurpAuth.onChange(function () { render(); });
+  /* auth resolves asynchronously, so favourites are not known when the grid is
+     first built. Re-render unconditionally once it lands (3 cheap passes). */
+  [150, 600, 1600].forEach(function (t) { setTimeout(render, t); });
 
   search.addEventListener('input', render);
   render();
