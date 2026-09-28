@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grid Tactics | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Grid Tactics</h1>
+      <p class="mt-1 text-xs text-white/40">Game &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Turn-based skirmish on a square grid. Move points, line of sight through forest, and an AI that scores every square it could stand on.</p>
+  <div class="ws-grid2">
+
+  <section class="ws-panel p-5">
+    <div class="flex flex-wrap items-end gap-3">
+      <div><label class="ws-label mb-2 block" for="size">Grid</label>
+        <select id="size" class="ws-input !w-28">
+          <option value="7">7 x 7</option>
+          <option value="9" selected>9 x 9</option>
+          <option value="11">11 x 11</option>
+        </select></div>
+      <div><label class="ws-label mb-2 block" for="difficulty">Difficulty</label>
+        <select id="difficulty" class="ws-input !w-36">
+          <option value="0">Recruit</option>
+          <option value="1" selected>Soldier</option>
+          <option value="2">Veteran</option>
+        </select></div>
+      <div class="flex items-end gap-2">
+        <button id="new" class="ws-btn">New battle</button>
+        <button id="undo" class="ws-btn-ghost">Undo</button>
+      </div>
+    </div>
+    <div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div>
+  </section>
+  <section class="ws-panel p-5">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap gap-2" id="legend"></div>
+      <div class="flex gap-3 text-xs">
+        <span class="ws-chip">Turn <b id="turn" class="text-accent">1</b></span>
+        <span class="ws-chip">You <b id="you" class="text-accent">0</b></span>
+        <span class="ws-chip">Foes <b id="foes" class="text-white">0</b></span>
+      </div>
+    </div>
+    <div id="board" class="grid gap-1"></div>
+    <div id="log" class="mt-4 max-h-40 overflow-y-auto rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-white/65"></div>
+  </section>
+
+  </div>
+  <div class="mt-8">
+
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+/* ---- terrain ---- */
+var TERRAIN={plain:{cost:1,los:1},forest:{cost:2,los:0},hill:{cost:2,los:1},water:{cost:99,los:0}};
+var NAMES={plain:'Plain',forest:'Forest',hill:'Hill',water:'Water'};
+var M=0, G=null;
+
+/* Terrain is deterministic given a seed so a replay of the same battle is the
+   same battle - makes the tool testable and stops "the map was unfair" noise. */
+function makeTerrain(n,seed){
+  var g=[],s=seed>>>0;
+  function rnd(){ s=(s*1664525+1013904223)>>>0; return s/4294967296; }
+  for(var y=0;y<n;y++){ var row=[]; for(var x=0;x<n;x++){ row.push('plain'); } g.push(row); }
+  for(var i=0;i<Math.floor(n/2);i++){
+    var fx=Math.floor(rnd()*n), fy=Math.floor(rnd()*n);
+    g[fy][fx]='forest';
+  }
+  for(var j=0;j<2;j++){
+    var wx=Math.floor(rnd()*n), wy=Math.floor(rnd()*(n-3))+1;
+    for(var k=0;k<3;k++) g[wy+k][wx]='water';
+  }
+  return g;
+}
+function tile(x,y){
+  if(x<0||y<0||x>=M||y>=M) return 'water';
+  return G.terrain[y][x];
+}
+function inb(x,y){ return x>=0&&y>=0&&x<M&&y>=M; }
+function moveCost(x,y){ return TERRAIN[tile(x,y)].cost; }
+
+/* ---- units ---- */
+var KINDS={
+  soldier:{hp:10,dmg:4,mp:4,range:1,los:1},
+  archer:{hp:7,dmg:5,mp:3,range:4,los:1},
+  guard:{hp:16,dmg:3,mp:2,range:1,los:1},
+};
+function mkUnit(side,kind,x,y){
+  var k=KINDS[kind];
+  return {side:side,kind:kind,x:x,y:y,hp:k.hp,maxhp:k.hp,mp:k.mp,alive:true};
+}
+
+/* Dijkstra over move points: forest and hill cost 2, water is impassable.
+   Returns a cost map so the AI can reuse the same reachability the player sees. */
+function reachable(u){
+  var dist={}, key=function(x,y){return x+','+y;};
+  dist[key(u.x,u.y)]=0;
+  var frontier=[[u.x,u.y]];
+  while(frontier.length){
+    frontier.sort(function(a,b){return dist[key(a[0],a[1])]-dist[key(b[0],b[1])];});
+    var cur=frontier.shift(), cx=cur[0], cy=cur[1], d=dist[key(cx,cy)];
+    if(d>=u.mp) continue;
+    var dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+    for(var i=0;i<4;i++){
+      var nx=cx+dirs[i][0], ny=cy+dirs[i][1];
+      if(!inb(nx,ny)) continue;
+      if(G.unitAt(nx,ny)) continue;
+      var c=moveCost(nx,ny); if(c>50) continue;
+      var nd=d+c;
+      if(nd<=u.mp && (dist[key(nx,ny)]===undefined || nd<dist[key(nx,ny)])){
+        dist[key(nx,ny)]=nd; frontier.push([nx,ny]);
+      }
+    }
+  }
+  return dist;
+}
+function key(x,y){return x+','+y;}
+
+/* Bresenham line of sight. Forest blocks sight; water and hill do not. A unit
+   standing behind a forest tile cannot be shot through it. */
+function hasLos(x0,y0,x1,y1){
+  var dx=Math.abs(x1-x0), dy=Math.abs(y1-y0);
+  var sx=x0<x1?1:-1, sy=y0<y1?1:-1, err=dx-dy, x=x0, y=y0;
+  while(true){
+    if(x===x1&&y===y1) return true;
+    var e2=2*err;
+    if(e2>-dy){ err-=dy; x+=sx; }
+    if(e2<dx){ err+=dx; y+=sy; }
+    if(x===x1&&y===y1) return true;
+    if(!TERRAIN[tile(x,y)].los) return false;
+  }
+}
+function inRange(a,b){
+  var d=Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y));
+  if(d>KINDS[a.kind].range) return false;
+  if(!KINDS[a.kind].los) return true;
+  return hasLos(a.x,a.y,b.x,b.y);
+}
+window.__tactics={KINDS:KINDS,TERRAIN:TERRAIN,makeTerrain:makeTerrain,reachable:reachable,
+  hasLos:hasLos,inRange:inRange,tile:tile,key:key,state:function(){return G;},
+  get M(){return M;},setM:function(v){M=v;}};
+
+/* ---- battle state ---- */
+function newBattle(){
+  var n=parseInt($('size').value,10)||9;
+  M=n;
+  G={n:n,terrain:makeTerrain(n, (n*2654435761)>>>0), units:[], turn:1, side:'you',
+     over:null, log:[], sel:null, reach:null, hist:[]};
+  var you=[[0,0,'guard'],[1,0,'soldier'],[0,1,'archer'],[2,0,'soldier']];
+  var foes=[];
+  var kinds=['soldier','archer','guard'];
+  for(var i=0;i<4;i++){
+    var spots=[[n-1,n-1],[n-2,n-1],[n-1,n-2],[n-2,n-2]];
+    foes.push(mkUnit('foe',kinds[i%3],spots[i][0],spots[i][1]));
+  }
+  for(var j=0;j<you.length;j++) G.units.push(mkUnit('you',you[j][2],you[j][0],you[j][1]));
+  G.units=G.units.concat(foes);
+  say('Battle joined. Take the high ground.');
+  render();
+}
+G = null;
+function unitAt(x,y){
+  for(var i=0;i<G.units.length;i++){
+    var u=G.units[i];
+    if(u.alive&&u.x===x&&u.y===y) return u;
+  }
+  return null;
+}
+function mine(side){ return G.units.filter(function(u){return u.alive&&u.side===side;}); }
+function say(t){ G.log.unshift(t); if(G.log.length>60) G.log.pop(); }
+
+function snapshot(){
+  return JSON.stringify({units:G.units,turn:G.turn,side:G.side,over:G.over,log:G.log});
+}
+function restore(s){
+  var o=JSON.parse(s);
+  G.units=o.units; G.turn=o.turn; G.side=o.side; G.over=o.over; G.log=o.log;
+  G.sel=null; G.reach=null;
+}
+function push(){ G.hist.push(snapshot()); if(G.hist.length>40) G.hist.shift(); }
+
+function moveTo(u,x,y){
+  u.x=x; u.y=y;
+}
+function attack(a,b){
+  var dmg=KINDS[a.kind].dmg;
+  /* A guard in cover - adjacent to forest or on a hill - takes one less. */
+  if((tile(b.x,b.y)==='forest'||tile(b.x,b.y)==='hill') && b.kind!=='guard') dmg-=1;
+  if(dmg<1) dmg=1;
+  b.hp-=dmg;
+  say(a.side==='you'?'Your '+a.kind+' hits the foe '+b.kind+' for '+dmg+'.'
+                 :'A foe '+a.kind+' strikes your '+b.kind+' for '+dmg+'.');
+  if(b.hp<=0){
+    b.alive=false;
+    say((a.side==='you'?'You':'The foe')+' wiped out a '+b.kind+'.');
+  }
+  a.mp=0;
+  return b.hp<=0;
+}
+function targetsFor(u){
+  return mine(u.side==='you'?'foe':'you').filter(function(t){
+    return inRange(u,t) && hasLos(u.x,u.y,t.x,t.y);
+  });
+}
+function checkOver(){
+  if(!mine('you').length){ G.over='defeat'; say('Your line is broken. Defeat.'); return true; }
+  if(!mine('foe').length){ G.over='victory'; say('The field is yours. Victory.'); return true; }
+  return false;
+}
+function endTurn(){
+  if(G.over) return;
+  G.sel=null; G.reach=null;
+  G.turn++;
+  G.side='foe';
+  var di=parseInt($('difficulty').value,10)||1;
+  aiTurn(di);
+  render();
+}
+window.__tactics.newBattle=newBattle;
+window.__tactics.attack=attack;
+window.__tactics.endTurn=endTurn;
+window.__tactics.mine=mine;
+window.__tactics.targetsFor=targetsFor;
+window.__tactics.push=push;
+window.__tactics.restore=restore;
+window.__tactics.snapshot=snapshot;
+
+/* ---- AI ----
+   Scores every legal (move, attack) pair. The score rewards damage, killing
+   outright, staying in cover and ending in range of something useful, so a
+   high-difficulty AI actually flanks instead of walking at the nearest unit. */
+function scoreMove(u,tx,ty,targets){
+  var s=0;
+  var copy=Object.assign({},u); copy.x=tx; copy.y=ty;
+  var hits=targetsFor(copy);
+  var saved=u.hp;
+  for(var i=0;i<hits.length;i++){
+    var t=hits[i], d=KINDS[u.kind].dmg;
+    if((tile(t.x,t.y)==='forest'||tile(t.x,t.y)==='hill') && t.kind!=='guard') d-=1;
+    s+=d*10;
+    if(d>=t.hp) s+=45;
+    if(t.hp<=d && KINDS[t.kind].hp<=6) s+=20;
+  }
+  if(hits.length) s+=15;
+  var terr=tile(tx,ty);
+  if(terr==='forest') s+=12; else if(terr==='hill') s+=8;
+  /* Do not stand in the open next to a healthy enemy. */
+  var adj=mine(u.side==='you'?'foe':'you').filter(function(e){
+    return Math.max(Math.abs(e.x-tx),Math.abs(e.y-ty))===1;});
+  adj.forEach(function(e){ s-=e.hp*1.5; });
+  s+=u.hp*0.5;
+  return s;
+}
+function aiTurn(di){
+  var order=mine('foe').slice().sort(function(a,b){
+    return (b.hp+(b.kind==='archer'?6:0))-(a.hp+(a.kind==='archer'?6:0));
+  });
+  var guardBudget=di;
+  for(var i=0;i<order.length;i++){
+    var u=order[i]; if(!u.alive) continue;
+    u.mp=KINDS[u.kind].mp;
+    var best={score:-1e9,x:u.x,y:u.y,target:null};
+    var reach=reachable(u);
+    for(var k in reach){
+      if(!Object.prototype.hasOwnProperty.call(reach,k)) continue;
+      var p=k.split(','), tx=parseInt(p[0],10), ty=parseInt(p[1],10);
+      var s=scoreMove(u,tx,ty);
+      /* A recruit wanders; a veteran takes the best square on the board. */
+      if(di===0) s=Math.random()*10;
+      if(s>best.score){ best={score:s,x:tx,y:ty,target:null}; }
+    }
+    moveTo(u,best.x,best.y);
+    var ts=targetsFor(u);
+    if(ts.length){
+      ts.sort(function(a,b){ return a.hp-b.hp || KINDS[b.kind].dmg-KINDS[a.kind].dmg; });
+      var t=ts[0];
+      /* Recruits sometimes miss; veterans never do. */
+      if(di>0 || Math.random()<0.7) attack(u,t);
+      else { say('A foe '+u.kind+' hesitates.'); u.mp=0; }
+    }
+  }
+  if(!checkOver()){
+    G.side='you';
+    mine('you').forEach(function(u){u.mp=KINDS[u.kind].mp;});
+    say('Your turn.');
+  }
+}
+window.__tactics.scoreMove=scoreMove;
+window.__tactics.aiTurn=aiTurn;
+
+/* ---- render ---- */
+var TILE={plain:'bg-white/[0.03]',forest:'bg-[#0f2417]',hill:'bg-white/[0.10]',water:'bg-[#0a1a2a]'};
+function render(){
+  var b=$('board');
+  b.style.gridTemplateColumns='repeat('+G.n+',minmax(0,1fr))';
+  var html='';
+  for(var y=0;y<G.n;y++) for(var x=0;x<G.n;x++){
+    var t=tile(x,y), u=unitAt(x,y);
+    var selG='';
+    if(G.sel&&G.sel.x===x&&G.sel.y===y) selG='outline:2px solid #FF5F1F;outline-offset:-2px;';
+    var reachG='';
+    if(G.reach&&G.reach[key(x,y)]!==undefined&&!u) reachG='box-shadow:inset 0 0 0 1px rgba(255,95,31,.45);';
+    html+='<button data-x="'+x+'" data-y="'+y+'" class="relative aspect-square rounded-md border border-white/[0.07] '
+      +TILE[t]+' hover:border-accent/50 transition-colors" style="'+selG+reachG+'">';
+    if(t==='forest') html+='<span class="text-[9px] text-emerald-500/60">&#9650;</span>';
+    if(t==='hill') html+='<span class="text-[9px] text-white/30">&#9651;</span>';
+    if(t==='water') html+='<span class="text-[9px] text-sky-500/50">&#8776;</span>';
+    if(u){
+      var col=u.side==='you'?'#FF5F1F':'#7dd3fc';
+      var pct=Math.max(0,u.hp/u.maxhp);
+      html+='<span class="absolute inset-0 flex items-center justify-center text-[8px] font-black uppercase tracking-tight" style="color:'+col+'">'
+        +u.kind.slice(0,3)+'</span>'
+        +'<span class="absolute inset-x-0 bottom-0 h-[3px] bg-black/60"><span class="block h-full" style="width:'+(pct*100)+'%;background:'+col+'"></span></span>';
+    }
+    html+='</button>';
+  }
+  b.innerHTML=html;
+  $('turn').textContent=G.turn;
+  $('you').textContent=mine('you').length;
+  $('foes').textContent=mine('foe').length;
+  $('legend').innerHTML=Object.keys(NAMES).map(function(k){
+    return '<span class="ws-chip">'+NAMES[k]+'</span>';}).join('')
+    +'<span class="ws-chip" style="border-color:#FF5F1F55;color:#FF5F1F">Yours</span>'
+    +'<span class="ws-chip" style="border-color:#7dd3fc55;color:#7dd3fc">Foes</span>';
+  $('log').innerHTML=G.log.map(function(l){
+    return '<div class="py-0.5">'+(/^Victory|^Defeat/.test(l)?'<b class="text-accent">'+l+'</b>':l)+'</div>';}).join('');
+  if(G.over){
+    var d=document.createElement('div');
+    d.className='mt-3 rounded-xl border border-accent/40 bg-accent/10 p-3 text-center text-sm font-bold text-accent';
+    d.textContent=G.over==='victory'?'Victory. Every foe is down.':'Defeat. Your line broke.';
+    $('board').parentNode.appendChild(d);
+  }
+}
+function click(x,y){
+  if(G.over||G.side!=='you') return;
+  var u=unitAt(x,y);
+  if(u&&u.side==='you'){ G.sel=u; G.reach=reachable(u); render(); return; }
+  if(G.sel){
+    if(u&&u.side==='foe'){
+      if(inRange(G.sel,u)&&hasLos(G.sel.x,G.sel.y,u.x,u.y)){
+        push(); attack(G.sel,u);
+        if(!checkOver()){ G.sel=null; G.reach=null; }
+        render(); return;
+      }
+      say('Out of range or no line of sight.'); render(); return;
+    }
+    if(G.reach&&G.reach[key(x,y)]!==undefined){
+      push(); moveTo(G.sel,x,y); G.sel=null; G.reach=null; render(); return;
+    }
+  }
+  G.sel=null; G.reach=null; render();
+}
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-x]');
+  if(b) click(parseInt(b.getAttribute('data-x'),10),parseInt(b.getAttribute('data-y'),10));
+});
+$('new').onclick=function(){ $('size').onchange(); newBattle(); };
+$('size').onchange=function(){};
+$('difficulty').onchange=function(){};
+$('undo').onclick=function(){
+  if(!G.hist.length){ seterr('err','Nothing to undo.'); return; }
+  seterr('err',''); restore(G.hist.pop()); render();
+};
+window.__tactics.click=click;
+window.__tactics.render=render;
+$('size').onchange=newBattle;
+$('difficulty').onchange=function(){ if(!G) newBattle(); else render(); };
+$('new').onclick=newBattle;
+newBattle();
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

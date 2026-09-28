@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Continuous Compounding — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Continuous-compounding interest and the e-folding half-life that goes with it. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/continuous-compounding/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Continuous Compounding">
+<meta property="og:description" content="Continuous-compounding interest and the e-folding half-life that goes with it. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/continuous-compounding/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Continuous Compounding on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Continuous Compounding">
+<meta name="twitter:description" content="Continuous-compounding interest and the e-folding half-life that goes with it. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Continuous Compounding on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Continuous Compounding","url":"https://ocurp.space/workspace/tools/continuous-compounding/","description":"Continuous-compounding interest and the e-folding half-life that goes with it. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Continuous Compounding</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">MONEY</span><span class="ws-chip">EXPONENT</span><span class="ws-chip">MATH</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid items-end gap-4 md:grid-cols-3 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="p">Principal (£)</label><input id="p" type="number" class="ws-input" placeholder="0.00" value="10000"></div><div><label class="ws-label mb-2 block" for="rate">Rate (% per year)</label><input id="rate" type="number" class="ws-input" placeholder="0.0" value="5"></div><div><label class="ws-label mb-2 block" for="t">Years</label><input id="t" type="number" class="ws-input" placeholder="0" value="10"></div><div><label class="ws-label mb-2 block" for="freq">Compare with</label><select id="freq" class="ws-input !w-full"><option value="1">Annual</option><option value="4">Quarterly</option><option value="12" selected>Monthly</option><option value="365">Daily</option></select></div></div><div class="mt-4 flex flex-wrap gap-2" id="presets"></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Growth over time</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="line" onclick="cp(this)"></button></div><div class="ws-out" id="line">-</div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Year</th><th class="py-2 pr-4">Continuous</th><th class="py-2 pr-4">Interest to date</th><th class="py-2 pr-4">Annualised</th></tr></thead><tbody id="tbl"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Why continuous is not much different</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="note" onclick="cp(this)"></button></div><div id="note" class="text-sm text-white/60">-</div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+var E=Math.E;
+/* A = P e^(rt). The whole tool. */
+function cont(p,rate,t){ return p*Math.pow(E,rate*t); }
+function interest(p,rate,t){ return cont(p,rate,t)-p; }
+function doubling(rate){ return rate>0 ? Math.log(2)/rate : null; }
+function efold(rate){ return rate>0 ? 1/rate : null; }
+function discrete(p,rate,t,n){ return p*Math.pow(1+rate/n,t*n); }
+function run(){
+  var p=parseFloat($('p').value), rate=(parseFloat($('rate').value)||0)/100, t=parseFloat($('t').value);
+  if(isNaN(p)||!(p>0)){ seterr('err','principal must be above zero'); return; }
+  if(isNaN(t)||t<0){ seterr('err','years must be zero or more'); return; }
+  seterr('err','');
+  var n=parseInt($('freq').value,10);
+  var A=cont(p,rate,t), gain=A-p;
+  var d=discrete(p,rate,t,n);
+  show([['Final value','£'+grp(A,2)],
+        ['Interest','£'+grp(gain,2)],
+        ['Growth',grp(p>0?gain/p*100:0,2)+'%'],
+        ['Doubling',doubling(rate)?grp(doubling(rate),2)+' yr':'never']]);
+  $('line').textContent='£'+grp(p,2)+' at '+(rate*100).toFixed(4)
+    +'% for '+t+' yr = £'+grp(A,2)+'  (gain £'+grp(gain,2)+')';
+  var step=t>20?5:(t>6?2:1), html='';
+  for(var y=0;y<=t+1e-9;y+=step){
+    if(y>t+1e-9) break;
+    var a=cont(p,rate,y);
+    html+=row([r(y,4),'£'+grp(a,2),'£'+grp(a-p,2),
+      (p>0?((a/p)-1)*100:0).toFixed(3)+'%']);
+  }
+  $('tbl').innerHTML=html;
+  $('note').innerHTML=[
+    'Continuous: A = P·e^(rt) = '+grp(p,2)+'·e^('+r(rate,6)+'×'+t+') = £'+grp(A,2)+'.',
+    (n>1 ? 'Compounded '+({1:'annually',4:'quarterly',12:'monthly',365:'daily'})[n]
+      +': £'+grp(d,2)+'. Continuous is £'+grp(A-d,2)+' more over '+t+' years.'
+      : 'Set the comparison to monthly to see the gap.'),
+    'A doubling time of ln2/r = '+ln2(rate)+' and an e-folding time of 1/r = '
+      +ln2(rate).replace(' years','')+' describe the same curve, because e^(ln2) = 2.',
+    'The limit of (1 + r/n)^(nt) as n goes to infinity is exactly e^(rt), which is '
+      +'why continuous sits a hair above every discrete option.',
+    'At '+((parseFloat($('rate').value)||0).toFixed(3))
+      +'%, £1 becomes £'+r(Math.pow(E,rate),6)+' after a year.'
+  ].map(function(t){return '<div class="py-1">'+esc(t)+'</div>';}).join('');
+  window.__contLast={principal:p,rate:rate,years:t,amount:A,interest:gain,
+    doubling:doubling(rate),efold:efold(rate),discrete:d,perYear:Math.pow(E,rate)};
+  return window.__contLast;
+}
+function ln2(rate){ return rate>0 ? grp(Math.log(2)/rate,3)+' years' : 'never'; }
+$('presets').innerHTML=[["1000", "6", "5"], ["25000", "4.5", "15"], ["10000", "7", "30"], ["500", "12", "3"]].map(function(p,i){
+  return '<button class="ws-btn-ghost !px-3 !py-1.5" onclick="preset('+i+')">'
+    +esc('£'+p[0]+' at '+p[1]+'%')+'</button>';}).join('');
+function preset(i){
+  var p=[["1000", "6", "5"], ["25000", "4.5", "15"], ["10000", "7", "30"], ["500", "12", "3"]][i];
+  $('p').value=p[0]; $('rate').value=p[1]; $('t').value=p[2]; run();
+}
+bind(['p','rate','t','freq'],run);
+window.__cont={cont:cont,interest:interest,doubling:doubling,efold:efold,
+  discrete:discrete,run:run};
+run();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/compound-interest/">
+      <span class="ocurp-related-n">Compound Interest</span>
+      <span class="ocurp-related-b">Project savings or investments forward with optional monthly deposits.</span>
+    </a></li>
+    <li><a href="/workspace/tools/discount-calculator/">
+      <span class="ocurp-related-n">Discount Calculator</span>
+      <span class="ocurp-related-b">Apply one or two stacked discounts and see the final price and what you saved.</span>
+    </a></li>
+    <li><a href="/workspace/tools/tip-calculator/">
+      <span class="ocurp-related-n">Tip Calculator</span>
+      <span class="ocurp-related-b">Work out the tip, the total and what each person owes when you split the bill.</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calculator/">
+      <span class="ocurp-related-n">Scientific Calculator</span>
+      <span class="ocurp-related-b">Full expression evaluation in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

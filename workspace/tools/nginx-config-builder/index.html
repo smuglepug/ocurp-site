@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nginx Config Builder — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Build a working nginx server block with TLS, caching, gzip and proxying set for you. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/nginx-config-builder/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Nginx Config Builder">
+<meta property="og:description" content="Build a working nginx server block with TLS, caching, gzip and proxying set for you. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/nginx-config-builder/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Nginx Config Builder on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Nginx Config Builder">
+<meta name="twitter:description" content="Build a working nginx server block with TLS, caching, gzip and proxying set for you. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Nginx Config Builder on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Nginx Config Builder","url":"https://ocurp.space/workspace/tools/nginx-config-builder/","description":"Build a working nginx server block with TLS, caching, gzip and proxying set for you. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Nginx Config Builder</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Network & Web — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">NGINX</span><span class="ws-chip">SERVER</span><span class="ws-chip">CONFIG</span><span class="ws-chip">CLIENT-SIDE</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid items-end gap-4 md:grid-cols-3"><div><label class="ws-label mb-2 block" for="domain">Domain</label><input id="domain" type="text" class="ws-input" placeholder="example.com" value="ocurp.space"></div><div><label class="ws-label mb-2 block" for="root">Document root</label><input id="root" type="text" class="ws-input" placeholder="/var/www/html" value="/var/www/html"></div><div><label class="ws-label mb-2 block" for="srvtype">Server type</label><select id="srvtype" class="ws-input !w-48"><option value="Static site">static</option><option value="Reverse proxy">proxy</option><option value="SPA">spa</option><option value="Proxy + static">mixed</option></select></div></div><div class="mt-4 grid items-end gap-4 md:grid-cols-3"><div><label class="ws-label mb-2 block" for="tls">TLS</label><select id="tls" class="ws-input !w-48"><option value="Yes — Let's Encrypt">le</option><option value="Yes — self-signed">self</option><option value="No">none</option></select></div><div><label class="ws-label mb-2 block" for="redirect">HTTP → HTTPS</label><select id="redirect" class="ws-input !w-40"><option value="Yes, 301">301</option><option value="Yes, 302">302</option><option value="No">no</option></select></div><div><label class="ws-label mb-2 block" for="gzip">gzip</label><select id="gzip" class="ws-input !w-40"><option value="gzip on">on</option><option value="gzip off">off</option></select></div></div><div class="mt-4 grid items-end gap-4 md:grid-cols-3"><div><label class="ws-label mb-2 block" for="upstream">Upstream</label><input id="upstream" type="text" class="ws-input" placeholder="127.0.0.1:3000" value="127.0.0.1:3000"></div><div><label class="ws-label mb-2 block" for="timeout">Proxy timeout</label><input id="timeout" type="number" class="ws-input" placeholder="60" value="60"></div><div><label class="ws-label mb-2 block" for="cache">Cache</label><select id="cache" class="ws-input !w-48"><option value="Static assets 30d">assets</option><option value="HTML no-cache">html</option><option value="None">none</option></select></div></div><div class="mt-4 flex flex-wrap items-center gap-3"><label class="flex items-center gap-2 text-sm text-white/70"><input id="www" type="checkbox" class="accent-[#FF5F1F]" checked> www redirect</label><label class="flex items-center gap-2 text-sm text-white/70"><input id="sec" type="checkbox" class="accent-[#FF5F1F]" checked> security headers</label><label class="flex items-center gap-2 text-sm text-white/70"><input id="logs" type="checkbox" class="accent-[#FF5F1F]" checked> access log</label><label class="flex items-center gap-2 text-sm text-white/70"><input id="spa" type="checkbox" class="accent-[#FF5F1F]"> SPA try_files</label><button id="http2" class="ws-btn-ghost !px-3 !py-1.5" onclick="return false"></button></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">nginx.conf</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="out" onclick="cp(this)">Copy config</button></div><pre id="out" class="ws-out"></pre></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Brace / quote balance</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="check" onclick="cp(this)"></button></div><pre id="check" class="ws-out"></pre></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Location blocks</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="mapinfo" onclick="cp(this)"></button></div><div id="mapinfo" class="space-y-2"></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var el=document.getElementById('stats');if(el)el.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){try{fn()}catch(e){seterr('err',e.message)}}
+
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var el=document.getElementById('stats');if(el)el.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){try{fn()}catch(e){seterr('err',e.message)}}
+
+function q(s){ return '"'+String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"')+'"'; }
+// Every literal lands inside quotes, so a stray " in the domain field cannot
+// silently unbalance the generated file.
+function validDomain(d){
+  return /^(?=.{1,253}$)([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,}$/.test(d);
+}
+function block(name,directives,opts){
+  var o=opts||{};
+  var head = o.log!==false
+    ? 'access_log /var/log/nginx/'+name.replace(/[^a-z0-9]+/gi,'_')+'.access.log combined;'
+    : 'access_log off;';
+  var err = o.log!==false
+    ? 'error_log  /var/log/nginx/'+name.replace(/[^a-z0-9]+/gi,'_')+'.error.log warn;'
+    : 'error_log off;';
+  var lines=['server {','    listen '+o.listen+';','    server_name '+o.names+';',head,err];
+  directives.forEach(function(d){ lines.push('    '+d); });
+  lines.push('}');
+  return lines.join('\n');
+}
+function buildConfig(o){
+  var d=o.domain, L=[], secure=(o.tls!=='none');
+  L.push('# nginx.conf generated for '+d);
+  L.push('# nginx -t  to validate,  nginx -s reload  to apply');
+  L.push('');
+  L.push('user www-data;');
+  L.push('worker_processes auto;');
+  L.push('pid /run/nginx.pid;');
+  L.push('');
+  L.push('events {');
+  L.push('    worker_connections 1024;');
+  L.push('    multi_accept on;');
+  L.push('}');
+  L.push('');
+  L.push('http {');
+  L.push('    sendfile on;');
+  L.push('    tcp_nopush on;');
+  L.push('    keepalive_timeout 65;');
+  L.push('    server_tokens off;');
+  L.push('    types_hash_max_size 2048;');
+  L.push('    include /etc/nginx/mime.types;');
+  L.push('    default_type application/octet-stream;');
+  if(o.gzip==='on'){
+    L.push('');
+    L.push('    gzip on;');
+    L.push('    gzip_vary on;');
+    L.push('    gzip_proxied any;');
+    L.push('    gzip_comp_level 6;');
+    L.push('    gzip_min_length 1024;');
+    L.push('    gzip_types');
+    L.push('        text/plain text/css text/xml application/json application/javascript');
+    L.push('        application/xml application/xml+rss image/svg+xml font/woff font/woff2;');
+  }
+  if(o.assetsUpstream) L.push('');
+  L.push('');
+
+  var assetLocation = o.cache==='assets' ? [
+    'location ~* \\.(?:css|js|jpg|jpeg|png|gif|svg|webp|avif|ico|woff2?)$ {',
+    '    expires 30d;',
+    '    add_header Cache-Control "public, max-age=2592000, immutable";',
+    '    access_log off;',
+    '    try_files $uri =404;',
+    '}'
+  ] : null;
+  var htmlLocation = o.cache==='html' ? [
+    'location / {',
+    '    add_header Cache-Control "no-cache, no-store, must-revalidate";',
+    '    expires -1;'
+  ] : null;
+  var proxyLocation = o.srvtype==='proxy'||o.srvtype==='mixed' ? [
+    'location / {',
+    '    proxy_pass http://'+o.upstream+';',
+    '    proxy_http_version 1.1;',
+    '    proxy_set_header Host $host;',
+    '    proxy_set_header X-Real-IP $remote_addr;',
+    '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;',
+    '    proxy_set_header X-Forwarded-Proto $scheme;',
+    '    proxy_set_header Upgrade $http_upgrade;',
+    '    proxy_set_header Connection "upgrade";',
+    '    proxy_connect_timeout 5s;',
+    '    proxy_read_timeout '+o.timeout+'s;',
+    '    proxy_send_timeout '+o.timeout+'s;',
+    '    proxy_buffering on;'
+  ] : [
+    'location / {',
+    '    index index.html index.htm;',
+    '    try_files $uri $uri/ =404;'
+  ];
+  function assemble(loc){
+    var dir=[], tail=[];
+    if(htmlLocation){
+      dir=dir.concat(htmlLocation); tail.push('    try_files $uri $uri/ =404;','}');
+      loc=dir.concat(tail);
+    } else if(o.spa){
+      loc=loc.concat(['    try_files $uri $uri/ /index.html;','}']);
+    } else {
+      loc=loc.concat(['}']);
+    }
+    return loc;
+  }
+  var directives=[];
+  if(htmlLocation) directives=assemble(htmlLocation);
+  else directives=assemble(proxyLocation);
+  if(assetLocation) directives=directives.concat([''],assetLocation);
+  if(o.srvtype==='spa' && !o.spa){
+    directives=directives.map(function(x){
+      return x==='    try_files $uri $uri/ =404;'
+        ? '    try_files $uri $uri/ /index.html;   # SPA history fallback' : x;});
+  }
+  var nameList = o.www ? d+' '+'www.'+d : d;
+
+  if(secure){
+    L.push('    # ---- HTTP: redirect everything to HTTPS ----');
+    L.push(block('redirect',[
+      'return '+(o.redirect==='302'?'302':'301')+' https://$host$request_uri;'
+    ],{listen:'80',names:nameList,log:o.logs}));
+    L.push('');
+    L.push('    # ---- HTTPS ----');
+    var srv=block('secure',directives,{listen:'443 ssl'+o.http2,
+      names:nameList,log:o.logs});
+    // Splice the TLS material in after server_name, which is where it belongs.
+    var lines=srv.split('\n');
+    var ins=lines.indexOf('    server_name '+nameList+';')+1;
+    var tlsBlock=[];
+    if(o.tls==='le'){
+      tlsBlock=[
+        '',
+        '    ssl_certificate     /etc/letsencrypt/live/'+d+'/fullchain.pem;',
+        '    ssl_certificate_key /etc/letsencrypt/live/'+d+'/privkey.pem;',
+        '    ssl_protocols       TLSv1.2 TLSv1.3;',
+        '    ssl_ciphers         ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;',
+        '    ssl_prefer_server_ciphers off;',
+        '    ssl_session_cache   shared:SSL:10m;',
+        '    ssl_session_timeout 1d;',
+        '    ssl_stapling on;',
+        '    ssl_stapling_verify on;'
+      ];
+    } else {
+      tlsBlock=[
+        '',
+        '    ssl_certificate     /etc/ssl/certs/'+d+'.crt;   # self-signed',
+        '    ssl_certificate_key /etc/ssl/private/'+d+'.key;',
+        '    ssl_protocols       TLSv1.2 TLSv1.3;',
+        '    ssl_session_cache   shared:SSL:10m;',
+        '    ssl_session_timeout 1d;'
+      ];
+    }
+    if(o.sec){
+      tlsBlock=tlsBlock.concat([
+        '',
+        '    add_header Strict-Transport-Security "max-age=15768000; includeSubDomains" always;',
+        '    add_header X-Frame-Options SAMEORIGIN always;',
+        '    add_header X-Content-Type-Options nosniff always;',
+        '    add_header Referrer-Policy strict-origin-when-cross-origin always;'
+      ]);
+    }
+    lines=lines.slice(0,ins).concat(tlsBlock,lines.slice(ins));
+    L.push(lines.join('\n'));
+  } else {
+    L.push(block('plain',directives,{listen:'80',names:nameList,log:o.logs}));
+  }
+  L.push('}');
+  var text=L.join('\n');
+  return {config:text, domains:nameList, locations:countLocations(text),
+          servers:(text.match(/\nserver \{|^server \{/g)||[]).length, secure:secure};
+}
+function countLocations(cfg){
+  return (cfg.match(/location\s+[^\{]*\{/g)||[]).length;
+}
+// A cheap structural check: quotes must pair and braces must balance. This
+// catches the two ways a generated nginx file actually fails to load.
+function validate(cfg){
+  var problems=[], depth=0, quotes=0, inStr=false, esc=false;
+  for(var i=0;i<cfg.length;i++){
+    var c=cfg[i];
+    if(esc){ esc=false; continue; }
+    if(c==='\\\\'){ esc=true; continue; }
+    if(c==='"'){ quotes++; inStr=!inStr; continue; }
+    if(inStr) continue;
+    if(c==='{') depth++;
+    if(c==='}'){ depth--; if(depth<0) problems.push('closing } with no opener at offset '+i); }
+  }
+  if(depth!==0) problems.push('brace imbalance: ends at depth '+depth);
+  if(quotes%2!==0) problems.push('unbalanced double quotes: '+quotes);
+  var stmts=cfg.split('\n').map(function(l){
+    /* Strip a trailing # comment before testing for a semicolon. An nginx
+       directive is terminated by ';' even when a comment follows it on the
+       same line, so `ssl_certificate ...;   # self-signed` is valid config.
+       Testing the raw line made validate() reject the tool's own output. */
+    var h=l.indexOf('#');
+    if(h>=0 && (h===0 || l.charAt(h-1)!=='\\')) l=l.slice(0,h);
+    return l;
+  }).filter(function(l){return l.trim().replace(/;\s*$/,'').length>0;});
+  // nginx allows a value to continue onto following lines; only a line that
+  // opens a block or is a comment can legitimately lack a trailing semicolon.
+  // Directives whose value is a space-separated list (gzip_types, proxy_set_header
+  // continuation lists) are legal across lines, so a newline does not end them.
+  var MULTILINE_OK={gzip_types:1,charset_map:1,mime_types:1,types_hash_max_size:1};
+  var unsemicolon=stmts.filter(function(l){
+    var t=l.trim();
+    if(/;\s*$/.test(t)) return false;
+    if(/[\{\}]\s*$/.test(t)) return false;
+    if(/^\s*#/.test(t)) return false;
+    if(/^\s*\w+\s*\{/.test(t)) return false;
+    if(MULTILINE_OK[t.split(/\s+/)[0]]) return false;
+    return true;
+  });
+  if(unsemicolon.length) problems.push(unsemicolon.length+' directive(s) without a semicolon: '+unsemicolon[0].trim());
+  return {ok:problems.length===0, problems:problems, depth:depth, quotes:quotes,
+          lines:cfg.split('\n').length};
+}
+window.__nginx={buildConfig:buildConfig,validate:validate,q:q,validDomain:validDomain};
+
+function run(){
+  var d=$('domain').value.trim().replace(/^https?:\/\//,'').replace(/\/.*$/,'');
+  if(!d){ seterr('err','enter a domain'); return; }
+  if(!validDomain(d)){ seterr('err','"'+d+'" is not a valid domain name'); return; }
+  seterr('err','');
+  var res=buildConfig({domain:d,root:$('root').value.trim()||'/var/www/html',
+    srvtype:$('srvtype').value,tls:$('tls').value,redirect:$('redirect').value,
+    gzip:$('gzip').value,upstream:$('upstream').value.trim()||'127.0.0.1:3000',
+    timeout:$('timeout').value||'60',cache:$('cache').value,www:$('www').checked,
+    sec:$('sec').checked,logs:$('logs').checked,spa:$('spa').checked,
+    http2:true});
+  var v=validate(res.config);
+  $('out').textContent=res.config;
+  $('check').textContent=v.ok
+    ? 'OK \u2014 braces balanced, quotes paired, every directive terminated.\n'
+      +'lines: '+v.lines+'   servers: '+res.servers+'   locations: '+res.locations
+    : 'PROBLEMS:\n- '+v.problems.join('\n- ');
+  $('check').style.color=v.ok?'#4ade80':'#f87171';
+  show([['Lines',v.lines],['Servers',res.servers],['Locations',res.locations],
+        ['Validates',v.ok?'yes':'no']]);
+  $('mapinfo').innerHTML=[
+    ['Server name',res.domains],
+    ['TLS',res.secure?($('tls').value==='le'?"Let's Encrypt":"self-signed"):'disabled'],
+    ['Root',$('root').value.trim()],
+    ['Gzip',$('gzip').value],
+    ['Cache',$('cache').value]
+  ].map(function(p){
+    return '<div class="flex justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">'
+      +'<span class="text-sm text-white/80">'+esc(p[0])+'</span>'
+      +'<span class="font-mono text-sm text-accent">'+esc(p[1])+'</span></div>';
+  }).join('');
+}
+$('http2').style.display='none';
+bind(['domain','root','srvtype','tls','redirect','gzip','upstream','timeout',
+      'cache','www','sec','logs','spa'],run);
+wire(run);
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/yaml-validator/">
+      <span class="ocurp-related-n">YAML Validator</span>
+      <span class="ocurp-related-b">Check a YAML file for tabs, bad pairs and duplicate keys, and see the structure it parsed </span>
+    </a></li>
+    <li><a href="/workspace/tools/bandwidth-calculator/">
+      <span class="ocurp-related-n">Bandwidth Calculator</span>
+      <span class="ocurp-related-b">How long a transfer really takes, and what upload speed a video call actually needs.</span>
+    </a></li>
+    <li><a href="/workspace/tools/cron-parser/">
+      <span class="ocurp-related-n">Cron Expression Parser</span>
+      <span class="ocurp-related-b">Expand a crontab into its fields, plain English and the next real run times.</span>
+    </a></li>
+    <li><a href="/workspace/tools/css-grid-builder/">
+      <span class="ocurp-related-n">CSS Grid Template Builder</span>
+      <span class="ocurp-related-b">Drag out a grid definition and get the CSS with media queries attached.</span>
+    </a></li>
+    <li><a href="/workspace/tools/data-usage-planner/">
+      <span class="ocurp-related-n">Data Usage Planner</span>
+      <span class="ocurp-related-b">See how much mobile data streaming, gaming and video actually costs you per month.</span>
+    </a></li>
+    <li><a href="/workspace/tools/favicon-checker/">
+      <span class="ocurp-related-n">Favicon Checker</span>
+      <span class="ocurp-related-b">See whether a site actually has a working favicon, and what format the icon really is.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -50,4 +50,8 @@ const RAW = [
   {slug:"tower-stack",name:"Tower Stack",cat:"game",blurb:"Tower Stack - playable in the browser.",tags:["GAMES"],ready:true},
   {slug:"tron-arena",name:"Tron Arena",cat:"game",blurb:"Tron Arena - playable in the browser.",tags:["GAMES"],ready:true},
   {slug:"tron-arena",name:"Tron Arena",cat:"game",blurb:"Tron Arena - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"kingdom-builder",name:"Kingdom Builder",cat:"game",blurb:"Spend gold each season to grow a village to 24 people before the year runs out.",tags:["GAMES","STRATEGY","SIM"],ready:true},
+  {slug:"kingdom-builder",name:"Kingdom Builder",cat:"game",blurb:"Spend gold each season to grow a village to 24 people before the year runs out.",tags:["GAMES","STRATEGY","SIM"],ready:true},
+  {slug:"orbit-race",name:"Orbit Race",cat:"game",blurb:"Kepler-orbit racing: pick a trajectory, burn, and coast to the next marker.",tags:["GAMES","SPACE","PHYSICS"],ready:true},
+  {slug:"orbit-race",name:"Orbit Race",cat:"game",blurb:"Kepler-orbit racing: pick a trajectory, burn, and coast to the next marker.",tags:["GAMES","SPACE","PHYSICS"],ready:true},
 ];

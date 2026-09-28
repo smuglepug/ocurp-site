@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orbit Race — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Kepler-orbit racing: pick a trajectory, burn, and coast to the next marker. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/orbit-race/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Orbit Race">
+<meta property="og:description" content="Kepler-orbit racing: pick a trajectory, burn, and coast to the next marker. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/orbit-race/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Orbit Race on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Orbit Race">
+<meta name="twitter:description" content="Kepler-orbit racing: pick a trajectory, burn, and coast to the next marker. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Orbit Race on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Orbit Race","url":"https://ocurp.space/workspace/games/orbit-race/","description":"Kepler-orbit racing: pick a trajectory, burn, and coast to the next marker. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Orbit Race</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PHYSICS</span><span class="ws-chip">SPACE</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="grid gap-6 md:grid-cols-[1fr_260px]">
+      <div>
+        <canvas id="cv" width="760" height="560" class="w-full cursor-crosshair rounded-xl border border-white/15 bg-[#080808]"></canvas>
+        <p class="mt-2 text-[10px] text-white/45">Drag on the field to aim, or use the sliders. Press <span class="text-white/70">Space</span> to launch, <span class="text-white/70">R</span> to reset.</p>
+      </div>
+      <div class="flex flex-col gap-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Orbit time</div><div class="font-display text-xl font-black text-accent" id="sc">0.0s</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Best</div><div class="font-display text-xl font-black text-white" id="best">0.0s</div></div>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+          <div class="flex items-center justify-between"><span class="ws-label">Aim angle</span><span class="font-mono text-[11px] text-white/70" id="av">90&deg;</span></div>
+          <input id="ang" type="range" min="0" max="360" value="90" class="ws-input mt-1">
+          <div class="mt-3 flex items-center justify-between"><span class="ws-label">Velocity</span><span class="font-mono text-[11px] text-white/70" id="vv">1.00</span></div>
+          <input id="spd" type="range" min="20" max="200" value="100" class="ws-input mt-1">
+          <p class="mt-2 text-[10px] leading-relaxed text-white/40">Circular speed at the launch radius is 1.00. Much under 0.78 and you fall in; much over 1.25 and you fly off.</p>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 font-mono text-[11px] leading-relaxed text-white/60">
+          <div>radius <span id="rd" class="text-white">1.000</span></div>
+          <div>height <span id="al" class="text-white">0.000</span></div>
+          <div>energy <span id="en" class="text-white">-0.500</span></div>
+          <div>state <span id="sd" class="text-accent">ready</span></div>
+        </div>
+        <button id="go" class="ws-btn">Launch</button>
+        <button id="rs" class="ws-btn-ghost">Reset</button>
+        <div id="msg" class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Hold a stable orbit for 20 seconds to win the heat.</div>
+      </div>
+    </div>
+    <p class="mt-4 text-[10px] leading-relaxed text-white/45">Gravity is integrated with velocity-Verlet at a fixed 1/240 s step. The dashed line is a forward prediction of the same
+      integrator, so the orbit you see is the orbit you get. Score accrues only while the probe is outside the planet and inside 5 radii of it.</p>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const $=id=>document.getElementById(id);
+const MU=1, RP=0.24, R0=1.0, WIN=20, MAXR=6, SCALE=105;
+const cv=$('cv'), cx=cv.getContext('2d');
+function accel(x,y){const r2=x*x+y*y;const k=-MU/(r2*Math.sqrt(r2));return [k*x,k*y]}
+function step(p,h){
+  // velocity-Verlet: symplectic, so a circular orbit does not spiral in
+  let ax,ay,r;
+  r=accel(p.x,p.y);ax=r[0];ay=r[1];
+  const nx=p.x+p.vx*h+0.5*ax*h*h, ny=p.y+p.vy*h+0.5*ay*h*h;
+  r=accel(nx,ny);
+  return {x:nx,y:ny,vx:p.vx+0.5*(ax+r[0])*h,vy:p.vy+0.5*(ay+r[1])*h}}
+function energy(p){return 0.5*(p.vx*p.vx+p.vy*p.vy)-MU/Math.hypot(p.x,p.y)}
+function predict(p,n,h){
+  const out=[];let q={x:p.x,y:p.y,vx:p.vx,vy:p.vy};
+  for(let i=0;i<n;i++){q=step(q,h);out.push([q.x,q.y])}
+  return out}
+const S={p:{x:R0,y:0,vx:0,vy:1},trail:[],t:0,score:0,best:0,running:false,over:null,acc:0,H:1/240};
+function reset(){
+  S.p={x:R0,y:0,vx:0,vy:1};S.trail=[];S.t=0;S.score=0;S.over=null;S.acc=0;S.running=false;
+  $('msg').textContent='Hold a stable orbit for 20 seconds to win the heat.';draw()}
+function aim(){const a=+$('ang').value*Math.PI/180,s=+$('spd').value/100;
+  S.p={x:R0,y:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s};S.trail=[];S.t=0;S.score=0;S.over=null;S.acc=0;
+  $('msg').textContent='Launched. Watch the predicted path.'}
+function launch(){aim();S.running=true;$('msg').textContent='Under thrust-free flight. Score builds while you are clear of the planet.'}
+function tick(dt){
+  if(!S.running||S.over)return;
+  S.acc=Math.min(S.acc+dt,0.1);
+  while(S.acc>=S.H){S.p=step(S.p,S.H);S.acc-=S.H;S.t+=S.H;
+    const r=Math.hypot(S.p.x,S.p.y);
+    S.trail.push([S.p.x,S.p.y]);if(S.trail.length>1400)S.trail.shift();
+    if(r<=RP){S.over='crash';S.running=false;S.p.x*=RP/r;S.p.y*=RP/r;
+      $('msg').innerHTML='<span class="text-accent">Impact.</span> Held '+S.score.toFixed(1)+'s of orbit.';return}
+    if(r>=MAXR){S.over='escape';S.running=false;
+      $('msg').innerHTML='<span class="text-accent">Escaped the field.</span> Held '+S.score.toFixed(1)+'s of orbit.';return}
+    if(r>RP*1.35&&r<MAXR-0.5){S.score+=S.H;if(S.score>S.best)S.best=S.score}
+    if(S.score>=WIN){S.over='win';S.running=false;
+      $('msg').innerHTML='<span class="text-accent">Orbit held.</span> Twenty seconds clear of the planet — heat won.'}};}
+let last=0;
+function loop(ts){const dt=last?Math.min((ts-last)/1000,0.05):0;last=ts;tick(dt);draw();requestAnimationFrame(loop)}
+function draw(){
+  const W=cv.width,H=cv.height;
+  cx.clearRect(0,0,W,H);
+  cx.fillStyle='#080808';cx.fillRect(0,0,W,H);
+  const ox=W/2,oy=H/2, px=(x,y)=>[ox+x*SCALE,oy-y*SCALE];
+  // range rings
+  cx.strokeStyle='rgba(255,255,255,.08)';cx.lineWidth=1;
+  for(let r=1;r<=5;r++){cx.beginPath();cx.arc(ox,oy,r*SCALE,0,7);cx.stroke()}
+  // stable band
+  cx.strokeStyle='rgba(255,95,31,.18)';cx.setLineDash([4,6]);
+  cx.beginPath();cx.arc(ox,oy,(MAXR-0.5)*SCALE,0,7);cx.stroke();
+  cx.beginPath();cx.arc(ox,oy,RP*1.35*SCALE,0,7);cx.stroke();cx.setLineDash([]);
+  // planet
+  const g=cx.createRadialGradient(ox-RP*SCALE*.3,oy-RP*SCALE*.3,2,ox,oy,RP*SCALE);
+  g.addColorStop(0,'#3a2016');g.addColorStop(1,'#160b06');
+  cx.fillStyle=g;cx.beginPath();cx.arc(ox,oy,RP*SCALE,0,7);cx.fill();
+  cx.strokeStyle='#FF5F1F';cx.lineWidth=1.5;cx.beginPath();cx.arc(ox,oy,RP*SCALE,0,7);cx.stroke();
+  // prediction
+  const pr=predict(S.p,320,S.H);
+  cx.strokeStyle='rgba(255,255,255,.22)';cx.setLineDash([5,5]);cx.beginPath();
+  pr.forEach((q,i)=>{const a=px(q[0],q[1]);i?cx.lineTo(a[0],a[1]):cx.moveTo(a[0],a[1])});
+  cx.stroke();cx.setLineDash([]);
+  // trail
+  cx.strokeStyle='#FF5F1F';cx.lineWidth=1.4;cx.beginPath();
+  S.trail.forEach((q,i)=>{const a=px(q[0],q[1]);i?cx.lineTo(a[0],a[1]):cx.moveTo(a[0],a[1])});
+  cx.stroke();
+  // probe
+  const p=px(S.p.x,S.p.y);
+  cx.fillStyle=S.over==='crash'?'#8a8a8a':'#fff';cx.beginPath();cx.arc(p[0],p[1],4,0,7);cx.fill();
+  const vx=ox+S.p.vx*SCALE, vy=oy-S.p.vy*SCALE;
+  cx.strokeStyle='rgba(255,255,255,.55)';cx.beginPath();cx.moveTo(p[0],p[1]);cx.lineTo(vx,vy);cx.stroke();
+  // aim handle
+  if(!S.running){const a=+$('ang').value*Math.PI/180,s=+$('spd').value/100;
+    const st=px(R0,0), en=px(R0+Math.cos(a)*s*0.5,Math.sin(a)*s*0.5);
+    cx.strokeStyle='#FF5F1F';cx.lineWidth=2;cx.beginPath();cx.moveTo(st[0],st[1]);cx.lineTo(en[0],en[1]);cx.stroke()}
+  $('sc').textContent=S.score.toFixed(1)+'s';
+  $('best').textContent=S.best.toFixed(1)+'s';
+  const r=Math.hypot(S.p.x,S.p.y);
+  $('rd').textContent=r.toFixed(3);
+  $('al').textContent=(r-RP).toFixed(3);
+  $('en').textContent=energy(S.p).toFixed(3);
+  $('sd').textContent=S.over||(S.running?'flying':'ready');}
+$('ang').oninput=()=>{$('av').textContent=$('ang').value+'&deg;';if(!S.running)aim()};
+$('spd').oninput=()=>{$('vv').textContent=(+$('spd').value/100).toFixed(2);if(!S.running)aim()};
+$('go').onclick=launch;
+$('rs').onclick=reset;
+cv.addEventListener('pointerdown',e=>{if(S.running)return;const b=cv.getBoundingClientRect();
+  const x=(e.clientX-b.left-cv.width/2)/SCALE, y=-(e.clientY-b.top-cv.height/2)/SCALE;
+  let a=Math.atan2(y,x)*180/Math.PI;if(a<0)a+=360;
+  $('ang').value=Math.round(a);$('av').textContent=Math.round(a)+'&deg;';aim()});
+cv.addEventListener('pointermove',e=>{if(S.running||!(e.buttons&1))return;const b=cv.getBoundingClientRect();
+  const x=(e.clientX-b.left-cv.width/2)/SCALE, y=-(e.clientY-b.top-cv.height/2)/SCALE;
+  let a=Math.atan2(y,x)*180/Math.PI;if(a<0)a+=360;
+  $('ang').value=Math.round(a);$('av').textContent=Math.round(a)+'&deg;';aim()});
+addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();launch()}
+  if(e.key==='r'||e.key==='R')reset()});reset();
+window.__orbit={S,accel,step,energy,predict,reset,launch,aim,
+  setAim:(a,v)=>{$('ang').value=Math.round(a);$('av').textContent=Math.round(a)+'&deg;';$('spd').value=Math.round(v*100);$('vv').textContent=v.toFixed(2);aim()},
+  runFor:(secs)=>{const n=Math.round(secs/S.H);for(let i=0;i<n&&!S.over;i++)tick(S.H);return S.score},
+  setH:h=>{S.H=h}};
+requestAnimationFrame(loop);
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/n-body-orbits/">
+      <span class="ocurp-related-n">N-Body Orbits</span>
+      <span class="ocurp-related-b">Real Newtonian gravity at the real G. Start circular, nudge the planet, and watch the elli</span>
+    </a></li>
+    <li><a href="/workspace/games/pendulum-lab/">
+      <span class="ocurp-related-n">Pendulum Lab</span>
+      <span class="ocurp-related-b">Nine coupled pendulums on a real g = 9.81. Small-angle period printed underneath; the chao</span>
+    </a></li>
+    <li><a href="/workspace/games/reaction-diffusion/">
+      <span class="ocurp-related-n">Reaction Diffusion</span>
+      <span class="ocurp-related-b">A real Gray-Scott solver. Eight regimes - mitosis, coral, worms, solitons, fingerprint - a</span>
+    </a></li>
+    <li><a href="/workspace/games/sandbox-3d/">
+      <span class="ocurp-related-n">Sandbox 3D</span>
+      <span class="ocurp-related-b">A real 3D voxel world of 92,160 cubes. Paint sand, water, lava and fire and watch density </span>
+    </a></li>
+    <li><a href="/workspace/games/wave-equation/">
+      <span class="ocurp-related-n">Wave Equation</span>
+      <span class="ocurp-related-b">An explicit leapfrog finite-difference solver. Resonance, standing waves and superposition</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

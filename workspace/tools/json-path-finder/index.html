@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Path Finder — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Point at any node in a JSON document and get the exact path to reach it. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/json-path-finder/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JSON Path Finder">
+<meta property="og:description" content="Point at any node in a JSON document and get the exact path to reach it. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/json-path-finder/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="JSON Path Finder on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JSON Path Finder">
+<meta name="twitter:description" content="Point at any node in a JSON document and get the exact path to reach it. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="JSON Path Finder on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Path Finder","url":"https://ocurp.space/workspace/tools/json-path-finder/","description":"Point at any node in a JSON document and get the exact path to reach it. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">JSON Path Finder</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">JSON</span><span class="ws-chip">PATH</span><span class="ws-chip">QUERY</span><span class="ws-chip">CLIENT-SIDE</span></div>
+        </div>
+      <section class="ws-panel p-6"><label class="ws-label mb-2 block" for="src">JSON document</label><textarea id="src" class="ws-input min-h-[180px] font-mono text-[12px] leading-relaxed"></textarea><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div><div class="mt-4 flex flex-wrap items-center gap-3"><div><label class="ws-label mb-2 block" for="filter">Filter keys</label><input id="filter" type="text" class="ws-input" placeholder="any substring"></div><div><label class="ws-label mb-2 block" for="depth">Depth</label><select id="depth" class="ws-input !w-32"><option value="All">0</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div><label class="flex items-center gap-2 text-sm text-white/70"><input id="idx" type="checkbox" class="accent-[#FF5F1F]" checked> Array indexes</label><button id="load" class="ws-btn-ghost !px-3 !py-1.5">Load sample</button></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Node tree — click one</span><span id="nodestat" class="ws-chip"></span></div><div id="tree" class="max-h-[420px] overflow-y-auto font-mono text-[12px] leading-relaxed"></div></section><div class="mt-4 grid gap-4 md:grid-cols-2"><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Selected path</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="jpath" onclick="cp(this)">Copy path</button></div><div class="mb-3"><div class="ws-label">JSONPath</div><div id="jpath" class="ws-out text-accent">-</div></div><div class="mb-3"><div class="ws-label">Dotted + index</div><div id="dpath" class="ws-out">-</div></div><div class="mb-3"><div class="ws-label">Bracket form</div><div id="bpath" class="ws-out">-</div></div><div><div class="ws-label">Value at path</div><div id="pval" class="ws-out">-</div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Predicates you can run</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="pred" onclick="cp(this)"></button></div><pre id="pred" class="ws-out"></pre></section></div>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var el=document.getElementById('stats');if(el)el.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){try{fn()}catch(e){seterr('err',e.message)}}
+
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var el=document.getElementById('stats');if(el)el.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){try{fn()}catch(e){seterr('err',e.message)}}
+
+// A JSONPath segment: object key, array index, or a wildcard.
+var IDENT=/^[A-Za-z_$][A-Za-z0-9_$]*$/;
+function segToken(s){
+  if(s.type==='index') return '['+s.key+']';
+  if(IDENT.test(s.key)) return '.'+s.key;
+  return "['"+String(s.key).replace(/'/g,"\\'")+"']";
+}
+// Collects every path in `node` that matches `segs`. Wildcards expand, so one
+// query can yield many results. Each entry is the FULL matched path, not just
+// the segment that landed on the value — a caller resolving the result needs
+// the whole thing.
+function pathsFor(node,segs,out,prefix){
+  prefix=prefix||[];
+  if(segs.length===0){ out.push(prefix.slice()); return; }
+  // Nothing to descend into: the path simply ends here.
+  if(node===null || typeof node!=='object') return;
+  var head=segs[0], rest=segs.slice(1);
+  var step;
+  if(head.key==='*'){
+    var ks = Array.isArray(node) ? node.map(function(_,i){return {k:String(i),i:1}}) : Object.keys(node).map(function(k){return {k:k,i:0}});
+    ks.forEach(function(e){
+      var v=Array.isArray(node)?node[Number(e.k)]:node[e.k];
+      pathsFor(v,rest,out,prefix.concat([{type:e.i?'index':'key',key:e.k}]));
+    });
+    return;
+  }
+  if(Array.isArray(node)){
+    if(head.type!=='index' && head.key!=='*') return;
+    if(head.type==='index' && !(Number(head.key)>=0 && Number(head.key)<node.length)) return;
+    step={type:'index',key:head.key};
+    pathsFor(node[Number(head.key)],rest,out,prefix.concat([step]));
+    return;
+  }
+  if(!Object.prototype.hasOwnProperty.call(node,head.key)) return;
+  pathsFor(node[head.key],rest,out,prefix.concat([{type:'key',key:head.key}]));
+}
+function resolve(node,segs){
+  var cur=node;
+  for(var i=0;i<segs.length;i++){
+    if(cur===null || typeof cur!=='object') return undefined;
+    if(segs[i].key==='*'){
+      cur = Array.isArray(cur)
+        ? cur.map(function(x){return x})
+        : Object.keys(cur).map(function(k){return cur[k]});
+      continue;
+    }
+    cur = cur[segs[i].key];
+  }
+  return cur;
+}
+function describe(node){
+  if(node===null) return 'null';
+  if(Array.isArray(node)) return 'array['+node.length+']';
+  if(typeof node==='object') return 'object{'+Object.keys(node).length+'}';
+  return typeof node+' '+JSON.stringify(node);
+}
+function walk(node,segs,cb,depth){
+  cb(segs,node);
+  if(depth>0 && depth<=(segs.length+1)){}
+  if(node!==null && typeof node==='object'){
+    if(Array.isArray(node)) node.forEach(function(v,i){
+      walk(v,segs.concat([{type:'index',key:String(i)}]),cb,depth);});
+    else Object.keys(node).forEach(function(k){
+      walk(node[k],segs.concat([{type:'key',key:k}]),cb,depth);});
+  }
+}
+window.__jsonpath={resolve:resolve,pathsFor:pathsFor,segToken:segToken,describe:describe,walk:walk};
+
+var SAMPLE='{\n  "store": {\n    "book": [\n'
+  +'      {"title": "Dune", "price": 9.99, "tags": ["sci-fi", "classic"]},\n'
+  +'      {"title": "Neuromancer", "price": 12.50, "tags": ["sci-fi"]}\n'
+  +'    ],\n    "bicycle": {"color": "red", "price": 399}\n  },\n'
+  +'  "meta": {"count": 2, "ok": true, "note": null}\n}';
+
+var DATA=null, flat=[];
+function buildTree(segs,node,openDepth){
+  var path=segs.map(segToken).join('');
+  var label;
+  if(segs.length===0) label='<span class="text-accent">$</span>';
+  else {
+    var last=segs[segs.length-1];
+    label='<span class="text-white/45">'+esc(path.slice(0,path.length-(last.type==='index'?'['+last.key+']':segToken(last).length)))+'</span>'
+      +'<span class="text-secondary">'+(last.type==='index'?'['+last.key+']':esc(last.key))+'</span>';
+  }
+  var isObj = node!==null && typeof node==='object';
+  var caret = isObj?'<span class="text-white/30">\u25be</span> ':'';
+  var d=describe(node);
+  var kind = Array.isArray(node)?'text-[#4ade80]':(node===null?'text-white/30':'text-[#7dd3fc]');
+  var h='<div class="flex items-start gap-2 rounded px-1 py-[1px] hover:bg-white/[0.06] cursor-pointer" style="padding-left:'+(segs.length*14)+'px" data-p="'+esc(JSON.stringify(segs))+'">'
+    +'<span>'+caret+label+'</span>'
+    +'<span class="'+kind+' ml-1 text-white/35">'+esc(d)+'</span></div>';
+  var out=h;
+  if(isObj){
+    if(Array.isArray(node)) node.forEach(function(v,i){
+      out+=buildTree(segs.concat([{type:'index',key:String(i)}]),v,openDepth);
+    });
+    else Object.keys(node).forEach(function(k){
+      out+=buildTree(segs.concat([{type:'key',key:k}]),node[k],openDepth);
+    });
+  }
+  return out;
+}
+function parseSegs(str){
+  if(!str) return [];
+  var segs=JSON.parse(str);
+  return segs.map(function(s){return {type:s.type,key:String(s.key)}});
+}
+function parseFilter(q){
+  if(!q) return null;
+  var needle=q.toLowerCase();
+  return function(k){ return k.toLowerCase().indexOf(needle)>=0; };
+}
+function run(){
+  var raw=$('src').value;
+  var data;
+  try{ data=JSON.parse(raw); }
+  catch(e){ seterr('err','invalid JSON: '+e.message); return; }
+  seterr('err','');
+  DATA=data;
+  var maxd=parseInt($('depth').value,10)||0;
+  var f=parseFilter($('filter').value.trim());
+  var showIdx=$('idx').checked;
+  flat=[];
+  // Walk the tree first, then filter on the final segment. Filtering during
+  // the walk would drop the ancestors needed to reach a matching descendant.
+  (function rec(n,segs){
+    if(maxd && segs.length>=maxd) return;
+    if(n!==null && typeof n==='object'){
+      if(Array.isArray(n)) n.forEach(function(v,i){
+        if(showIdx) rec(v,segs.concat([{type:'index',key:String(i)}]));
+      });
+      else Object.keys(n).forEach(function(k){
+        rec(n[k],segs.concat([{type:'key',key:k}]));
+      });
+    }
+  })(data,[]);
+  function matches(s){
+    if(!f) return true;
+    if(!s.length) return false;
+    var last=s[s.length-1];
+    return last.type==='key' && f(last.key);
+  }
+  var shown=flat.filter(matches);
+  $('tree').innerHTML=buildTree([],data,0);
+  Array.prototype.forEach.call($('tree').children,function(el){
+    el.onclick=function(){ selectPath(parseSegs(el.getAttribute('data-p'))); };
+  });
+  $('nodestat').textContent=shown.length+' node'+(shown.length===1?'':'s')+' matching'
+    +(f?' "'+$('filter').value+'"':'');
+  var cards2=[];
+  cards2.push(['Total nodes',countNodes(data)]);
+  cards2.push(['Array items',countArr(data)]);
+  cards2.push(['Max depth',maxDepth(data)-1]);
+  cards2.push(['Matches',shown.length]);
+  show(cards2);
+  var preds=[];
+  preds.push('$..book[*].title                      \u2192 '+JSON.stringify(query(data,['*','book','*','title'])));
+  preds.push('$.store.book[0].price                  \u2192 '+JSON.stringify(resolve(data,[{type:'key',key:'store'},{type:'key',key:'book'},{type:'index',key:'0'},{type:'key',key:'price'}])));
+  preds.push('$.store.*.price                        \u2192 '+JSON.stringify(query(data,[{type:'key',key:'store'},{type:'*',key:'*'},{type:'key',key:'price'}])));
+  preds.push('$..tags[*]                            \u2192 '+JSON.stringify(query(data,[{type:'*',key:'*'},{type:'*',key:'*'},{type:'key',key:'tags'},{type:'*',key:'*'}])));
+  $('pred').textContent=preds.join('\n');
+  if(shown.length) selectPath(shown[0].segs);
+  else clearSelection();
+}
+function query(node,segs){
+  var res=[]; pathsFor(node,segs,res);
+  return res.map(function(s){return resolve(node,s)});
+}
+function countNodes(n){
+  if(n===null||typeof n!=='object') return 1;
+  var c=1;
+  Object.keys(n).forEach(function(k){ c+=countNodes(n[k]); });
+  return c;
+}
+function countArr(n){
+  if(n===null||typeof n!=='object') return 0;
+  var c=0;
+  Object.keys(n).forEach(function(k){ if(Array.isArray(n[k])) c+=n[k].length; c+=countArr(n[k]); });
+  return c;
+}
+function maxDepth(n){
+  if(n===null||typeof n!=='object') return 1;
+  return 1+Math.max.apply(null,Object.keys(n).map(function(k){return maxDepth(n[k])}).concat([0]));
+}
+function clearSelection(){
+  $('jpath').textContent='-'; $('dpath').textContent='-';
+  $('bpath').textContent='-'; $('pval').textContent='-';
+}
+function selectPath(segs){
+  var jp='$'+segs.map(segToken).join('');
+  $('jpath').textContent=jp;
+  $('dpath').textContent=segs.map(function(s){return s.key}).join('.')||'(root)';
+  $('bpath').textContent='$['+segs.map(function(s){
+    return s.type==='index'?s.key:"'"+String(s.key).replace(/'/g,"\\'")+"'";}).join('][')+']';
+  var v=DATA===null?undefined:resolve(DATA,segs);
+  $('pval').textContent=typeof v==='object'&&v!==null?JSON.stringify(v):String(v);
+}
+$('load').addEventListener('click',function(){ $('src').value=SAMPLE; run(); });
+$('src').value=SAMPLE;
+bind(['filter','depth','idx'],run);
+wire(run);
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/csv-json/">
+      <span class="ocurp-related-n">CSV to JSON</span>
+      <span class="ocurp-related-b">Convert delimited text and JSON both ways.</span>
+    </a></li>
+    <li><a href="/workspace/tools/csv-to-json/">
+      <span class="ocurp-related-n">CSV to JSON</span>
+      <span class="ocurp-related-b">Turn CSV or TSV into clean JSON, correctly handling quoted fields, escaped quotes and blan</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-diff/">
+      <span class="ocurp-related-n">JSON Diff</span>
+      <span class="ocurp-related-b">Compare two JSON documents key by key and see exactly what was added, removed or changed.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-formatter/">
+      <span class="ocurp-related-n">JSON Prettifier</span>
+      <span class="ocurp-related-b">Format, minify and validate JSON with a live error pointer.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-minifier/">
+      <span class="ocurp-related-n">JSON Minifier &amp; Formatter</span>
+      <span class="ocurp-related-b">Strip JSON whitespace or pretty-print it, with key sort and duplicate detection.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-to-csv/">
+      <span class="ocurp-related-n">JSON to CSV</span>
+      <span class="ocurp-related-b">Flatten a JSON array into CSV with headers and download.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

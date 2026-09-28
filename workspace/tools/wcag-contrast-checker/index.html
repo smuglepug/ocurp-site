@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WCAG Contrast Checker — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Every text and background pair scored against WCAG AA and AAA for normal and large text. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/wcag-contrast-checker/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="WCAG Contrast Checker">
+<meta property="og:description" content="Every text and background pair scored against WCAG AA and AAA for normal and large text. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/wcag-contrast-checker/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="WCAG Contrast Checker on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="WCAG Contrast Checker">
+<meta name="twitter:description" content="Every text and background pair scored against WCAG AA and AAA for normal and large text. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="WCAG Contrast Checker on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"WCAG Contrast Checker","url":"https://ocurp.space/workspace/tools/wcag-contrast-checker/","description":"Every text and background pair scored against WCAG AA and AAA for normal and large text. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">WCAG Contrast Checker</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">WCAG</span><span class="ws-chip">ACCESSIBILITY</span><span class="ws-chip">CONTRAST</span><span class="ws-chip">CLIENT-SIDE</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid items-end gap-4 md:grid-cols-4"><div><label class="ws-label mb-2 block" for="fg">Foreground</label><input id="fg" type="text" class="ws-input" placeholder="#000000" value="#FF5F1F"></div><div><label class="ws-label mb-2 block" for="bg">Background</label><input id="bg" type="text" class="ws-input" placeholder="#ffffff" value="#050505"></div><div><label class="ws-label mb-2 block" for="sample">Sample text</label><select id="sample" class="ws-input !w-52"><option value="Heading 32px">32</option><option value="Body 16px">16</option><option value="Small 12px">12</option></select></div><div class="flex gap-2 pb-0.5"><button id="swap" class="ws-btn-ghost">Swap</button><button id="rand" class="ws-btn-ghost">Random</button></div></div><div class="mt-4 flex flex-wrap gap-3"><label class="flex items-center gap-2 text-sm text-white/70"><input id="apca" type="checkbox" class="accent-[#FF5F1F]"> Show APCA</label><label class="flex items-center gap-2 text-sm text-white/70"><input id="apcasz" type="checkbox" class="accent-[#FF5F1F]"> Show APCA font size</label></div><div id="preview" class="mt-5 rounded-xl border border-white/10 p-6 text-center"><div id="pvtext" class="text-lg">Sample text at 16px to judge legibility.</div><div class="ws-label mt-2" id="pvinfo">-</div></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3"></div><div class="mt-5 grid gap-4 md:grid-cols-2"><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Pass / fail</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="ratios" onclick="cp(this)"></button></div><div id="ratios" class="space-y-2"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Everything measured</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">Level</th><th class="py-2 pr-4">Needs</th><th class="py-2 pr-4">Ratio</th><th class="py-2 pr-4">Result</th></tr></thead><tbody id="tbl"></tbody></table></div></section></div>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var el=document.getElementById('stats');if(el)el.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){try{fn()}catch(e){seterr('err',e.message)}}
+
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var el=document.getElementById('stats');if(el)el.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){try{fn()}catch(e){seterr('err',e.message)}}
+
+// WCAG 2.x relative luminance. sRGB channels are linearised first; a naive
+// average of the 8-bit values is wrong for every colour that is not pure grey.
+function hexToRgb(h){
+  h=String(h||'').trim().replace(/^#/,'');
+  if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  if(!/^[0-9a-fA-F]{6}$/.test(h)) return null;
+  return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];
+}
+function rgbToHex(r,g,b){
+  function p(v){v=Math.max(0,Math.min(255,Math.round(v)));return ('0'+v.toString(16)).slice(-2);}
+  return ('#'+p(r)+p(g)+p(b)).toLowerCase();
+}
+function srgbToLin(c){
+  c=c/255;
+  return c<=0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055,2.4);
+}
+function relLuminance(rgb){
+  return 0.2126*srgbToLin(rgb[0])+0.7152*srgbToLin(rgb[1])+0.0722*srgbToLin(rgb[2]);
+}
+function contrastRatio(a,b){
+  var la=relLuminance(hexToRgb(a)), lb=relLuminance(hexToRgb(b));
+  if(la===null||lb===null) return null;
+  var hi=Math.max(la,lb), lo=Math.min(la,lb);
+  return (hi+0.05)/(lo+0.05);
+}
+function luminanceHex(h){
+  var L=relLuminance(hexToRgb(h));
+  return L===null?null:Math.round(L*10000)/10000;
+}
+// HSL is an sRGB-space convention: hue/saturation must come from the raw
+// 8-bit channels. Running them on linearised values skews the hue (orange
+// reads as yellow) and inflates saturation, so this stays in sRGB.
+function rgbToHsl(rgb){
+  var R=rgb[0]/255, G=rgb[1]/255, B=rgb[2]/255;
+  var mx=Math.max(R,G,B), mn=Math.min(R,G,B), d=mx-mn, l=(mx+mn)/2, h=0, s=0;
+  if(d!==0){
+    s=l>0.5 ? d/(2-mx-mn) : d/(mx+mn);
+    if(mx===R) h=((G-B)/d+(G<B?6:0));
+    else if(mx===G) h=((B-R)/d+2);
+    else h=((R-G)/d+4);
+    h*=60;
+  }
+  return [h,s*100,l*100];
+}
+// HSL is defined directly on gamma-encoded sRGB, so there is NO inverse-gamma
+// step here — applying one is what makes a faithful round-trip of #FF5F1F come
+// back as #ffa462. R,G,B below are already sRGB channel values.
+function hslToRgb(hsl){
+  var h=((hsl[0]%360)+360)%360, s=Math.max(0,Math.min(100,hsl[1]))/100,
+      l=Math.max(0,Math.min(100,hsl[2]))/100;
+  var c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2, R=0,G=0,B=0;
+  if(h<60){R=c;G=x}else if(h<120){R=x;G=c}else if(h<180){G=c;B=x}
+  else if(h<240){G=x;B=c}else if(h<300){R=x;B=c}else{R=c;B=x}
+  return [(R+m)*255,(G+m)*255,(B+m)*255];
+}
+function hslHex(h,s,l){
+  var rgb=hslToRgb([h,s,l]);
+  return rgbToHex(rgb[0],rgb[1],rgb[2]);
+}
+// WCAG APCA is not the same metric; this reports the plain sRGB-YIQ luma that
+// designers use for quick "is this text lighter or darker" decisions.
+function luma(rgb){return 0.299*rgb[0]+0.587*rgb[1]+0.114*rgb[2];}
+function bestInk(bg){
+  var rgb=hexToRgb(bg); if(!rgb) return '#000000';
+  return contrastRatio(bg,'#ffffff')>=contrastRatio(bg,'#000000')?'#ffffff':'#000000';
+}
+
+var LEVELS=[
+  {k:'AA normal',  need:4.5, note:'body text'},
+  {k:'AA large',   need:3,   note:'18.66px bold / 24px regular'},
+  {k:'AAA normal', need:7,   note:'body text'},
+  {k:'AAA large',  need:4.5, note:'18.66px bold / 24px regular'},
+  {k:'AA non-text',need:3,   note:'icons, borders, UI parts'}
+];
+var SIZES={'32':[32,900],'16':[16,400],'12':[12,400]};
+// APCA lightness contrast (0.1 Lc) is the WCAG 3 draft metric. Implemented
+// properly it needs the full coefficient set; this is the published Y' simple
+// approximation, reported separately and clearly labelled as not WCAG 2.
+function apcaLum(rgb){
+  var f=rgb.map(function(c){
+    c=c/255;
+    return c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);
+  });
+  return 0.2126729*f[0]+0.7151522*f[1]+0.0721750*f[2];
+}
+function apcaLc(txt,bg){
+  var t=apcaLum(hexToRgb(txt)), b=apcaLum(hexToRgb(bg));
+  if(t===null||b===null) return null;
+  if(Math.abs(b-t)<0.0005) return 0;
+  var S=0;
+  if(b>t){S=(Math.pow(b,0.56)-Math.pow(t,0.57))*1.14;}
+  else     {S=(Math.pow(b,0.65)-Math.pow(t,0.62))*1.14;}
+  return Math.round(S*1000)/1000;
+}
+function verdict(ratio,need){
+  return {ok:ratio>=need, mark:ratio>=need?'\u2713':'\u2717'};
+}
+function analyse(fg,bg,sizeKey){
+  var ratio=contrastRatio(fg,bg);
+  if(ratio===null) return null;
+  var lvl=L.map(function(v,i){
+    var v2=verdict(ratio,v.need);
+    return {level:v.k, need:v.need, note:v.note, ratio:Math.round(ratio*100)/100, pass:v2.ok, mark:v2.mark};
+  });
+  var fgb=hexToRgb(fg), bgb=hexToRgb(bg), sz=SIZES[sizeKey]||SIZES['16'];
+  return {
+    fg:fg, bg:bg, ratio:Math.round(ratio*100)/100,
+    aaNormal:lvl[0].pass, aaLarge:lvl[1].pass,
+    aaaNormal:lvl[2].pass, aaaLarge:lvl[3].pass,
+    levels:lvl,
+    fgLuminance:luminanceHex(fg), bgLuminance:luminanceHex(bg),
+    apcaLc:apcaLc(fg,bg),
+    bestInk:bestInk(bg),
+    largerText:sz[0]>=24 || (sz[0]>=18.66 && sz[1]>=700),
+    fontPx:sz[0], fontWeight:sz[1]
+  };
+}
+var L=LEVELS, LCACHE=analyse;
+window.__contrast={hexToRgb:hexToRgb,rgbToHex:rgbToHex,relLuminance:relLuminance,
+  contrastRatio:contrastRatio,luminanceHex:luminanceHex,bestInk:bestInk,
+  apcaLc:apcaLc,analyse:analyse,LEVELS:LEVELS};
+
+function run(){
+  var fg=$('fg').value.trim()||'#000000', bg=$('bg').value.trim()||'#ffffff';
+  var a=analyse(fg,bg,$('sample').value);
+  if(!a){seterr('err','need two hex colours, e.g. #RRGGBB'); return;}
+  seterr('err','');
+  $('preview').style.background=bg;
+  var pv=$('pvtext'); pv.style.color=fg;
+  var sz=SIZES[$('sample').value]||SIZES['16'];
+  pv.style.fontSize=sz[0]+'px'; pv.style.fontWeight=sz[1];
+  $('pvinfo').textContent=fg+' on '+bg+' \u2014 '+a.ratio+':1 at '+sz[0]+'px/'+sz[1];
+  show([['Ratio',a.ratio+':1'],['AA body',a.aaNormal?'Pass':'Fail'],
+        ['AAA body',a.aaaNormal?'Pass':'Fail'],['Best ink',a.bestInk],
+        ['Fg luminance',a.fgLuminance],['Bg luminance',a.bgLuminance]]);
+  $('ratios').innerHTML=a.levels.map(function(v){
+    var col=v.pass?'#4ade80':'#f87171';
+    return '<div class="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">'
+      +'<span class="text-sm text-white/80">'+esc(v.level)+' <span class="text-white/30">'+esc(v.note)+'</span></span>'
+      +'<span class="font-mono text-sm" style="color:'+col+'">'+v.mark+' '+v.ratio+'</span></div>';
+  }).join('');
+  var rows=a.levels.map(function(v){
+    var col=v.pass?'#4ade80':'#f87171';
+    return '<tr class="border-t border-white/5">'
+      +'<td class="py-2 pr-4">'+esc(v.level)+'</td>'
+      +'<td class="py-2 pr-4 font-mono text-white/50">'+v.need+':1</td>'
+      +'<td class="py-2 pr-4 font-mono">'+v.ratio+':1</td>'
+      +'<td class="py-2 pr-4" style="color:'+col+'">'+v.mark+' '+(v.pass?'pass':'fail')+'</td></tr>';
+  });
+  if($('apca').checked){
+    rows.push('<tr class="border-t border-white/5"><td class="py-2 pr-4">APCA Lc</td>'
+      +'<td class="py-2 pr-4 font-mono text-white/50">\u00b7106 (draft)</td>'
+      +'<td class="py-2 pr-4 font-mono">'+a.apcaLc+'</td>'
+      +'<td class="py-2 pr-4 text-white/45">not WCAG 2</td></tr>');
+  }
+  $('tbl').innerHTML=rows.join('');
+}
+$('swap').addEventListener('click',function(){
+  var f=$('fg').value; $('fg').value=$('bg').value; $('bg').value=f; run();
+});
+$('rand').addEventListener('click',function(){
+  function h(){return ('0'+Math.floor(Math.random()*256).toString(16)).slice(-2);}
+  $('fg').value='#'+h()+h()+h(); run();
+});
+bind(['fg','bg','sample','apca'],run);
+wire(run);
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/contrast-checker/">
+      <span class="ocurp-related-n">Contrast Checker</span>
+      <span class="ocurp-related-b">Check any two colours against the WCAG contrast rules and see which levels pass.</span>
+    </a></li>
+    <li><a href="/workspace/tools/color-blindness-simulator/">
+      <span class="ocurp-related-n">Colour Blindness Simulator</span>
+      <span class="ocurp-related-b">See any picture through protanopia, deuteranopia, tritanopia or total colour blindness.</span>
+    </a></li>
+    <li><a href="/workspace/tools/braille-translator/">
+      <span class="ocurp-related-n">Braille Translator</span>
+      <span class="ocurp-related-b">Convert text to Grade 1 Unicode Braille and back, with capital and number signs handled pr</span>
+    </a></li>
+    <li><a href="/workspace/tools/avif-to-png/">
+      <span class="ocurp-related-n">AVIF to PNG</span>
+      <span class="ocurp-related-b">Convert an AVIF picture to PNG in your browser - the file never leaves the page.</span>
+    </a></li>
+    <li><a href="/workspace/tools/background-remover/">
+      <span class="ocurp-related-n">Background Remover</span>
+      <span class="ocurp-related-b">Cut the background off a photo in your browser — no upload, no watermark.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base64-to-image/">
+      <span class="ocurp-related-n">Base64 to Image</span>
+      <span class="ocurp-related-b">Paste a data URI and preview or download the image.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -58,9 +58,15 @@ tailwind.config = { theme: { extend: {
 <meta property="og:description" content="Reindent SQL queries so they can actually be read. Runs entirely in your browser - nothing is uploaded.">
 <meta property="og:url" content="https://ocurp.space/workspace/tools/sql-formatter/">
 <meta property="og:site_name" content="Ocurp">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SQL Formatter on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="SQL Formatter">
 <meta name="twitter:description" content="Reindent SQL queries so they can actually be read. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="SQL Formatter on Ocurp - free, runs in your browser">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SQL Formatter","url":"https://ocurp.space/workspace/tools/sql-formatter/","description":"Reindent SQL queries so they can actually be read. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
@@ -75,70 +81,305 @@ tailwind.config = { theme: { extend: {
       <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">SQL Formatter</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">SQL</span><span class="ws-chip">FORMAT</span><span class="ws-chip">CLIENT-SIDE</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">SQL</span><span class="ws-chip">FORMAT</span><span class="ws-chip">DATABASE</span><span class="ws-chip">CLIENT-SIDE</span></div>
         </div>
-      <section class="ws-panel p-6"><label class="ws-label mb-2 block">SQL</label><textarea id="src" class="ws-input min-h-[140px]" placeholder="SELECT * FROM users WHERE id=1"></textarea><div class="mt-3 flex flex-wrap gap-3"><button id="go" class="ws-btn">Format</button><button id="clr" class="ws-btn-ghost">Clear</button></div><div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Formatted SQL</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div></section>
+      <section class="ws-panel p-6"><label class="ws-label mb-2 block" for="src">Query</label><textarea id="src" class="ws-input min-h-[170px] font-mono text-[12px] leading-relaxed"></textarea><div class="mt-4 grid items-end gap-4 md:grid-cols-4"><div><label class="ws-label mb-2 block" for="dialect">Dialect</label><select id="dialect" class="ws-input !w-44"><option value="Standard SQL">standard</option><option value="PostgreSQL">postgres</option><option value="MySQL">mysql</option></select></div><div><label class="ws-label mb-2 block" for="indent">Indent</label><select id="indent" class="ws-input !w-36"><option value="2 spaces">2</option><option value="4 spaces">4</option><option value="Tab">tab</option></select></div><div><label class="ws-label mb-2 block" for="kcase">Keyword case</label><select id="kcase" class="ws-input !w-36"><option value="UPPER">upper</option><option value="lower">lower</option></select></div><div><label class="ws-label mb-2 block" for="wrap">Max width</label><select id="wrap" class="ws-input !w-36"><option value="No wrap">0</option><option value="72">72</option><option value="80">80</option></select></div></div><div class="mt-4 flex flex-wrap items-center gap-3"><label class="flex items-center gap-2 text-sm text-white/70"><input id="keepcom" type="checkbox" class="accent-[#FF5F1F]" checked> Keep comments</label><button id="go" class="ws-btn">Format</button><button id="minify" class="ws-btn-ghost !px-3 !py-1.5">Minify</button><button id="load" class="ws-btn-ghost !px-3 !py-1.5">Load sample</button></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Formatted SQL</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="out" onclick="cp(this)">Copy SQL</button></div><pre id="out" class="ws-out"></pre></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Token stream</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">#</th><th class="py-2 pr-4">Token</th><th class="py-2 pr-4">Kind</th><th class="py-2 pr-4">At</th></tr></thead><tbody id="tbl"></tbody></table></div></section>
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
   </div>
 </div>
 <script src="/workspace/related.js" defer></script>
-<script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}const $=id=>document.getElementById(id);
-const KW=['SELECT','FROM','WHERE','AND','OR','JOIN','LEFT JOIN','INNER JOIN','ON','GROUP BY','ORDER BY','HAVING','LIMIT','OFFSET','INSERT INTO','VALUES','UPDATE','SET','DELETE FROM'];
-$('go').onclick=()=>{let s=$('src').value.replace(/\s+/g,' ').trim();
-  KW.forEach(k=>{s=s.replace(new RegExp('\\b'+k.replace(' ','\\s+')+'\\b','gi'),'\n'+k)});
-  $('out').textContent=s.replace(/\n(\s*)/g,(m,p,i)=>i===0?p.substring(1):'\n  ')}
-$('src').value='select u.id, u.name from users u left join orders o on o.user_id=u.id where u.city=\'Benin City\' order by u.name limit 10';
-$('go').click();</script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var el=document.getElementById('stats');if(el)el.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){try{fn()}catch(e){seterr('err',e.message)}}
 
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var el=document.getElementById('stats');if(el)el.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){try{fn()}catch(e){seterr('err',e.message)}}
 
+var KEYWORDS=('select from where and or not null is in like between exists all any some as '
+ +'insert into values update set delete create table alter drop index view join inner left right '
+ +'full outer cross on using group by having order asc desc limit offset union intersect except '
+ +'returning case when then else end distinct count sum avg min max coalesce cast begin commit '
+ +'rollback transaction with recursive primary foreign key references default unique check constraint '
+ +'cascade grant revoke explain analyze if else for while return declare go over partition window').split(' ');
+// Two-word clauses must be recognised before their single-word prefixes, or
+// "group" is emitted as a keyword and "by" as a bare identifier.
+var PHRASES=['group by','order by','partition by','insert into','left join','right join',
+ 'full join','inner join','cross join','left outer join','right outer join','full outer join',
+ 'is not','not null','on delete','primary key','foreign key','create table','drop table',
+ 'alter table','create index','select distinct'];
+var DOLLAR=/^\$[A-Za-z_][A-Za-z0-9_]*\$|^\$\$/;
+function isWord(c){return /[A-Za-z0-9_$]/.test(c);}
 
+// Real tokenizer. A regex-based formatter cannot tell 'a select b' inside a
+// string literal from a keyword, and would happily break the literal in half.
+function tokenize(sql,dialect){
+  var toks=[], i=0, n=sql.length;
+  while(i<n){
+    var c=sql[i];
+    if(c===' '||c==='\t'||c==='\r'||c==='\n'){ i++; continue; }
+    if(c==='-'&&sql[i+1]==='-'){
+      var j=i; while(j<n&&sql[j]!=='\n') j++;
+      toks.push({t:'comment',v:sql.slice(i,j),at:i}); i=j; continue;
+    }
+    if(c==='/'&&sql[i+1]==='*'){
+      var k=i+2;
+      while(k<n&&!(sql[k]==='*'&&sql[k+1]==='/')) k++;
+      k=Math.min(n,k+2);
+      toks.push({t:'comment',v:sql.slice(i,k),at:i}); i=k; continue;
+    }
+    if(dialect==='postgres'&&c==='$'){
+      // PostgreSQL dollar-quoted string: $tag$ ... $tag$
+      var m=/^(\$[A-Za-z_][A-Za-z0-9_]*\$|\$\$)/.exec(sql.slice(i));
+      if(m){
+        var tag=m[1], end=sql.indexOf(tag,i+tag.length);
+        var stop=end<0?n:end+tag.length;
+        toks.push({t:'string',v:sql.slice(i,stop),at:i}); i=stop; continue;
+      }
+    }
+    if(c==="'"){
+      var p=i+1;
+      // A doubled '' is an escaped quote, not a terminator. Backslash escapes
+      // are MySQL-only; treating them everywhere would truncate Postgres
+      // literals that legitimately contain a backslash.
+      while(p<n){
+        if(sql[p]==="'"&&dialect==='mysql'&&sql[p+1]==='\\'){ p+=2; continue; }
+        if(sql[p]==="'"){
+          if(sql[p+1]==="'"){ p+=2; continue; }
+          p++; break;
+        }
+        p++;
+      }
+      toks.push({t:'string',v:sql.slice(i,Math.min(p,n)),at:i}); i=Math.min(p,n); continue;
+    }
+    if(c==='"'){
+      var q=i+1;
+      while(q<n){
+        if(sql[q]==='"'){ if(sql[q+1]==='"'){q+=2;continue;} q++; break; }
+        q++;
+      }
+      toks.push({t:'ident',v:sql.slice(i,Math.min(q,n)),at:i}); i=Math.min(q,n); continue;
+    }
+    if(c==='`'||c==='['){
+      var cl=c==='`'?'`':']';
+      var b2=i+1;
+      while(b2<n&&sql[b2]!==cl) b2++;
+      b2=Math.min(n,b2+1);
+      toks.push({t:'ident',v:sql.slice(i,b2),at:i}); i=b2; continue;
+    }
+    if(/[0-9]/.test(c)||(c==='.'&&/[0-9]/.test(sql[i+1]||''))){
+      var d=i;
+      while(d<n&&/[0-9a-fA-FxX.eE]/.test(sql[d])){
+        if(/[eE]/.test(sql[d])&&/[+-]/.test(sql[d+1]||'')) d++;
+        d++;
+      }
+      toks.push({t:'number',v:sql.slice(i,d),at:i}); i=d; continue;
+    }
+    // A '.' between two identifiers is a qualifier (u.id, db.tbl.col), not a
+    // punctuation break. Emitting "u . id" would silently change the query's
+    // meaning to a column named "id" selected from a table aliased "u" in a
+    // different position — so the tokenizer keeps the dotted run as one name.
+    // A LEADING dot is a separate case (t.col) and falls through untouched.
+    if(c==='.'&&/[A-Za-z0-9_$)]/.test(sql[i+1]||'')){
+      var prev=toks[toks.length-1];
+      if(prev&&(prev.t==='ident'||prev.t==='number')&&/[A-Za-z0-9_$)\]]$/.test(prev.v)){
+        var d2=i+1;
+        while(d2<n&&/[A-Za-z0-9_$]/.test(sql[d2])) d2++;
+        if(d2>i+1){ toks.push({t:'ident',v:sql.slice(i,d2),at:i}); i=d2; continue; }
+      }
+    }
+    if(c==='@'||c==='#'||c==='?'){
+      toks.push({t:'param',v:c,at:i}); i++; continue;
+    }
+    if(c===';'){ toks.push({t:'punct',v:';',at:i}); i++; continue; }
+    if('(),'.indexOf(c)>=0){ toks.push({t:'punct',v:c,at:i}); i++; continue; }
+    if(isWord(c)){
+      var w=i;
+      while(w<n&&isWord(sql[w])) w++;
+      var word=sql.slice(i,w), lw=word.toLowerCase();
+      // Try a two-word clause first, but only when both halves are keywords.
+      var paired=null;
+      for(var p2=0;p2<PHRASES.length;p2++){
+        var ph=PHRASES[p2], parts=ph.split(' ');
+        if(parts.length!==2) continue;
+        var after=sql.slice(w).match(/^\s+([A-Za-z_][A-Za-z0-9_]*)/);
+        if(parts[0]===lw&&after&&after[1].toLowerCase()===parts[1]){
+          paired={t:'kw',v:ph,at:i,span:w+after[0].length-i};
+          i=w+after[0].length;
+          break;
+        }
+      }
+      if(paired){ toks.push(paired); continue; }
+      toks.push({t:KEYWORDS.indexOf(lw)>=0?'kw':'ident',v:word,at:i});
+      i=w; continue;
+    }
+    // Operators: keep multi-character runs intact.
+    var o=i, op=sql.slice(i,i+2);
+    if(['<=','>=','<>','!=','||','::','->','->>'].indexOf(op)>=0){
+      toks.push({t:'op',v:op,at:i}); i+=2; continue;
+    }
+    toks.push({t:'op',v:c,at:i}); i++;
+  }
+  return toks;
+}
 
+var BREAK_AFTER={from:1,where:1,group:1,order:1,limit:1,having:1,union:1,intersect:1,
+  except:1,set:1,values:1,on:1,join:1,into:1};
+var LEAD_KW=['select','from','where','group by','order by','having','limit','union',
+ 'intersect','except','values','set','on'];
+function format(sql,opts){
+  var dialect=opts.dialect||'standard';
+  var toks=tokenize(sql,dialect);
+  if(!toks.length) return {sql:'',toks:toks,lines:0};
+  var unit = opts.indent==='tab' ? '\t' : ' '.repeat(parseInt(opts.indent,10)||2);
+  var up = opts.kcase!=='lower';
+  var out=[], cur='', depth=0, lines=0;
+  function push(){
+    if(cur.replace(/\s+$/,'')==='' && cur!=='') return;
+    out.push(unit.repeat(Math.max(0,depth))+cur.replace(/\s+$/,''));
+    cur=''; lines++;
+  }
+  function emit(s){ cur+=s; }
+  for(var i=0;i<toks.length;i++){
+    var t=toks[i], v=t.v;
+    var low=t.t==='kw'?v.toLowerCase():v;
+    if(t.t==='comment' && !opts.keepcom) continue;
+    if(t.t==='comment'){ push(); out.push(unit.repeat(Math.max(0,depth))+v); lines++; continue; }
+    if(t.t==='punct' && v==='('){
+      emit('('); depth++;
+      var nxt=toks[i+1];
+      // A function call stays on one line; a subquery or value list breaks out.
+      var isCall = toks[i-1] && toks[i-1].t==='ident' && /[A-Za-z0-9_)]$/.test(toks[i-1].v);
+      if(!isCall){ depth--; push(); depth++; }
+      continue;
+    }
+    if(t.t==='punct' && v===')'){
+      depth=Math.max(0,depth-1);
+      if(cur.trim()==='') out.push(unit.repeat(depth)+')');
+      else emit(')');
+      continue;
+    }
+    if(t.t==='punct' && v===','){ emit(','); push(); continue; }
+    if(t.t==='punct' && v===';'){
+      if(cur.trim()!=='') push();
+      out.push(unit.repeat(Math.max(0,depth))+';'); lines++;
+      continue;
+    }
+    if(t.t==='kw' && LEAD_KW.indexOf(low)>=0){
+      if(cur.trim()!=='') push();
+      emit(up?v.toUpperCase():v.toLowerCase());
+      continue;
+    }
+    if(t.t==='kw' && (low==='left join'||low==='right join'||low==='inner join'||
+        low==='full join'||low==='cross join'||low==='outer join'||low==='join')){
+      if(cur.trim()!=='') push();
+      emit(up?v.toUpperCase():v.toLowerCase());
+      continue;
+    }
+    if(t.t==='kw' && (low==='on'||low==='and'||low==='or')){
+      emit(' '+(up?v.toUpperCase():v.toLowerCase()));
+      push();
+      continue;
+    }
+    if(t.t==='kw'){ emit((cur?' ':'')+(up?v.toUpperCase():v.toLowerCase())); continue; }
+    if(t.t==='op'){ emit((cur?' ':'')+v); continue; }
+    if(t.t==='param'){ emit((cur?' ':'')+v); continue; }
+    if(t.t==='number'||t.t==='string'||t.t==='ident'){
+      emit((cur&&!/[,(]/.test(cur.slice(-1))?' ':'')+v);
+      continue;
+    }
+    emit(v);
+  }
+  if(cur.trim()!=='') push();
+  var text=out.join('\n');
+  return {sql:text, toks:toks, lines:out.length};
+}
+function minify(sql,dialect){
+  return tokenize(sql,dialect).map(function(t){
+    return t.t==='comment'?'':(t.t==='string'||t.t==='ident'?t.v:t.v);
+  }).filter(function(s){return s!==''}).join(' ').replace(/\s+([,;)])/g,'$1').trim();
+}
+window.__sql={tokenize:tokenize,format:format,minify:minify,KEYWORDS:KEYWORDS};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+var SAMPLE="select u.id,u.name,o.total from users u left join orders o on o.user_id=u.id where u.city='Benin City' and o.total>100 group by u.id,u.name,o.total order by o.total desc limit 10;";
+function run(){
+  var src=$('src').value;
+  if(!src.trim()){ seterr('err','paste a query first'); $('out').textContent=''; return; }
+  var res;
+  try{ res=format(src,{dialect:$('dialect').value,indent:$('indent').value,
+                      kcase:$('kcase').value,keepcom:$('keepcom').checked}); }
+  catch(e){ seterr('err','format failed: '+e.message); return; }
+  if(!res.toks.length){ seterr('err','no SQL tokens found'); return; }
+  seterr('err','');
+  $('out').textContent=res.sql;
+  var counts={};
+  res.toks.forEach(function(t){ counts[t.t]=(counts[t.t]||0)+1; });
+  var strs=res.toks.filter(function(t){return t.t==='string'});
+  show([['Tokens',res.toks.length],['Lines',res.lines],
+        ['Keywords',counts.kw||0],['Strings kept',strs.length],
+        ['Comments',counts.comment||0]]);
+  $('tbl').innerHTML=res.toks.slice(0,200).map(function(t,i){
+    return '<tr class="border-t border-white/5">'
+      +'<td class="py-2 pr-4 text-white/30">'+i+'</td>'
+      +'<td class="py-2 pr-4 font-mono">'+esc(t.v.length>40?t.v.slice(0,40)+'\u2026':t.v)+'</td>'
+      +'<td class="py-2 pr-4 text-white/50">'+esc(t.t)+'</td>'
+      +'<td class="py-2 pr-4 text-white/30">'+t.at+'</td></tr>';
+  }).join('');
+}
+$('go').addEventListener('click',run);
+$('minify').addEventListener('click',function(){
+  $('out').textContent=minify($('src').value,$('dialect').value);
+});
+$('load').addEventListener('click',function(){ $('src').value=SAMPLE; run(); });
+$('src').value=SAMPLE;
+bind(['dialect','indent','kcase','wrap','keepcom'],run);
+wire(run);
+</script>
 
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">

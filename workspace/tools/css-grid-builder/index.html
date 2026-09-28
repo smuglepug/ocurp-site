@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSS Grid Template Builder — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Drag out a grid definition and get the CSS with media queries attached. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/css-grid-builder/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="CSS Grid Template Builder">
+<meta property="og:description" content="Drag out a grid definition and get the CSS with media queries attached. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/css-grid-builder/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="CSS Grid Template Builder on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CSS Grid Template Builder">
+<meta name="twitter:description" content="Drag out a grid definition and get the CSS with media queries attached. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="CSS Grid Template Builder on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSS Grid Template Builder","url":"https://ocurp.space/workspace/tools/css-grid-builder/","description":"Drag out a grid definition and get the CSS with media queries attached. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">CSS Grid Template Builder</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Network & Web — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">CSS</span><span class="ws-chip">GRID</span><span class="ws-chip">LAYOUT</span><span class="ws-chip">CLIENT-SIDE</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid items-end gap-4 md:grid-cols-5"><div><label class="ws-label mb-2 block" for="cols">Columns</label><input id="cols" type="number" class="ws-input" placeholder="4" value="4"></div><div><label class="ws-label mb-2 block" for="rows">Rows</label><input id="rows" type="number" class="ws-input" placeholder="4" value="4"></div><div><label class="ws-label mb-2 block" for="gap">Gap</label><select id="gap" class="ws-input !w-40"><option value="0">0</option><option value="0.5rem">.5rem</option><option value="1rem" selected>1rem</option><option value="1.5rem">1.5rem</option><option value="2rem">2rem</option></select></div><div><label class="ws-label mb-2 block" for="bp">Breakpoint</label><select id="bp" class="ws-input !w-40"><option value="640px">640px</option><option value="768px" selected>768px</option><option value="1024px">1024px</option></select></div><div><label class="ws-label mb-2 block" for="mcols">Mobile cols</label><select id="mcols" class="ws-input !w-36"><option value="1" selected>1</option><option value="2">2</option></select></div></div><div class="mt-4 flex flex-wrap items-center gap-3"><label class="flex items-center gap-2 text-sm text-white/70"><input id="rep" type="checkbox" class="accent-[#FF5F1F]" checked> use repeat()</label><label class="flex items-center gap-2 text-sm text-white/70"><input id="areas" type="checkbox" class="accent-[#FF5F1F]" checked> named areas</label><label class="flex items-center gap-2 text-sm text-white/70"><input id="autorows" type="checkbox" class="accent-[#FF5F1F]"> auto-rows</label><button id="fit" class="ws-btn-ghost !px-3 !py-1.5">Fit items to page</button><span id="cellhint" class="ws-chip"></span></div><div class="mt-5"><div class="ws-label mb-2">Click cells to place items</div><div id="pad" class="inline-grid gap-1"></div><div class="mt-3 flex flex-wrap gap-2" id="presets"></div></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">CSS</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="out" onclick="cp(this)">Copy CSS</button></div><pre id="out" class="ws-out"></pre></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Matching HTML</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="htmlout" onclick="cp(this)">Copy HTML</button></div><pre id="htmlout" class="ws-out"></pre></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Track sizes</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="shapeinfo" onclick="cp(this)"></button></div><div id="shapeinfo" class="space-y-2"></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var el=document.getElementById('stats');if(el)el.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){try{fn()}catch(e){seterr('err',e.message)}}
+
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var el=document.getElementById('stats');if(el)el.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){try{fn()}catch(e){seterr('err',e.message)}}
+
+// Track sizing from an author-entered string. Fractions are valid CSS, so the
+// builder emits the caller's tokens verbatim rather than reformatting them.
+function tracks(n,useRepeat,template){
+  var cols=[];
+  for(var i=0;i<n;i++) cols.push(i+1);
+  if(!template) template='1fr';
+  if(useRepeat && n>1 && template.indexOf(' ')<0) return 'repeat('+n+', '+template+')';
+  if(useRepeat && n>1) return 'repeat('+n+', '+template+')';
+  return cols.map(function(){return template}).join(' ');
+}
+function buildCss(opts){
+  var n=Math.max(1,Math.min(24,parseInt(opts.cols,10)||1));
+  var m=Math.max(1,Math.min(24,parseInt(opts.rows,10)||1));
+  var gap=opts.gap||'1rem';
+  var mcols=Math.max(1,Math.min(6,parseInt(opts.mcols,10)||1));
+  var tpl=tracks(n,opts.useRepeat,opts.template);
+  var out=[];
+  out.push('.grid {');
+  out.push('  display: grid;');
+  out.push('  grid-template-columns: '+tpl+';');
+  out.push('  grid-template-rows: repeat('+m+', '+(opts.autoRows?'auto':'minmax(120px, auto)')+');');
+  out.push('  gap: '+gap+';');
+  if(opts.named && opts.items && opts.items.length){
+    out.push('  grid-template-areas:');
+    for(var y=0;y<m;y++){
+      var line=[];
+      for(var x=0;x<n;x++){
+        var it=opts.items[y] && opts.items[y][x];
+        line.push(it?'"'+it.name+'"':'"."');
+      }
+      out.push('    '+line.join(' ')+(y===m-1?';':''));
+    }
+  }
+  out.push('}');
+  // The mobile block is always emitted: a grid that only works above the
+  // breakpoint is the single most common bug in hand-written grid CSS.
+  out.push('');
+  out.push('@media (max-width: '+opts.breakpoint+') {');
+  out.push('  .grid {');
+  out.push('    grid-template-columns: '+(mcols>1?'repeat('+mcols+', 1fr)':'1fr')+';');
+  if(opts.named && opts.items && opts.items.length){
+    out.push('    grid-template-areas: none;');
+  }
+  out.push('  }');
+  out.push('}');
+  return {css:out.join('\n'), cols:n, rows:m, template:tpl,
+          cells:n*m, mobileCols:mcols, breakpoint:opts.breakpoint, gap:gap};
+}
+window.__cssgrid={buildCss:buildCss,tracks:tracks};
+
+function renderPad(){
+  var n=Math.max(1,Math.min(12,parseInt($('cols').value,10)||4));
+  var m=Math.max(1,Math.min(12,parseInt($('rows').value,10)||4));
+  $('pad').style.gridTemplateColumns='repeat('+n+', 2.2rem)';
+  $('pad').innerHTML='';
+  for(var y=0;y<m;y++)for(var x=0;x<n;x++){
+    var d=document.createElement('button');
+    d.className='h-9 rounded-md border border-white/15 bg-white/[0.05] text-[10px] font-bold text-white/70 hover:border-accent';
+    d.setAttribute('data-y',y); d.setAttribute('data-x',x);
+    d.onclick=function(){
+      var it=items[Number(this.getAttribute('data-y'))][Number(this.getAttribute('data-x'))];
+      items[Number(this.getAttribute('data-y'))][Number(this.getAttribute('data-x'))]=
+        it?null:{name:'item-'+(++seq)};
+      run();
+    };
+    $('pad').appendChild(d);
+  }
+  $('cellhint').textContent=n+' \u00d7 '+m+' = '+(n*m)+' cells';
+}
+var items=[], seq=0;
+function blankItems(n,m){
+  var a=[];
+  for(var y=0;y<m;y++){a.push([]);for(var x=0;x<n;x++)a[y].push(null);}
+  return a;
+}
+var PRESETS=[
+  {name:'Dashboard', cols:4, rows:3, items:[[{name:'sidebar'},{name:'stats'},{name:'stats'},{name:'stats'}],
+    [{name:'sidebar'},{name:'main'},{name:'main'},{name:'side'}],
+    [{name:'sidebar'},{name:'main'},{name:'main'},{name:'side'}]]},
+  {name:'Hero split', cols:6, rows:2, items:[[{name:'copy'},{name:'copy'},{name:'copy'},{name:'copy'},{name:'media'},{name:'media'}],
+    [{name:'foot'},{name:'foot'},{name:'foot'},{name:'foot'},{name:'foot'},{name:'foot'}]]},
+  {name:'Cards', cols:3, rows:2, items:[[{name:'card'},{name:'card'},{name:'card'}],
+    [{name:'card'},{name:'card'},{name:'card'}]]}
+];
+$('presets').innerHTML=PRESETS.map(function(p,i){
+  return '<button class="ws-btn-ghost !px-3 !py-1.5" data-p="'+i+'" onclick="usePreset(this)">'+esc(p.name)+'</button>';
+}).join('');
+function usePreset(b){
+  var p=PRESETS[Number(b.getAttribute('data-p'))];
+  $('cols').value=p.cols; $('rows').value=p.rows;
+  items=p.items; seq=p.items.flat().filter(Boolean).length;
+  renderPad(); run();
+}
+$('fit').addEventListener('click',function(){
+  items=blankItems(parseInt($('cols').value,10)||4,parseInt($('rows').value,10)||4);
+  seq=0; renderPad(); run();
+});
+function run(){
+  var n=Math.max(1,Math.min(24,parseInt($('cols').value,10)||1));
+  var m=Math.max(1,Math.min(24,parseInt($('rows').value,10)||1));
+  // Keep the item matrix the same shape as the current grid, or the areas
+  // block would emit the wrong number of columns and break the CSS.
+  if(!items.length || items.length!==m || !items[0] || items[0].length!==n){
+    items=blankItems(n,m);
+  }
+  var res=buildCss({cols:n, rows:m, gap:$('gap').value, breakpoint:$('bp').value,
+    mcols:$('mcols').value, useRepeat:$('rep').checked, named:$('areas').checked,
+    autoRows:$('autorows').checked, items:items});
+  seterr('err','');
+  $('out').textContent=res.css;
+  var names=[];
+  items.forEach(function(row){row.forEach(function(c){if(c&&names.indexOf(c.name)<0)names.push(c.name)})});
+  $('htmlout').textContent=names.map(function(nm,i){
+    return '<div class="item-'+(i+1)+'">'+nm+'</div>';}).join('\n')+
+    '\n\n<!-- .item-N { grid-area: NAME; } -->';
+  show([['Columns',res.cols],['Rows',res.rows],['Cells',res.cells],
+        ['Named areas',names.length],['Mobile cols',res.mobileCols]]);
+  $('shapeinfo').innerHTML=
+    '<div class="flex justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">'
+    +'<span class="text-sm text-white/80">grid-template-columns</span>'
+    +'<span class="font-mono text-sm text-accent">'+esc(res.template)+'</span></div>'
+    +'<div class="flex justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">'
+    +'<span class="text-sm text-white/80">gap</span>'
+    +'<span class="font-mono text-sm text-accent">'+esc(res.gap)+'</span></div>'
+    +'<div class="flex justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">'
+    +'<span class="text-sm text-white/80">Breakpoint</span>'
+    +'<span class="font-mono text-sm text-accent">max-width '+esc(res.breakpoint)+'</span></div>'
+    +'<div class="flex justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">'
+    +'<span class="text-sm text-white/80">Fractions per row</span>'
+    +'<span class="font-mono text-sm text-accent">'+res.cols+'fr</span></div>';
+  // Repaint the pad from the item matrix.
+  var pad=$('pad').children;
+  for(var y=0;y<m;y++)for(var x=0;x<n;x++){
+    var el=pad[y*n+x]; if(!el) continue;
+    var it=items[y] && items[y][x];
+    el.textContent=it?it.name:'';
+    el.style.background=it?'rgba(255,95,31,.18)':'';
+    el.style.borderColor=it?'#FF5F1F':'rgba(255,255,255,.15)';
+  }
+}
+bind(['cols','rows','gap','bp','mcols','rep','areas','autorows'],function(){
+  if(['cols','rows'].indexOf(document.activeElement.id)>=0) renderPad();
+  run();
+});
+items=blankItems(4,4);
+renderPad();
+wire(run);
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/box-shadow/">
+      <span class="ocurp-related-n">Box Shadow Generator</span>
+      <span class="ocurp-related-b">Layer shadows visually and copy the CSS.</span>
+    </a></li>
+    <li><a href="/workspace/tools/css-border-radius-generator/">
+      <span class="ocurp-related-n">Border Radius Generator</span>
+      <span class="ocurp-related-b">Dial in all eight corner radii, watch the shape change and copy the exact CSS.</span>
+    </a></li>
+    <li><a href="/workspace/tools/css-clip-path-generator/">
+      <span class="ocurp-related-n">CSS Clip Path Generator</span>
+      <span class="ocurp-related-b">Pick a shape or drag the points, then copy the exact clip-path polygon CSS.</span>
+    </a></li>
+    <li><a href="/workspace/tools/css-formatter/">
+      <span class="ocurp-related-n">CSS Formatter</span>
+      <span class="ocurp-related-b">Prettify or minify CSS with indentation control.</span>
+    </a></li>
+    <li><a href="/workspace/tools/css-glassmorphism-generator/">
+      <span class="ocurp-related-n">Glassmorphism CSS Generator</span>
+      <span class="ocurp-related-b">Dial the blur, tint, saturation and border, watch a live preview, and copy the exact backd</span>
+    </a></li>
+    <li><a href="/workspace/tools/css-minifier/">
+      <span class="ocurp-related-n">CSS Minifier</span>
+      <span class="ocurp-related-b">Minify CSS with before/after byte count and download.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

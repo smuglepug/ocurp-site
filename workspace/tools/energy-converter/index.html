@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Energy & Heat Converter — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Joules, calories, BTU, watt-hours and electron-volts converted exactly. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/energy-converter/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Energy &amp; Heat Converter">
+<meta property="og:description" content="Joules, calories, BTU, watt-hours and electron-volts converted exactly. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/energy-converter/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Energy &amp; Heat Converter on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Energy &amp; Heat Converter">
+<meta name="twitter:description" content="Joules, calories, BTU, watt-hours and electron-volts converted exactly. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Energy &amp; Heat Converter on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Energy & Heat Converter","url":"https://ocurp.space/workspace/tools/energy-converter/","description":"Joules, calories, BTU, watt-hours and electron-volts converted exactly. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Energy & Heat Converter</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ENERGY</span><span class="ws-chip">HEAT</span><span class="ws-chip">SI</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid items-end gap-4 md:grid-cols-[1fr_1fr_1fr_auto]"><div><label class="ws-label mb-2 block" for="val">Value</label><input id="val" type="number" class="ws-input" placeholder="0" value="1"></div><div><label class="ws-label mb-2 block" for="from">From</label><select id="from" class="ws-input !w-64"><option value="j">Joule (J)</option><option value="kj">Kilojoule (kJ)</option><option value="mj">Megajoule (MJ)</option><option value="wh">Watt-hour (Wh)</option><option value="kwh">Kilowatt-hour (kWh)</option><option value="erg">Erg</option><option value="cal">Calorie (cal)</option><option value="kcal" selected>Kilocalorie (kcal)</option><option value="btu">British thermal unit (BTU)</option><option value="thm">Therm</option><option value="ftlb">Foot-pound (ft·lbf)</option><option value="inlb">Inch-pound (in·lbf)</option><option value="ev">Electron-volt (eV)</option><option value="kev">Kiloelectron-volt (keV)</option><option value="mev">Megaelectron-volt (MeV)</option><option value="gev">Gigaelectron-volt (GeV)</option><option value="tnt_mt">Tonne of TNT (megatonne)</option><option value="tnt_t">Tonne of TNT</option><option value="toe">Tonne of oil equivalent</option></select></div><div><label class="ws-label mb-2 block" for="to">To</label><select id="to" class="ws-input !w-64"><option value="j">Joule (J)</option><option value="kj">Kilojoule (kJ)</option><option value="mj">Megajoule (MJ)</option><option value="wh">Watt-hour (Wh)</option><option value="kwh" selected>Kilowatt-hour (kWh)</option><option value="erg">Erg</option><option value="cal">Calorie (cal)</option><option value="kcal">Kilocalorie (kcal)</option><option value="btu">British thermal unit (BTU)</option><option value="thm">Therm</option><option value="ftlb">Foot-pound (ft·lbf)</option><option value="inlb">Inch-pound (in·lbf)</option><option value="ev">Electron-volt (eV)</option><option value="kev">Kiloelectron-volt (keV)</option><option value="mev">Megaelectron-volt (MeV)</option><option value="gev">Gigaelectron-volt (GeV)</option><option value="tnt_mt">Tonne of TNT (megatonne)</option><option value="tnt_t">Tonne of TNT</option><option value="toe">Tonne of oil equivalent</option></select></div><div class="flex gap-2 pb-0.5"><button id="swap" class="ws-btn-ghost !w-auto">Swap</button></div></div><div class="mt-4 flex flex-wrap gap-2" id="quick"></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">All units against the joule</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="line" onclick="cp(this)"></button></div><div class="ws-out" id="line">-</div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Unit</th><th class="py-2 pr-4">Joules exactly</th><th class="py-2 pr-4">In joules</th></tr></thead><tbody id="tbl"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Physical reference points</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="spec" onclick="cp(this)"></button></div><div id="spec" class="text-sm text-white/60">-</div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+var UNITS=[["j", "Joule (J)", 1.0, "SI"], ["kj", "Kilojoule (kJ)", 1000.0, "SI"], ["mj", "Megajoule (MJ)", 1000000.0, "SI"], ["wh", "Watt-hour (Wh)", 3600.0, "SI derived"], ["kwh", "Kilowatt-hour (kWh)", 3600000.0, "SI derived"], ["erg", "Erg", 1e-07, "CGS"], ["cal", "Calorie (cal)", 4.184, "Thermochemistry"], ["kcal", "Kilocalorie (kcal)", 4184.0, "Food"], ["btu", "British thermal unit (BTU)", 1055.05585262, "Imperial"], ["thm", "Therm", 105505585.262, "Imperial"], ["ftlb", "Foot-pound (ft\u00b7lbf)", 1.3558179483314003, "Imperial"], ["inlb", "Inch-pound (in\u00b7lbf)", 0.1129848290276167, "Imperial"], ["ev", "Electron-volt (eV)", 1.602176634e-19, "Particle"], ["kev", "Kiloelectron-volt (keV)", 1.602176634e-16, "Particle"], ["mev", "Megaelectron-volt (MeV)", 1.602176634e-13, "Particle"], ["gev", "Gigaelectron-volt (GeV)", 1.602176634e-10, "Particle"], ["tnt_mt", "Tonne of TNT (megatonne)", 4184000000000000.0, "Explosive"], ["tnt_t", "Tonne of TNT", 4184000000000.0, "Explosive"], ["toe", "Tonne of oil equivalent", 41868000000.0, "Fuel"]];
+var LABEL={}; UNITS.forEach(function(u){LABEL[u[0]]=u[1];});
+function factor(u){ for(var i=0;i<UNITS.length;i++) if(UNITS[i][0]===u) return UNITS[i][2];
+  throw new Error('unknown unit: '+u); }
+/* Energy is a pure multiple of the joule, so this is the whole engine. */
+function toJoules(v,unit){ return v*factor(unit); }
+function fromJoules(j,unit){ return j/factor(unit); }
+function convert(v,from,to){ return fromJoules(toJoules(v,from),to); }
+function convertAll(v,from){
+  var j=toJoules(v,from);
+  return UNITS.map(function(u){ return {unit:u[0],label:u[1],joules:j,value:j/u[2]}; });
+}
+/* 6 dp is right for kilowatt-hours and hopeless for electron-volts, so
+   anything outside 1e-4..1e6 falls back to exponential notation. */
+function fmt(x){
+  if(x===0) return '0';
+  if(!isFinite(x)) return String(x);
+  var a=Math.abs(x);
+  if(a>=1e-4&&a<1e6) return grp(x,6);
+  return x.toExponential(4);
+}
+function run(){
+  var v=parseFloat($('val').value);
+  if(isNaN(v)){ seterr('err','enter a number'); return; }
+  seterr('err','');
+  var to=$('to').value, from=$('from').value;
+  var out=convert(v,from,to), j=toJoules(v,from);
+  $('line').textContent=fmt(v)+' '+LABEL[from]+' = '+fmt(out)+' '+LABEL[to]
+    +'  ('+fmt(j)+' J)';
+  show([[LABEL[to].split(' (')[0], fmt(out)],
+        ['Joules', fmt(j)],
+        ['Kilowatt-hours', fmt(j/3.6e6)],
+        ['BTU', fmt(j/1055.05585262)]]);
+  $('tbl').innerHTML=UNITS.map(function(u){
+    return row([esc(u[1]), u[2].toExponential(6), fmt(j/u[2])]);}).join('');
+  $('spec').innerHTML=[
+    'Energy to lift a 70 kg person 1 m: '+r(70*9.80665,3)+' J',
+    'One slice of bread, roughly: '+r(320000,0)+' J ('+r(320000/4184,2)+' kcal)',
+    'A UK home, one year at 3,500 kWh: '+r(3500*3.6e6,0)+' J',
+    'One electron across 1 volt: 1 eV = 1.602176634e-19 J',
+    'Fission of one 235U nucleus: about 200 MeV = '+r(200e6*1.602176634e-19,4)+' J'
+  ].map(function(s){return '<div class="py-1">'+esc(s)+'</div>';}).join('');
+  window.__energyLast={value:v,from:from,to:to,result:out,joules:j};
+  return window.__energyLast;
+}
+$('swap').addEventListener('click',function(){ var f=$('from').value;
+  $('from').value=$('to').value; $('to').value=f; run(); });
+$('quick').innerHTML=[['1','kcal','kwh'],['1','kwh','btu'],['1','ev','kj'],
+  ['100','kcal','j'],['1','toe','kwh']].map(function(q,i){
+  return '<button class="ws-btn-ghost !px-3 !py-1.5" onclick="quick('+i+')">'
+    +esc(q[0]+' '+q[1]+' → '+q[2])+'</button>';}).join('');
+function quick(i){
+  var q=[['1','kcal','kwh'],['1','kwh','btu'],['1','ev','kj'],
+         ['100','kcal','j'],['1','toe','kwh']][i];
+  $('val').value=q[0]; $('from').value=q[1]; $('to').value=q[2]; run();
+}
+bind(['val','from','to'],run);
+window.__energy={convert:convert,toJoules:toJoules,fromJoules:fromJoules,
+  convertAll:convertAll,run:run};
+run();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/solar-panel-calculator/">
+      <span class="ocurp-related-n">Solar Panel Calculator</span>
+      <span class="ocurp-related-b">Solar output in kWh, payback period and offset for a given roof and tariff.</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi/">
+      <span class="ocurp-related-n">BMI Calculator</span>
+      <span class="ocurp-related-b">Body mass index with healthy-range context.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calculator/">
+      <span class="ocurp-related-n">Scientific Calculator</span>
+      <span class="ocurp-related-b">Full expression evaluation in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calorie-calculator/">
+      <span class="ocurp-related-n">Calorie Calculator</span>
+      <span class="ocurp-related-b">Daily calories from age, weight, activity and goal, using the Mifflin-St Jeor equation.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
