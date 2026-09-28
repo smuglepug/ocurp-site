@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Random Name Picker — Free Online Tool | Ocurp</title>
+<title>Random Name Picker | Owen's Workspace</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,17 +51,6 @@ tailwind.config = { theme: { extend: {
   .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
   .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
 </style>
-<meta name="description" content="Pick random first and last name combinations, with repeats, then style them nine different ways. Runs entirely in your browser - nothing is uploaded.">
-<link rel="canonical" href="https://ocurp.space/workspace/tools/random-name-picker/">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Random Name Picker">
-<meta property="og:description" content="Pick random first and last name combinations, with repeats, then style them nine different ways. Runs entirely in your browser - nothing is uploaded.">
-<meta property="og:url" content="https://ocurp.space/workspace/tools/random-name-picker/">
-<meta property="og:site_name" content="Ocurp">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Random Name Picker">
-<meta name="twitter:description" content="Pick random first and last name combinations, with repeats, then style them nine different ways. Runs entirely in your browser - nothing is uploaded.">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Random Name Picker","url":"https://ocurp.space/workspace/tools/random-name-picker/","description":"Pick random first and last name combinations, with repeats, then style them nine different ways. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -77,7 +66,7 @@ tailwind.config = { theme: { extend: {
           </div>
           <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">RANDOM</span><span class="ws-chip">NAMES</span><span class="ws-chip">PICKER</span></div>
         </div>
-      <section class="ws-panel mt-4 p-5"><div class="grid gap-4 md:grid-cols-2"><div><label class="ws-label mb-2 block" for="first">First names (comma separated)</label><input id="first" type="text" class="ws-input" placeholder="Ada, Grace, Alan, Katherine, Linus"></div><div><label class="ws-label mb-2 block" for="last">Last names (comma separated)</label><input id="last" type="text" class="ws-input" placeholder="Lovelace, Hopper, Turing, Johnson, Torvalds"></div><div><label class="ws-label mb-2 block" for="count">How many to pick</label><input id="count" type="number" class="ws-input" placeholder="3" value="3"></div><div><label class="ws-label mb-2 block" for="rep">Allow repeats</label><input id="rep" type="text" class="ws-input" placeholder="0"></div></div><div class="mt-4"><div class="ws-label mb-2">Style</div><div class="flex flex-wrap gap-2" id="styles"></div></div><div class="mt-5 flex flex-wrap items-center gap-3"><button id="go" class="ws-btn">Pick names</button><span class="text-xs text-white/50" id="note"></span></div><div class="mt-5"><div class="ws-label mb-2">Picked</div><div id="out" class="ws-out"></div></div></section>
+      <section class="ws-panel mt-4 p-5"><div class="grid gap-4 md:grid-cols-2"><div><label class="ws-label mb-2 block" for="first">First names (comma separated)</label><input id="first" type="text" class="ws-input" placeholder="Ada, Grace, Alan, Katherine, Linus" value="Ada, Grace, Alan, Katherine, Linus"></div><div><label class="ws-label mb-2 block" for="last">Last names (comma separated)</label><input id="last" type="text" class="ws-input" placeholder="Lovelace, Hopper, Turing, Johnson, Torvalds" value="Lovelace, Hopper, Turing, Johnson, Torvalds"></div><div><label class="ws-label mb-2 block" for="count">How many to pick</label><input id="count" type="number" class="ws-input" placeholder="3" value="3"></div><div><label class="ws-label mb-2 block" for="rep">Allow repeats</label><input id="rep" type="text" class="ws-input" placeholder="0" value="0"></div></div><div class="mt-4"><div class="ws-label mb-2">Style</div><div class="flex flex-wrap gap-2" id="styles"></div></div><div class="mt-5 flex flex-wrap items-center gap-3"><button id="go" class="ws-btn">Pick names</button><span class="text-xs text-white/50" id="note"></span></div><div class="mt-5"><div class="ws-label mb-2">Picked</div><div id="out" class="ws-out"></div></div></section>
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
@@ -120,12 +109,20 @@ function style(name,st,bin){
   }
   return name;
 }
-function pick(list,noRep,bin){
-  const pool=list.slice();
-  if(!noRep) return pool[bin[0]%pool.length];
-  if(!pool.length) return '';
-  const i=bin[0]%pool.length;
-  return pool.splice(i,1)[0];
+// Fisher-Yates over the pool. Taking `randomInt % n` per pick instead just
+// hashes each draw independently, so repeats show up constantly and
+// "no repeats" silently lies.
+function shuffled(list,bin){
+  const a=list.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j=bin[i%bin.length]%  (i+1);
+    const t=a[i]; a[i]=a[j]; a[j]=t;
+  }
+  return a;
+}
+function drawFrom(list,draw){
+  if(!list.length) return '';
+  return list[draw%list.length];
 }
 function run(){
   const firsts=$('first').value.split(',').map(s=>s.trim()).filter(Boolean);
@@ -134,17 +131,21 @@ function run(){
   const count=Math.max(1,Math.min(50,parseInt($('count').value,10)||3));
   const noRep=$('rep').value==='0';
   const st=$('styles').querySelector('button.on').dataset.st;
-  const rng=crypto.getRandomValues(new Uint32Array(count*3+4));
+  const rng=crypto.getRandomValues(new Uint32Array((count+2)*(firsts.length+lasts.length)+8));
+  // With repeats off, walk a shuffled list so the "no repeat" promise is real.
+  const fPool=noRep?shuffled(firsts,rng):firsts;
+  const lPool=noRep?shuffled(lasts,rng):lasts;
   const out=[];
   for(let i=0;i<count;i++){
-    const f=pick(firsts,noRep,rng.slice(i*3,i*3+2));
-    const l=pick(lasts,noRep,rng.slice(i*3+1,i*3+3));
-    let nm=style(f+' '+l,st,rng.slice(i*3,i*3+2));
-    if(st==='shout') nm=style(f+' '+l,st,rng.slice(i*3,i*3+2));
-    out.push(String(i+1).padStart(2,'0')+'. '+nm);
+    const slice=rng.slice(i*4,i*4+4);
+    const f=noRep?fPool[i%fPool.length]:drawFrom(firsts,slice[0]);
+    const l=noRep?lPool[i%lPool.length]:drawFrom(lasts,slice[1]);
+    out.push(String(i+1).padStart(2,'0')+'. '+style(f+' '+l,st,slice));
   }
   $('out').textContent=out.join('\n');
-  $('note').textContent=count+' name'+(count===1?'':'s')+' from '+firsts.length*lasts.length+' combinations.';
+  const cap=noRep?Math.min(firsts.length,lasts.length):Infinity;
+  $('note').textContent=count+' name'+(count===1?'':'s')+' from '+firsts.length*lasts.length+
+    ' combinations'+(noRep?', no repeats (pools exhausted after '+cap+')':'')+'.';
 }
 $('styles').innerHTML=Object.keys(SCRIPT_STYLES).map((k,i)=>
   '<button class="ws-btn-ghost !px-3 !py-2'+(i===0?' on':'')+'" data-st="'+SCRIPT_STYLES[k]+'">'+k+'</button>').join('');
@@ -156,59 +157,5 @@ $('styles').addEventListener('click',e=>{
 $('go').addEventListener('click',run);
 run();
 </script>
-
-
-
-<!--ocurp-related-->
-<nav aria-label="Related tools" class="ocurp-related">
-  <h2 class="ocurp-related-h">Related</h2>
-  <ul class="ocurp-related-grid">
-    <li><a href="/workspace/tools/spin-wheel/">
-      <span class="ocurp-related-n">Spin Wheel</span>
-      <span class="ocurp-related-b">Draw a wheel of any size, spin it with a fair cryptographic pick and land the winner under</span>
-    </a></li>
-    <li><a href="/workspace/tools/coin-flip/">
-      <span class="ocurp-related-n">Coin Flip</span>
-      <span class="ocurp-related-b">Flip up to 500 coins at once and get the heads and tails tally.</span>
-    </a></li>
-    <li><a href="/workspace/tools/dice-roller/">
-      <span class="ocurp-related-n">Dice Roller</span>
-      <span class="ocurp-related-b">Roll up to 500 dice of any size, with a modifier and a full tally of the results.</span>
-    </a></li>
-    <li><a href="/workspace/tools/random-number/">
-      <span class="ocurp-related-n">Random Number Generator</span>
-      <span class="ocurp-related-b">Draw random whole numbers in any range, with unique and sorted modes and a cryptographic s</span>
-    </a></li>
-    <li><a href="/workspace/tools/anagram-solver/">
-      <span class="ocurp-related-n">Anagram Solver</span>
-      <span class="ocurp-related-b">Find exact anagrams and longer words you can build from a letter set.</span>
-    </a></li>
-    <li><a href="/workspace/tools/braille-translator/">
-      <span class="ocurp-related-n">Braille Translator</span>
-      <span class="ocurp-related-b">Convert text to Grade 1 Unicode Braille and back, with capital and number signs handled pr</span>
-    </a></li>
-  </ul>
-  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
-</nav>
-
-<style>
-.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
-.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
-  color:rgba(255,255,255,.35);margin:0 0 1rem}
-.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
-  grid-template-columns:1fr}
-@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
-@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
-.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
-  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
-  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
-.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
-.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
-.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
-  color:rgba(255,255,255,.42)}
-.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
-  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
-.ocurp-related-all:hover{text-decoration:underline}
-</style>
 </body>
 </html>

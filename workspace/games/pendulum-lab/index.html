@@ -162,58 +162,6 @@ tailwind.config = { theme: { extend: {
 </div>
 <script src="/workspace/related.js" defer></script>
 <script>
-const cv=document.getElementById('cv'),cx=cv.getContext('2d'),N=21,S=cv.width/N;
-let snake,dir,food,score,dead,timer,speed=110;
-const best=()=>parseInt(localStorage.getItem('ws-snake-best')||'0');
-document.getElementById('best').textContent=best();
-function reset(){snake=[{x:10,y:10}];dir={x:1,y:0};place();score=0;dead=false;
-  document.getElementById('score').textContent='0';draw()}
-function place(){do{food={x:Math.floor(Math.random()*N),y:Math.floor(Math.random()*N)}}
-  while(snake.some(s=>s.x===food.x&&s.y===food.y))}
-function step(){
-  const h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
-  if(h.x<0||h.y<0||h.x>=N||h.y>=N||snake.some(s=>s.x===h.x&&s.y===h.y)){over();return}
-  snake.unshift(h);
-  if(h.x===food.x&&h.y===food.y){score++;document.getElementById('score').textContent=score;place();
-    if(score%5===0&&speed>60){speed-=8;restart()}}
-  else snake.pop();
-  draw();
-}
-function over(){dead=true;clearInterval(timer);
-  if(score>best()){localStorage.setItem('ws-snake-best',score);document.getElementById('best').textContent=score}
-  cx.fillStyle='rgba(5,5,5,.75)';cx.fillRect(0,0,cv.width,cv.height);
-  cx.fillStyle='#FF5F1F';cx.font='900 28px Manrope,sans-serif';cx.textAlign='center';
-  cx.fillText('DEAD — ' + score, cv.width/2, cv.height/2)}
-function draw(){
-  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,cv.width,cv.height);
-  cx.fillStyle='#FF5F1F';cx.beginPath();cx.arc(food.x*S+S/2,food.y*S+S/2,S/2.6,0,7);cx.fill();
-  snake.forEach((s,i)=>{cx.fillStyle=i?'rgba(255,255,255,.75)':'#fff';
-    cx.fillRect(s.x*S+1,s.y*S+1,S-2,S-2)});
-}
-function restart(){clearInterval(timer);timer=setInterval(()=>{if(!dead)step()},speed)}
-document.getElementById('start').onclick=()=>{if(dead||!timer){reset();restart()}};
-document.getElementById('reset').onclick=()=>{clearInterval(timer);timer=null;reset()};
-addEventListener('keydown',e=>{
-  const m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],
-           w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]}[e.key];
-  if(!m)return;e.preventDefault();
-  const nd={x:m[0],y:m[1]};
-  if(nd.x!==-dir.x||nd.y!==-dir.y)dir=nd;
-});
-let ts=null;
-cv.addEventListener('touchstart',e=>{ts=e.touches[0]},{passive:true});
-cv.addEventListener('touchend',e=>{
-  if(!ts)return;const dx=e.changedTouches[0].clientX-ts.clientX,dy=e.changedTouches[0].clientY-ts.clientY;
-  if(Math.max(Math.abs(dx),Math.abs(dy))<20)return;
-  const nd=Math.abs(dx)>Math.abs(dy)?{x:Math.sign(dx),y:0}:{x:0,y:Math.sign(dy)};
-  if(nd.x!==-dir.x||nd.y!==-dir.y)dir=nd;
-},{passive:true});
-reset();
-</script>
-</body>
-</html>
-<script src="/workspace/related.js" defer></script>
-<script>
 /* ══ PENDULUM LAB ═══════════════════════════════════════════════════════════
    Real dynamics, real g. Single bob on a massless rod:
        theta'' = -(g/L) sin(theta) - c theta'
@@ -297,10 +245,15 @@ function applyPreset(k){
   N = k==='single'?1 : k==='double'?2 : k==='triple'?3 : 2;
   const a = k==='chaos' ? 0.2 : Number($('amp').value)*Math.PI/180;
   P=[];
+  // b.rad is required by createRadialGradient in draw(); leaving it undefined
+  // threw "The provided double value is non-finite" and killed the whole render.
+  const baseRad = N===1?13:(N===2?10:8);
   for(let i=0;i<N;i++){
-    if(k==='triple') P.push({th:(i%2?-1:1)*a, w:0});
-    else if(k==='chaos') P.push({th:(i?-1:1)*a, w:(i?0.9:-0.9)});
-    else P.push({th:i?-a:a, w:0});
+    let th, w;
+    if(k==='triple'){ th=(i%2?-1:1)*a; w=0; }
+    else if(k==='chaos'){ th=(i?-1:1)*a; w=(i?0.9:-0.9); }
+    else { th=i?-a:a; w=0; }
+    P.push({th:th, w:w, rad:baseRad});
   }
   xp=0; vp=0; t=0; trail=[]; crossings=[]; lastTh=P[0].th; measured=0;
   $('hudmode').textContent = k.toUpperCase();
@@ -463,8 +416,6 @@ window.__pend={
 resize(); reset(); showStats(); draw();          // first frame before any rAF
 requestAnimationFrame(loop);
 </script>
-
-
 
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">
