@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profile — Ocurp</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background:#050505; color:#fff; font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.8rem 1.4rem; font-size:10px; font-weight:900; letter-spacing:.22em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.03); padding:.8rem 1.4rem; font-size:10px; font-weight:900; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.55); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.4) }
+  .card { border-radius:14px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.045); transition:border-color .2s, transform .2s }
+  .card:hover { border-color:rgba(255,95,31,.5); transform:translateY(-3px) }
+</style>
+</head>
+<body class="min-h-screen">
+<header class="sticky top-0 z-40 border-b border-white/10 bg-[#050505]/90 backdrop-blur">
+  <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 md:px-6">
+    <a href="/" class="flex items-center gap-3">
+      <span class="h-8 w-1 rounded-full bg-accent" style="background:#FF5F1F"></span>
+      <span class="flex flex-col justify-center">
+        <span class="text-sm font-black tracking-widest leading-none">OWEN OSAYI</span>
+        <span class="mt-1 text-[10px] font-medium uppercase tracking-wider text-white/50">THE FOUNDER</span>
+      </span>
+    </a>
+    <nav class="hidden items-center gap-10 text-sm font-bold tracking-wide md:flex">
+      <a href="/workspace/tools/" class="text-white/60 transition-colors hover:text-white">Tools</a>
+      <a href="/workspace/games/" class="text-white/60 transition-colors hover:text-white">Games</a>
+      <a href="/workspace/websites/" class="text-white/60 transition-colors hover:text-white">Websites</a>
+      <a href="#" data-ocurp-account class="text-accent font-black" style="color:#FF5F1F">Profile</a>
+    </nav>
+    <a href="/" class="flex h-12 items-center justify-center rounded-full px-8 text-[11px] font-black uppercase tracking-widest text-black" style="background:#FF5F1F">Home</a>
+  </div>
+</header>
+
+<main class="relative z-10 mx-auto max-w-7xl px-4 py-14 md:px-6">
+  <div class="inline-flex items-center gap-3 mb-4">
+    <span class="h-1.5 w-1.5 rounded-full" style="background:#FF5F1F"></span>
+    <span class="text-[10px] font-black uppercase tracking-[0.5em]" style="color:#FF5F1F">Your profile</span>
+  </div>
+  <h1 class="font-black tracking-tighter" style="font-size:clamp(2rem,5vw,3.6rem);line-height:1" id="greeting">Profile</h1>
+  <p class="mt-4 max-w-2xl text-lg text-white/50" id="subline">Your saved projects live here.</p>
+
+  <section class="mt-10 grid gap-4 md:grid-cols-3">
+    <a href="/ocurp/portfolio/createproject/" class="ws-panel block p-6 transition-all hover:-translate-y-1" style="border-color:rgba(255,95,31,.35)">
+      <div class="ws-label mb-3">Create</div>
+      <h2 class="text-xl font-bold">Create a project</h2>
+      <p class="mt-2 text-sm text-white/50">A game, a website, a tool or a write-up. Pick the kind and post it.</p>
+      <span class="mt-4 inline-block text-[10px] font-black uppercase tracking-[0.28em]" style="color:#FF5F1F">Start &rarr;</span>
+    </a>
+    <a href="/ocurp/portfolio/createproject/" class="ws-panel block p-6 transition-all hover:-translate-y-1">
+      <div class="ws-label mb-3">Add</div>
+      <h2 class="text-xl font-bold">Add a project</h2>
+      <p class="mt-2 text-sm text-white/50">Import one you already host — from GitHub, or straight from a live URL.</p>
+      <span class="mt-4 inline-block text-[10px] font-black uppercase tracking-[0.28em] text-white/45">Import &rarr;</span>
+    </a>
+    <div class="ws-panel block p-6">
+      <div class="ws-label mb-3">Account</div>
+      <h2 class="text-xl font-bold" id="acctName">Not signed in</h2>
+      <p class="mt-2 text-sm text-white/50" id="acctMeta">&nbsp;</p>
+      <button id="signout" class="ws-btn-ghost mt-4">Sign out</button>
+    </div>
+  </section>
+
+  <section class="mt-14">
+    <div class="flex items-center justify-between gap-4">
+      <h2 class="text-2xl font-bold">Saved projects</h2>
+      <span class="ws-chip" id="favCount">0 SAVED</span>
+    </div>
+    <div id="favGrid" class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+    <div id="favEmpty" class="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-12 text-center">
+      <p class="text-lg font-bold">Nothing saved yet</p>
+      <p class="mt-2 text-sm text-white/50">Open any tool or game and press the star to keep it here.</p>
+      <div class="mt-5 flex flex-wrap justify-center gap-3">
+        <a href="/workspace/tools/" class="ws-btn">Browse tools</a>
+        <a href="/workspace/games/" class="ws-btn-ghost">Browse games</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-14">
+    <h2 class="text-2xl font-bold">Your projects</h2>
+    <p class="mt-2 text-sm text-white/50">Projects you create or import will be listed here.</p>
+    <div id="ownGrid" class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+    <div class="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-10 text-center">
+      <p class="text-sm text-white/50">Nothing posted yet.</p>
+      <a href="/ocurp/portfolio/createproject/" class="ws-btn mt-5">Create your first project</a>
+    </div>
+  </section>
+</main>
+
+<footer class="border-t border-white/10 py-10">
+  <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 text-xs text-white/40 md:flex-row md:px-6">
+    <p>&copy; <span id="yr"></span> <span class="font-bold text-white/60">Owen Osayi</span> THE FOUNDER</p>
+    <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 hover:text-white">Owen's Workspace</a>
+  </div>
+</footer>
+
+<script src="/workspace/ocurp-index.js"></script>
+<script src="/workspace/auth.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  $('yr').textContent = new Date().getFullYear();
+
+  var A = window.OcurpAuth;
+
+  function findEntry(slug) { return window.OCURP_FIND ? window.OCURP_FIND(slug) : null; }
+
+  function hrefFor(e, slug) {
+    if (!e) return '/workspace/tools/' + slug + '/';
+    if (e.group === 'games') return '/workspace/games/' + slug + '/';
+    if (e.group === 'websites') return e.url || '/workspace/websites/';
+    return '/workspace/tools/' + slug + '/';
+  }
+
+  function render() {
+    var u = A.user();
+    $('greeting').textContent = u ? (u.name || 'Profile') : 'Profile';
+    $('subline').textContent = u
+      ? 'Signed in' + (u.email ? ' as ' + u.email : ' on this device') + (u.since ? ' since ' + u.since : '') + '.'
+      : 'Your saved projects live here. Sign in to keep them across devices.';
+    $('acctName').textContent = u ? (u.name || 'Signed in') : 'Not signed in';
+    $('acctMeta').textContent = u ? (u.email || 'Device-only account') : 'Sign in to save projects and favourites.';
+    $('signout').style.display = u ? '' : 'none';
+
+    var favs = A.favourites.list();
+    $('favCount').textContent = favs.length + ' SAVED';
+    $('favEmpty').style.display = favs.length ? 'none' : '';
+    $('favGrid').innerHTML = favs.map(function (slug) {
+      var e = findEntry(slug);
+      var name = e ? e.name : slug;
+      var blurb = e ? (e.blurb || '') : '';
+      return '<a href="' + hrefFor(e, slug) + '" class="card block p-5">'
+        + '<div class="ws-label mb-2">Saved</div>'
+        + '<h3 class="text-lg font-bold">' + name + '</h3>'
+        + '<p class="mt-2 text-sm text-white/50">' + blurb + '</p>'
+        + '<span class="mt-4 inline-block text-[10px] font-black uppercase tracking-[0.28em]" style="color:#FF5F1F">Open &rarr;</span>'
+        + '</a>';
+    }).join('');
+  }
+
+  $('signout').addEventListener('click', function () { A.signOut(); render(); });
+  window.addEventListener('ocurp:auth', render);
+  window.addEventListener('ocurp:favs', render);
+  render();
+
+  if (!A.user()) {
+    A.promptSignIn('Sign in to keep your saved projects and favourites on your profile.');
+  }
+})();
+</script>
+</body>
+</html>
