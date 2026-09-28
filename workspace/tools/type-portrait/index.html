@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Type Portrait — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Turns a word into a generated poster of repeating letterforms. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/type-portrait/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Type Portrait">
+<meta property="og:description" content="Turns a word into a generated poster of repeating letterforms. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/type-portrait/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Type Portrait">
+<meta name="twitter:description" content="Turns a word into a generated poster of repeating letterforms. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Type Portrait","url":"https://ocurp.space/workspace/tools/type-portrait/","description":"Turns a word into a generated poster of repeating letterforms. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Type Portrait</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">CANVAS</span><span class="ws-chip">TYPOGRAPHY</span><span class="ws-chip">SHAPE</span><span class="ws-chip">CLIENT-SIDE</span></div>
+        </div>
+      
+  <div class="grid gap-4 lg:grid-cols-[1fr_340px]">
+    <section class="ws-panel p-5">
+      <div class="mb-3 flex items-center justify-between">
+        <span class="ws-label">Portrait</span>
+        <span class="ws-chip" id="stamp">0 LINES</span>
+      </div>
+      <div class="flex justify-center">
+        <canvas id="cv" width="720" height="820" class="w-full max-w-[720px] rounded-xl border border-white/10"></canvas>
+      </div>
+      <div class="mt-4 flex flex-wrap items-center gap-3">
+        <button id="reshuffle" class="ws-btn">Reshuffle</button>
+        <button id="invert" class="ws-btn-ghost">Invert</button>
+        <button id="dl" class="ws-btn-ghost">Download PNG</button>
+        <span class="text-[11px] text-white/45" id="hud"></span>
+      </div>
+    </section>
+
+    <section class="ws-panel p-5">
+      <label class="ws-label mb-2 block">Text</label>
+      <textarea id="src" class="ws-input min-h-[110px]" placeholder="Paste anything to shape it">The workspace began as one stubborn page about a founder who refused to slow down. Every tool since has been a small argument for keeping things fast, local, and honest about what they actually compute.</textarea>
+      <div class="mt-4 grid gap-4">
+        <div><label class="ws-label mb-2 block">Type size <span id="sv">17</span>px</label>
+          <input id="size" type="range" min="8" max="40" value="17" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Weight <span id="wv">700</span></label>
+          <input id="wt" type="range" min="200" max="900" step="100" value="700" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Line height <span id="lv">1.4</span></label>
+          <input id="lh" type="range" min="0.9" max="2.6" step="0.05" value="1.4" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Shape &ndash; portrait <span id="cv2">0.5</span></label>
+          <input id="curve" type="range" min="0" max="1" step="0.01" value="0.5" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Edge jitter <span id="jv">0.4</span></label>
+          <input id="jit" type="range" min="0" max="1" step="0.01" value="0.4" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Shuffle depth <span id="dv">0.5</span></label>
+          <input id="depth" type="range" min="0" max="1" step="0.01" value="0.5" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Accent word rate <span id="hv">14</span>%</label>
+          <input id="accent" type="range" min="0" max="60" value="14" class="w-full accent-[#FF5F1F]"></div>
+      </div>
+      <div class="ws-panel ws-copy mt-4 p-4">
+        <div class="mb-2 flex items-center justify-between">
+          <span class="ws-label">Measured</span>
+          <button class="ws-btn-ghost !px-3 !py-1.5" id="cpy">Copy</button>
+        </div>
+        <pre id="out" class="ws-out min-h-[150px]"></pre>
+      </div>
+    </section>
+  </div>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d',{willReadFrequently:true});
+const W=720,H=820;
+const SIDS=['size','wt','lh','curve','jit','depth','accent'];
+const READ={size:'sv',wt:'wv',lh:'lv',curve:'cv2',jit:'jv',depth:'dv',accent:'hv'};
+let inv=false,rs=99;
+function mul(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function cfg(){const o={};SIDS.forEach(k=>{o[k]=parseFloat($(k).value);$(READ[k]).textContent=$(k).value});return o}
+function hx(){return inv?'#050505':'#FF5F1F'}
+// width available for a given line-band y, shaped as a portrait silhouette
+function spanAt(y,c){
+  const t=Math.max(0,Math.min(1,y/H));
+  const top=Math.pow(1-t,0.55*c.curve*2+0.4);
+  const mid=Math.sin(Math.PI*Math.min(1,t*1.15));
+  const w=(0.16+0.80*Math.pow(mid,0.85))*(0.35+0.65*top);
+  return Math.max(40,w*(W-120));
+}
+function render(){
+  const c=cfg();
+  ctx.fillStyle=inv?'#FF5F1F':'#050505';ctx.fillRect(0,0,W,H);
+  ctx.textBaseline='alphabetic';
+  const words=$('src').value.trim().split(/\s+/).filter(Boolean);
+  if(!words.length){$('out').textContent='Type something to shape it.';return{l:0,w:0}}
+  const rnd=mul(rs);
+  const size=c.size,lh=size*c.lh;
+  let y=lh*1.6,line=0,wordsUsed=0,accents=0;
+  ctx.font=c.wt+' '+size+'px Manrope, Inter, sans-serif';
+  let cur=[],curW=0;
+  const maxY=H-lh;
+  for(const w of words){
+    const adv=ctx.measureText(w+' ').width;
+    const lim=spanAt(y,c);
+    if(curW+adv>lim&&cur.length){
+      // emit the line, justified to the limit
+      const extra=(lim-curW)/Math.max(1,cur.length-1);
+      ctx.fillStyle=hx();
+      let x=W/2-((cur.reduce((s,t)=>s+ctx.measureText(t+' ').width,0)+extra*(cur.length-1))/2);
+      cur.forEach((t,i)=>{
+        const isA=rnd()<c.accent/100;
+        if(isA){accents++}
+        ctx.fillStyle=isA&&!inv?'#e0f2fe':(inv?(isA?'#0a0a0a':'#e0f2fe'):'#FF5F1F');
+        ctx.save();
+        if(c.jit){
+          const jx=(rnd()-0.5)*c.jit*10, jy=(rnd()-0.5)*c.jit*5, rot=(rnd()-0.5)*c.jit*0.12;
+          ctx.translate(x+jx,y+jy);ctx.rotate(rot);
+        }
+        ctx.fillText(t,x,0);
+        ctx.restore();
+        x+=ctx.measureText(t+' ').width+extra;
+      });
+      wordsUsed+=cur.length;line++;
+      cur=[];curW=0;
+      y+=lh;
+      if(y>maxY)break;
+    }
+    cur.push(w);curW+=adv;
+  }
+  if(cur.length&&y<=maxY){
+    const lim=spanAt(y,c);
+    ctx.fillStyle=hx();
+    let x=W/2-(cur.reduce((s,t)=>s+ctx.measureText(t+' ').width,0)/2);
+    cur.forEach(t=>{ctx.fillText(t,x,y);x+=ctx.measureText(t+' ').width});
+    wordsUsed+=cur.length;line++;
+  }
+  $('stamp').textContent=line+' LINES';
+  $('hud').textContent=wordsUsed+'/'+words.length+' words set';
+  const d=ctx.getImageData(0,0,W,H).data;
+  let lit=0;
+  for(let i=0;i<d.length;i+=4)if(d[i]>40||d[i+1]>40||d[i+2]>40)lit++;
+  const w=$('width');
+  $('out').textContent=[
+    'Input       '+words.length+' words',
+    'Set         '+wordsUsed+' words across '+line+' line(s)',
+    'Typeface    '+c.wt+' '+size+'px Manrope/Inter, line-height '+c.lh+' ('+lh.toFixed(1)+'px)',
+    'Measured    widest line spans '+spanAt(H*0.5,c).toFixed(0)+'px at mid-height',
+    'Shape curve '+c.curve+'   jitter '+c.jit+'   shuffle '+c.depth,
+    'Accents     '+accents+' word(s) tinted',
+    'Ink px      '+lit.toLocaleString()+' of '+(W*H).toLocaleString()+' ('+(100*lit/(W*H)).toFixed(2)+'%)',
+    'Render      '+(line>0&&lit>2000?'TYPESET - glyphs drawn':(line>0?'TYPESET - very sparse':'BLANK')),
+  ].join('\n');
+  return {line:line,words:wordsUsed,lit:lit};
+}
+SIDS.forEach(k=>$(k).addEventListener('input',render));
+$('src').addEventListener('input',render);
+$('reshuffle').onclick=()=>{rs=Math.floor(Math.random()*1e6);render()};
+$('invert').onclick=()=>{inv=!inv;render()};
+$('dl').onclick=()=>{const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download='type-portrait.png';a.click()};
+$('cpy').onclick=function(){navigator.clipboard.writeText($('out').textContent);this.classList.add('ok');setTimeout(()=>this.classList.remove('ok'),1200)};
+window.__type={
+  render:render,canvas:cv,cfg:cfg,spanAt:spanAt,
+  setText:s=>{$('src').value=s;return render()},
+  set:v=>{Object.keys(v).forEach(k=>{if($(k))$(k).value=v[k]});return render()},
+  stats:()=>{const d=ctx.getImageData(0,0,W,H).data;let lit=0;
+    for(let i=0;i<d.length;i+=4)if(d[i]>40||d[i+1]>40||d[i+2]>40)lit++;
+    return {line:parseInt($('stamp').textContent)||0,lit:lit,out:$('out').textContent}}
+};
+render();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/avif-to-png/">
+      <span class="ocurp-related-n">AVIF to PNG</span>
+      <span class="ocurp-related-b">Convert an AVIF picture to PNG in your browser - the file never leaves the page.</span>
+    </a></li>
+    <li><a href="/workspace/tools/background-remover/">
+      <span class="ocurp-related-n">Background Remover</span>
+      <span class="ocurp-related-b">Cut the background off a photo in your browser — no upload, no watermark.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base64-to-image/">
+      <span class="ocurp-related-n">Base64 to Image</span>
+      <span class="ocurp-related-b">Paste a data URI and preview or download the image.</span>
+    </a></li>
+    <li><a href="/workspace/tools/batch-compressor/">
+      <span class="ocurp-related-n">Batch Image Compressor</span>
+      <span class="ocurp-related-b">Compress many images at once, see the quality loss per file, save as ZIP.</span>
+    </a></li>
+    <li><a href="/workspace/tools/box-shadow/">
+      <span class="ocurp-related-n">Box Shadow Generator</span>
+      <span class="ocurp-related-b">Layer shadows visually and copy the CSS.</span>
+    </a></li>
+    <li><a href="/workspace/tools/color-blindness-simulator/">
+      <span class="ocurp-related-n">Colour Blindness Simulator</span>
+      <span class="ocurp-related-b">See any picture through protanopia, deuteranopia, tritanopia or total colour blindness.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

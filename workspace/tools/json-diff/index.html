@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Diff — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; }
+  body { font-family:'Inter',sans-serif; background:#050505; }
+  .ws-panel { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:1rem; }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; width:100%; padding:.85rem 1.1rem; border-radius:.75rem; background:#FF5F1F; color:#000; font-weight:800; font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; border:0; cursor:pointer; transition:opacity .15s; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; width:100%; padding:.85rem 1.1rem; border-radius:.75rem; background:transparent; color:#fff; font-weight:700; font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; border:1px solid rgba(255,255,255,.14); cursor:pointer; transition:border-color .15s,color .15s; }
+  .ws-btn-ghost:hover { border-color:#FF5F1F; color:#FF5F1F; }
+  .ws-label { font-size:10px; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.45); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  textarea.ws-input { font-family:'IBM Plex Sans',monospace; font-size:.8rem; line-height:1.6; resize:vertical; }
+  .ws-chip { display:inline-flex; align-items:center; gap:.35rem; border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.6); }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(40px,-30px) scale(1.1)} }
+  .bg-vibrant-blob { position:fixed; width:34rem; height:34rem; border-radius:50%; filter:blur(90px); opacity:.12; background:#e0f2fe; pointer-events:none; z-index:0; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; z-index:1; opacity:.02; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"); }
+</style>
+<meta name="description" content="Compare two JSON documents key by key and see exactly what was added, removed or changed. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/json-diff/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JSON Diff">
+<meta property="og:description" content="Compare two JSON documents key by key and see exactly what was added, removed or changed. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/json-diff/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JSON Diff">
+<meta name="twitter:description" content="Compare two JSON documents key by key and see exactly what was added, removed or changed. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Diff","url":"https://ocurp.space/workspace/tools/json-diff/","description":"Compare two JSON documents key by key and see exactly what was added, removed or changed. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">JSON Diff</h1>
+      <p class="mt-1 text-[10px] font-medium uppercase tracking-[0.22em] text-white/45">Data &amp; Code &mdash; client-side</p>
+    </div>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-2">
+    <section class="ws-panel p-6">
+      <div class="ws-label mb-2">A &mdash; before</div>
+      <textarea id="a" class="ws-input" rows="12" spellcheck="false">{
+  "name": "Owen",
+  "role": "Founder",
+  "skills": ["js", "design"]
+}</textarea>
+      <div class="mt-4 ws-label mb-2">B &mdash; after</div>
+      <textarea id="b" class="ws-input" rows="12" spellcheck="false">{
+  "name": "Owen",
+  "role": "Engineer",
+  "skills": ["js", "design", "ml"]
+}</textarea>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="swap" class="ws-btn-ghost !w-auto !px-4 !py-2">Swap</button>
+        <button id="fmt" class="ws-btn-ghost !w-auto !px-4 !py-2">Format both</button>
+        <button id="ign" class="ws-btn-ghost !w-auto !px-4 !py-2">Ignore order</button>
+      </div>
+      <div id="err" class="mt-3 text-sm"></div>
+    </section>
+    <section class="ws-panel p-6">
+      <div class="mb-3 flex items-center justify-between">
+        <div class="ws-label">Differences</div>
+        <button id="copy" class="ws-btn-ghost !w-auto !px-3 !py-1.5">Copy patch</button>
+      </div>
+      <div id="sum" class="mb-3 text-sm"></div>
+      <div id="out" class="max-h-96 space-y-1 overflow-y-auto font-mono text-xs"></div>
+    </section>
+  </div>
+  <div class="mt-6">
+    <p class="max-w-2xl text-sm leading-relaxed text-white/50">Compares two JSON documents key by key and shows exactly what was added, removed or changed - with an optional order-insensitive mode for arrays.</p>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+
+const $ = id => document.getElementById(id);
+let ignoreOrder = false;
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function parse(t, which) {
+  try { return { ok: true, v: JSON.parse(t) }; }
+  catch (e) { return { ok: false, msg: e.message }; }
+}
+function diff(a, b, path, out) {
+  if (JSON.stringify(a) === JSON.stringify(b)) return;
+  const ta = a === null ? 'null' : Array.isArray(a) ? 'array' : typeof a;
+  const tb = b === null ? 'null' : Array.isArray(b) ? 'array' : typeof b;
+  if (ta !== tb) { out.push({ p: path, k: 'type', a, b }); return; }
+  if (ta === 'array') {
+    if (ignoreOrder) {
+      const sa = a.slice().sort((x, y) => JSON.stringify(x).localeCompare(JSON.stringify(y)));
+      const sb = b.slice().sort((x, y) => JSON.stringify(x).localeCompare(JSON.stringify(y)));
+      if (JSON.stringify(sa) !== JSON.stringify(sb)) { out.push({ p: path, k: 'array', a, b }); }
+      return;
+    }
+    const n = Math.max(a.length, b.length);
+    for (let i = 0; i < n; i++) {
+      if (i >= a.length) out.push({ p: path + '[' + i + ']', k: 'add', a: undefined, b: b[i] });
+      else if (i >= b.length) out.push({ p: path + '[' + i + ']', k: 'del', a: a[i], b: undefined });
+      else diff(a[i], b[i], path + '[' + i + ']', out);
+    }
+    return;
+  }
+  if (ta === 'object') {
+    const keys = Array.from(new Set(Object.keys(a).concat(Object.keys(b)))).sort();
+    keys.forEach(k => {
+      const p = path ? path + '.' + k : k;
+      if (!(k in a)) out.push({ p, k: 'add', a: undefined, b: b[k] });
+      else if (!(k in b)) out.push({ p, k: 'del', a: a[k], b: undefined });
+      else diff(a[k], b[k], p, out);
+    });
+    return;
+  }
+  out.push({ p: path, k: 'chg', a, b });
+}
+function run() {
+  const A = parse($('a').value, 'A'), B = parse($('b').value, 'B');
+  $('err').innerHTML = '';
+  if (!A.ok) { $('err').innerHTML = '<span style="color:#f87171">A: ' + esc(A.msg) + '</span>'; return; }
+  if (!B.ok) { $('err').innerHTML = '<span style="color:#f87171">B: ' + esc(B.msg) + '</span>'; return; }
+  const out = [];
+  diff(A.v, B.v, '', out);
+  const colour = { add: '#4ade80', del: '#f87171', chg: '#FF5F1F', type: '#a78bfa', array: '#a78bfa' };
+  $('sum').innerHTML = out.length
+    ? out.length + ' difference' + (out.length === 1 ? '' : 's') + ' &middot; <span style="color:#4ade80">'
+      + out.filter(d => d.k === 'add').length + ' added</span> &middot; <span style="color:#f87171">'
+      + out.filter(d => d.k === 'del').length + ' removed</span>'
+    : '<span style="color:#4ade80">Identical</span>';
+  $('out').innerHTML = out.length ? out.map(d =>
+    '<div class="rounded border-l-2 bg-white/[0.03] px-2 py-1" style="border-color:' + colour[d.k] + '">'
+    + '<span style="color:' + colour[d.k] + '">' + d.k.toUpperCase() + '</span> '
+    + '<span class="text-white/70">' + esc(d.p || '(root)') + '</span><br>'
+    + '<span style="color:#f87171">- ' + esc(d.a === undefined ? '' : JSON.stringify(d.a)) + '</span><br>'
+    + '<span style="color:#4ade80">+ ' + esc(d.b === undefined ? '' : JSON.stringify(d.b)) + '</span></div>').join('')
+    : '';
+  $('out').dataset.n = out.length;
+}
+['a', 'b'].forEach(id => $(id).addEventListener('input', run));
+$('swap').onclick = () => { const t = $('a').value; $('a').value = $('b').value; $('b').value = t; run(); };
+$('fmt').onclick = () => {
+  ['a', 'b'].forEach(id => { try { $(id).value = JSON.stringify(JSON.parse($(id).value), null, 2); } catch (e) {} });
+  run();
+};
+$('ign').onclick = () => {
+  ignoreOrder = !ignoreOrder;
+  $('ign').style.color = ignoreOrder ? '#FF5F1F' : '';
+  run();
+};
+$('copy').onclick = () => {
+  navigator.clipboard.writeText($('out').innerText);
+  $('copy').textContent = 'Copied';
+  setTimeout(() => { $('copy').textContent = 'Copy patch'; }, 1200);
+};
+run();
+
+</script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/text-diff/">
+      <span class="ocurp-related-n">Text Diff</span>
+      <span class="ocurp-related-b">Compare two blocks of text line by line with colour highlighting.</span>
+    </a></li>
+    <li><a href="/workspace/tools/csv-json/">
+      <span class="ocurp-related-n">CSV to JSON</span>
+      <span class="ocurp-related-b">Convert delimited text and JSON both ways.</span>
+    </a></li>
+    <li><a href="/workspace/tools/csv-to-json/">
+      <span class="ocurp-related-n">CSV to JSON</span>
+      <span class="ocurp-related-b">Turn CSV or TSV into clean JSON, correctly handling quoted fields, escaped quotes and blan</span>
+    </a></li>
+    <li><a href="/workspace/tools/diff-checker/">
+      <span class="ocurp-related-n">Diff Checker</span>
+      <span class="ocurp-related-b">Compare two blocks of text line by line.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-formatter/">
+      <span class="ocurp-related-n">JSON Prettifier</span>
+      <span class="ocurp-related-b">Format, minify and validate JSON with a live error pointer.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-minifier/">
+      <span class="ocurp-related-n">JSON Minifier &amp; Formatter</span>
+      <span class="ocurp-related-b">Strip JSON whitespace or pretty-print it, with key sort and duplicate detection.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

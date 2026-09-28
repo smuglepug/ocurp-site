@@ -72,12 +72,12 @@ tailwind.config = { theme: { extend: {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Tip Calculator</h1>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Tip & Tax Calculator</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">MATH</span><span class="ws-chip">MONEY</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">TIP</span><span class="ws-chip">TAX</span><span class="ws-chip">RECEIPT</span></div>
         </div>
-      <section class="ws-panel mt-4 p-5"><div class="grid gap-4 md:grid-cols-3"><div><label class="ws-label mb-2 block" for="bill">Bill amount</label><input id="bill" type="number" class="ws-input" placeholder="50" value="50"></div><div><label class="ws-label mb-2 block" for="pct">Tip %</label><input id="pct" type="number" class="ws-input" placeholder="15" value="15"></div><div><label class="ws-label mb-2 block" for="ppl">Split between</label><input id="ppl" type="number" class="ws-input" placeholder="1" value="1"></div></div><div class="mt-5"><div class="ws-label mb-2">Totals</div><div id="res" class="ws-out"></div></div></section>
+      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5"><div><label class="ws-label mb-2 block" for="bill">Bill amount</label><input id="bill" type="number" class="ws-input" placeholder="100" value="100"></div><div><label class="ws-label mb-2 block" for="tip">Tip %</label><input id="tip" type="number" class="ws-input" placeholder="18" value="18"></div><div><label class="ws-label mb-2 block" for="tax">Tax %</label><input id="tax" type="number" class="ws-input" placeholder="8.5" value="8.5"></div><div><label class="ws-label mb-2 block" for="disc">Discount %</label><input id="disc" type="number" class="ws-input" placeholder="0" value="0"></div><div><label class="ws-label mb-2 block" for="people">People</label><select id="people" class="ws-input !w-32"><option value="1">1 person</option><option value="2" selected>2 people</option><option value="3">3 people</option><option value="4">4 people</option><option value="5">5 people</option><option value="6">6 people</option></select></div></div><div class="mt-4 flex flex-wrap gap-4"><label class="flex items-center gap-2 text-sm text-white/70"><input id="pretax" type="checkbox" class="accent-[#FF5F1F]" checked> Tip on pre-tax amount (standard)</label><label class="flex items-center gap-2 text-sm text-white/70"><input id="split" type="checkbox" class="accent-[#FF5F1F]" checked> Split evenly</label></div><div class="mt-4 flex flex-wrap gap-2" id="quick"></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy receipt</button></div><div class="rounded-xl border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Total to pay</div><div id="big" class="mt-2 font-display text-4xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Receipt breakdown</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Line</th><th class="py-2 pr-4">Amount</th></tr></thead><tbody id="tbl"></tbody></table></div></section>
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
@@ -85,31 +85,92 @@ tailwind.config = { theme: { extend: {
 </div>
 <script src="/workspace/related.js" defer></script>
 <script>
-const $=id=>document.getElementById(id);
-function calc(){
-  const b=parseFloat($('bill').value), p=parseFloat($('pct').value)||0, n=Math.max(1,parseInt($('ppl').value)||1);
-  if(isNaN(b)){ $('res').innerHTML='<span class="text-white/40">Enter the bill.</span>'; return; }
-  const tip=b*p/100, total=b+tip;
-  const rows=[['Tip',tip.toFixed(2)],['Total',total.toFixed(2)],['Per person',(total/n).toFixed(2)],
-              ['Tip per person',(tip/n).toFixed(2)]];
-  $('res').innerHTML=rows.map(r=>'<div class="flex justify-between gap-4 border-b border-white/5 py-2"><span class="text-white/55">'+r[0]+'</span><span class="font-mono font-black" style="color:#FF5F1F">'+r[1]+'</span></div>').join('');
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
 }
-document.querySelectorAll('input').forEach(i=>i.addEventListener('input',calc)); calc();
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+// Order: discount first, then tax on the discounted amount, then the tip on
+// the pre-tax bill (the convention almost every restaurant uses).
+function total(bill,tipPct,taxPct,discPct,preTip){
+  var afterDisc = bill * (1 - discPct/100);
+  var tax = afterDisc * (taxPct/100);
+  var tip = preTip ? bill * (tipPct/100) : (afterDisc + tax) * (tipPct/100);
+  return {afterDisc:afterDisc, tax:tax, tip:tip, total:afterDisc + tax + tip};
+}
+var QUICK = [['12','7.5','1'],['15','8','2'],['18','8.5','2'],['20','5','4'],['25','0','1']];
+$('quick').innerHTML = QUICK.map(function(q,i){
+  return '<button class="ws-btn-ghost !px-3 !py-1.5" data-i="'+i+'" onclick="useQuick(this)">'
+    +q[0]+'% tip / '+q[1]+'% tax</button>';}).join('');
+function useQuick(b){
+  var q=QUICK[Number(b.getAttribute('data-i'))];
+  $('tip').value=q[0]; $('tax').value=q[1]; $('people').value=q[2]; run();
+}
+function run(){
+  var bill=parseFloat($('bill').value), tip=parseFloat($('tip').value),
+      tax=parseFloat($('tax').value), disc=parseFloat($('disc').value),
+      people=parseFloat($('people').value)||1;
+  if(!isFinite(bill)||bill<0){ seterr('err','bill must be zero or more'); return; }
+  if(!isFinite(tip)||!isFinite(tax)||!isFinite(disc)){ seterr('err','percentages must be numbers'); return; }
+  if(disc<0||disc>100){ seterr('err','a discount cannot be over 100%'); return; }
+  if(tip<0){ seterr('err','a tip cannot be negative'); return; }
+  seterr('err','');
+  var t=total(bill,tip,tax,disc,$('pretax').checked);
+  $('big').textContent = '$'+r(t.total,2);
+  $('bigsub').textContent = $('split').checked
+    ? r(t.total/people,2)+' per person across '+people
+    : 'single payer, '+bill+' bill';
+  $('tbl').innerHTML =
+      row(['Bill', '$'+r(bill,2)]) +
+      (disc>0 ? row(['Discount ('+r(disc,2)+'%)', '−$'+r(bill-afterD(bill,disc),2)]) : '') +
+      row(['Subtotal after discount', '$'+r(t.afterDisc,2)]) +
+      row(['Tax ('+r(tax,2)+'%)', '$'+r(t.tax,2)]) +
+      row(['Tip ('+r(tip,2)+'%)' + ($('pretax').checked?' on pre-tax bill':''), '$'+r(t.tip,2)]) +
+      row(['Total', '<span class="text-accent">$'+r(t.total,2)+'</span>']) +
+      ($('split').checked ? row(['Per person', '$'+r(t.total/people,2)+' × '+people]) : '');
+  show([['Bill','$'+r(bill,2)],['Tip','$'+r(t.tip,2)],['Tax','$'+r(t.tax,2)],
+        ['Total','$'+r(t.total,2)]]);
+}
+function afterD(b,d){ return b*(1-d/100); }
+['bill','tip','tax','disc','people'].forEach(function(id){
+  $(id).addEventListener('input',run); $(id).addEventListener('change',run); });
+['pretax','split'].forEach(function(id){ $(id).addEventListener('change',run); });
+window.__tip = {total:total, run:run, QUICK:QUICK};
+run();
 </script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">

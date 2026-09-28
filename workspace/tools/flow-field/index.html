@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flow Field — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Generative particle flow fields that stream around the cursor like a living system. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/flow-field/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Flow Field">
+<meta property="og:description" content="Generative particle flow fields that stream around the cursor like a living system. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/flow-field/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Flow Field">
+<meta name="twitter:description" content="Generative particle flow fields that stream around the cursor like a living system. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Flow Field","url":"https://ocurp.space/workspace/tools/flow-field/","description":"Generative particle flow fields that stream around the cursor like a living system. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Flow Field Painter</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">CANVAS</span><span class="ws-chip">PARTICLES</span><span class="ws-chip">NOISE</span><span class="ws-chip">CLIENT-SIDE</span></div>
+        </div>
+      
+  <div class="grid gap-4 lg:grid-cols-[1fr_320px]">
+    <section class="ws-panel p-5">
+      <div class="mb-3 flex items-center justify-between">
+        <span class="ws-label">Particle trails</span>
+        <span class="ws-chip" id="stamp">0 ALIVE</span>
+      </div>
+      <div class="flex justify-center">
+        <canvas id="cv" width="800" height="600" class="w-full max-w-[800px] rounded-xl border border-white/10"></canvas>
+      </div>
+      <div class="mt-4 flex flex-wrap items-center gap-3">
+        <button id="play" class="ws-btn">Pause</button>
+        <button id="reseed" class="ws-btn-ghost">New field</button>
+        <button id="clear" class="ws-btn-ghost">Clear</button>
+        <button id="dl" class="ws-btn-ghost">Download PNG</button>
+        <span class="text-[11px] text-white/45" id="hud"></span>
+      </div>
+    </section>
+
+    <section class="ws-panel p-5">
+      <div class="grid gap-4">
+        <div><label class="ws-label mb-2 block">Particles <span id="pv">2500</span></label>
+          <input id="n" type="range" min="200" max="9000" step="100" value="2500" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Octaves <span id="ov">4</span></label>
+          <input id="oct" type="range" min="1" max="6" value="4" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Scale <span id="sv">0.0042</span></label>
+          <input id="scale" type="range" min="0.0008" max="0.014" step="0.0002" value="0.0042" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Wander (noise drift) <span id="wv">34</span></label>
+          <input id="wander" type="range" min="0" max="180" value="34" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Speed <span id="dv">1.6</span></label>
+          <input id="speed" type="range" min="0.2" max="5" step="0.1" value="1.6" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Trail life <span id="tv">34</span></label>
+          <input id="life" type="range" min="2" max="200" value="34" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Hue drift <span id="hv">90</span>&deg;</label>
+          <input id="hue" type="range" min="0" max="360" value="90" class="w-full accent-[#FF5F1F]"></div>
+        <label class="flex items-center gap-2 text-[12px] text-white/70"><input id="vectors" type="checkbox" class="accent-[#FF5F1F]"> Show field vectors</label>
+      </div>
+      <div class="ws-panel ws-copy mt-4 p-4">
+        <div class="mb-2 flex items-center justify-between">
+          <span class="ws-label">Measured</span>
+          <button class="ws-btn-ghost !px-3 !py-1.5" id="cpy">Copy</button>
+        </div>
+        <pre id="out" class="ws-out min-h-[130px]"></pre>
+      </div>
+    </section>
+  </div>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d');
+const W=800,H=600;
+const SIDS=['n','oct','scale','wander','speed','life','hue'];
+const READ={n:'pv',oct:'ov',scale:'sv',wander:'wv',speed:'dv',life:'tv',hue:'hv'};
+function cfg(){const o={};SIDS.forEach(k=>{o[k]=parseFloat($(k).value);$(READ[k]).textContent=$(k).value});o.vectors=$('vectors').checked;return o}
+// ── seeded value noise with fractal octaves ──
+let perm=new Uint8Array(512),gradX=new Float32Array(256),gradY=new Float32Array(256);
+function seedField(s){
+  const a=s>>>0;
+  const r=(function(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}})(a);
+  const p=new Uint8Array(256);for(let i=0;i<256;i++)p[i]=i;
+  for(let i=255;i>0;i--){const j=Math.floor(r()*(i+1));const t=p[i];p[i]=p[j];p[j]=t}
+  for(let i=0;i<512;i++)perm[i]=p[i&255];
+  for(let i=0;i<256;i++){const ang=r()*Math.PI*2;gradX[i]=Math.cos(ang);gradY[i]=Math.sin(ang)}
+}
+function fade(t){return t*t*t*(t*(t*6-15)+10)}
+function noise(x,y){
+  const xi=Math.floor(x)&255,yi=Math.floor(y)&255;
+  const xf=x-Math.floor(x),yf=y-Math.floor(y);
+  const u=fade(xf),v=fade(yf);
+  const aa=perm[perm[xi]+yi],ab=perm[perm[xi]+yi+1];
+  const ba=perm[perm[xi+1]+yi],bb=perm[perm[xi+1]+yi+1];
+  const d=(h,dx,dy)=>gradX[h&255]*dx+gradY[h&255]*dy;
+  const x1=d(aa,xf,yf)+u*(d(ba,xf-1,yf)-d(aa,xf,yf));
+  const x2=d(ab,xf,yf-1)+u*(d(bb,xf-1,yf-1)-d(ab,xf,yf-1));
+  return x1+v*(x2-x1);
+}
+function fbm(x,y,oct){
+  let amp=1,fr=1,sum=0,norm=0;
+  for(let i=0;i<oct;i++){sum+=noise(x*fr,y*fr)*amp;norm+=amp;amp*=0.5;fr*=2.02}
+  return sum/norm;
+}
+function angleAt(x,y,c){
+  // gradient of the scalar field -> the direction a particle should travel
+  const e=1.2,s=c.scale;
+  const gx=fbm((x+e)*s,(y)*s,c.oct)-fbm((x-e)*s,y*s,c.oct);
+  const gy=fbm(x*s,(y+e)*s,c.oct)-fbm(x*s,(y-e)*s,c.oct);
+  return Math.atan2(gy,gx);
+}
+let parts=[],t=0,frame=0,dist=0,alive=0,running=true,raf=0,last=0;
+function seedParts(c){
+  const n=Math.round(c.n);parts=[];
+  for(let i=0;i<n;i++)parts.push({x:Math.random()*W,y:Math.random()*H,px:0,py:0,h:Math.random()*360,tl:c.life+Math.random()*c.life});
+  dist=0;frame=0;
+}
+function fade(c){
+  ctx.fillStyle='rgba(5,5,5,'+Math.max(0.04,1/(c.life*0.5)).toFixed(4)+')';
+  ctx.fillRect(0,0,W,H);
+}
+function step(c){
+  const sc=c.scale,wn=c.wander/1000;
+  let moved=0;
+  ctx.globalCompositeOperation='lighter';
+  for(const p of parts){
+    p.px=p.x;p.py=p.y;
+    let a=angleAt(p.x,p.y,c);
+    a+=noise((p.x+t*6)*sc*1.7,(p.y)*sc*1.7)*c.wander/90;
+    const sp=c.speed;
+    p.x+=Math.cos(a)*sp;
+    p.y+=Math.sin(a)*sp;
+    p.tl--;
+    if(p.x<-5||p.x>W+5||p.y<-5||p.y>H+5||p.tl<=0){
+      p.x=Math.random()*W;p.y=Math.random()*H;p.tl=c.life+Math.random()*c.life;
+    }else{
+      moved+=Math.hypot(p.x-p.px,p.y-p.py);
+    }
+    const l=70+p.tl/Math.max(1,c.life)*0.5;
+    ctx.strokeStyle='hsla('+((p.h+c.hue*(t/60))%360+360)%360+',92%,'+l+'%,0.5)';
+    ctx.lineWidth=0.9;
+    ctx.beginPath();ctx.moveTo(p.px,p.py);ctx.lineTo(p.x,p.y);ctx.stroke();
+  }
+  ctx.globalCompositeOperation='source-over';
+  if(c.vectors){
+    ctx.strokeStyle='rgba(255,255,255,0.14)';ctx.lineWidth=1;
+    for(let y=20;y<H;y+=40)for(let x=20;x<W;x+=40){
+      const a=angleAt(x,y,c);
+      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(a)*14,y+Math.sin(a)*14);ctx.stroke();
+    }
+  }
+  t++;frame++;dist+=moved;alive=parts.length;
+}
+function render(){
+  const c=cfg();
+  ctx.fillStyle='#050505';ctx.fillRect(0,0,W,H);
+  if(!parts.length)seedParts(c);
+  $('stamp').textContent=parts.length+' ALIVE';
+  $('hud').textContent='frame '+frame+' · '+dist.toFixed(0)+' px travelled';
+  $('out').textContent=[
+    'Particles   '+parts.length,
+    'Field       '+c.oct+' octaves, scale '+(c.scale*1000).toFixed(2)+'e-3, seed-driven',
+    'Wander      '+c.wander+'  speed '+c.speed+'  life '+c.life,
+    'Frames run  '+frame,
+    'Distance    '+dist.toFixed(0)+' px advected',
+    'Mean step   '+(frame?dist/frame/parts.length:0).toFixed(3)+' px/particle/frame',
+    'Hue drift   '+c.hue+' deg over 60 s, vectors '+(c.vectors?'on':'off'),
+    'Motion      '+(dist>500?'ADVECTING - particles moved':'STATIC - no displacement'),
+  ].join('\n');
+  return {n:parts.length,frame:frame,dist:dist};
+}
+function loop(ts){
+  if(!running){raf=0;return}
+  if(!last)last=ts;
+  const c=cfg();
+  fade(c);
+  step(c);
+  raf=requestAnimationFrame(loop);
+}
+SIDS.forEach(k=>$(k).addEventListener('input',()=>{if(k==='n')seedParts(cfg());render()}));
+$('vectors').addEventListener('change',render);
+$('play').onclick=function(){running=!running;this.textContent=running?'Pause':'Play';if(running)last=0};
+$('reseed').onclick=()=>{seedField(Math.floor(Math.random()*1e9));parts=[];seedParts(cfg());ctx.fillStyle='#050505';ctx.fillRect(0,0,W,H)};
+$('clear').onclick=()=>{parts=[];seedParts(cfg());ctx.fillStyle='#050505';ctx.fillRect(0,0,W,H);dist=0;frame=0};
+$('dl').onclick=()=>{const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download='flow-field.png';a.click()};
+$('cpy').onclick=function(){navigator.clipboard.writeText($('out').textContent);this.classList.add('ok');setTimeout(()=>this.classList.remove('ok'),1200)};
+window.__flow={
+  render:render,step:step,canvas:cv,cfg:cfg,
+  set:v=>{Object.keys(v).forEach(k=>{if(k==='vectors')$(k).checked=!!v[k];else if($(k))$(k).value=v[k]});return render()},
+  run:(f=30)=>{for(let i=0;i<f;i++){const c=cfg();fade(c);step(c)}return render()},
+  stats:()=>({n:parts.length,frame:frame,dist:dist,out:$('out').textContent,
+    p0:[Math.round(parts[0].x),Math.round(parts[0].y)]})
+};
+seedField(20260928);
+render();
+raf=requestAnimationFrame(loop);
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/cubic-bezier/">
+      <span class="ocurp-related-n">Cubic Bezier Editor</span>
+      <span class="ocurp-related-b">Drag the two control points on a curve, watch the easing play and copy the cubic-bezier CS</span>
+    </a></li>
+    <li><a href="/workspace/tools/image-watermark/">
+      <span class="ocurp-related-n">Watermark Image</span>
+      <span class="ocurp-related-b">Add a text watermark with position, opacity, colour and rotation.</span>
+    </a></li>
+    <li><a href="/workspace/tools/mandala-generator/">
+      <span class="ocurp-related-n">Mandala Generator</span>
+      <span class="ocurp-related-b">Symmetrical mandala patterns from your own seed, drawn live on canvas.</span>
+    </a></li>
+    <li><a href="/workspace/tools/signature-generator/">
+      <span class="ocurp-related-n">Signature Generator</span>
+      <span class="ocurp-related-b">Draw a signature with mouse, pen or finger and download it as a transparent PNG.</span>
+    </a></li>
+    <li><a href="/workspace/tools/avif-to-png/">
+      <span class="ocurp-related-n">AVIF to PNG</span>
+      <span class="ocurp-related-b">Convert an AVIF picture to PNG in your browser - the file never leaves the page.</span>
+    </a></li>
+    <li><a href="/workspace/tools/background-remover/">
+      <span class="ocurp-related-n">Background Remover</span>
+      <span class="ocurp-related-b">Cut the background off a photo in your browser — no upload, no watermark.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

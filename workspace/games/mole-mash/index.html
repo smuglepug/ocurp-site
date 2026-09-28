@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mole Mash — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Mole Mash - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/mole-mash/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mole Mash">
+<meta property="og:description" content="Mole Mash - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/mole-mash/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Mole Mash">
+<meta name="twitter:description" content="Mole Mash - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Mole Mash","url":"https://ocurp.space/workspace/games/mole-mash/","description":"Mole Mash - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Mole Mash</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">REACTION</span><span class="ws-chip">TIMED</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <button id="go" class="ws-btn">Start</button>
+      <button id="rs" class="ws-btn-ghost" style="display:none">Play again</button>
+      <span class="ws-chip" id="score">0</span>
+      <span class="ws-chip" id="time">30.0</span>
+      <span class="ws-chip" id="best">BEST 0</span>
+      <span class="ws-chip" id="stat">READY</span>
+    </div>
+    <div id="grid" class="mx-auto grid max-w-[520px] grid-cols-3 gap-3 sm:gap-5"></div>
+    <p class="mt-4 text-center text-xs text-white/45">Click a mole, or use <b>1-9</b> / arrow keys + <b>Space</b>. Faster whacks score more and build a combo. 30 seconds.</p>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const grid=$('grid');
+let holes=[], score=0, best=0, timeLeft=30, running=false, spawnT=0.4, combo=0, comboT=0, sel=4, t0=0;
+const NAMES=['1','2','3','4','5','6','7','8','9'];
+for(let i=0;i<9;i++){
+  const b=document.createElement('button');
+  b.type='button';
+  b.className='relative block aspect-square w-full overflow-hidden rounded-2xl border border-white/10 bg-[#141414] transition-transform select-none';
+  b.innerHTML='<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[72%] w-[86%] rounded-t-full bg-black/70"></div>'
+    +'<div class="mole absolute left-1/2 top-1/2 flex h-[70%] w-[74%] -translate-x-1/2 items-end justify-center rounded-t-2xl bg-gradient-to-b from-[#8a5a3b] to-[#5a3a24] transition-transform duration-100" style="transform:translate(-50%,120%)">'
+    +'<div class="mb-[22%] flex w-[70%] justify-between px-[10%]"><span class="h-[26%] w-[26%] rounded-full bg-[#0d0d0d]"></span><span class="h-[26%] w-[26%] rounded-full bg-[#0d0d0d]"></span></div>'
+    +'<div class="absolute bottom-[14%] h-[18%] w-[34%] rounded-full bg-[#0d0d0d]"></div>'
+    +'<div class="absolute left-[6%] top-[42%] h-[16%] w-[16%] rounded-full bg-[#FF5F1F]/80"></div>'
+    +'<div class="absolute right-[6%] top-[42%] h-[16%] w-[16%] rounded-full bg-[#FF5F1F]/80"></div>'
+    +'</div><span class="lbl absolute left-2 top-1 text-[9px] font-black tracking-[0.2em] text-white/20">'+NAMES[i]+'</span>';
+  grid.appendChild(b);
+  holes.push({el:b, mole:b.querySelector('.mole'), up:false, t:0, popped:0});
+}
+function upd(){
+  $('score').textContent=score;
+  $('best').textContent='BEST '+best;
+  $('time').textContent=Math.max(0,timeLeft).toFixed(1);
+  $('stat').textContent = running? (combo>1? 'COMBO x'+combo : 'GO') : 'READY';
+  $('stat').style.color = combo>1? '#FF5F1F' : '';
+}
+function start(){
+  score=0; timeLeft=30; running=true; spawnT=0.3; combo=0; comboT=0;
+  holes.forEach(h=>{h.up=false;h.t=0;h.mole.style.transform='translate(-50%,120%)';h.el.style.opacity=1});
+  $('go').style.display='none'; $('rs').style.display='none';
+  upd();
+}
+function end(){
+  running=false;
+  $('rs').style.display=''; $('rs').textContent='Play again';
+  $('stat').textContent='TIME UP';
+  $('stat').style.color='#FF5F1F';
+  if(score>best) best=score;
+  upd();
+}
+function whack(i,now){
+  if(!running) return;
+  const h=holes[i];
+  if(!h.up) return;
+  h.up=false; h.mole.style.transform='translate(-50%,120%)';
+  combo = (now-comboT<1200)? combo+1 : 1; comboT=now;
+  // Cap the multiplier at 5x, otherwise a long streak inflates the score into
+  // six figures and every run looks the same.
+  const mult = Math.min(5, combo>1? combo : 1);
+  score += 100*mult;
+  upd();
+}
+function tick(ts){
+  if(!ts) ts=performance.now();
+  if(running){
+    timeLeft -= 1/60;
+    if(comboT && ts-comboT>1600) combo=0;
+    spawnT-=1/60;
+    if(spawnT<=0){
+      const free=holes.map((h,i)=>h.up?-1:i).filter(i=>i>=0);
+      if(free.length){
+        let n = 1+(Math.random()<0.45?1:0);
+        while(n-- > 0 && free.length){
+          const pick=free.splice((Math.random()*free.length)|0,1)[0];
+          const h=holes[pick]; h.up=true; h.t=0.75+Math.random()*0.95;
+          h.mole.style.transform='translate(-50%,4%)';
+        }
+      }
+      spawnT=0.30+Math.random()*0.35;
+    }
+    for(const h of holes){
+      if(!h.up) continue;
+      h.t-=1/60;
+      if(h.t<=0){ h.up=false; h.mole.style.transform='translate(-50%,120%)'; }
+    }
+    upd();
+    if(timeLeft<=0) end();
+  }
+  requestAnimationFrame(tick);
+}
+grid.addEventListener('pointerdown',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  const i=holes.findIndex(h=>h.el===b); if(i<0) return;
+  sel=i; markSel();
+  b.style.transform='scale(.9)'; setTimeout(()=>b.style.transform='',90);
+  whack(i,performance.now());
+});
+function markSel(){
+  holes.forEach((h,i)=>{ h.el.style.outline = i===sel? '2px solid #FF5F1F' : 'none'; h.el.style.outlineOffset='2px'; });
+}
+window.addEventListener('keydown',e=>{
+  if(e.key===' '){ e.preventDefault(); if(!running){ if($('go').style.display!=='none') start(); else start(); } else whack(sel,performance.now()); return; }
+  if(e.key==='r'||e.key==='R'){ e.preventDefault(); start(); return; }
+  if(e.key>='1'&&e.key<='9'){ sel=(+e.key)-1; markSel(); whack(sel,performance.now()); return; }
+  const m={ArrowLeft:-1,ArrowRight:1,ArrowUp:-3,ArrowDown:3};
+  if(e.key in m){ e.preventDefault(); sel=Math.max(0,Math.min(8,sel+m[e.key])); markSel(); }
+});
+$('go').addEventListener('click',start);
+$('rs').addEventListener('click',start);
+markSel(); upd(); requestAnimationFrame(tick);
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+    </a></li>
+    <li><a href="/workspace/games/breakout/">
+      <span class="ocurp-related-n">Breakout</span>
+      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
+    </a></li>
+    <li><a href="/workspace/games/flappy-bird/">
+      <span class="ocurp-related-n">Flappy Bird</span>
+      <span class="ocurp-related-b">Thread the gaps. Your best score is saved on this device.</span>
+    </a></li>
+    <li><a href="/workspace/games/fruit-slice/">
+      <span class="ocurp-related-n">Fruit Slice</span>
+      <span class="ocurp-related-b">Fruit Slice - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/fruit-slice/">
+      <span class="ocurp-related-n">Fruit Slice</span>
+      <span class="ocurp-related-b">Fruit Slice - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

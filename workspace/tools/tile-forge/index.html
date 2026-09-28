@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tile Forge — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Seamless tiling patterns generated from simple rules, ready to export. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/tile-forge/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Tile Forge">
+<meta property="og:description" content="Seamless tiling patterns generated from simple rules, ready to export. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/tile-forge/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Tile Forge">
+<meta name="twitter:description" content="Seamless tiling patterns generated from simple rules, ready to export. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Tile Forge","url":"https://ocurp.space/workspace/tools/tile-forge/","description":"Seamless tiling patterns generated from simple rules, ready to export. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Tile Forge</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">CANVAS</span><span class="ws-chip">PATTERN</span><span class="ws-chip">WANG-TILE</span><span class="ws-chip">CLIENT-SIDE</span></div>
+        </div>
+      
+  <div class="grid gap-4 lg:grid-cols-[1fr_330px]">
+    <section class="ws-panel p-5">
+      <div class="mb-3 flex items-center justify-between">
+        <span class="ws-label">Mosaic</span>
+        <span class="ws-chip" id="stamp">0 TILES</span>
+      </div>
+      <div class="flex justify-center">
+        <canvas id="cv" width="720" height="720" class="w-full max-w-[720px] rounded-xl border border-white/10"></canvas>
+      </div>
+      <div class="mt-4 flex flex-wrap items-center gap-3">
+        <button id="solve" class="ws-btn">Solve edges</button>
+        <button id="shuffle" class="ws-btn-ghost">Shuffle</button>
+        <button id="alt" class="ws-btn-ghost">Toggle alt colours</button>
+        <button id="dl" class="ws-btn-ghost">Download PNG</button>
+        <span class="text-[11px] text-white/45" id="hud"></span>
+      </div>
+    </section>
+
+    <section class="ws-panel p-5">
+      <div class="grid gap-4">
+        <div><label class="ws-label mb-2 block">Grid <span id="gv">14</span></label>
+          <input id="grid" type="range" min="4" max="40" value="14" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Tile size <span id="sv">50</span>px</label>
+          <input id="size" type="range" min="14" max="120" value="50" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Colours <span id="cv2">4</span></label>
+          <input id="cols" type="range" min="2" max="8" value="4" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Corner radius <span id="rv">6</span></label>
+          <input id="rad" type="range" min="0" max="40" value="6" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Line width <span id="bv">3</span></label>
+          <input id="lw" type="range" min="0" max="16" value="3" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Pattern <span id="pv">weave</span></label>
+          <select id="pat" class="ws-input !w-44">
+            <option value="weave">weave</option>
+            <option value="basket">basketweave</option>
+            <option value="pinwheel">pinwheel</option>
+            <option value="bricks">bricks</option>
+          </select></div>
+        <div><label class="ws-label mb-2 block">Hue base <span id="hv">18</span>&deg;</label>
+          <input id="hue" type="range" min="0" max="360" value="18" class="w-full accent-[#FF5F1F]"></div>
+      </div>
+      <div class="ws-panel ws-copy mt-4 p-4">
+        <div class="mb-2 flex items-center justify-between">
+          <span class="ws-label">Measured</span>
+          <button class="ws-btn-ghost !px-3 !py-1.5" id="cpy">Copy</button>
+        </div>
+        <pre id="out" class="ws-out min-h-[160px]"></pre>
+      </div>
+    </section>
+  </div>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d',{willReadFrequently:true});
+const W=720,H=720;
+const SIDS=['grid','size','cols','rad','lw','hue'];
+const READ={grid:'gv',size:'sv',cols:'cv2',rad:'rv',lw:'bv',hue:'hv'};
+let alt=false,rs=7,base=null,scores=[];
+function mul(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function cfg(){const o={};SIDS.forEach(k=>{o[k]=parseFloat($(k).value);$(READ[k]).textContent=$(k).value});o.pat=$('pat').value;return o}
+function build(c){
+  const g=Math.round(c.grid),n=Math.round(c.cols),rnd=mul(rs);
+  const t={n:g,ncol:n,pat:c.pat,rows:[]};
+  for(let i=0;i<g;i++){
+    const row=[];
+    for(let j=0;j<g;j++){
+      row.push({N:Math.floor(rnd()*n),E:Math.floor(rnd()*n),S:Math.floor(rnd()*n),W:Math.floor(rnd()*n),
+                c:Math.floor(rnd()*n)});
+    }
+    t.rows.push(row);
+  }
+  return t;
+}
+function score(t){
+  let tot=0,ok=0;
+  const g=t.n;
+  for(let i=0;i<g;i++)for(let j=0;j<g;j++){
+    if(j<g-1){tot++;if(t.rows[i][j].E===t.rows[i][j+1].W)ok++}
+    if(i<g-1){tot++;if(t.rows[i][j].S===t.rows[i+1][j].N)ok++}
+  }
+  return {tot:tot,ok:ok,rate:tot?ok/tot:0};
+}
+function solve(){
+  const c=cfg();
+  base=JSON.parse(JSON.stringify(base));
+  let cur=score(base),passes=0;
+  const t=base,rnd=mul(99);
+  for(let pass=0;pass<24;pass++){
+    let improved=false;
+    const g=t.n;
+    for(let i=0;i<g;i++)for(let j=0;j<g;j++){
+      // recolour this tile's edges to match whichever neighbour is cheaper
+      const cell=t.rows[i][j];
+      const nbrs=[];
+      if(j>0)nbrs.push(['W',t.rows[i][j-1].E]);
+      if(j<g-1)nbrs.push(['E',t.rows[i][j+1].W]);
+      if(i>0)nbrs.push(['N',t.rows[i-1][j].S]);
+      if(i<g-1)nbrs.push(['S',t.rows[i+1][j].N]);
+      for(const [side,val] of nbrs){
+        const other=side==='N'?'S':side==='S'?'N':side==='E'?'W':'E';
+        if(cell[side]!==val){cell[side]=val;improved=true}
+      }
+      if(rnd()<0.15){cell.N=Math.floor(rnd()*t.ncol);cell.E=Math.floor(rnd()*t.ncol);cell.S=Math.floor(rnd()*t.ncol);cell.W=Math.floor(rnd()*t.ncol)}
+    }
+    passes++;
+    if(!improved)break;
+  }
+  const end=score(t);
+  return {passes:passes,start:cur.rate,end:end.rate};
+}
+function tile(ctx2,x,y,s,c,cell,rnd){
+  const n=cell.c;
+  const hue=alt?((parseFloat($('hue').value)+140+n*47)%360):((parseFloat($('hue').value)+n*(360/c.ncol))%360);
+  const l=alt?44:18+ n*(52/Math.max(1,c.ncol-1||1));
+  const fill='hsl('+hue+',70%,'+l+'%)';
+  const rad=parseFloat($('rad').value),lw=parseFloat($('lw').value);
+  ctx2.beginPath();
+  if(ctx2.roundRect&&rad>0)ctx2.roundRect(x+lw/2,y+lw/2,s-lw,s-lw,rad);
+  else ctx2.rect(x+lw/2,y+lw/2,s-lw,s-lw);
+  ctx2.fillStyle=fill;ctx2.fill();
+  if(lw>0){ctx2.strokeStyle='rgba(5,5,5,0.85)';ctx2.lineWidth=lw;ctx2.stroke()}
+  // inner pattern driven by the tile's own edge colours
+  const g=(c.ncol*12)|0;
+  ctx2.save();
+  ctx2.beginPath();
+  if(ctx2.roundRect&&rad>0)ctx2.roundRect(x+lw,y+lw,s-2*lw,s-2*lw,Math.max(0,rad-lw/2));
+  else ctx2.rect(x+lw,y+lw,s-2*lw,s-2*lw);
+  ctx2.clip();
+  ctx2.globalAlpha=alt?0.5:0.32;
+  if(c.pat==='weave'){
+    for(let k=0;k<g;k++){
+      const p=(k/g)*s;
+      const on=(cell.N+k)%2===0;
+      ctx2.fillStyle=on?'#fff':'#000';
+      ctx2.fillRect(x+p,y,s/g*0.5,s);
+    }
+  }else if(c.pat==='basket'){
+    const bw=s/4;
+    for(let by=0;by<4;by++)for(let bx=0;bx<4;bx++){
+      if((bx+by)%2)continue;
+      ctx2.fillStyle=((cell.E+bx)%2)?'#fff':'#000';
+      ctx2.fillRect(x+bx*bw,y+by*bw,bw,bw);
+    }
+  }else if(c.pat==='pinwheel'){
+    for(let k=0;k<4;k++){
+      ctx2.fillStyle=(cell['NESW'.charAt(k)]===k)?'#fff':'#000';
+      ctx2.beginPath();
+      const cx=x+s/2,cy=y+s/2,a=k*Math.PI/2;
+      ctx2.moveTo(cx,cy);
+      ctx2.lineTo(cx+Math.cos(a)*s,cy+Math.sin(a)*s);
+      ctx2.lineTo(cx+Math.cos(a+0.9)*s,cy+Math.sin(a+0.9)*s);
+      ctx2.closePath();ctx2.fill();
+    }
+  }else{
+    const rows=4,off=(cell.S%2)*s/8;
+    for(let by=0;by<rows;by++){
+      ctx2.fillStyle=(by%2)?'#000':'#fff';
+      const yy=y+by*s/rows+off;
+      ctx2.fillRect(x,yy,s,s/rows*0.34);
+    }
+  }
+  ctx2.restore();
+}
+function render(){
+  const c=cfg();
+  if(!base||base.n!==Math.round(c.grid)||base.ncol!==Math.round(c.cols)||base.pat!==c.pat)base=build(c);
+  ctx.fillStyle='#050505';ctx.fillRect(0,0,W,H);
+  const s=Math.min(W,H)/base.n;
+  const rnd=mul(rs+1);
+  for(let i=0;i<base.n;i++)for(let j=0;j<base.n;j++)tile(ctx,j*s,i*s,s,c,base.rows[i][j],rnd);
+  scores=score(base);
+  const total=base.n*base.n;
+  $('stamp').textContent=total+' TILES';
+  $('hud').textContent=scores.ok+'/'+scores.tot+' edges matched';
+  $('out').textContent=[
+    'Grid        '+base.n+' x '+base.n+' = '+total+' tiles, '+s.toFixed(1)+' px each',
+    'Pattern     '+c.pat+' with '+base.ncol+' colours, radius '+c.rad+', line '+c.lw,
+    'Palette     base hue '+c.hue+' deg, alt colours '+(alt?'on':'off'),
+    'Edge pairs  '+scores.tot+' (H+V adjacencies checked)',
+    'Matching    '+scores.ok+' matched, '+(scores.tot-scores.ok)+' mismatched',
+    'Match rate  '+(scores.rate*100).toFixed(2)+'%',
+    'Scoring     full local-search solve re-runs this and should raise the rate',
+  ].join('\n');
+  return {n:total,rate:scores.rate,ok:scores.ok};
+}
+SIDS.forEach(k=>$(k).addEventListener('input',()=>{if(k==='grid'||k==='cols')base=null;render()}));
+$('pat').addEventListener('change',()=>{base=null;render()});
+$('shuffle').onclick=()=>{rs=Math.floor(Math.random()*1e6);base=null;render()};
+$('alt').onclick=()=>{alt=!alt;render()};
+$('solve').onclick=()=>{const r=solve();render();
+  $('hud').textContent='solved: '+(r.start*100).toFixed(1)+'% -> '+(r.end*100).toFixed(1)+'% in '+r.passes+' passes';
+  $('out').textContent+='\nSOLVE      '+(r.start*100).toFixed(2)+'% -> '+(r.end*100).toFixed(2)+'% over '+r.passes+' passes';
+};
+$('dl').onclick=()=>{const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download='tile-forge.png';a.click()};
+$('cpy').onclick=function(){navigator.clipboard.writeText($('out').textContent);this.classList.add('ok');setTimeout(()=>this.classList.remove('ok'),1200)};
+window.__tile={
+  render:render,solve:solve,canvas:cv,score:()=>score(base),
+  set:v=>{Object.keys(v).forEach(k=>{if($(k))$(k).value=v[k]});base=null;return render()},
+  stats:()=>{const d=ctx.getImageData(0,0,W,H).data;let lit=0;
+    for(let i=0;i<d.length;i+=4)if(d[i]>30||d[i+1]>30||d[i+2]>30)lit++;
+    return {n:base?base.n*base.n:0,rate:scores.rate,ok:scores.ok,lit:lit,out:$('out').textContent}}
+};
+render();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/image-mirror/">
+      <span class="ocurp-related-n">Image Mirror &amp; Tile</span>
+      <span class="ocurp-related-b">Flip horizontal or vertical, or tile the image into a repeating kaleidoscope pattern.</span>
+    </a></li>
+    <li><a href="/workspace/tools/avif-to-png/">
+      <span class="ocurp-related-n">AVIF to PNG</span>
+      <span class="ocurp-related-b">Convert an AVIF picture to PNG in your browser - the file never leaves the page.</span>
+    </a></li>
+    <li><a href="/workspace/tools/background-remover/">
+      <span class="ocurp-related-n">Background Remover</span>
+      <span class="ocurp-related-b">Cut the background off a photo in your browser — no upload, no watermark.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base64-to-image/">
+      <span class="ocurp-related-n">Base64 to Image</span>
+      <span class="ocurp-related-b">Paste a data URI and preview or download the image.</span>
+    </a></li>
+    <li><a href="/workspace/tools/batch-compressor/">
+      <span class="ocurp-related-n">Batch Image Compressor</span>
+      <span class="ocurp-related-b">Compress many images at once, see the quality loss per file, save as ZIP.</span>
+    </a></li>
+    <li><a href="/workspace/tools/box-shadow/">
+      <span class="ocurp-related-n">Box Shadow Generator</span>
+      <span class="ocurp-related-b">Layer shadows visually and copy the CSS.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

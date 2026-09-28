@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colour Picker — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; }
+  body { font-family:'Inter',sans-serif; background:#050505; }
+  .ws-panel { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:1rem; }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; width:100%; padding:.85rem 1.1rem; border-radius:.75rem; background:#FF5F1F; color:#000; font-weight:800; font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; border:0; cursor:pointer; transition:opacity .15s; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; width:100%; padding:.85rem 1.1rem; border-radius:.75rem; background:transparent; color:#fff; font-weight:700; font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; border:1px solid rgba(255,255,255,.14); cursor:pointer; transition:border-color .15s,color .15s; }
+  .ws-btn-ghost:hover { border-color:#FF5F1F; color:#FF5F1F; }
+  .ws-label { font-size:10px; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.45); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  textarea.ws-input { font-family:'IBM Plex Sans',monospace; font-size:.8rem; line-height:1.6; resize:vertical; }
+  .ws-chip { display:inline-flex; align-items:center; gap:.35rem; border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.6); }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(40px,-30px) scale(1.1)} }
+  .bg-vibrant-blob { position:fixed; width:34rem; height:34rem; border-radius:50%; filter:blur(90px); opacity:.12; background:#e0f2fe; pointer-events:none; z-index:0; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; z-index:1; opacity:.02; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"); }
+</style>
+<meta name="description" content="One colour in, every notation out - HEX, RGB, HSL and CMYK - with WCAG contrast ratios and shades. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/color-picker/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Colour Picker">
+<meta property="og:description" content="One colour in, every notation out - HEX, RGB, HSL and CMYK - with WCAG contrast ratios and shades. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/color-picker/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Colour Picker">
+<meta name="twitter:description" content="One colour in, every notation out - HEX, RGB, HSL and CMYK - with WCAG contrast ratios and shades. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Colour Picker","url":"https://ocurp.space/workspace/tools/color-picker/","description":"One colour in, every notation out - HEX, RGB, HSL and CMYK - with WCAG contrast ratios and shades. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Colour Picker</h1>
+      <p class="mt-1 text-[10px] font-medium uppercase tracking-[0.22em] text-white/45">Design &amp; Colour &mdash; client-side</p>
+    </div>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-2">
+    <section class="ws-panel p-6">
+      <div class="ws-label mb-3">Pick a colour</div>
+      <input id="pick" type="color" value="#FF5F1F" class="h-14 w-full cursor-pointer rounded-xl border border-white/20 bg-transparent p-1">
+      <div class="mt-4 grid grid-cols-2 gap-3">
+        <div><label class="ws-label mb-2 block" for="hex">HEX</label><input id="hex" class="ws-input font-mono" value="#FF5F1F"></div>
+        <div><label class="ws-label mb-2 block" for="rgb">RGB</label><input id="rgb" class="ws-input font-mono" value="255, 95, 31"></div>
+        <div><label class="ws-label mb-2 block" for="hsl">HSL</label><input id="hsl" class="ws-input font-mono" value="17, 100%, 56%"></div>
+        <div><label class="ws-label mb-2 block" for="cmyk">CMYK</label><input id="cmyk" class="ws-input font-mono" value="0, 63, 88, 0"></div>
+      </div>
+      <p id="wcag" class="mt-4 text-xs leading-relaxed text-white/60"></p>
+    </section>
+    <section class="ws-panel p-6">
+      <div class="mb-3 flex items-center justify-between">
+        <div class="ws-label">Shades &amp; contrast</div>
+        <button id="copy" class="ws-btn-ghost !w-auto !px-3 !py-1.5">Copy CSS</button>
+      </div>
+      <div class="flex h-24 overflow-hidden rounded-xl border border-white/10">
+        <div id="swatches" class="flex w-full"></div>
+      </div>
+      <div class="mt-4 grid grid-cols-3 gap-2 text-center text-[10px] font-bold">
+        <div class="rounded-lg border border-white/10 p-2"><div id="onw" class="mb-1 h-6 rounded"></div><span class="text-white/50">on white</span></div>
+        <div class="rounded-lg border border-white/10 p-2"><div id="onb" class="mb-1 h-6 rounded"></div><span class="text-white/50">on black</span></div>
+        <div class="rounded-lg border border-white/10 p-2"><div id="hexv" class="mb-1 h-6 rounded"></div><span class="text-white/50">swatch</span></div>
+      </div>
+      <div class="mt-4 flex flex-wrap gap-2" id="chips"></div>
+    </section>
+  </div>
+  <div class="mt-6">
+    <p class="max-w-2xl text-sm leading-relaxed text-white/50">One colour in, every notation out - HEX, RGB, HSL and CMYK - with WCAG contrast ratios and a clickable shade ramp.</p>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+
+const $ = id => document.getElementById(id);
+function hex2rgb(h) {
+  h = h.trim().replace(/^#/, '');
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  if (!/^[0-9a-f]{6}$/i.test(h)) return null;
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+function rgb2hex(r, g, b) {
+  return '#' + [r, g, b].map(x => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, '0')).join('');
+}
+function rgb2hsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  let h = 0;
+  if (d) {
+    if (mx === r) h = ((g - b) / d) % 6;
+    else if (mx === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60; if (h < 0) h += 360;
+  }
+  const l = (mx + mn) / 2;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  return [Math.round(h), Math.round(s * 100), Math.round(l * 100)];
+}
+function hsl2rgb(h, s, l) {
+  h = ((h % 360) + 360) % 360; s /= 100; l /= 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+  const t = h < 60 ? [c,x,0] : h < 120 ? [x,c,0] : h < 180 ? [0,c,x] : h < 240 ? [0,x,c] : h < 300 ? [x,0,c] : [c,0,x];
+  return t.map(v => Math.round((v + m) * 255));
+}
+function rgb2cmyk(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const k = 1 - Math.max(r, g, b);
+  if (k === 1) return [0, 0, 0, 100];
+  return [Math.round((1 - r - k) / (1 - k) * 100), Math.round((1 - g - k) / (1 - k) * 100),
+          Math.round((1 - b - k) / (1 - k) * 100), Math.round(k * 100)];
+}
+function lum([r, g, b]) {
+  const f = c => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+function ratio(a, b) {
+  const la = lum(a), lb = lum(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+let rgb = [255, 95, 31];
+function set(rgbIn, from) {
+  rgb = rgbIn.map(x => Math.max(0, Math.min(255, Math.round(x))));
+  const hex = rgb2hex.apply(null, rgb);
+  const hsl = rgb2hsl.apply(null, rgb);
+  const cmyk = rgb2cmyk.apply(null, rgb);
+  $('pick').value = hex;
+  if (from !== 'hex') $('hex').value = hex;
+  if (from !== 'rgb') $('rgb').value = rgb.join(', ');
+  if (from !== 'hsl') $('hsl').value = hsl[0] + ', ' + hsl[1] + '%, ' + hsl[2] + '%';
+  if (from !== 'cmyk') $('cmyk').value = cmyk.join(', ');
+  // contrast
+  const w = ratio(rgb, [255, 255, 255]), b = ratio(rgb, [0, 0, 0]);
+  const lvl = v => v >= 7 ? 'AAA' : v >= 4.5 ? 'AA' : v >= 3 ? 'AA Large' : 'fail';
+  $('wcag').innerHTML = 'vs white <strong>' + w.toFixed(2) + ':1</strong> (' + lvl(w) + ') &middot; vs black <strong>' + b.toFixed(2) + ':1</strong> (' + lvl(b) + ')';
+  // shades
+  const hslBase = rgb2hsl.apply(null, rgb);
+  const sw = [];
+  [0.95, 0.85, 0.7, 0.5, 0.3, 0.15, 0].forEach(ll => {
+    sw.push('<div title="L ' + Math.round(ll * 100) + '%" class="flex-1 cursor-pointer" style="background:' + rgb2hex.apply(null, hsl2rgb(hslBase[0], hslBase[1], ll * 100)) + '" data-l="' + Math.round(ll * 100) + '"></div>');
+  });
+  $('swatches').innerHTML = sw.join('');
+  Array.prototype.forEach.call($('swatches').children, el => {
+    el.onclick = () => set(hsl2rgb(hslBase[0], hslBase[1], +el.dataset.l));
+  });
+  $('onw').style.background = rgb2hex.apply(null, rgb);
+  $('onb').style.background = rgb2hex.apply(null, rgb);
+  $('hexv').style.background = hex;
+  $('onw').style.color = b >= w ? '#000' : '#fff';
+  $('onb').style.color = w >= b ? '#000' : '#fff';
+  // chips
+  const names = { 0: 'black', 100: 'white' };
+  $('chips').innerHTML = ['hex', 'rgb', 'hsl', 'cmyk'].map(k =>
+    '<button class="ws-btn-ghost !w-auto !px-3 !py-1.5" data-k="' + k + '">Copy ' + k.toUpperCase() + '</button>').join('')
+    + '<span class="ws-chip">' + hex + '</span>';
+  Array.prototype.forEach.call($('chips').querySelectorAll('button'), b2 => {
+    b2.onclick = () => {
+      const map = { hex: hex, rgb: rgb.join(', '), hsl: hsl.join(', '), cmyk: cmyk.join(', ') };
+      navigator.clipboard.writeText(map[b2.dataset.k]);
+      b2.textContent = 'Copied';
+      setTimeout(() => { b2.textContent = 'Copy ' + b2.dataset.k.toUpperCase(); }, 1100);
+    };
+  });
+}
+$('pick').addEventListener('input', () => set(hex2rgb($('pick').value) || [0,0,0], 'pick'));
+$('hex').addEventListener('input', () => { const r = hex2rgb($('hex').value); if (r) set(r, 'hex'); });
+$('rgb').addEventListener('input', () => {
+  const p = $('rgb').value.split(/[,\s]+/).map(Number).filter(n => !isNaN(n));
+  if (p.length >= 3) set(p.slice(0, 3), 'rgb');
+});
+$('hsl').addEventListener('input', () => {
+  const p = $('hsl').value.split(/[,\s%]+/).map(Number).filter(n => !isNaN(n));
+  if (p.length >= 3) set(hsl2rgb(p[0], p[1], p[2]), 'hsl');
+});
+$('cmyk').addEventListener('input', () => {
+  const p = $('cmyk').value.split(/[,\s%]+/).map(Number).filter(n => !isNaN(n));
+  if (p.length < 4) return;
+  const c = p[0] / 100, m = p[1] / 100, y = p[2] / 100, k = p[3] / 100;
+  set([255 * (1 - c) * (1 - k), 255 * (1 - m) * (1 - k), 255 * (1 - y) * (1 - k)], 'cmyk');
+});
+$('copy').onclick = () => {
+  const h = rgb2hsl.apply(null, rgb), c = rgb2cmyk.apply(null, rgb);
+  navigator.clipboard.writeText('HEX ' + $('hex').value + '\nRGB ' + $('rgb').value + '\nHSL ' + $('hsl').value + '\nCMYK ' + $('cmyk').value);
+  $('copy').textContent = 'Copied';
+  setTimeout(() => { $('copy').textContent = 'Copy CSS'; }, 1200);
+};
+set(rgb, 'init');
+
+</script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/hex-to-rgb/">
+      <span class="ocurp-related-n">HEX to RGB Converter</span>
+      <span class="ocurp-related-b">Convert HEX, RGB, HSL and HSV with WCAG contrast ratios and a full tint scale.</span>
+    </a></li>
+    <li><a href="/workspace/tools/hsv-converter/">
+      <span class="ocurp-related-n">HSV Converter</span>
+      <span class="ocurp-related-b">Convert HSV to RGB, hex and hsl with a round-trip encoder check, relative luminance and a </span>
+    </a></li>
+    <li><a href="/workspace/tools/image-color-picker/">
+      <span class="ocurp-related-n">Image Colour Picker</span>
+      <span class="ocurp-related-b">Click any pixel in an image to get its hex, RGB and HSL values, with a magnifier for preci</span>
+    </a></li>
+    <li><a href="/workspace/tools/color-blindness-simulator/">
+      <span class="ocurp-related-n">Colour Blindness Simulator</span>
+      <span class="ocurp-related-b">See any picture through protanopia, deuteranopia, tritanopia or total colour blindness.</span>
+    </a></li>
+    <li><a href="/workspace/tools/contrast-checker/">
+      <span class="ocurp-related-n">Contrast Checker</span>
+      <span class="ocurp-related-b">Check any two colours against the WCAG contrast rules and see which levels pass.</span>
+    </a></li>
+    <li><a href="/workspace/tools/image-adjust/">
+      <span class="ocurp-related-n">Image Adjustments</span>
+      <span class="ocurp-related-b">Brightness, contrast, saturation, temperature, highlights and shadows applied to the real </span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

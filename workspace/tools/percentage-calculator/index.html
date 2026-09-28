@@ -75,9 +75,9 @@ tailwind.config = { theme: { extend: {
       <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Percentage Calculator</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">MATH</span><span class="ws-chip">PERCENT</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">PERCENT</span><span class="ws-chip">DISCOUNT</span><span class="ws-chip">CHANGE</span></div>
         </div>
-      <section class="ws-panel mt-4 p-5"><div class="grid gap-4 md:grid-cols-2"><div><label class="ws-label mb-2 block" for="a">What is</label><input id="a" type="number" class="ws-input" placeholder="20" value="20"></div><div><label class="ws-label mb-2 block" for="b">percent of</label><input id="b" type="number" class="ws-input" placeholder="150" value="150"></div><div><label class="ws-label mb-2 block" for="c">X is what percent of</label><input id="c" type="number" class="ws-input" placeholder="30" value="30"></div><div><label class="ws-label mb-2 block" for="d">Y</label><input id="d" type="number" class="ws-input" placeholder="150" value="150"></div><div><label class="ws-label mb-2 block" for="e">From</label><input id="e" type="number" class="ws-input" placeholder="100" value="100"></div><div><label class="ws-label mb-2 block" for="g">to</label><input id="g" type="number" class="ws-input" placeholder="125" value="125"></div></div><div class="mt-5"><div class="ws-label mb-2">Answers</div><div id="res" class="ws-out"></div></div></section>
+      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><div><label class="ws-label mb-2 block" for="a">Value A</label><input id="a" type="number" class="ws-input" placeholder="250" value="250"></div><div><label class="ws-label mb-2 block" for="b">Value B</label><input id="b" type="number" class="ws-input" placeholder="40" value="40"></div><div><label class="ws-label mb-2 block" for="mode">Mode</label><select id="mode" class="ws-input !w-56"><option value="of" selected>X % of Y</option><option value="whatpct">X is what % of Y</option><option value="change">Percent change A to B</option><option value="diff">Percent difference A vs B</option><option value="add">Add X % to A</option><option value="sub">Remove X % from A</option></select></div></div><div class="mt-4 flex flex-wrap gap-2" id="quick"></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy result</button></div><div class="rounded-xl border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Answer</div><div id="big" class="mt-2 font-display text-4xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Breakdown</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Component</th><th class="py-2 pr-4">Value</th></tr></thead><tbody id="tbl"></tbody></table></div></section>
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
@@ -85,36 +85,96 @@ tailwind.config = { theme: { extend: {
 </div>
 <script src="/workspace/related.js" defer></script>
 <script>
-const $=id=>document.getElementById(id);
-function n(id){ const v=parseFloat($(id).value); return isNaN(v)?null:v; }
-function calc(){
-  const a=n('a'), b=n('b'), c=n('c'), d=n('d'), e=n('e'), g=n('g');
-  const out=[];
-  if(a!==null&&b!==null) out.push([a+'% of '+b, (a/100*b).toFixed(4).replace(/\.?0+$/,'')]);
-  if(c!==null&&d!==null&&d!==0) out.push([c+' is this % of '+d, (c/d*100).toFixed(4).replace(/\.?0+$/,'')+'%']);
-  if(e!==null&&g!==null&&e!==0) out.push(['Change from '+e+' to '+g, ((g-e)/e*100).toFixed(4).replace(/\.?0+$/,'')+'%']);
-  if(e!==null&&g!==null) out.push(['Difference', (g-e).toFixed(4).replace(/\.?0+$/,'')]);
-  $('res').innerHTML = out.length
-    ? out.map(r=>'<div class="flex justify-between gap-4 border-b border-white/5 py-2"><span class="text-white/55">'+r[0]+'</span><span class="font-mono font-black" style="color:#FF5F1F">'+r[1]+'</span></div>').join('')
-    : '<span class="text-white/40">Fill any pair of boxes.</span>';
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
 }
-document.querySelectorAll('input').forEach(i=>i.addEventListener('input',calc));
-calc();
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+var LABELS = {
+  of:      function(a,b){ return b===0?null:a/100*b; },
+  whatpct: function(a,b){ return b===0?null:a/b*100; },
+  change:  function(a,b){ return a===0?null:(b-a)/a*100; },
+  diff:    function(a,b){ return (a+b)===0?null:Math.abs(b-a)/((a+b)/2)*100; },
+  add:     function(a,b){ return a+a/100*b; },
+  sub:     function(a,b){ return a-a/100*b; }
+};
+var DESCR = {
+  of:'% of = A/100 x B', whatpct:'% = A / B x 100',
+  change:'% change = (B − A) / A x 100   (divides by the OLD value)',
+  diff:'% difference = |B − A| / ((A+B)/2) x 100   (divides by the MEAN)',
+  add:'A + (A/100 x B)', sub:'A − (A/100 x B)'
+};
+var QUICK = [['of','Tip on 60 at 18%',60,18,'of'],['of','15% off 80',80,15,'sub'],
+             ['change','Growth 120 to 150',120,150,'change'],['change','Drop 250 to 200',250,200,'change'],
+             ['diff','10 vs 20',10,20,'diff'],['whatpct','24 out of 32',24,32,'whatpct']];
+$('quick').innerHTML = QUICK.map(function(q,i){
+  return '<button class="ws-btn-ghost !px-3 !py-1.5" data-i="'+i+'" onclick="useQuick(this)">'
+    + esc(q[1])+'</button>';}).join('');
+function useQuick(b){
+  var q=QUICK[Number(b.getAttribute('data-i'))];
+  $('a').value=q[2]; $('b').value=q[3]; $('mode').value=q[4]; run();
+}
+function run(){
+  var a=parseFloat($('a').value), b=parseFloat($('b').value), m=$('mode').value;
+  if(!isFinite(a)||!isFinite(b)){ seterr('err','both values must be numbers'); return; }
+  var out=LABELS[m](a,b);
+  if(out===null){
+    seterr('err', m==='change' ? 'percent change from zero is undefined'
+      : m==='diff' ? 'percent difference against -'+a+' is undefined'
+      : 'cannot divide by zero');
+    $('big').textContent='-'; $('bigsub').textContent='-'; $('tbl').innerHTML=''; show([]); return;
+  }
+  seterr('err','');
+  var isPct = (m==='whatpct'||m==='change'||m==='diff');
+  $('big').textContent = grp(out,6)+(isPct?' %':'');
+  $('bigsub').textContent = esc(DESCR[m]);
+  $('tbl').innerHTML = row(['A', grp(a,6)]) + row(['B', grp(b,6)]) +
+      row(['Result', '<span class="text-accent">'+grp(out,6)+(isPct?' %':'')+'</span>']) +
+      row(['Worked', '<span class="font-mono text-white/60 text-xs">'+esc(DESCR[m])+'</span>']);
+  if(m==='change') $('tbl').innerHTML += row(['Absolute change', grp(b-a,6)]);
+  if(m==='of')      $('tbl').innerHTML += row(['Remainder', grp(b-out,6)]);
+  if(m==='sub')     $('tbl').innerHTML += row(['You save', grp(a/100*b,6)]);
+  if(m==='add')     $('tbl').innerHTML += row(['Increase', grp(a/100*b,6)]);
+  show([['A',grp(a,6)],['B',grp(b,6)],['Result',grp(out,6)+(isPct?' %':'')]]);
+}
+['a','b'].forEach(function(id){ $(id).addEventListener('input',run); });
+$('mode').addEventListener('change',run);
+window.__pct = {LABELS:LABELS, DESCR:DESCR, run:run, QUICK:QUICK};
+run();
 </script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">
