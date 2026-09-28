@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cron Expression Parser | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Cron Expression Parser</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Network & Web — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">CRON</span><span class="ws-chip">SCHEDULER</span><span class="ws-chip">CRONTAB</span></div>
+        </div>
+      <section class="ws-panel p-6"><div><label class="ws-label mb-2 block" for="expr">Cron expression</label><input id="expr" type="text" class="ws-input" placeholder="m h dom mon dow" value="*/15 9-17 * * 1-5"></div><div class="mt-3 flex flex-wrap items-center gap-3"><button id="presets" class="ws-btn-ghost !px-3 !py-1.5">Load presets</button><label class="flex items-center gap-2 text-sm text-white/70"><input id="sec" type="checkbox" class="accent-[#FF5F1F]"> Include seconds field</label><div><label class="ws-label mb-2 block" for="tz">Over next</label><select id="tz" class="ws-input !w-36"><option>5</option><option>10</option><option>20</option></select></div></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Fields</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="out" onclick="cp(this)"></button></div><div id="fields" class="grid gap-3 md:grid-cols-5"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Upcoming runs</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="out" onclick="cp(this)">Copy</button></div><div class="mb-3 flex items-center justify-between"><span class="ws-label">Upcoming runs</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="out" onclick="cp(this)">Copy</button></div><div id="out" class="ws-out"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Plain English</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="desc" onclick="cp(this)">Copy</button></div><div class="mb-3 flex items-center justify-between"><span class="ws-label">Plain English</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="desc" onclick="cp(this)">Copy</button></div><div id="desc" class="ws-out"></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+v+'</div>'
+ +'<div class="ws-label mt-1">'+k+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+var $=function(id){return document.getElementById(id)};
+function pad(n,w){var s=String(n);while(s.length<w)s='0'+s;return s;}
+
+var FIELD_NAMES = ['minute','hour','day of month','month','day of week'];
+var MONTHS = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+var DOW = {sun:0,mon:1,tue:2,wed:3,thu:4,fri:5,sat:6};
+var DOW_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var PRESETS = {
+  'Every minute':'* * * * *',
+  'Every 5 min':'*/5 * * * *',
+  'Hourly':'0 * * * *',
+  'Daily 02:00':'0 2 * * *',
+  'Weekdays 09:00':'0 9 * * 1-5',
+  'Every Monday':'0 0 * * 1',
+  'Monthly 1st':'0 0 1 * *',
+  'Twice daily':'0 0,12 * * *'
+};
+// Parse one field into the set of matching values in [min,max].
+// Supports: * | a | a-b | a,b | */n | a-b/n and the 7 = Sunday, 0 = Sunday alias.
+function parseField(spec, min, max, names){
+  var out = {}, aliases = names||null;
+  function add(v){
+    if(v===7 && max===6) v = 0;   // cron: 7 is also Sunday
+    if(v<min || v>max) throw new Error('value '+v+' is out of range '+min+'-'+max);
+    out[v] = 1;
+  }
+  spec.split(',').forEach(function(part){
+    part = part.trim();
+    if(part==='') throw new Error('empty term');
+    var step = 1, slash = part.indexOf('/');
+    if(slash >= 0){
+      step = parseInt(part.slice(slash+1), 10);
+      if(!step || step < 1) throw new Error('step must be a positive integer');
+      part = part.slice(0, slash);
+    }
+    var lo, hi;
+    if(part === '*' || part === '?'){ lo = min; hi = max; }
+    else if(part.indexOf('-') > 0){
+      var ab = part.split('-');
+      lo = resolve(ab[0], aliases, min, max);
+      hi = resolve(ab[1], aliases, min, max);
+    } else {
+      lo = resolve(part, aliases, min, max);
+      hi = (step > 1) ? max : lo;
+    }
+    if(lo > hi) throw new Error('range '+lo+'-'+hi+' is backwards');
+    for(var v = lo; v <= hi; v += step) add(v);
+  });
+  return Object.keys(out).map(Number).sort(function(a,b){return a-b;});
+}
+function resolve(tok, aliases, min, max){
+  tok = String(tok).trim().toLowerCase();
+  if(!/^\d+$/.test(tok) && aliases && aliases[tok] !== undefined) return aliases[tok];
+  if(!/^\d+$/.test(tok)) throw new Error('"'+tok+'" is not a number or a known name');
+  return parseInt(tok, 10);
+}
+function describeList(vals, names, offset){
+  var o = offset || 0;
+  return vals.map(function(v){ return names && names[v-o] !== undefined ? names[v-o] : v; }).join(', ');
+}
+function parseCron(text, withSeconds){
+  var parts = text.trim().split(/\s+/);
+  var six = withSeconds;
+  if(six){
+    if(parts.length !== 6) throw new Error('6 fields needed with seconds: s m h dom mon dow, got '+parts.length);
+  } else {
+    if(parts.length !== 5) throw new Error('5 fields needed: m h dom mon dow, got '+parts.length);
+  }
+  var i = six ? 1 : 0;
+  var sec   = six ? parseField(parts[0], 0, 59) : null;
+  var min   = parseField(parts[i],   0, 59);
+  var hour  = parseField(parts[i+1], 0, 23);
+  var dom   = parseField(parts[i+2], 1, 31);
+  var mon   = parseField(parts[i+3], 1, 12, MONTHS);
+  var dow   = parseField(parts[i+4], 0, 6,  DOW);
+  return {seconds:sec, minute:min, hour:hour, dom:dom, month:mon,
+          dow:dow, domRestricted: parts[i+2] !== '*', dowRestricted: parts[i+4] !== '*'};
+}
+function fieldCard(label, spec, values){
+  var txt = spec === '*' ? 'every' : spec;
+  return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">'
+    +'<div class="ws-label">'+esc(label)+'</div>'
+    +'<div class="mt-1 font-mono text-sm text-accent">'+esc(txt)+'</div>'
+    +'<div class="mt-1 text-[11px] text-white/50">'+values.length+' value'+(values.length===1?'':'s')+'</div>'
+    +'<div class="mt-1 font-mono text-[11px] text-white/40">'+esc(values.slice(0,12).join(', '))+(values.length>12?' …':'')+'</div>'
+    +'</div>';
+}
+function matches(f, d){
+  var domOk = f.dom.indexOf(d.getDate()) >= 0;
+  var dowOk = f.dow.indexOf(d.getDay()) >= 0;
+  // Vixie cron: when BOTH day fields are restricted the match is an OR,
+  // otherwise it is an AND. Getting this backwards is the classic cron bug.
+  var dayOk = (f.domRestricted && f.dowRestricted) ? (domOk || dowOk) : (domOk && dowOk);
+  return f.hour.indexOf(d.getHours()) >= 0
+      && f.minute.indexOf(d.getMinutes()) >= 0
+      && f.month.indexOf(d.getMonth()+1) >= 0
+      && (f.seconds === null || f.seconds.indexOf(d.getSeconds()) >= 0)
+      && dayOk;
+}
+function nextRuns(f, count, from){
+  var out = [], d = new Date(from.getTime());
+  d.setSeconds(0, 0);
+  d.setMinutes(d.getMinutes() + 1);
+  var guard = 0;
+  while(out.length < count && guard < 400000){
+    guard++;
+    if(matches(f, d)) out.push(new Date(d.getTime()));
+    d.setMinutes(d.getMinutes() + 1);
+  }
+  return out;
+}
+function fmt(d){ return d.toLocaleString(undefined,
+  {weekday:'short', year:'numeric', month:'short', day:'2-digit',
+   hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false}); }
+function describe(f, text){
+  var bits = [];
+  var mins = f.minute, hrs = f.hour;
+  if(mins.length === 24 && hrs.length === 24) bits.push('every minute');
+  else if(mins.length === 1 && hrs.length === 1)
+    bits.push('at ' + pad(hrs[0],2) + ':' + pad(mins[0],2));
+  else if(mins.length === 1 && hrs.length === 24) bits.push('every hour, minute ' + mins[0]);
+  else if(mins.length === 1) bits.push('during hour ' + describeList(hrs) + ', minute ' + mins[0]);
+  else if(hrs.length === 1) bits.push('during hour ' + pad(hrs[0],2));
+  else bits.push('at ' + describeList(mins) + ' past ' + describeList(hrs));
+  if(!f.domRestricted && !f.dowRestricted) bits.push('on every day');
+  else if(f.dowRestricted && !f.domRestricted) bits.push('on ' + describeList(f.dow, DOW_FULL));
+  else if(f.domRestricted && !f.dowRestricted) bits.push('on day ' + describeList(f.dom) + ' of the month');
+  else bits.push('on day ' + describeList(f.dom) + ' or a ' + describeList(f.dow, DOW_FULL));
+  if(f.month.length !== 12) bits.push('in ' + describeList(f.month, ['','January','February','March','April','May','June','July','August','September','October','November','December'], 1));
+  return bits.join(', ');
+}
+function run(){
+  var err=$('err'); err.textContent=''; err.style.color='';
+  var n = parseInt($('tz').value, 10);
+  var f;
+  try{ f = parseCron($('expr').value, $('sec').checked); }
+  catch(e){
+    err.textContent='\\u2717 '+e.message; err.style.color='#f87171';
+    $('fields').innerHTML=''; $('out').textContent=''; $('desc').textContent='';
+    show([]); return;
+  }
+  var MN=['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  var parts = $('expr').value.trim().split(/\s+/);
+  var off = $('sec').checked ? 1 : 0;
+  var card = function(label, idx, values){
+    if(idx < 0 || idx >= parts.length) return '';
+    return fieldCard(label, parts[idx], values);
+  };
+  $('fields').innerHTML =
+      (f.seconds ? fieldCard('second', parts[0], f.seconds) : '')
+    + card('minute', off,   f.minute)
+    + card('hour',   off+1, f.hour)
+    + card('day of month', off+2, f.dom)
+    + card('month',  off+3, f.month)
+    + card('day of week', off+4, f.dow);
+  var runs = nextRuns(f, n, new Date());
+  $('out').textContent = runs.length
+    ? runs.map(function(d){ return fmt(d); }).join('\n')
+    : 'No runs in the next 200 days with this expression.';
+  $('desc').textContent = describe(f, $('expr').value);
+  show([['Minutes',f.minute.length],['Hours',f.hour.length],
+        ['Days',(f.domRestricted?f.dom.length:1)*(f.dowRestricted?f.dow.length:1)],
+        ['Next run', runs.length ? fmt(runs[0]).slice(-8) : 'none']]);
+}
+$('expr').addEventListener('input',run);
+$('sec').addEventListener('change',run);
+$('tz').addEventListener('change',run);
+$('presets').addEventListener('click',function(){
+  var keys=Object.keys(PRESETS), k=$('expr').getAttribute('data-i');
+  k = (k===null||k===undefined) ? 0 : (Number(k)+1)%keys.length;
+  $('expr').setAttribute('data-i',k);
+  $('expr').value = PRESETS[keys[k]];
+  run();
+});
+window.__cron={parseCron:parseCron,parseField:parseField,nextRuns:nextRuns,
+               matches:matches,describe:describe,fmt:fmt,run:run,PRESETS:PRESETS};
+run();
+</script>
+</body>
+</html>

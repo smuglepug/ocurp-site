@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Falling Sand | Owen's Workspace</title>
+<title>Sandbox | Owen's Workspace</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,7 +33,12 @@ tailwind.config = { theme: { extend: {
   .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
   .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
   .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
   .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
   .ws-input option { background-color:#141414 !important; color:#fff !important }
   select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
   .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
@@ -56,155 +61,259 @@ tailwind.config = { theme: { extend: {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Falling Sand</h1>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Sandbox</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">SANDBOX</span><span class="ws-chip">SIM</span><span class="ws-chip">CANVAS</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">SANDBOX</span><span class="ws-chip">SIM</span><span class="ws-chip">PHYSICS</span></div>
         </div>
       
   <section class="ws-panel p-6">
-    <div class="mb-4 flex flex-wrap items-center gap-2" id="pal"></div>
-    <div class="mb-4 flex flex-wrap items-center gap-3">
-      <label class="ws-label">Brush <span id="bs">4</span></label>
-      <input id="brush" type="range" min="1" max="12" value="4" class="w-40 accent-[#FF5F1F]">
+    <div class="mb-3 flex flex-wrap items-center gap-3">
+      <input id="search" class="ws-input !w-48" placeholder="Search elements...">
+      <span class="ws-chip" id="current">SAND</span>
+      <label class="ws-label">Brush <span id="bs">5</span></label>
+      <input id="brush" type="range" min="1" max="16" value="5" class="w-36 accent-[#FF5F1F]">
       <button id="pause" class="ws-btn-ghost">Pause</button>
       <button id="clear" class="ws-btn-ghost">Clear</button>
-      <span class="ws-chip" id="info">0 cells</span>
+      <button id="save" class="ws-btn-ghost">Save</button>
+      <button id="load" class="ws-btn-ghost">Load</button>
+      <span class="ws-chip" id="info">0</span>
     </div>
-    <canvas id="cv" class="w-full touch-none rounded-xl border border-white/15" style="image-rendering:pixelated;aspect-ratio:3/2"></canvas>
-    <p class="mt-3 text-xs text-white/45">Click and drag to pour. Sand piles up, water flows and pools, fire spreads through wood and oil, plants grow near water, acid eats solids, lava melts ice into water.</p>
+    <div id="cats" class="mb-3 flex flex-wrap gap-2"></div>
+    <div id="pal" class="mb-4 max-h-44 overflow-y-auto rounded-xl border border-white/10 bg-white/[0.02] p-3"></div>
+    <div class="flex flex-wrap items-center gap-3">
+      <canvas id="cv" class="w-full touch-none rounded-xl border border-white/15" style="image-rendering:pixelated;aspect-ratio:16/9"></canvas>
+    </div>
+    <p class="mt-3 text-xs text-white/45">Click and drag to pour. Powder falls through liquid by density, oil floats on water, fire spreads and turns wood to ash, water and lava make stone and steam, acid eats solids, salt melts ice, seeds sprout in water. Cloner copies, Spout pours water, Void deletes.</p>
   </section>
 
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
-    <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
   </div>
 </div>
 <script src="/workspace/related.js" defer></script>
 <script>
 const $=id=>document.getElementById(id);
-let W=200,H=133;
+const EL=[{id:1,name:"Sand",cat:"Powders",col:[196,180,132],kind:"powder",dens:20},
+  {id:2,name:"Dirt",cat:"Powders",col:[120,88,54],kind:"powder",dens:22},
+  {id:3,name:"Gunpowder",cat:"Powders",col:[96,96,96],kind:"powder",dens:18},
+  {id:4,name:"Ash",cat:"Powders",col:[110,106,102],kind:"powder",dens:8},
+  {id:5,name:"Salt",cat:"Powders",col:[230,230,236],kind:"powder",dens:19},
+  {id:6,name:"Snow",cat:"Powders",col:[236,244,255],kind:"powder",dens:9},
+  {id:7,name:"Flour",cat:"Powders",col:[226,214,192],kind:"powder",dens:15},
+  {id:8,name:"Water",cat:"Liquids",col:[54,116,214],kind:"liquid",dens:10},
+  {id:9,name:"Oil",cat:"Liquids",col:[76,58,40],kind:"liquid",dens:6},
+  {id:10,name:"Acid",cat:"Liquids",col:[150,230,70],kind:"liquid",dens:11},
+  {id:11,name:"Lava",cat:"Liquids",col:[220,90,30],kind:"liquid",dens:30},
+  {id:12,name:"Slime",cat:"Liquids",col:[90,190,110],kind:"liquid",dens:13},
+  {id:13,name:"Alcohol",cat:"Liquids",col:[186,206,236],kind:"liquid",dens:7},
+  {id:14,name:"Stone",cat:"Solids",col:[110,110,118],kind:"solid",dens:100},
+  {id:15,name:"Wood",cat:"Solids",col:[122,84,48],kind:"solid",dens:100},
+  {id:16,name:"Metal",cat:"Solids",col:[150,156,166],kind:"solid",dens:100},
+  {id:17,name:"Ice",cat:"Solids",col:[150,210,255],kind:"solid",dens:100},
+  {id:18,name:"Glass",cat:"Solids",col:[190,220,230],kind:"solid",dens:100},
+  {id:19,name:"Wall",cat:"Solids",col:[60,60,66],kind:"solid",dens:1000},
+  {id:20,name:"Fire",cat:"Energy",col:[255,95,31],kind:"gas",dens:2},
+  {id:21,name:"Steam",cat:"Energy",col:[200,200,210],kind:"gas",dens:1},
+  {id:22,name:"Smoke",cat:"Energy",col:[110,110,110],kind:"gas",dens:1},
+  {id:23,name:"Plant",cat:"Life",col:[70,160,80],kind:"solid",dens:100},
+  {id:24,name:"Seed",cat:"Life",col:[126,150,72],kind:"powder",dens:14},
+  {id:25,name:"Cloner",cat:"Special",col:[180,120,220],kind:"solid",dens:100},
+  {id:26,name:"Spout",cat:"Special",col:[70,140,200],kind:"solid",dens:100},
+  {id:27,name:"Void",cat:"Special",col:[24,24,28],kind:"solid",dens:100}];
+const BYID={}; EL.forEach(e=>BYID[e.id]=e);
+const GRID=200, GRIDH=113;
+let g=new Uint8Array(GRID*GRIDH), life=new Uint8Array(GRID*GRIDH), moved=new Uint8Array(GRID*GRIDH);
+const cv=$('cv'); cv.width=GRID; cv.height=GRIDH;
+const cx=cv.getContext('2d'); const img=cx.createImageData(GRID,GRIDH);
+const CMAP={0:[13,13,13]}; EL.forEach(e=>CMAP[e.id]=e.col);
+const EMPTY=0, AIR=0;
+let cur=1, brush=5, running=true, cat='Powders';
 
-function sizeGrid(){const r=cv.getBoundingClientRect();const nw=Math.max(140,Math.min(480,Math.round((r.width||800)/2)));const nh=Math.max(100,Math.min(340,Math.round((r.height||500)/2)));if(nw===W&&nh===H)return;W=nw;H=nh;cv.width=W;cv.height=H;g=new Uint8Array(W*H);life=new Uint8Array(W*H);img=cx.createImageData(W,H);}
-let g=new Uint8Array(W*H), life=new Uint8Array(W*H);
-const cv=$('cv'); cv.width=W; cv.height=H;
-const cx=cv.getContext('2d');
-let img=cx.createImageData(W,H);
+/* ---------- palette ---------- */
+$('cats').innerHTML=EL.map(e=>e.cat).filter((v,i,a)=>a.indexOf(v)===i)
+  .map(c=>'<button data-cat="'+c+'" class="ws-btn-ghost !px-3 !py-2">'+c+'</button>').join('');
+function paintPalette(){
+  const q=$('search').value.trim().toLowerCase();
+  const list=EL.filter(e=> q ? e.name.toLowerCase().includes(q) : e.cat===cat);
+  $('pal').innerHTML=list.map(e=>{
+    const rgb=e.col;
+    return '<button data-el="'+e.id+'" class="mb-2 mr-2 inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-[11px] font-bold '
+      + (e.id===cur?'border-accent bg-accent/10 text-white':'border-white/10 bg-white/[0.03] text-white/60')
+      + '"><span style="width:10px;height:10px;border-radius:3px;background:rgb('+rgb[0]+','+rgb[1]+','+rgb[2]+')"></span>'+e.name+'</button>';
+  }).join('');
+}
+function setCat(c){ cat=c; [...$('cats').children].forEach(b=>b.className = b.dataset.cat===c ? 'ws-btn !px-3 !py-2' : 'ws-btn-ghost !px-3 !py-2'); paintPalette(); }
+$('cats').addEventListener('click',e=>{const b=e.target.closest('button'); if(b) setCat(b.dataset.cat)});
+$('pal').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b)return;
+  cur=+b.dataset.el; $('current').textContent=BYID[cur].name.toUpperCase(); paintPalette();});
+$('search').addEventListener('input',paintPalette);
+$('brush').addEventListener('input',e=>{brush=+e.target.value; $('bs').textContent=brush});
+$('pause').addEventListener('click',()=>{running=!running; $('pause').textContent=running?'Pause':'Resume'});
+$('clear').addEventListener('click',()=>{g.fill(0); life.fill(0)});
+$('save').addEventListener('click',()=>{ try{ localStorage.setItem('ws-sandbox', btoa(String.fromCharCode.apply(null,g))); $('info').textContent='saved'; }catch(_){ $('info').textContent='save failed'; } });
+$('load').addEventListener('click',()=>{ try{ const s=localStorage.getItem('ws-sandbox'); if(!s) return;
+  const bin=atob(s); for(let i=0;i<g.length&&i<bin.length;i++) g[i]=bin.charCodeAt(i); life.fill(0); $('info').textContent='loaded'; }catch(_){ $('info').textContent='load failed'; } });
 
-cv.style.imageRendering='pixelated';
-
-sizeGrid();
-
-window.addEventListener('resize',sizeGrid);
-const EL=[
- ['Sand',1,[196,180,132]],['Water',2,[54,116,214]],['Stone',3,[110,110,118]],
- ['Wood',4,[122,84,48]],['Fire',5,[255,95,31]],['Smoke',6,[110,110,110]],
- ['Oil',7,[76,58,40]],['Plant',8,[70,160,80]],['Acid',9,[150,230,70]],
- ['Ice',10,[150,210,255]],['Lava',11,[220,90,30]]
-];
-const CMAP={0:[13,13,13]}; EL.forEach(e=>CMAP[e[1]]=e[2]);
-let paint=1, brush=4, running=true;
-$('pal').innerHTML=EL.map(e=>'<button data-e="'+e[1]+'" class="ws-btn-ghost !px-3 !py-2">'+e[0]+'</button>').join('')
-  +'<button data-e="0" class="ws-btn-ghost !px-3 !py-2">Erase</button>';
-$('pal').addEventListener('click',ev=>{
-  const b=ev.target.closest('button'); if(!b)return; paint=+b.dataset.e;
-  [...$('pal').children].forEach(c=>c.className='ws-btn-ghost !px-3 !py-2');
-  b.className='ws-btn !px-3 !py-2';
-});
-$('brush').addEventListener('input',ev=>{brush=+ev.target.value;$('bs').textContent=brush});
-$('pause').addEventListener('click',()=>{running=!running;$('pause').textContent=running?'Pause':'Resume'});
-$('clear').addEventListener('click',()=>{g.fill(0);life.fill(0)});
-const get=(x,y)=>(x<0||y<0||x>=W||y>=H)?-1:g[y*W+x];
-const set=(x,y,v)=>{if(x<0||y<0||x>=W||y>=H)return;g[y*W+x]=v};
+/* ---------- painting ---------- */
+const idx=(x,y)=>y*GRID+x;
+const inb=(x,y)=>x>=0&&y>=0&&x<GRID&&y<GRIDH;
+const get=(x,y)=>inb(x,y)?g[idx(x,y)]:-1;
+const set=(x,y,v)=>{ if(!inb(x,y))return; g[idx(x,y)]=v; if(v===20) life[idx(x,y)]=70; else if(v===22) life[idx(x,y)]=60; };
 let down=false;
-function pos(e){const r=cv.getBoundingClientRect();
-  return [Math.floor((e.clientX-r.left)/r.width*W),Math.floor((e.clientY-r.top)/r.height*H)]}
+function pos(e){ const r=cv.getBoundingClientRect(); return [Math.floor((e.clientX-r.left)/r.width*GRID), Math.floor((e.clientY-r.top)/r.height*GRIDH)]; }
 function splat(x,y,v){
   for(let dy=-brush;dy<=brush;dy++)for(let dx=-brush;dx<=brush;dx++){
     if(dx*dx+dy*dy>brush*brush)continue;
-    const nx=x+dx,ny=y+dy; if(nx<0||ny<0||nx>=W||ny>=H)continue;
-    const i=ny*W+nx; g[i]=v;
-    life[i]= v===5?80 : v===6?50 : 0;
+    const nx=x+dx, ny=y+dy; if(!inb(nx,ny))continue;
+    if(v===0){ g[idx(nx,ny)]=0; life[idx(nx,ny)]=0; continue; }
+    if(get(nx,ny)===0||BYID[get(nx,ny)]===undefined||BYID[get(nx,ny)].kind!=='solid'||BYID[v].kind==='solid') { g[idx(nx,ny)]=v; }
+    if(v===20) life[idx(nx,ny)]=70; else if(v===22) life[idx(nx,ny)]=60;
   }
 }
-cv.addEventListener('pointerdown',e=>{down=true;try{cv.setPointerCapture(e.pointerId)}catch(_){}
-  const p=pos(e); splat(p[0],p[1],paint)});
-cv.addEventListener('pointermove',e=>{if(!down)return;const p=pos(e);splat(p[0],p[1],paint)});
-window.addEventListener('pointerup',()=>{down=false});
-window.addEventListener('pointercancel',()=>{down=false});
-const SOLID={3:1,4:1,8:1,10:1};
+cv.addEventListener('pointerdown',e=>{down=true; try{cv.setPointerCapture(e.pointerId)}catch(_){}; const p=pos(e); splat(p[0],p[1],cur);});
+cv.addEventListener('pointermove',e=>{if(!down)return; const p=pos(e); splat(p[0],p[1],cur);});
+window.addEventListener('pointerup',()=>down=false);
+window.addEventListener('pointercancel',()=>down=false);
+
+/* ---------- physics ---------- */
+const FLAMMABLE={4:0,15:1,9:1,13:1,23:1,3:1,7:1,24:1};
+const DISSOLVE={14:1,15:1,16:1,17:1,18:1,23:1};
+const K={EMPTY:0,SAND:1,DIRT:2,GUNPOWDER:3,ASH:4,SALT:5,SNOW:6,FLOUR:7,WATER:8,OIL:9,ACID:10,LAVA:11,SLIME:12,
+  ALCOHOL:13,STONE:14,WOOD:15,METAL:16,ICE:17,GLASS:18,WALL:19,FIRE:20,STEAM:21,SMOKE:22,PLANT:23,SEED:24,
+  CLONER:25,SPOUT:26,VOID:27};
+const dens=id=> id===0?0:(BYID[id]?BYID[id].dens:0);
+const kind=id=> id===0?'empty':(BYID[id]?BYID[id].kind:'solid');
+const isFl = id=> FLAMMABLE[id]===1;
+const canDisplace=(from,into)=>{
+  const kf=kind(from), ki=kind(into);
+  if(into===0) return true;
+  if(ki==='solid') return false;
+  return dens(from)>dens(into);
+};
 function step(){
-  for(let y=H-1;y>=0;y--){
+  moved.fill(0);
+  for(let y=GRIDH-1;y>=0;y--){
     const flip=Math.random()<0.5;
-    for(let k=0;k<W;k++){
-      const x=flip?k:W-1-k, i=y*W+x, t=g[i]; if(!t) continue;
-      const below=get(x,y+1), dl=get(x-1,y+1), dr=get(x+1,y+1);
+    for(let k=0;k<GRID;k++){
+      const x=flip?k:GRID-1-k, i=y*GRID+x, t=g[i];
+      if(!t||moved[i]) continue;
+      const kd=kind(t);
+      const below=get(x,y+1), above=get(x,y-1);
       const side=Math.random()<0.5?-1:1;
-      if(t===1){                                   // sand: powder
-        if(below===0||below===2||below===5||below===7||below===9){ set(x,y,below===0?0:below); set(x,y+1,1); }
-        else if(dl===0||dl===2||dl===9){ const v=dl; set(x,y,v===0?0:v); set(x-1,y+1,1); }
-        else if(dr===0||dr===2||dr===9){ const v=dr; set(x,y,v===0?0:v); set(x+1,y+1,1); }
-      } else if(t===2||t===7||t===9||t===11){      // liquids
-        const visc = (t===7||t===11) ? 0.5 : 1;
-        if(Math.random()>visc) continue;
-        if(t===9){                                  // acid dissolves solids
-          for(const [ax,ay] of [[0,1],[-1,1],[1,1],[0,-1]]){
-            const s=get(x+ax,y+ay);
-            if(SOLID[s]&&Math.random()<0.35){ set(x+ax,y+ay,0); set(x,y,0); break; }
-          }
-          if(!g[i]) continue;
+
+      /* --- reactions --- */
+      if(t===K.WATER){
+        for(const [ax,ay] of [[0,1],[-1,0],[1,0],[0,-1]]){
+          const n=get(x+ax,y+ay);
+          if(n===K.LAVA){ set(x+ax,y+ay,K.STONE); set(x,y,K.STEAM); break; }
+          if(n===K.FIRE){ set(x+ax,y+ay,K.STEAM); if(Math.random()<0.5) set(x,y,K.STEAM); break; }
         }
-        if(t===11){                                 // lava ignites + cools
-          for(const [ax,ay] of [[0,1],[-1,0],[1,0],[0,-1]]){
-            const s=get(x+ax,y+ay);
-            if(s===4||s===8||s===7){ set(x+ax,y+ay,5); life[(y+ay)*W+(x+ax)]=80; }
-            if(s===10){ set(x+ax,y+ay,2); }
-          }
-          if(Math.random()<0.004){ set(x,y,3); continue; }
+      }
+      if(t===K.SALT){
+        for(const [ax,ay] of [[0,1],[-1,0],[1,0],[0,-1]]){
+          const n=get(x+ax,y+ay);
+          if((n===K.ICE||n===K.SNOW)&&Math.random()<0.06) set(x+ax,y+ay,K.WATER);
         }
-        if(below===0||below===5||below===6){ set(x,y,below===0?0:below); set(x,y+1,t); }
-        else if(dl===0){ set(x,y,0); set(x-1,y+1,t); }
-        else if(dr===0){ set(x,y,0); set(x+1,y+1,t); }
-        else {
-          const sx=get(x+side,y);
-          if(sx===0){ set(x,y,0); set(x+side,y,t); }
+      }
+      if(t===K.ACID){
+        for(const [ax,ay] of [[0,1],[-1,0],[1,0],[0,-1]]){
+          const n=get(x+ax,y+ay);
+          if(DISSOLVE[n]){ set(x+ax,y+ay,K.SMOKE); if(Math.random()<0.55) set(x,y,0); break; }
         }
-      } else if(t===5){                            // fire
+      }
+      if(t===K.FIRE){
         for(const [ax,ay] of [[0,1],[-1,0],[1,0],[0,-1],[-1,1],[1,1]]){
-          const s=get(x+ax,y+ay);
-          if((s===4||s===8||s===7)&&Math.random()<0.18){ set(x+ax,y+ay,5); life[(y+ay)*W+(x+ax)]=70; }
+          const n=get(x+ax,y+ay);
+          if(isFl(n)&&Math.random()<0.16){ set(x+ax,y+ay, n===K.WOOD&&Math.random()<0.12?K.ASH : K.FIRE); }
+          if(n===K.GUNPOWDER){                      /* explosion */
+            for(let ey=-4;ey<=4;ey++)for(let ex=-4;ex<=4;ex++){
+              if(ex*ex+ey*ey>16) continue;
+              const nx=x+ex, ny=y+ey; if(!inb(nx,ny)) continue;
+              if(get(nx,ny)!==K.WALL) set(nx,ny, Math.random()<0.7?K.FIRE:K.SMOKE);
+            }
+          }
+          if(n===K.ICE||n===K.SNOW){ if(Math.random()<0.1) set(x+ax,y+ay,K.WATER); }
         }
-        life[i]--; if(life[i]<=0){ set(x,y,Math.random()<0.5?6:0); life[i]=50; continue; }
-        const up=get(x,y-1);
-        if(up===0){ set(x,y,0); set(x,y-1,5); life[(y-1)*W+x]=life[i]; }
-      } else if(t===6){                            // smoke
-        life[i]--; if(life[i]<=0){ set(x,y,0); continue; }
-        const up=get(x,y-1);
-        if(up===0){ set(x,y,0); set(x,y-1,6); life[(y-1)*W+x]=life[i]; }
-        else { const sx=get(x+side,y); if(sx===0){ set(x,y,0); set(x+side,y,6); life[y*W+x+side]=life[i]; } }
-      } else if(t===8){                            // plant grows toward water
+        life[i]--; if(life[i]<=0){ set(x,y, Math.random()<0.5?K.SMOKE:K.ASH); life[i]=55; continue; }
+      }
+      if(t===K.LAVA){
+        for(const [ax,ay] of [[0,1],[-1,0],[1,0],[0,-1]]){
+          const n=get(x+ax,y+ay);
+          if(isFl(n)&&Math.random()<0.2) set(x+ax,y+ay,K.FIRE);
+          if(n===K.ICE||n===K.SNOW) set(x+ax,y+ay,K.WATER);
+          if(n===K.WATER){ set(x+ax,y+ay,K.STEAM); if(Math.random()<0.5){ set(x,y,K.STONE); continue; } }
+        }
+        if(Math.random()<0.003){ set(x,y,K.STONE); continue; }
+      }
+      if((t===K.ICE||t===K.SNOW)&&(below===K.FIRE||below===K.LAVA||above===K.FIRE||above===K.LAVA)){
+        if(Math.random()<0.06) set(x,y,K.WATER);
+      }
+      if(t===K.SEED){ if(below===K.WATER||get(x+1,y)===K.WATER||get(x-1,y)===K.WATER){ if(Math.random()<0.05) set(x,y,K.PLANT); } }
+      if(t===K.PLANT){
         let wet=false;
-        for(const [ax,ay] of [[0,1],[-1,0],[1,0],[0,-1],[-1,1],[1,1]]) if(get(x+ax,y+ay)===2) wet=true;
-        if(wet&&Math.random()<0.05&&get(x,y-1)===0){ set(x,y-1,8); }
-      } else if(t===10){                           // ice
-        for(const [ax,ay] of [[0,1],[-1,0],[1,0],[0,-1]]) if(get(x+ax,y+ay)===5||get(x+ax,y+ay)===11){
-          if(Math.random()<0.05) set(x,y,2);
+        for(const [ax,ay] of [[0,1],[-1,0],[1,0],[0,-1]]) if(get(x+ax,y+ay)===K.WATER) wet=true;
+        if(wet&&Math.random()<0.035&&above===0) set(x,y-1,K.PLANT);
+      }
+      if(t===K.CLONER){ if(below===0&&above!==K.CLONER&&above!==0) set(x,y+1,above); }
+      if(t===K.SPOUT){ if(above===0&&Math.random()<0.25) set(x,y-1,K.WATER); }
+      if(t===K.VOID){
+        for(const [ax,ay] of [[0,1],[-1,0],[1,0],[0,-1]]) if(get(x+ax,y+ay)>0&&get(x+ax,y+ay)!==K.WALL) set(x+ax,y+ay,0);
+        continue;
+      }
+
+      /* --- movement --- */
+      if(kd==='solid') continue;
+      if(kd==='powder'){
+        if(canDisplace(t,below)){ g[idx(x,y+1)]=t; g[i]=below===0?0:below; moved[idx(x,y+1)]=1; continue; }
+        const d1=get(x+side,y+1), d2=get(x-side,y+1);
+        if(canDisplace(t,d1)){ g[idx(x+side,y+1)]=t; g[i]=d1===0?0:d1; moved[idx(x+side,y+1)]=1; continue; }
+        if(canDisplace(t,d2)){ g[idx(x-side,y+1)]=t; g[i]=d2===0?0:d2; moved[idx(x-side,y+1)]=1; continue; }
+        if(t===K.SAND||t===K.SALT||t===K.FLOUR){ const s1=get(x+side,y); if(canDisplace(t,s1)&&s1===0){ g[idx(x+side,y)]=t; g[i]=0; moved[idx(x+side,y)]=1; } }
+      } else if(kd==='liquid'){
+        const visc = (t===K.LAVA||t===K.SLIME||t===K.OIL) ? 0.5 : 1;
+        if(Math.random()>visc) continue;
+        if(canDisplace(t,below)){ g[idx(x,y+1)]=t; g[i]=below===0?0:below; moved[idx(x,y+1)]=1; continue; }
+        const d1=get(x+side,y+1), d2=get(x-side,y+1);
+        if(canDisplace(t,d1)){ g[idx(x+side,y+1)]=t; g[i]=d1===0?0:d1; moved[idx(x+side,y+1)]=1; continue; }
+        if(canDisplace(t,d2)){ g[idx(x-side,y+1)]=t; g[i]=d2===0?0:d2; moved[idx(x-side,y+1)]=1; continue; }
+        const s1=get(x+side,y), s2=get(x-side,y);
+        if(s1===0){ g[idx(x+side,y)]=t; g[i]=0; moved[idx(x+side,y)]=1; }
+        else if(s2===0){ g[idx(x-side,y)]=t; g[i]=0; moved[idx(x-side,y)]=1; }
+      } else if(kd==='gas'){
+        if(t===K.SMOKE){ life[i]--; if(life[i]<=0){ set(x,y,0); continue; } }
+        if(t===K.STEAM){ life[i]--; if(life[i]<=0){ set(x,y,K.WATER); continue; } }
+        if(t===K.FIRE){
+          /* flames also drop downward, otherwise fire poured on top of wood never ignites it */
+          const b=get(x,y+1);
+          if((b===0||isFl(b))&&Math.random()<0.5){ g[idx(x,y+1)]=t; g[i]=0; moved[idx(x,y+1)]=1; continue; }
         }
+        if(above===0){ g[idx(x,y-1)]=t; g[i]=0; moved[idx(x,y-1)]=1; }
+        else { const s1=get(x+side,y); if(s1===0){ g[idx(x+side,y)]=t; g[i]=0; moved[idx(x+side,y)]=1; } }
+        if(t===K.FIRE&&life[i]<=0){ set(x,y,K.SMOKE); life[i]=50; }
       }
     }
   }
 }
 function draw(){
   const d=img.data; let n=0;
-  for(let i=0;i<W*H;i++){
+  for(let i=0;i<GRID*GRIDH;i++){
     const c=CMAP[g[i]]||CMAP[0];
-    d[i*4]=c[0];d[i*4+1]=c[1];d[i*4+2]=c[2];d[i*4+3]=255;
-    if(g[i])n++;
+    d[i*4]=c[0]; d[i*4+1]=c[1]; d[i*4+2]=c[2]; d[i*4+3]=255;
+    if(g[i]) n++;
   }
   cx.putImageData(img,0,0);
-  $('info').textContent=n+' cells';
+  $('info').textContent=n.toLocaleString('en-US')+' cells';
 }
-setInterval(()=>{ if(running) step(); draw(); },33);
+let acc=0, last=performance.now();
+function loop(now){
+  const dt=now-last; last=now; acc+=dt;
+  if(acc>33){ acc=0; if(running&&!down) step(); draw(); }
+  requestAnimationFrame(loop);
+}
+paintPalette();
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>

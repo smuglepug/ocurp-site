@@ -33,7 +33,12 @@ tailwind.config = { theme: { extend: {
   .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
   .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
   .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
   .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
   .ws-input option { background-color:#141414 !important; color:#fff !important }
   select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
   .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
@@ -88,12 +93,13 @@ inline: {x: 1, y: 2}</textarea>
 
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
-    <a href="/workspace/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
   </div>
 </div>
 <script src="/workspace/related.js" defer></script>
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
+let errLine=0;
 function parseVal(s){
   s=s.trim();
   if(s===''||s==='~'||s.toLowerCase()==='null')return null;
@@ -104,28 +110,18 @@ function parseVal(s){
   if((s.startsWith('"')&&s.endsWith('"'))||(s.startsWith("'")&&s.endsWith("'"))){
     return s.slice(1,-1);
   }
-  // flow-style array [a, b, c]
   if(s.startsWith('[')&&s.endsWith(']')){
     const inner=s.slice(1,-1).trim();
     if(inner==='')return [];
-    return inner.split(',').map(v=>parseVal(v.trim()));
+    return splitFlow(inner,',').map(v=>parseVal(v.trim()));
   }
-  // flow-style map {k: v, k2: v2}
   if(s.startsWith('{')&&s.endsWith('}')){
     const inner=s.slice(1,-1).trim();
     if(inner==='')return {};
     const obj={};
-    // simple split on comma (not inside quotes)
-    const parts=[];
-    let cur='',inQ=false;
-    for(const c of inner){
-      if(c==='"'||c==="'")inQ=!inQ;
-      if(c===','&&!inQ){parts.push(cur);cur=''}
-      else cur+=c;
-    }
-    if(cur)parts.push(cur);
+    const parts=splitFlow(inner,',');
     parts.forEach(p=>{
-      const ci=p.indexOf(':');
+      const ci=findColon(p);
       if(ci>0){
         const k=p.slice(0,ci).trim().replace(/^["']|["']$/g,'');
         const v=p.slice(ci+1).trim();
@@ -134,33 +130,45 @@ function parseVal(s){
     });
     return obj;
   }
-  // literal block scalar indicator
-  if(s==='|'||s==='>')return null;
   return s;
+}
+function splitFlow(s,delim){
+  const parts=[];
+  let cur='',inQ=false,depth=0;
+  for(let j=0;j<s.length;j++){
+    const c=s[j];
+    if(c==='"'||c==="'")inQ=!inQ;
+    if(!inQ){
+      if(c==='['||c==='{')depth++;
+      if(c===']'||c==='}')depth--;
+      if(c===delim&&depth===0){parts.push(cur);cur='';continue}
+    }
+    cur+=c;
+  }
+  if(cur)parts.push(cur);
+  return parts;
+}
+function findColon(s){
+  let inQ=false;
+  for(let j=0;j<s.length;j++){
+    const c=s[j];
+    if(c==='"'||c==="'")inQ=!inQ;
+    if(c===':'&&!inQ&&(j+1>=s.length||s[j+1]===' '||s[j+1]==='\t'))return j;
+  }
+  return -1;
 }
 function parseYaml(text){
   const lines=text.split('\n');
   let i=0;
-  let lineNum=0;
-  function getLine(){
-    while(i<lines.length){
-      lineNum++;
-      const l=lines[i];
-      if(!l.trim()||l.trim().startsWith('#')){i++;continue}
-      return l;
-    }
-    return null;
-  }
   function parseBlock(minIndent){
     let result=null;
     let isArray=false;
     while(i<lines.length){
-      const savedI=i;
       const line=lines[i];
       if(!line.trim()||line.trim().startsWith('#')){i++;continue}
-      lineNum++;
+      errLine=i+1;
       const indent=line.length-line.trimStart().length;
-      if(indent<minIndent){i=savedI;break}
+      if(indent<minIndent)break;
       if(indent>minIndent){
         if(result===null){result=[];isArray=true}
         const sub=parseBlock(indent);
@@ -173,7 +181,6 @@ function parseYaml(text){
       }
       i++;
       const trimmed=line.trimStart();
-      // list item
       if(trimmed.startsWith('- ')){
         if(result===null){result=[];isArray=true}
         if(!isArray){result=[result];isArray=true}
@@ -183,23 +190,15 @@ function parseYaml(text){
           result.push(sub);
           continue;
         }
-        // inline flow
-        if(rest.startsWith('[')&&rest.endsWith(']')){
-          result.push(parseVal(rest));
-          continue;
-        }
-        if(rest.startsWith('{')&&rest.endsWith('}')){
-          result.push(parseVal(rest));
-          continue;
-        }
+        if(rest.startsWith('[')&&rest.endsWith(']')){result.push(parseVal(rest));continue}
+        if(rest.startsWith('{')&&rest.endsWith('}')){result.push(parseVal(rest));continue}
         const colonIdx=findColon(rest);
         if(colonIdx>0&&!rest.startsWith('"')&&!rest.startsWith("'")){
           const key=rest.slice(0,colonIdx).trim();
           const valStr=rest.slice(colonIdx+1).trim();
           let val;
           if(valStr===''){
-            const sub=parseBlock(minIndent+1);
-            val=sub;
+            val=parseBlock(minIndent+1);
           } else {
             val=parseVal(valStr);
           }
@@ -218,10 +217,10 @@ function parseYaml(text){
         result.push(sub);
         continue;
       }
-      if(isArray){i=savedI+1;break}
+      if(isArray)break;
       if(result===null)result={};
       const colonIdx=findColon(trimmed);
-      if(colonIdx<0){continue}
+      if(colonIdx<0)continue;
       const key=trimmed.slice(0,colonIdx).trim().replace(/^["']|["']$/g,'');
       const valStr=trimmed.slice(colonIdx+1).trim();
       if(valStr===''){
@@ -233,29 +232,20 @@ function parseYaml(text){
     }
     return result||{};
   }
-  function findColon(s){
-    let inQ=false;
-    for(let j=0;j<s.length;j++){
-      const c=s[j];
-      if(c==='"'||c==="'")inQ=!inQ;
-      if(c===':'&&!inQ&&(j+1>=s.length||s[j+1]===' '||s[j+1]==='\t'))return j;
-    }
-    return -1;
-  }
   return parseBlock(0);
 }
 function run(){
   $('err').textContent='';
+  errLine=0;
   const t=$('src').value.trim();
   if(!t){$('out').textContent='';return}
   try{
     const o=parseYaml(t);
     const ind=parseInt($('ind').value)||2;
-    const json=JSON.stringify(o,null,ind);
-    if(json==='{}'&&t.trim()){$('err').textContent='Warning: output may be incomplete — check YAML structure';}
-    $('out').textContent=json;
+    $('out').textContent=JSON.stringify(o,null,ind);
   }catch(e){
-    $('err').textContent='\u2717 Line '+lineNum+': '+e.message;
+    const ln=errLine||'?';
+    $('err').textContent='\u2717 Line '+ln+': '+e.message;
     $('out').textContent='';
   }
 }

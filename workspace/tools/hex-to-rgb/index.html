@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEX to RGB Converter | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">HEX to RGB Converter</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">COLOUR</span><span class="ws-chip">HEX</span><span class="ws-chip">HSL</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-4 md:grid-cols-[1.4fr_1fr]"><div><label class="ws-label mb-2 block" for="hex">HEX</label><input id="hex" class="ws-input font-mono text-lg" value="#FF5F1F"></div><div><label class="ws-label mb-2 block" for="rgb">RGB</label><input id="rgb" type="text" class="ws-input" placeholder="255, 95, 31" value="255, 95, 31"></div><div><label class="ws-label mb-2 block" for="hsl">HSL</label><input id="hsl" type="text" class="ws-input" placeholder="h, s%, l%" value="18, 100%, 56%"></div></div><div class="mt-4 flex flex-wrap items-center gap-4"><div class="flex items-center gap-2"><label class="ws-label mb-0" for="pick">Picker</label><input id="pick" type="color" value="#FF5F1F" class="h-11 w-16 cursor-pointer rounded-lg border border-white/20 bg-transparent p-1"></div><button id="swap" class="ws-btn-ghost !px-3 !py-1.5">Shade steps</button><div id="swatch" class="h-11 flex-1 rounded-lg border border-white/20"></div></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Conversions</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="out" onclick="cp(this)"></button></div><div id="cards" class="grid gap-3 sm:grid-cols-2"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">CSS</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="out" onclick="cp(this)">Copy CSS</button></div><div class="mb-3 flex items-center justify-between"><span class="ws-label">CSS</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="out" onclick="cp(this)">Copy CSS</button></div><div id="out" class="ws-out"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Shades and tints</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="shades" onclick="cp(this)">Copy all</button></div><div id="shades"></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+v+'</div>'
+ +'<div class="ws-label mt-1">'+k+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+var $=function(id){return document.getElementById(id)};
+function pad(n,w){var s=String(n);while(s.length<w)s='0'+s;return s;}
+
+function clamp(v, lo, hi){ return v<lo?lo:(v>hi?hi:v); }
+function parseHex(s){
+  var t = String(s).trim().replace(/^#/, '');
+  if(/^[0-9a-fA-F]{3}$/.test(t))
+    t = t[0]+t[0]+t[1]+t[1]+t[2]+t[2];
+  if(!/^[0-9a-fA-F]{6}$/.test(t)) throw new Error('HEX must be 3 or 6 hex digits, e.g. #FF5F1F');
+  return {r:parseInt(t.slice(0,2),16), g:parseInt(t.slice(2,4),16), b:parseInt(t.slice(4,6),16)};
+}
+function rgbToHsl(r, g, b){
+  r/=255; g/=255; b/=255;
+  var mx = Math.max(r,g,b), mn = Math.min(r,g,b);
+  var h=0, s=0, l=(mx+mn)/2;
+  var d = mx-mn;
+  if(d !== 0){
+    s = l > 0.5 ? d/(2-mx-mn) : d/(mx+mn);
+    if(mx === r)      h = ((g-b)/d + (g < b ? 6 : 0));
+    else if(mx === g) h = ((b-r)/d + 2);
+    else              h = ((r-g)/d + 4);
+    h *= 60;
+  }
+  return {h:Math.round(h), s:Math.round(s*100), l:Math.round(l*100)};
+}
+function hslToRgb(h, s, l){
+  h=((h%360)+360)%360; s=clamp(s,0,100)/100; l=clamp(l,0,100)/100;
+  var c = (1-Math.abs(2*l-1))*s, x = c*(1-Math.abs((h/60)%2-1)), m = l-c/2;
+  var t;
+  if(h<60)      t=[c,x,0];
+  else if(h<120) t=[x,c,0];
+  else if(h<180) t=[0,c,x];
+  else if(h<240) t=[0,x,c];
+  else if(h<300) t=[x,0,c];
+  else           t=[c,0,x];
+  return {r:Math.round((t[0]+m)*255), g:Math.round((t[1]+m)*255), b:Math.round((t[2]+m)*255)};
+}
+function toHex(r, g, b){
+  function p(v){ return pad(clamp(Math.round(v),0,255).toString(16), 2).toUpperCase(); }
+  return '#' + p(r) + p(g) + p(b);
+}
+function parseRgbStr(s){
+  var m = String(s).match(/(\d+)\s*[, ]\s*(\d+)\s*[, ]\s*(\d+)/);
+  if(!m) throw new Error('RGB should read like "255, 95, 31"');
+  var v = [Number(m[1]), Number(m[2]), Number(m[3])];
+  v.forEach(function(x){ if(x<0||x>255) throw new Error('RGB channels run 0-255'); });
+  return {r:v[0], g:v[1], b:v[2]};
+}
+function parseHslStr(s){
+  var m = String(s).match(/(-?\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*%?\s*,\s*(\d+(?:\.\d+)?)\s*%?/);
+  if(!m) throw new Error('HSL should read like "18, 100%, 56%"');
+  var h=Number(m[1]), s=Number(m[2]), l=Number(m[3]);
+  if(s<0||s>100||l<0||l>100) throw new Error('HSL saturation and lightness are 0-100%');
+  return hslToRgb(h, s, l);
+}
+function shadeSteps(hex){
+  var c = parseHex(hex), hsl = rgbToHsl(c.r, c.g, c.b), out = [];
+  [50,100,200,300,400,500,600,700,800,900].forEach(function(step){
+    var l = step <= 500 ? (100 - (step/500)*55) : (45 - (step-500)/400*40);
+    var cc = hslToRgb(hsl.h, hsl.s, l);
+    out.push({step: step, hex: toHex(cc.r, cc.g, cc.b)});
+  });
+  return out;
+}
+// Relative luminance per WCAG 2.x, needed for a real contrast readout.
+function relLum(r, g, b){
+  function ch(v){ v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); }
+  return 0.2126*ch(r) + 0.7152*ch(g) + 0.0722*ch(b);
+}
+function contrastOn(hex, other){
+  var a = parseHex(hex), b = parseHex(other);
+  var la = relLum(a.r,a.g,a.b), lb = relLum(b.r,b.g,b.b);
+  var hi = Math.max(la,lb), lo = Math.min(la,lb);
+  return (hi+0.05)/(lo+0.05);
+}
+function render(hex, src){
+  var c = parseHex(hex), h = rgbToHsl(c.r, c.g, c.b);
+  var hexStr = toHex(c.r, c.g, c.b);
+  $('hex').value = hexStr;
+  $('rgb').value = c.r + ', ' + c.g + ', ' + c.b;
+  $('hsl').value = h.h + ', ' + h.s + '%, ' + h.l + '%';
+  $('pick').value = hexStr.toLowerCase();
+  $('swatch').style.background = hexStr;
+  $('err').textContent=''; $('err').style.color='';
+  var cw = contrastOn(hexStr, '#FFFFFF'), cb = contrastOn(hexStr, '#000000');
+  $('cards').innerHTML =
+      kv('HEX', hexStr) + kv('RGB', c.r + ' / ' + c.g + ' / ' + c.b)
+    + kv('HSL', h.h + '° ' + h.s + '% ' + h.l + '%')
+    + kv('HSV', rgbToHsv(c.r, c.g, c.b))
+    + kv('CSS rgb()', 'rgb(' + c.r + ' ' + c.g + ' ' + c.b + ')')
+    + kv('On white', cw.toFixed(2) + ':1' + (cw>=4.5?' ✓ AA':''))
+    + kv('On black', cb.toFixed(2) + ':1' + (cb>=4.5?' ✓ AA':''))
+    + kv('Hue', h.h + '°');
+  $('out').textContent = '/* from ' + (src||'HEX') + ' */\n'
+    + '--brand: ' + hexStr + ';\n'
+    + '--brand-rgb: ' + c.r + ' ' + c.g + ' ' + c.b + ';\n'
+    + '--brand-hsl: ' + h.h + ' ' + h.s + '% ' + h.l + '%;\n'
+    + 'color: ' + hexStr + ';\n'
+    + 'background: rgba(' + c.r + ', ' + c.g + ', ' + c.b + ', 0.5);';
+  $('shades').innerHTML = shadeSteps(hexStr).map(function(s){
+    var onW = contrastOn(s.hex, '#FFFFFF');
+    return '<div class="flex items-center gap-3 py-1.5">'
+      +'<span class="w-14 text-xs text-white/50">' + s.step + '</span>'
+      +'<span class="h-9 w-9 rounded-md border border-white/20" style="background:'+s.hex+'"></span>'
+      +'<span class="font-mono text-xs text-white/70">' + s.hex + '</span>'
+      +'<span class="text-xs text-white/35">white ' + onW.toFixed(2) + ':1</span></div>';
+  }).join('');
+  return {hex:hexStr, r:c.r, g:c.g, b:c.b, h:h.h, s:h.s, l:h.l};
+}
+function rgbToHsv(r, g, b){
+  r/=255; g/=255; b/=255;
+  var mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn, h=0;
+  if(d!==0){
+    if(mx===r) h=((g-b)/d+(g<b?6:0)); else if(mx===g) h=((b-r)/d+2); else h=((r-g)/d+4);
+    h*=60;
+  }
+  return Math.round(h) + '° ' + Math.round(mx*100) + '% ' + Math.round((mx===0?0:d/mx)*100) + '%';
+}
+function kv(k, v){
+  return '<div class="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2.5">'
+    +'<span class="ws-label">' + esc(k) + '</span>'
+    +'<span class="font-mono text-sm text-white/85">' + esc(v) + '</span></div>';
+}
+function fromHex(){ try{ render($('hex').value, 'HEX'); }catch(e){ fail(e); } }
+function fromRgb(){ try{ var c=parseRgbStr($('rgb').value); render(toHex(c.r,c.g,c.b), 'RGB'); }catch(e){ fail(e); } }
+function fromHsl(){ try{ var c=parseHslStr($('hsl').value); render(toHex(c.r,c.g,c.b), 'HSL'); }catch(e){ fail(e); } }
+function fail(e){
+  $('err').textContent='\\u2717 '+e.message; $('err').style.color='#f87171';
+}
+$('hex').addEventListener('input',fromHex);
+$('rgb').addEventListener('input',fromRgb);
+$('hsl').addEventListener('input',fromHsl);
+$('pick').addEventListener('input',function(){ render($('pick').value, 'picker'); });
+$('swap').addEventListener('click',function(){
+  var c = parseHex($('hex').value);
+  var c2 = hslToRgb(rgbToHsl(c.r,c.g,c.b).h, rgbToHsl(c.r,c.g,c.b).s, 45);
+  render(toHex(c2.r,c2.g,c2.b), 'shade');
+});
+window.__hex={parseHex:parseHex,rgbToHsl:rgbToHsl,hslToRgb:hslToRgb,toHex:toHex,
+              contrastOn:contrastOn,shadeSteps:shadeSteps,render:render,
+              parseRgbStr:parseRgbStr,parseHslStr:parseHslStr,relLum:relLum};
+render($('hex').value, 'HEX');
+</script>
+</body>
+</html>

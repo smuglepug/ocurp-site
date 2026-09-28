@@ -178,12 +178,12 @@
   function syncNav() {
     var u = current();
     document.querySelectorAll('[data-ocurp-account]').forEach(function (el) {
-      el.textContent = u ? 'Profile' : 'Sign In';
+      el.textContent = u ? 'Profile' : 'Projects';
       el.setAttribute('href', u ? '/ocurp/profile/' : '/ocurp/signin/');
       el.dataset.bound = '1';
     });
     document.querySelectorAll('[data-ocurp-account-name]').forEach(function (el) {
-      el.textContent = u ? (u.name || 'Profile') : 'Sign In';
+      el.textContent = u ? (u.name || 'Profile') : 'Projects';
     });
   }
 
