@@ -159,12 +159,25 @@ var $=function(id){return document.getElementById(id)};
 var FUNCS={sin:1,cos:1,tan:1,asin:1,acos:1,atan:1,sinh:1,cosh:1,tanh:1,exp:1,log:1,log2:1,log10:1,sqrt:1,abs:1,floor:1,ceil:1,round:1,min:2,max:2,pow:2,atan2:2};
 function tokenize(src){
   var t=[],i=0;
-  src=src.replace(/\s+/g,'').replace(/(\d)\s*[xX]\s*(\d)/g,'$1*$2').replace(/(\d)\s*\((\d)/g,'$1*($2');
+  src=src.replace(/\s+/g,'')
+         .replace(/(\d)\s*[xX]\s*(\d)/g,'$1*$2')      // 2x3 -> 2*3
+         .replace(/(\d)\s*\((\d)/g,'$1*($2')
+         // 1/x and 2x are IMPLICIT MULTIPLICATION. Without this the
+         // 'x' is read as an argument to a non-existent function and the
+         // parser recurses until the stack blows.
+         // implicit multiply: 2x -> 2*x, (x+1)x -> ...*x.
+         // Must run AFTER the division case is already an operator, so
+         // '1/x' stays a DIVISION and only bare '2x' becomes 2*x.
+         .replace(/(\d)([xX])(?![\d(])/g,'$1*$2')
+         .replace(/(\))\s*([xX])/g,'$1*$2');
   while(i<src.length){
     var c=src[i];
     if(/[0-9.]/.test(c)){ var j=i; while(j<src.length&&/[0-9.]/.test(src[j])) j++; t.push({k:'n',v:parseFloat(src.slice(i,j))}); i=j; continue; }
     if(/[a-zA-Z]/.test(c)){ var j2=i; while(j2<src.length&&/[a-zA-Z0-9]/.test(src[j2])) j2++;
-      t.push({k:'f',v:src.slice(i,j2).toLowerCase()}); i=j2; continue; }
+      // 'x' (or 't') is the integration variable, not a function name.
+      // Tagging it 'f' made EVERY expression fail with Unknown function "x".
+      var word=src.slice(i,j2).toLowerCase();
+      t.push({k:(word==='x'||word==='t')?'x':'f', v:word}); i=j2; continue; }
     if('+-*/^(),'.indexOf(c)>=0){ t.push({k:c}); i++; continue; }
     throw new Error('Unexpected character "'+c+'"');
   }
@@ -244,13 +257,13 @@ function compile(src){
   function expr(){
     var v=term();
     while(t[pos]&&(t[pos].k==='+'||t[pos].k==='-')){ var op=t[pos].k; pos++; var w=term();
-      v=(op==='+')?function(x){return v(x)+w(x)}:function(x){return v(x)-w(x)}; }
+      var a0=v; v=(op==='+')?function(x){return a0(x)+w(x)}:function(x){return a0(x)-w(x)}; }
     return v;
   }
   function term(){
     var v=power();
     while(t[pos]&&(t[pos].k==='*'||t[pos].k==='/')){ var op=t[pos].k; pos++; var w=power();
-      v=(op==='*')?function(x){return v(x)*w(x)}:function(x){return v(x)/w(x)}; }
+      var a1=v; v=(op==='*')?function(x){return a1(x)*w(x)}:function(x){return a1(x)/w(x)}; }
     return v;
   }
   function power(){
@@ -279,7 +292,10 @@ function compile(src){
         while(t[pos]&&t[pos].k===','){ pos++; args.push(expr()); }
         if(!t[pos]||t[pos].k!==')') throw new Error('Missing )');
         pos++;
-      } else args.push(unary());
+      } else { throw new Error(tk.v+'() needs parentheses'); }
+      // (previously: 'else args.push(unary())' - for a bare identifier that
+      // recursed into atom() with pos already past the name, looping until
+      // RangeError: Maximum call stack size exceeded.)
       if(args.length!==ar) throw new Error(tk.v+'() expects '+ar+' argument'+(ar>1?'s':''));
       var nm=tk.v;
       return function(x){ var a=args.map(function(g){return g(x)}); return applyFn(nm,a); };
@@ -503,6 +519,10 @@ window.__int = { simpson:simpson, trap:trap, midp:midp, gauss:gauss, richardson:
 run();
 
 </script>
+
+
+
+
 
 
 

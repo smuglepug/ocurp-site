@@ -234,4 +234,9 @@ const RAW = [
   {slug:"pregnancy-due-date",name:"Pregnancy Due Date",cat:"math",blurb:"Estimated due date from the last period, plus the current week and trimester.",tags:["HEALTH","DATE","CLIENT-SIDE"],ready:true},
   {slug:"profit-margin-calculator",name:"Profit Margin Calculator",cat:"math",blurb:"Margin, markup and break-even from cost and price, with the percentages that matter.",tags:["MONEY","BUSINESS","CLIENT-SIDE"],ready:true},
   {slug:"retirement-calculator",name:"Retirement Calculator",cat:"math",blurb:"Project a pot to a retirement age, with contributions and growth per year.",tags:["MONEY","PLANNING","CLIENT-SIDE"],ready:true},
+  {slug:"pdf-page-count",name:"PDF Page Counter",cat:"document",blurb:"Count pages, page sizes and orientation of any PDF without uploading it.",tags:["PDF","PAGES","SIZE","CLIENT-SIDE"],ready:true},
+  {slug:"epub-to-text",name:"EPUB to Text",cat:"document",blurb:"Pull the readable text out of an EPUB: the ZIP index is walked by hand and the chapters inflated in the browser.",tags:["EPUB","TEXT","ZIP","CLIENT-SIDE"],ready:true},
+  {slug:"certificate-generator",name:"Certificate Generator",cat:"document",blurb:"Design an award or achievement certificate and download it as a 1400x990 PNG.",tags:["CERTIFICATE","CANVAS","PNG","CLIENT-SIDE"],ready:true},
+  {slug:"favicon-checker",name:"Favicon Checker",cat:"web",blurb:"See whether a site actually has a working favicon, and what format the icon really is.",tags:["FAVICON","SEO","WEB","CLIENT-SIDE"],ready:true},
+  {slug:"open-graph-preview",name:"Open Graph Preview",cat:"web",blurb:"Render your link the way a chat app or X will show it, and generate the meta tags to match.",tags:["OG","SOCIAL","META","CLIENT-SIDE"],ready:true},
 ];
