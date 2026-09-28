@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Histogram — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Real per-channel histograms with mean, standard deviation, median and quartiles from the decoded pixels. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/image-histogram/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Image Histogram">
+<meta property="og:description" content="Real per-channel histograms with mean, standard deviation, median and quartiles from the decoded pixels. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/image-histogram/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Image Histogram">
+<meta name="twitter:description" content="Real per-channel histograms with mean, standard deviation, median and quartiles from the decoded pixels. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Histogram","url":"https://ocurp.space/workspace/tools/image-histogram/","description":"Real per-channel histograms with mean, standard deviation, median and quartiles from the decoded pixels. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Image Histogram</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">IMAGE</span><span class="ws-chip">COLOUR</span><span class="ws-chip">CLIENT-SIDE</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div id="drop" class="border-2 border-dashed border-white/15 rounded-xl p-8 text-center cursor-pointer transition-colors hover:border-accent/50">
+      <p class="text-sm text-white/50">Drop or click to load an image</p>
+      <p class="mt-1 text-[10px] text-white/30">Every bin is counted from the decoded pixels</p>
+    </div>
+    <input id="file" type="file" accept="image/*" class="hidden">
+    <div id="controls" class="mt-6 hidden">
+      <div class="flex flex-wrap items-end gap-4">
+        <div><label class="ws-label mb-2 block">Bins</label>
+          <select id="bins" class="ws-input !w-28">
+            <option value="16">16</option><option value="32">32</option>
+            <option value="64" selected>64</option><option value="128">128</option>
+          </select></div>
+        <div class="flex items-center gap-4"><label class="flex items-center gap-2 text-xs text-white/60">
+          <input id="log" type="checkbox" class="h-4 w-4 accent-[#FF5F1F]"> Log scale</label></div>
+        <button id="dl" class="ws-btn">Download chart</button>
+      </div>
+      <div class="mt-6 grid gap-4 lg:grid-cols-2">
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+          <div class="ws-label mb-2">Source</div>
+          <img id="src" class="mx-auto max-h-56 rounded-lg" alt="source">
+          <div class="mt-2 text-center text-xs text-white/50" id="meta"></div>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+          <div class="ws-label mb-2">Histogram</div>
+          <canvas id="cv" width="640" height="360" class="w-full rounded-lg"></canvas>
+        </div>
+      </div>
+      <div class="ws-panel ws-copy mt-4 p-4">
+        <div class="mb-2 flex items-center justify-between">
+          <span class="ws-label">Channel statistics</span>
+          <button class="ws-btn-ghost !px-3 !py-1.5" id="cpy">Copy</button>
+        </div>
+        <pre id="out" class="ws-out min-h-[120px]"></pre>
+      </div>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d');
+let data=null,dim=null,nm='';
+const CH=[['R',255,95,31],['G',95,255,160],['B',31,160,255]];
+function hist(vals,bins){
+  const h=new Array(bins).fill(0);
+  for(let i=0;i<vals.length;i++){let b=Math.floor(vals[i]/256*bins);if(b>=bins)b=bins-1;h[b]++;}
+  return h;
+}
+function stats(vals){
+  const n=vals.length;let s=0,mn=255,mx=0;
+  for(let i=0;i<n;i++){const v=vals[i];s+=v;if(v<mn)mn=v;if(v>mx)mx=v;}
+  const mean=s/n;
+  let v2=0;for(let i=0;i<n;i++){const d=vals[i]-mean;v2+=d*d;}
+  const sd=Math.sqrt(v2/n);
+  const sorted=Float64Array.from(vals).sort();
+  const q=p=>sorted[Math.min(n-1,Math.max(0,Math.round(p*(n-1))))];
+  const counts=new Array(256).fill(0);
+  for(let i=0;i<n;i++)counts[vals[i]]++;
+  let acc=0,median=0;
+  for(let v=0;v<256;v++){acc+=counts[v];if(acc>=n/2){median=v;break;}}
+  return {min:mn,max:mx,mean:mean,sd:sd,median:median,q1:q(.25),q3:q(.75)};
+}
+function draw(){
+  ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,cv.width,cv.height);
+  if(!data) return;
+  const bins=parseInt($('bins').value);
+  const R=new Float64Array(data.length),G=new Float64Array(data.length),B=new Float64Array(data.length);
+  let n=0;
+  for(let i=0;i<data.length;i+=4){
+    if(data[i+3]<16) continue;
+    R[n]=data[i];G[n]=data[i+1];B[n]=data[i+2];n++;
+  }
+  const sets=[[R.subarray(0,n),CH[0]],[G.subarray(0,n),CH[1]],[B.subarray(0,n),CH[2]]];
+  const pad=34,baseY=cv.height-30,pw=cv.width-pad*2,ph=cv.height-60;
+  const peaks=sets.map(s=>hist(s[0],bins));
+  const top=Math.max.apply(null,peaks.flat().map(v=>v));
+  ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad,pad);ctx.lineTo(pad,baseY);ctx.lineTo(pad+pw,baseY);ctx.stroke();
+  const useLog=$('log').checked;
+  const denom=useLog?Math.log(top+1):top;
+  sets.forEach((s,ci)=>{
+    ctx.strokeStyle=s[1][1]+','+s[1][2]+','+s[1][3]+')';
+    ctx.lineWidth=1.6;
+    ctx.beginPath();
+    for(let b=0;b<bins;b++){
+      const v=peaks[ci][b];
+      const h=(useLog?Math.log(v+1):v)/denom*ph;
+      const x=pad+b/bins*pw,y=baseY-h;
+      if(b===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }
+    ctx.lineTo(pad+pw,baseY);ctx.lineTo(pad,baseY);ctx.closePath();
+    ctx.globalAlpha=.16;ctx.fillStyle=ctx.strokeStyle;ctx.fill();ctx.globalAlpha=1;
+    ctx.beginPath();
+    for(let b=0;b<bins;b++){
+      const v=peaks[ci][b];
+      const h=(useLog?Math.log(v+1):v)/denom*ph;
+      const x=pad+b/bins*pw,y=baseY-h;
+      if(b===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  });
+  const st=sets.map(s=>stats(s[0]));
+  const lum=[];
+  for(let i=0;i<n;i++)lum.push(0.2126*R[i]+0.7152*G[i]+0.0722*B[i]);
+  const ls=stats(Float64Array.from(lum));
+  let opaque=0,total=data.length/4;
+  for(let i=3;i<data.length;i+=4)if(data[i]>=16)opaque++;
+  const lines=[];
+  lines.push('Image      '+dim.w+'\u00d7'+dim.h+'  '+nm);
+  lines.push('Opaque px  '+opaque.toLocaleString()+' of '+total.toLocaleString()
+    +'  ('+(opaque/total*100).toFixed(1)+'%)');
+  lines.push('Bins       '+bins+(useLog?' (log scale)':'')+'   peak bin '+top.toLocaleString()+' px');
+  lines.push('');
+  lines.push('chan  min  max    mean      sd   median  q1    q3');
+  ['R','G','B'].forEach((k,i)=>{
+    const s=st[i];
+    lines.push(k+'    '+String(s.min).padStart(3)+'  '+String(s.max).padStart(3)+'  '
+      +s.mean.toFixed(2).padStart(7)+'  '+s.sd.toFixed(2).padStart(6)+'  '
+      +String(s.median).padStart(6)+'  '+String(s.q1).padStart(4)+'  '+String(s.q3).padStart(4));
+  });
+  lines.push('Luma '+ls.min.toFixed(0).padStart(3)+'  '+ls.max.toFixed(0).padStart(3)+'  '
+    +ls.mean.toFixed(2).padStart(7)+'  '+ls.sd.toFixed(2).padStart(6)+'  '
+    +String(Math.round(ls.median)).padStart(6)+'  '+ls.q1.toFixed(0).padStart(4)+'  '+ls.q3.toFixed(0).padStart(4));
+  const flatR=Math.abs(st[0].sd)<6&&Math.abs(st[1].sd)<6&&Math.abs(st[2].sd)<6;
+  lines.push('');
+  lines.push('Read       '+(flatR?'near-flat channels \u2014 low contrast image':'tonal spread present'));
+  $('out').textContent=lines.join('\n');
+  $('dl').onclick=()=>{const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download=(nm||'image').replace(/\.[^.]+$/,'')+'-histogram.png';a.click();};
+}
+function load(f){
+  nm=f.name;
+  const url=URL.createObjectURL(f),im=new Image();
+  im.onload=()=>{
+    dim={w:im.naturalWidth,h:im.naturalHeight};
+    const max=1400;
+    let w=im.naturalWidth,h=im.naturalHeight;
+    if(w>max||h>max){const s=Math.min(max/w,max/h);w=Math.round(w*s);h=Math.round(h*s);}
+    cv.width=cv.height=1;
+    const t=document.createElement('canvas');t.width=w;t.height=h;
+    t.getContext('2d').drawImage(im,0,0,w,h);
+    data=t.getContext('2d').getImageData(0,0,w,h).data;
+    $('src').src=url;
+    $('src').style.maxWidth=Math.min(520,w)+'px';
+    $('meta').textContent=im.naturalWidth+'\u00d7'+im.naturalHeight+' · '+(f.size/1024).toFixed(1)+' KB · '+(f.type||'image');
+    $('controls').classList.remove('hidden');
+    draw();
+  };
+  im.onerror=()=>{$('meta').textContent='That file could not be decoded as an image.';};
+  im.src=url;
+}
+const drop=$('drop'),file=$('file');
+drop.onclick=()=>file.click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('border-accent');};
+drop.ondragleave=()=>drop.classList.remove('border-accent');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('border-accent');if(e.dataTransfer.files[0])load(e.dataTransfer.files[0]);};
+file.onchange=e=>{if(e.target.files[0])load(e.target.files[0]);};
+$('bins').addEventListener('change',draw);
+$('log').addEventListener('change',draw);
+$('cpy').onclick=function(){navigator.clipboard.writeText($('out').textContent);this.classList.add('ok');setTimeout(()=>this.classList.remove('ok'),1200);};
+window.__hist={load:load,draw:draw,hist:hist,stats:function(v){return stats(Float64Array.from(v));},canvas:cv,
+  setImage:function(w,h,fn){const t=document.createElement('canvas');t.width=w;t.height=h;
+    const c=t.getContext('2d');const d=c.createImageData(w,h);
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){const p=fn(x,y);const i=(y*w+x)*4;
+      d.data[i]=p[0];d.data[i+1]=p[1];d.data[i+2]=p[2];d.data[i+3]=p.length>3?p[3]:255;}
+    c.putImageData(d,0,0);data=d.data;dim={w:w,h:h};nm='synthetic';$('controls').classList.remove('hidden');draw();},
+  ink:function(){const d=ctx.getImageData(0,0,cv.width,cv.height).data;let n=0;
+    for(let i=0;i<d.length;i+=4)if(d[i]>20&&d[i+1]>20) n++;return n;}};
+</script>
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/image-adjust/">
+      <span class="ocurp-related-n">Image Adjustments</span>
+      <span class="ocurp-related-b">Brightness, contrast, saturation, temperature, highlights and shadows applied to the real </span>
+    </a></li>
+    <li><a href="/workspace/tools/background-remover/">
+      <span class="ocurp-related-n">Background Remover</span>
+      <span class="ocurp-related-b">Cut the background off a photo in your browser — no upload, no watermark.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base64-to-image/">
+      <span class="ocurp-related-n">Base64 to Image</span>
+      <span class="ocurp-related-b">Paste a data URI and preview or download the image.</span>
+    </a></li>
+    <li><a href="/workspace/tools/batch-compressor/">
+      <span class="ocurp-related-n">Batch Image Compressor</span>
+      <span class="ocurp-related-b">Compress many images at once, see the quality loss per file, save as ZIP.</span>
+    </a></li>
+    <li><a href="/workspace/tools/contrast-checker/">
+      <span class="ocurp-related-n">Contrast Checker</span>
+      <span class="ocurp-related-b">Check any two colours against the WCAG contrast rules and see which levels pass.</span>
+    </a></li>
+    <li><a href="/workspace/tools/heic-to-jpg/">
+      <span class="ocurp-related-n">HEIC to JPG</span>
+      <span class="ocurp-related-b">Decode HEIC in-browser via heic2any, no upload.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reaction Diffusion — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="A real Gray-Scott solver. Eight regimes - mitosis, coral, worms, solitons, fingerprint - and the feed/kill map that makes them. Runs entirely in your...">
+<link rel="canonical" href="https://ocurp.space/workspace/games/reaction-diffusion/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Reaction Diffusion">
+<meta property="og:description" content="A real Gray-Scott solver. Eight regimes - mitosis, coral, worms, solitons, fingerprint - and the feed/kill map that makes them. Runs entirely in your...">
+<meta property="og:url" content="https://ocurp.space/workspace/games/reaction-diffusion/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Reaction Diffusion">
+<meta name="twitter:description" content="A real Gray-Scott solver. Eight regimes - mitosis, coral, worms, solitons, fingerprint - and the feed/kill map that makes them. Runs entirely in your...">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Reaction Diffusion","url":"https://ocurp.space/workspace/games/reaction-diffusion/","description":"A real Gray-Scott solver. Eight regimes - mitosis, coral, worms, solitons, fingerprint - and the feed/kill map that makes them. Runs entirely in your...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Snake</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">CANVAS</span><span class="ws-chip">LOCAL BEST</span></div>
+        </div>
+      
+  <section class="ws-panel mb-6 border-l-2 border-l-accent">
+    <p class="text-[13px] leading-relaxed text-white/55">The Gray-Scott solver that ships with every chemistry degree. Eight regimes: mitosis, coral, worms, solitons, fingerprint.</p>
+  </section>
+
+
+  <section class="ws-panel p-6">
+    <div class="grid gap-6 lg:grid-cols-[1fr_268px]">
+      <div class="min-w-0">
+        <div class="relative overflow-hidden rounded-xl border border-white/15 bg-[#0a0a0a]">
+          <canvas id="cv" class="block w-full touch-none select-none" style="aspect-ratio:1/1"></canvas>
+          <div class="pointer-events-none absolute left-3 top-3 flex flex-col gap-1">
+            <span class="ws-chip" id="hudmode">MITOSIS</span>
+            <span class="ws-chip" id="hudhint">CLICK OR DRAG TO SEED CHEMICAL V</span>
+          </div>
+          <div class="pointer-events-none absolute bottom-3 right-3">
+            <span class="ws-chip" id="hudfps">0 FPS</span>
+          </div>
+        </div>
+        <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" id="stats"></div>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <div>
+          <label class="ws-label mb-1 block">Pattern</label>
+          <select id="pattern" class="ws-input">
+            <option value="0.037,0.06">Mitosis f=.037 k=.060</option>
+            <option value="0.030,0.062">Coral f=.030 k=.062</option>
+            <option value="0.026,0.055">Worms f=.026 k=.055</option>
+            <option value="0.022,0.051">Spots f=.022 k=.051</option>
+            <option value="0.014,0.054">Chaos f=.014 k=.054</option>
+            <option value="0.025,0.060">Solitons f=.025 k=.060</option>
+            <option value="0.018,0.051">Pulsating f=.018 k=.051</option>
+            <option value="0.046,0.0594">Fingerprint f=.046 k=.0594</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="ws-label mb-1 block">Feed F <span id="fv">0.0370</span></label>
+            <input id="feed" type="range" min="0.005" max="0.09" step="0.0005" value="0.037" class="w-full accent-[#FF5F1F]">
+          </div>
+          <div>
+            <label class="ws-label mb-1 block">Kill K <span id="kv">0.0600</span></label>
+            <input id="kill" type="range" min="0.03" max="0.075" step="0.0002" value="0.06" class="w-full accent-[#FF5F1F]">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="ws-label mb-1 block">Diffusion D<sub>u</sub> <span id="duv">1.00</span></label>
+            <input id="dif" type="range" min="0.3" max="1.6" step="0.02" value="1" class="w-full accent-[#FF5F1F]">
+          </div>
+          <div>
+            <label class="ws-label mb-1 block">Brush <span id="brv">9</span></label>
+            <input id="brush" type="range" min="3" max="26" step="1" value="9" class="w-full accent-[#FF5F1F]">
+          </div>
+        </div>
+        <div>
+          <label class="ws-label mb-1 block">Look</label>
+          <select id="look" class="ws-input">
+            <option value="accent">Accent (U on black)</option>
+            <option value="heat">Heat (U)</option>
+            <option value="viridis">Viridis (U)</option>
+            <option value="div">Chemical U&minus;V</option>
+            <option value="edges">Edges (|laplacian|)</option>
+          </select>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="play" class="ws-btn">Start</button>
+          <button id="reset" class="ws-btn-ghost">Reset</button>
+          <button id="seed" class="ws-btn-ghost">Randomise</button>
+          <button id="clear" class="ws-btn-ghost">Clear</button>
+        </div>
+        <p class="text-[10px] leading-relaxed text-white/30">
+          <span class="font-mono text-white/60">u&#8347; = D<sub>u</sub>&nabla;&sup2;u &minus; uv&sup2; + F(1&minus;u)</span><br>
+          <span class="font-mono text-white/60">v&#8347; = D<sub>v</sub>&nabla;&sup2;v + uv&sup2; &minus; (F+K)v</span><br>
+          Five-point Laplacian, explicit Euler, D<sub>v</sub> = D<sub>u</sub>/2. The band where patterns exist is
+          narrow &mdash; push K past about 0.065 and everything dies.
+        </p>
+      </div>
+    </div>
+  </section>
+  <p class="-mt-4 mb-4 text-[10px] font-black uppercase tracking-[0.26em] text-white/30">Two chemicals, one pattern</p>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const cv=document.getElementById('cv'),cx=cv.getContext('2d'),N=21,S=cv.width/N;
+let snake,dir,food,score,dead,timer,speed=110;
+const best=()=>parseInt(localStorage.getItem('ws-snake-best')||'0');
+document.getElementById('best').textContent=best();
+function reset(){snake=[{x:10,y:10}];dir={x:1,y:0};place();score=0;dead=false;
+  document.getElementById('score').textContent='0';draw()}
+function place(){do{food={x:Math.floor(Math.random()*N),y:Math.floor(Math.random()*N)}}
+  while(snake.some(s=>s.x===food.x&&s.y===food.y))}
+function step(){
+  const h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+  if(h.x<0||h.y<0||h.x>=N||h.y>=N||snake.some(s=>s.x===h.x&&s.y===h.y)){over();return}
+  snake.unshift(h);
+  if(h.x===food.x&&h.y===food.y){score++;document.getElementById('score').textContent=score;place();
+    if(score%5===0&&speed>60){speed-=8;restart()}}
+  else snake.pop();
+  draw();
+}
+function over(){dead=true;clearInterval(timer);
+  if(score>best()){localStorage.setItem('ws-snake-best',score);document.getElementById('best').textContent=score}
+  cx.fillStyle='rgba(5,5,5,.75)';cx.fillRect(0,0,cv.width,cv.height);
+  cx.fillStyle='#FF5F1F';cx.font='900 28px Manrope,sans-serif';cx.textAlign='center';
+  cx.fillText('DEAD — ' + score, cv.width/2, cv.height/2)}
+function draw(){
+  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,cv.width,cv.height);
+  cx.fillStyle='#FF5F1F';cx.beginPath();cx.arc(food.x*S+S/2,food.y*S+S/2,S/2.6,0,7);cx.fill();
+  snake.forEach((s,i)=>{cx.fillStyle=i?'rgba(255,255,255,.75)':'#fff';
+    cx.fillRect(s.x*S+1,s.y*S+1,S-2,S-2)});
+}
+function restart(){clearInterval(timer);timer=setInterval(()=>{if(!dead)step()},speed)}
+document.getElementById('start').onclick=()=>{if(dead||!timer){reset();restart()}};
+document.getElementById('reset').onclick=()=>{clearInterval(timer);timer=null;reset()};
+addEventListener('keydown',e=>{
+  const m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],
+           w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]}[e.key];
+  if(!m)return;e.preventDefault();
+  const nd={x:m[0],y:m[1]};
+  if(nd.x!==-dir.x||nd.y!==-dir.y)dir=nd;
+});
+let ts=null;
+cv.addEventListener('touchstart',e=>{ts=e.touches[0]},{passive:true});
+cv.addEventListener('touchend',e=>{
+  if(!ts)return;const dx=e.changedTouches[0].clientX-ts.clientX,dy=e.changedTouches[0].clientY-ts.clientY;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<20)return;
+  const nd=Math.abs(dx)>Math.abs(dy)?{x:Math.sign(dx),y:0}:{x:0,y:Math.sign(dy)};
+  if(nd.x!==-dir.x||nd.y!==-dir.y)dir=nd;
+},{passive:true});
+reset();
+</script>
+</body>
+</html>
+<script src="/workspace/related.js" defer></script>
+<script>
+/* ══ GRAY-SCOTT REACTION DIFFUSION ══════════════════════════════════════════
+   The canonical two-chemical morphogen system (Pearson 1993):
+
+       u_t = Du lap(u) - u v^2 + F (1-u)
+       v_t = Dv lap(v) + u v^2 - (F+K) v
+
+   Solved on a unit square with a five-point Laplacian and periodic wrap, in
+   place, in a Float32Array. Du = 1, Dv = 0.5, dt = 1.0 - the values Pearson
+   used, and the reason his parameter map is directly reusable here.
+   Only the F/K pair selects the pattern; the solver itself is unchanged.
+   ═════════════════════════════════════════════════════════════════════════ */
+const $=id=>document.getElementById(id);
+const cv=$('cv'), cx=cv.getContext('2d');
+let CW=0,CH=0,S=150;                 // S = grid cells per side
+function resize(){
+  const r=cv.getBoundingClientRect();
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const w=Math.max(260,Math.round(r.width*dpr)), h=Math.max(260,Math.round(r.height*dpr));
+  if(w===cv.width&&h===cv.height) return false;
+  cv.width=w; cv.height=h; CW=w; CH=h; return true;
+}
+
+let A,B,img;
+const DU=1.0, DV=0.5, DT=1.0;
+let F=0.037, K=0.06, DUc=1.0, BR=9;
+let running=false, iter=0, itersPerFrame=1, fps=0, frames=0, fpsT=0;
+let vSum=0, vMax=0, uSum=0;
+
+function alloc(){
+  A=new Float32Array(S*S); B=new Float32Array(S*S); img=cx.createImageData(S,S);
+}
+function seedMode(n){
+  A.fill(1); B.fill(0); iter=0;
+  const put=(cx0,cy0,r)=>{
+    for(let y=Math.max(0,cy0-r); y<Math.min(S,cy0+r); y++)
+      for(let x=Math.max(0,cx0-r); x<Math.min(S,cx0+r); x++){
+        const dx=x-cx0, dy=y-cy0;
+        if(dx*dx+dy*dy<=r*r){ A[y*S+x]=0.5; B[y*S+x]=0.25; }
+      }
+  };
+  for(let i=0;i<n;i++) put(Math.floor(Math.random()*S), Math.floor(Math.random()*S), Math.floor(S*0.09));
+}
+function seedNoise(){
+  A.fill(1); B.fill(0); iter=0;
+  for(let i=0;i<S*S;i++){ A[i]=1-Math.random()*0.5; B[i]=Math.random()*0.25; }
+}
+function clearAll(){ A.fill(1); B.fill(0); iter=0; }
+
+/* one explicit Euler step of the full system */
+function simulate(){
+  for(let y=0;y<S;y++){
+    const ym=((y-1+S)%S)*S, yp=((y+1)%S)*S, y0=y*S;
+    for(let x=0;x<S;x++){
+      const xm=(x-1+S)%S, xp=(x+1)%S, i=y0+x;
+      const u=A[i], v=B[i];
+      const uu=u*u, uvv=u*v*v;
+      const lu=A[y0+xm]+A[y0+xp]+A[ym+x]+A[yp+x]-4*u;
+      const lv=B[y0+xm]+B[y0+xp]+B[ym+x]+B[yp+x]-4*v;
+      A[i]=u+DT*(DUc*lu-uvv+F*(1-u));
+      B[i]=v+DT*(DV*lv+uvv-(F+K)*v);
+    }
+  }
+  iter++;
+}
+function stats(){
+  let sv=0,mv=0,su=0;
+  for(let i=0;i<S*S;i+=7){ const v=B[i]; sv+=v; if(v>mv)mv=v; su+=A[i]; }
+  const n=Math.ceil(S*S/7);
+  vSum=sv/n; vMax=mv; uSum=su/n;
+}
+
+/* ── colour ramps ─────────────────────────────────────────────────────── */
+const RAMPS={
+  heat:[[8,8,16],[40,12,60],[120,26,80],[200,60,50],[255,150,40],[255,240,190]],
+  viridis:[[68,1,84],[59,82,139],[33,145,140],[94,201,98],[253,231,37]],
+  accent:[[5,5,5],[60,18,8],[140,48,16],[255,95,31],[255,170,120],[255,240,225]]
+};
+function ramp(stops,x){
+  const n=stops.length-1, p=Math.max(0,Math.min(0.9999,x))*n;
+  const i=Math.floor(p), f=p-i, a=stops[i], b=stops[i+1];
+  return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f];
+}
+function paint(){
+  const look=$('look').value, d=img.data;
+  if(look==='div'){
+    for(let i=0;i<S*S;i++){
+      const d0=Math.max(0,Math.min(1,A[i]-B[i]*2.5))*255;
+      d[i*4]=255-d0*0.25; d[i*4+1]=60+ (255-d0)*0.35; d[i*4+2]=31+(255-d0)*0.75; d[i*4+3]=255;
+    }
+  } else if(look==='edges'){
+    for(let y=0;y<S;y++){
+      const ym=((y-1+S)%S)*S, yp=((y+1)%S)*S, y0=y*S;
+      for(let x=0;x<S;x++){
+        const xm=(x-1+S)%S, xp=(x+1)%S, i=y0+x;
+        const lv=B[y0+xm]+B[y0+xp]+B[ym+x]+B[yp+x]-4*B[i];
+        const e=Math.min(1,Math.abs(lv)*14);
+        d[i*4]=e*255; d[i*4+1]=e*140; d[i*4+2]=e*40; d[i*4+3]=255;
+      }
+    }
+  } else {
+    const st=RAMPS[look==='accent'?'accent':look];
+    // v peaks around 0.3; normalise on a fixed scale so patterns stay comparable
+    for(let i=0;i<S*S;i++){
+      const c=ramp(st,B[i]/0.38);
+      d[i*4]=c[0]; d[i*4+1]=c[1]; d[i*4+2]=c[2]; d[i*4+3]=255;
+    }
+  }
+  cx.putImageData(img,0,0,0,0,S,S,0,0,S,S);
+}
+
+/* ── stats ─────────────────────────────────────────────────────────────── */
+const STATS=[['Pattern','st-pat'],['Feed F','st-f'],['Kill K','st-k'],['Du / Dv','st-d'],
+             ['Mean V','st-mv'],['Max V','st-xv'],['Grid','st-grid'],['Iterations','st-it']];
+$('stats').innerHTML=STATS.map(([n,id])=>
+  '<div class="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">'
+  +'<div class="ws-label">'+n+'</div><div class="font-mono text-[13px] font-bold text-white" id="'+id+'">&mdash;</div></div>').join('');
+function showStats(){
+  $('st-pat').textContent=$('pattern').selectedOptions[0].text.split(' ')[0].toUpperCase();
+  $('st-f').textContent=F.toFixed(4);
+  $('st-k').textContent=K.toFixed(4);
+  $('st-d').textContent=DUc.toFixed(2)+' / 0.50';
+  $('st-mv').textContent=vSum.toFixed(5);
+  $('st-xv').textContent=vMax.toFixed(4);
+  $('st-grid').textContent=S+'×'+S;
+  $('st-it').textContent=iter.toLocaleString();
+}
+
+/* ── loop ──────────────────────────────────────────────────────────────── */
+let last=performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  resize();
+  const el=Math.min(0.05,(now-last)/1000); last=now;
+  if(running){
+    // keep ~12 solver steps per 1/60 s of wall clock regardless of display rate
+    itersPerFrame=Math.max(1,Math.round(20*el));
+    for(let k=0;k<itersPerFrame;k++) simulate();
+  }
+  frames++;
+  if(now-fpsT>500){ fps=frames*1000/(now-fpsT); frames=0; fpsT=now; stats(); showStats(); }
+  paint();
+  $('hudfps').textContent=fps.toFixed(0)+' FPS';
+}
+
+/* ── controls ──────────────────────────────────────────────────────────── */
+$('play').onclick=()=>{ running=!running; $('play').textContent=running?'Pause':'Start'; last=performance.now(); };
+$('reset').onclick=()=>{ seedMode(12); };
+$('seed').onclick=()=>{ seedNoise(); };
+$('clear').onclick=()=>{ clearAll(); };
+$('pattern').onchange=()=>{ const p=$('pattern').value.split(',');
+  F=Number(p[0]); K=Number(p[1]);
+  $('feed').value=F; $('kill').value=K; $('fv').textContent=F.toFixed(4); $('kv').textContent=K.toFixed(4);
+  $('hudmode').textContent=$('pattern').selectedOptions[0].text.split(' ')[0].toUpperCase();
+  seedMode(12); };
+$('feed').oninput=()=>{ F=Number($('feed').value); $('fv').textContent=F.toFixed(4); };
+$('kill').oninput=()=>{ K=Number($('kill').value); $('kv').textContent=K.toFixed(4); };
+$('dif').oninput =()=>{ DUc=Number($('dif').value); $('duv').textContent=DUc.toFixed(2); };
+$('brush').oninput=()=>{ BR=Number($('brush').value); $('brv').textContent=BR; };
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+  if(e.key===' '){ e.preventDefault(); $('play').click(); }
+  if(e.key==='r'||e.key==='R') seedNoise();
+  if(e.key==='c'||e.key==='C') clearAll();
+});
+let painting=false;
+function toCell(e){
+  const r=cv.getBoundingClientRect();
+  const x=Math.max(0,Math.min(S-1,Math.floor((e.clientX-r.left)/r.width*S)));
+  const y=Math.max(0,Math.min(S-1,Math.floor((e.clientY-r.top)/r.height*S)));
+  return [x,y];
+}
+function dab(x,y){
+  for(let j=Math.max(0,y-BR);j<=Math.min(S-1,y+BR);j++)
+    for(let i=Math.max(0,x-BR);i<=Math.min(S-1,x+BR);i++){
+      if((i-x)*(i-x)+(j-y)*(j-y)>BR*BR) continue;
+      A[j*S+i]=0.30; B[j*S+i]=0.60;
+    }
+}
+cv.addEventListener('pointerdown',e=>{ painting=true; cv.setPointerCapture(e.pointerId);
+  const [x,y]=toCell(e); dab(x,y); });
+cv.addEventListener('pointermove',e=>{ if(!painting) return;
+  const [x,y]=toCell(e); dab(x,y); });
+const up=()=>{ painting=false; };
+cv.addEventListener('pointerup',up); cv.addEventListener('pointercancel',up);
+new ResizeObserver(()=>{ resize(); paint(); }).observe(cv);
+
+/* exposed for the verification harness */
+window.__rd={
+  state(){ return {running:running, iter:iter, F:F, K:K, Du:DUc, Dv:DV,
+    meanV:vSum, maxV:vMax, meanU:uSum, grid:S}; },
+  setRunning(v){ running=v; $('play').textContent=running?'Pause':'Start'; },
+  run(n){ for(let k=0;k<n;k++) simulate(); stats(); },
+  seedMode, clearAll, dabAt(fx,fy){ dab(Math.floor(fx*S),Math.floor(fy*S)); },
+  sample(){ let mx=0,su=0,sv=0; for(let i=0;i<S*S;i++){ if(B[i]>mx)mx=B[i]; sv+=B[i]; su+=A[i]; }
+    return {maxB:mx, meanB:sv/(S*S), meanA:su/(S*S)}; }
+};
+alloc(); resize(); seedMode(12); stats(); showStats(); paint();
+requestAnimationFrame(loop);
+</script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/n-body-orbits/">
+      <span class="ocurp-related-n">N-Body Orbits</span>
+      <span class="ocurp-related-b">Real Newtonian gravity at the real G. Start circular, nudge the planet, and watch the elli</span>
+    </a></li>
+    <li><a href="/workspace/games/pendulum-lab/">
+      <span class="ocurp-related-n">Pendulum Lab</span>
+      <span class="ocurp-related-b">Nine coupled pendulums on a real g = 9.81. Small-angle period printed underneath; the chao</span>
+    </a></li>
+    <li><a href="/workspace/games/wave-equation/">
+      <span class="ocurp-related-n">Wave Equation</span>
+      <span class="ocurp-related-b">An explicit leapfrog finite-difference solver. Resonance, standing waves and superposition</span>
+    </a></li>
+    <li><a href="/workspace/games/sandbox-3d/">
+      <span class="ocurp-related-n">Sandbox 3D</span>
+      <span class="ocurp-related-b">A real 3D voxel world of 92,160 cubes. Paint sand, water, lava and fire and watch density </span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

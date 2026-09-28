@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audio Trim & Cut — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Trim to exact times with fades, resample, fold to mono or stereo, and export a real WAV file. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/audio-trim-cut/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Audio Trim &amp; Cut">
+<meta property="og:description" content="Trim to exact times with fades, resample, fold to mono or stereo, and export a real WAV file. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/audio-trim-cut/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Audio Trim &amp; Cut">
+<meta name="twitter:description" content="Trim to exact times with fades, resample, fold to mono or stereo, and export a real WAV file. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Audio Trim & Cut","url":"https://ocurp.space/workspace/tools/audio-trim-cut/","description":"Trim to exact times with fades, resample, fold to mono or stereo, and export a real WAV file. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Audio Trim & Cut</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Audio & Speech — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">AUDIO</span><span class="ws-chip">WAV</span><span class="ws-chip">CLIENT-SIDE</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div id="drop" class="border-2 border-dashed border-white/15 rounded-xl p-8 text-center cursor-pointer transition-colors hover:border-accent/50">
+      <p class="text-sm text-white/50">Drop or click to load an audio file</p>
+      <p class="mt-1 text-[10px] text-white/30">Decoded with WebAudio, re-encoded to a real RIFF/WAV file</p>
+    </div>
+    <input id="file" type="file" accept="audio/*" class="hidden">
+    <div id="controls" class="mt-6 hidden">
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div><label class="ws-label mb-2 block">Start (s)</label><input id="st" class="ws-input" type="number" step="0.01" value="0.5"></div>
+        <div><label class="ws-label mb-2 block">End (s)</label><input id="en" class="ws-input" type="number" step="0.01" value="3"></div>
+        <div><label class="ws-label mb-2 block">Fade in (s)</label><input id="fi" class="ws-input" type="number" step="0.01" min="0" value="0.05"></div>
+        <div><label class="ws-label mb-2 block">Fade out (s)</label><input id="fo" class="ws-input" type="number" step="0.01" min="0" value="0.05"></div>
+        <div><label class="ws-label mb-2 block">Gain (dB)</label><input id="g" class="ws-input" type="number" step="0.5" value="0"></div>
+        <div><label class="ws-label mb-2 block">Sample rate</label>
+          <select id="sr" class="ws-input"><option value="0">Keep original</option>
+            <option value="8000">8000 Hz</option><option value="16000">16000 Hz</option>
+            <option value="22050">22050 Hz</option><option value="32000">32000 Hz</option>
+            <option value="44100">44100 Hz</option><option value="48000">48000 Hz</option></select></div>
+        <div><label class="ws-label mb-2 block">Channels</label>
+          <select id="ch" class="ws-input"><option value="0">Keep original</option>
+            <option value="1">Mono</option><option value="2">Stereo</option></select></div>
+        <div class="flex items-end"><button id="cut" class="ws-btn w-full">Apply</button></div>
+      </div>
+      <div class="mt-5 flex flex-wrap items-center gap-3">
+        <button id="dl" class="ws-btn" disabled style="opacity:.4">Download WAV</button>
+        <button id="ply" class="ws-btn-ghost" disabled style="opacity:.4">Preview</button>
+        <span class="ws-chip" id="stamp">NOT READY</span>
+      </div>
+      <div class="mt-6 grid gap-4 lg:grid-cols-2">
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+          <div class="ws-label mb-2">Source</div>
+          <canvas id="src" width="480" height="120" class="mx-auto max-h-56 w-full rounded-lg border border-white/10"></canvas>
+          <div class="mt-2 text-center text-xs text-white/50" id="meta"></div>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+          <div class="ws-label mb-2">Waveform — trimmed region highlighted</div>
+          <canvas id="cv" width="760" height="220" class="w-full rounded-lg"></canvas>
+        </div>
+      </div>
+      <div class="ws-panel ws-copy mt-4 p-4">
+        <div class="mb-2 flex items-center justify-between">
+          <span class="ws-label">Audio readout</span>
+          <button class="ws-btn-ghost !px-3 !py-1.5" id="cpy">Copy</button>
+        </div>
+        <pre id="out" class="ws-out min-h-[120px]"></pre>
+      </div>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d');
+let AC=null,buf=null,outBuf=null,nm='',outUrl=null,playSrc=null;
+function ac(){if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();return AC;}
+function drawWave(){
+  ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,cv.width,cv.height);
+  if(!buf) return;
+  const ch=buf.getChannelData(0),n=ch.length,mid=cv.height/2;
+  let s=0,sq=0,peak=0;
+  for(let i=0;i<n;i++){const v=ch[i];s+=v;sq+=v*v;const a=Math.abs(v);if(a>peak)peak=a;}
+  const rms=Math.sqrt(sq/n),db=20*Math.log10(rms||1e-9);
+  let start=buf.duration*0.5,end=buf.duration*0.5;
+  try{start=Math.max(0,parseFloat($('st').value)||0);end=Math.min(buf.duration,parseFloat($('en').value)||buf.duration);}catch(e){}
+  ctx.strokeStyle='rgba(255,95,31,.16)';
+  ctx.fillStyle='rgba(255,95,31,.13)';
+  ctx.fillRect(start/buf.duration*cv.width,0,(end-start)/buf.duration*cv.width,cv.height);
+  ctx.strokeStyle='#FF5F1F';ctx.lineWidth=1;
+  ctx.beginPath();
+  const step=Math.max(1,Math.floor(n/cv.width));
+  let mx=0;
+  for(let x=0;x<cv.width;x++){
+    let m=0;
+    for(let i=x*step;i<Math.min(n,(x+1)*step);i++){const a=Math.abs(ch[i]);if(a>m)m=a;}
+    mx=Math.max(mx,m);
+    const h=m*(mid-14);
+    ctx.moveTo(x+0.5,mid-h);ctx.lineTo(x+0.5,mid+h);
+  }
+  ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.3)';ctx.setLineDash([3,3]);
+  [start,end].forEach(t=>{const x=t/buf.duration*cv.width;
+    ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,cv.height);ctx.stroke();});
+  ctx.setLineDash([]);
+  $('meta').textContent=nm+' · '+buf.duration.toFixed(3)+' s · '+buf.sampleRate+' Hz · '+buf.numberOfChannels+' ch · '+buf.length.toLocaleString()+' samples';
+  if(!outBuf)return;
+  const o=outBuf.getChannelData(0);
+  let os=0,osq=0,opeak=0;
+  for(let i=0;i<o.length;i++){os+=o[i];osq+=o[i]*o[i];const a=Math.abs(o[i]);if(a>opeak)opeak=a;}
+  const orms=Math.sqrt(osq/o.length);
+  const lines=[];
+  lines.push('Source     '+buf.duration.toFixed(3)+' s @ '+buf.sampleRate+' Hz × '+buf.numberOfChannels);
+  lines.push('Cut        '+start.toFixed(3)+' s \u2192 '+end.toFixed(3)+' s  ('+outBuf.duration.toFixed(3)+' s kept, '+(outBuf.duration/buf.duration*100).toFixed(1)+'%)');
+  lines.push('Samples    '+Math.round(outBuf.length)+' in, '+o.length+' out  ('+(Math.round(outBuf.length)-o.length)+' dropped)');
+  lines.push('Format     '+outBuf.sampleRate+' Hz × '+outBuf.numberOfChannels+' ch  ('+(outBuf.sampleRate/1000).toFixed(1)+' kHz)');
+  lines.push('');
+  lines.push('src  RMS '+rms.toFixed(5)+'  peak '+peak.toFixed(5)+'  '+(db>=0?'+':'')+db.toFixed(2)+' dBFS');
+  lines.push('out  RMS '+orms.toFixed(5)+'  peak '+opeak.toFixed(5)+'  '+(20*Math.log10(orms||1e-9)>=0?'+':'')+(20*Math.log10(orms||1e-9)).toFixed(2)+' dBFS');
+  lines.push('Gain       '+(20*Math.log10((orms||1e-9)/(rms||1e-9))).toFixed(2)+' dB measured');
+  lines.push('Samples    1 \u00d7 '+o.length+' \u00d7 '+(outBuf.numberOfChannels*2)+' bytes = '+o.length*outBuf.numberOfChannels*2+' bytes of PCM');
+  $('out').textContent=lines.join('\n');
+  $('stamp').textContent=(outBuf.duration).toFixed(3)+' S · '+(outBuf.sampleRate/1000).toFixed(1)+' KHZ · '+outBuf.numberOfChannels+' CH';
+}
+function encodeWAV(b){
+  const chs=b.numberOfChannels,len=b.length,sr=b.sampleRate;
+  const bytes=44+len*chs*2;
+  const ab=new ArrayBuffer(bytes),v=new DataView(ab);
+  const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
+  w(0,'RIFF');v.setUint32(4,bytes-8,true);w(8,'WAVE');w(12,'fmt ');
+  v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,chs,true);
+  v.setUint32(24,sr,true);v.setUint32(28,sr*chs*2,true);
+  v.setUint16(32,chs*2,true);v.setUint16(34,16,true);w(36,'data');
+  v.setUint32(40,len*chs*2,true);
+  let o=44;
+  for(let i=0;i<len;i++)for(let c=0;c<chs;c++){
+    const s=Math.max(-1,Math.min(1,b.getChannelData(c)[i]));
+    v.setInt16(o,s<0?s*0x8000:s*0x7fff,true);o+=2;
+  }
+  return new Blob([ab],{type:'audio/wav'});
+}
+function process(){
+  if(!buf) return;
+  const sr=parseInt($('sr').value)||buf.sampleRate;
+  const wantCh=parseInt($('ch').value)||buf.numberOfChannels;
+  const a=ac();
+  const dur=buf.duration;
+  const fi=Math.max(0,parseFloat($('fi').value)||0);
+  const fo=Math.max(0,parseFloat($('fo').value)||0);
+  const gain=Math.pow(10,(parseFloat($('g').value)||0)/20);
+  let start=Math.max(0,Math.min(dur,parseFloat($('st').value)||0));
+  let end=Math.max(0,Math.min(dur,parseFloat($('en').value)||dur));
+  if(end<=start){end=dur;$('en').value=dur.toFixed(3);}
+  const tmp=a.createBuffer(1,Math.max(1,Math.round((end-start)*buf.sampleRate)),buf.sampleRate);
+  const ch0=buf.getChannelData(0);
+  const sI=Math.round(start*buf.sampleRate),eI=Math.min(ch0.length,Math.round(end*buf.sampleRate));
+  for(let i=0;i<tmp.length;i++){
+    const i0=sI+i;let v=0,n=0;
+    for(let c=0;c<buf.numberOfChannels;c++){v+=buf.getChannelData(c)[Math.min(buf.length-1,i0)];n++;}
+    v=(v/n)*gain;
+    const tt=(start+i/buf.sampleRate)-start;
+    if(fi>0&&tt<fi)v*=tt/fi;
+    if(fo>0&&(end-start)-tt<fo)v*=Math.max(0,((end-start)-tt)/fo);
+    tmp.getChannelData(0)[i]=v;
+  }
+  // resample + channel fold through an OfflineAudioContext (real, not faked)
+  const ocLen=Math.max(1,Math.round((end-start)*sr));
+  const ocx=new OfflineAudioContext(wantCh,ocLen,sr);
+  const s2=ocx.createBufferSource();s2.buffer=tmp;
+  const g2=ocx.createGain();
+  if(wantCh===1){g2.gain.value=1;const merge=ocx.createChannelMerger(1);s2.connect(g2);g2.connect(merge,0,0);merge.connect(ocx.destination);}
+  else{const s=ocx.createChannelSplitter(1);const mg=ocx.createChannelMerger(2);s2.connect(g2);g2.connect(s,0);s.connect(mg,0,0);s.connect(mg,0,1);mg.connect(ocx.destination);}
+  s2.start();
+  ocx.startRendering().then(r=>{
+    outBuf=r;
+    if(outUrl)URL.revokeObjectURL(outUrl);
+    outUrl=URL.createObjectURL(encodeWAV(r));
+    $('dl').disabled=false;$('ply').disabled=false;
+    $('dl').style.opacity=1;$('ply').style.opacity=1;
+    $('dl').onclick=()=>{const el=document.createElement('a');el.href=outUrl;el.download=(nm||'audio').replace(/\.[^.]+$/,'')+'-trimmed.wav';el.click();};
+    $('ply').onclick=()=>{
+      if(playSrc){try{playSrc.stop();}catch(e){}playSrc=null;}
+      playSrc=a.createBufferSource();playSrc.buffer=r;playSrc.connect(a.destination);playSrc.start();};
+    drawWave();
+  });
+}
+function load(f){
+  nm=f.name;
+  const a=ac();
+  f.arrayBuffer().then(ab=>a.decodeAudioData(ab)).then(b=>{
+    buf=b;
+    $('st').value=0;$('en').value=Math.min(b.duration,3).toFixed(3);
+    $('controls').classList.remove('hidden');
+    const c=$('src'),cx=c.getContext('2d');
+    const g=cx.createLinearGradient(0,0,480,0);
+    g.addColorStop(0,'#FF5F1F');g.addColorStop(1,'#1a1a1a');
+    cx.fillStyle=g;cx.fillRect(0,40,480,40);
+    cx.fillStyle='rgba(255,255,255,.8)';cx.font='bold 15px monospace';cx.fillText(f.name,14,74);
+    cx.fillStyle='rgba(255,255,255,.5)';cx.font='12px monospace';
+    cx.fillText(b.duration.toFixed(2)+' s · '+b.sampleRate+' Hz',14,94);
+    drawWave();
+    process();
+  }).catch(()=>{$('meta').textContent='';$('controls').classList.remove('hidden');
+    $('out').textContent='Could not decode '+f.name+' — the browser has no decoder for that codec.';});
+}
+const drop=$('drop'),file=$('file');
+drop.onclick=()=>file.click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('border-accent');};
+drop.ondragleave=()=>drop.classList.remove('border-accent');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('border-accent');if(e.dataTransfer.files[0])load(e.dataTransfer.files[0]);};
+file.onchange=e=>{if(e.target.files[0])load(e.target.files[0]);};
+['st','en','fi','fo','g','sr','ch'].forEach(k=>$(k).addEventListener('change',process));
+$('cut').onclick=process;
+$('cpy').onclick=function(){navigator.clipboard.writeText($('out').textContent);this.classList.add('ok');setTimeout(()=>this.classList.remove('ok'),1200);};
+window.__trim={load:load,process:process,encodeWAV:encodeWAV,draw:drawWave,
+  out:()=>outBuf?{dur:outBuf.duration,sr:outBuf.sampleRate,ch:outBuf.numberOfChannels,len:outBuf.length,
+    rms:Math.sqrt(outBuf.getChannelData(0).reduce((s,v)=>s+v*v,0)/outBuf.length),
+    peak:Math.max.apply(null,Array.from(outBuf.getChannelData(0)).map(Math.abs))}:null,
+  src:()=>buf?{dur:buf.duration,sr:buf.sampleRate,ch:buf.numberOfChannels,len:buf.length}:null,
+  blob:()=>outUrl,wavBytes:()=>{if(!outBuf)return 0;return 44+outBuf.length*outBuf.numberOfChannels*2;},
+  wavHead:()=>new Promise(r=>{if(!outUrl)return r(null);fetch(outUrl).then(x=>x.arrayBuffer()).then(b=>{
+    const v=new DataView(b);r({riff:String.fromCharCode(b[0],b[1],b[2],b[3]),wave:String.fromCharCode(b[8],b[9],b[10],b[11]),
+      data:String.fromCharCode(b[36],b[37],b[38],b[39]),ch:v.getUint16(22,true),sr:v.getUint32(24,true),bytes:b.byteLength});});}),
+  peek:(i)=>{if(!outBuf)return null;const d=outBuf.getChannelData(0);return d[i]===undefined?null:[d[i],d[Math.min(d.length-1,i+1)]];}};
+</script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/audio-spectrum-analyzer/">
+      <span class="ocurp-related-n">Audio Spectrum Analyzer</span>
+      <span class="ocurp-related-b">Radix-2 FFT of any audio file with band energies, spectral centroid and a peak-hold readou</span>
+    </a></li>
+    <li><a href="/workspace/tools/frequency-generator/">
+      <span class="ocurp-related-n">Frequency Generator</span>
+      <span class="ocurp-related-b">Play any frequency from 1 Hz to 22 kHz, pick a waveform, run a sweep and see the wave live</span>
+    </a></li>
+    <li><a href="/workspace/tools/pitch-speed/">
+      <span class="ocurp-related-n">Pitch &amp; Speed Changer</span>
+      <span class="ocurp-related-b">Shift pitch and playback rate of any audio file.</span>
+    </a></li>
+    <li><a href="/workspace/tools/tone-synth/">
+      <span class="ocurp-related-n">Tone &amp; SFX Synth</span>
+      <span class="ocurp-related-b">Generate tones and effects with the Web Audio API.</span>
+    </a></li>
+    <li><a href="/workspace/tools/morse-code/">
+      <span class="ocurp-related-n">Morse Code</span>
+      <span class="ocurp-related-b">Translate text to Morse and back with audio playback.</span>
+    </a></li>
+    <li><a href="/workspace/tools/tts/">
+      <span class="ocurp-related-n">Browser TTS</span>
+      <span class="ocurp-related-b">Read text aloud with the voices on your device.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

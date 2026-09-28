@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HSV Converter — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Convert HSV to RGB, hex and hsl with a round-trip encoder check, relative luminance and a contrast ratio. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/hsv-converter/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="HSV Converter">
+<meta property="og:description" content="Convert HSV to RGB, hex and hsl with a round-trip encoder check, relative luminance and a contrast ratio. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/hsv-converter/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="HSV Converter">
+<meta name="twitter:description" content="Convert HSV to RGB, hex and hsl with a round-trip encoder check, relative luminance and a contrast ratio. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"HSV Converter","url":"https://ocurp.space/workspace/tools/hsv-converter/","description":"Convert HSV to RGB, hex and hsl with a round-trip encoder check, relative luminance and a contrast ratio. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">HSV Converter</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">COLOUR</span><span class="ws-chip">HSV</span><span class="ws-chip">RGB</span></div>
+        </div>
+      <section class="ws-panel mt-4 p-5"><div class="grid gap-4 md:grid-cols-4"><div><label class="ws-label mb-2 block" for="h">Hue 0-360</label><input id="h" type="number" class="ws-input" placeholder="28" value="28"></div><div><label class="ws-label mb-2 block" for="s">Saturation %</label><input id="s" type="number" class="ws-input" placeholder="100" value="100"></div><div><label class="ws-label mb-2 block" for="v">Value %</label><input id="v" type="number" class="ws-input" placeholder="100" value="100"></div><div><label class="ws-label mb-2 block" for="a">Alpha 0-1</label><input id="a" type="number" class="ws-input" placeholder="1" value="1"></div></div><div class="mt-5 flex flex-wrap items-center gap-4"><div id="sw" class="h-16 w-16 rounded-2xl border border-white/15"></div><div class="flex flex-wrap gap-2" id="ramps"></div></div><div class="mt-5 flex flex-wrap items-center gap-3"><button id="go" class="ws-btn">Update</button><button id="copy" class="ws-btn-ghost">Copy HEX</button></div><div class="mt-5"><div class="ws-label mb-2">Conversions</div><div id="out" class="ws-out"></div></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+const hx=n=>{const s=n.toString(16).toUpperCase();return s.length<2?'0'+s:s;};
+function hsv2rgb(h,s,v){
+  h=((h%360)+360)%360; s=clamp(s,0,100)/100; v=clamp(v,0,100)/100;
+  const c=v*s, x=c*(1-Math.abs((h/60)%2-1)), m=v-c;
+  let r=0,g=0,b=0;
+  if(h<60){r=c;g=x;} else if(h<120){r=x;g=c;}
+  else if(h<180){g=c;b=x;} else if(h<240){g=x;b=c;}
+  else if(h<300){r=x;b=c;} else {r=c;b=x;}
+  return [Math.round((r+m)*255),Math.round((g+m)*255),Math.round((b+m)*255)];
+}
+function rgb2hsv(r,g,b){
+  r/=255;g/=255;b/=255;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;
+  let h=0;
+  if(d){
+    if(mx===r) h=60*(((g-b)/d)%6);
+    else if(mx===g) h=60*((b-r)/d+2);
+    else h=60*((r-g)/d+4);
+  }
+  if(h<0)h+=360;
+  return [Math.round(h),Math.round(mx?d/mx*100:0),Math.round(mx*100)];
+}
+function run(){
+  const h=clamp(parseFloat($('h').value)||0,0,360);
+  const s=clamp(parseFloat($('s').value)||0,0,100);
+  const v=clamp(parseFloat($('v').value)||0,0,100);
+  const a=clamp(parseFloat($('a').value)||0,0,1);
+  const [r,g,b]=hsv2rgb(h,s,v);
+  const hex='#'+hx(r)+hx(g)+hx(b);
+  const back=rgb2hsv(r,g,b);
+  // relative luminance + contrast against white and black text
+  const lin=c=>{c/=255;return c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);};
+  const L=0.2126*lin(r)+0.7152*lin(g)+0.0722*lin(b);
+  const ratio=(1.05)/(L+0.05);
+  $('out').textContent=[
+    'HSV        '+h.toFixed(0)+', '+s.toFixed(0)+'%, '+v.toFixed(0)+'%'+(a<1?'  alpha '+a:''),
+    'RGB        rgb('+r+', '+g+', '+b+')',
+    'HEX        '+hex,
+    'round-trip HSV  '+back[0]+', '+back[1]+'%, '+back[2]+'%   (encoder check)',
+    'luminance  '+L.toFixed(4),
+    'vs white   '+ratio.toFixed(2)+':1',
+    'CSS        hsl('+h.toFixed(0)+', '+s.toFixed(0)+'%, '+v.toFixed(0)+'%)'
+  ].join('\n');
+  $('sw').style.background='hsla('+h+','+s+'%,'+v+'%,'+a+')';
+  $('ramps').innerHTML=[0,60,120,180,240,300].map(dh=>{
+    const c=hsv2rgb(h+dh,s||100,v||100);
+    return '<span class="h-9 w-9 rounded-lg border border-white/10" title="'+(h+dh)+'" style="background:rgb('+c.join(',')+')"></span>';
+  }).join('');
+}
+$('go').addEventListener('click',run);
+$('copy').addEventListener('click',()=>{
+  const hex=$('out').textContent.split('\n').find(l=>l.startsWith('HEX')).split(/\s+/)[1];
+  navigator.clipboard.writeText(hex).then(()=>{
+    $('copy').classList.add('ok'); setTimeout(()=>$('copy').classList.remove('ok'),1200);
+  });
+});
+run();
+</script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/contrast-checker/">
+      <span class="ocurp-related-n">Contrast Checker</span>
+      <span class="ocurp-related-b">Check any two colours against the WCAG contrast rules and see which levels pass.</span>
+    </a></li>
+    <li><a href="/workspace/tools/hex-to-rgb/">
+      <span class="ocurp-related-n">HEX to RGB Converter</span>
+      <span class="ocurp-related-b">Convert HEX, RGB, HSL and HSV with WCAG contrast ratios and a full tint scale.</span>
+    </a></li>
+    <li><a href="/workspace/tools/image-adjust/">
+      <span class="ocurp-related-n">Image Adjustments</span>
+      <span class="ocurp-related-b">Brightness, contrast, saturation, temperature, highlights and shadows applied to the real </span>
+    </a></li>
+    <li><a href="/workspace/tools/image-histogram/">
+      <span class="ocurp-related-n">Image Histogram</span>
+      <span class="ocurp-related-b">Real per-channel histograms with mean, standard deviation, median and quartiles from the d</span>
+    </a></li>
+    <li><a href="/workspace/tools/palette/">
+      <span class="ocurp-related-n">Palette Extractor</span>
+      <span class="ocurp-related-b">Pull a palette out of any image you drop in.</span>
+    </a></li>
+    <li><a href="/workspace/tools/color-converter/">
+      <span class="ocurp-related-n">HEX / RGB / HSL</span>
+      <span class="ocurp-related-b">Convert colours three ways with a live preview.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -33,4 +33,9 @@ const RAW = [
   {slug:"gomoku",name:"Gomoku",cat:"game",blurb:"Five in a row against an AI that scores every candidate move.",tags:["GAMES","STRATEGY","AI"],ready:true},
   {slug:"nim",name:"Nim",cat:"game",blurb:"Two piles, optimal play. The AI always leaves you a losing position.",tags:["GAMES","STRATEGY","MATH"],ready:true},
   {slug:"space-invaders",name:"Space Invaders",cat:"game",blurb:"Descending waves, destructible shields and a rising score.",tags:["GAMES","ARCADE"],ready:true},
+  {slug:"jepa-lab",name:"Latent Physics Lab",cat:"game",blurb:"A JEPA learns to predict a ball's next position from a latent representation of a frame - never from pixels. It trains in your browser.",tags:["GAMES","AI","ML"],ready:true},
+  {slug:"n-body-orbits",name:"N-Body Orbits",cat:"game",blurb:"Real Newtonian gravity at the real G. Start circular, nudge the planet, and watch the ellipse appear - with live semi-major axis, eccentricity and period.",tags:["GAMES","PHYSICS","SIMULATION","ASTROPHYSICS"],ready:true},
+  {slug:"pendulum-lab",name:"Pendulum Lab",cat:"game",blurb:"Nine coupled pendulums on a real g = 9.81. Small-angle period printed underneath; the chaos beside it is the point.",tags:["GAMES","PHYSICS","SIMULATION","MATH"],ready:true},
+  {slug:"reaction-diffusion",name:"Reaction Diffusion",cat:"game",blurb:"A real Gray-Scott solver. Eight regimes - mitosis, coral, worms, solitons, fingerprint - and the feed/kill map that makes them.",tags:["GAMES","SIMULATION","PHYSICS","VISUAL"],ready:true},
+  {slug:"wave-equation",name:"Wave Equation",cat:"game",blurb:"An explicit leapfrog finite-difference solver. Resonance, standing waves and superposition, with the measured period next to the theory.",tags:["GAMES","SIMULATION","PHYSICS","MATH"],ready:true},
 ];

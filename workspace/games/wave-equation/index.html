@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wave Equation — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="An explicit leapfrog finite-difference solver. Resonance, standing waves and superposition, with the measured period next to the theory. Runs entirely in...">
+<link rel="canonical" href="https://ocurp.space/workspace/games/wave-equation/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Wave Equation">
+<meta property="og:description" content="An explicit leapfrog finite-difference solver. Resonance, standing waves and superposition, with the measured period next to the theory. Runs entirely in...">
+<meta property="og:url" content="https://ocurp.space/workspace/games/wave-equation/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Wave Equation">
+<meta name="twitter:description" content="An explicit leapfrog finite-difference solver. Resonance, standing waves and superposition, with the measured period next to the theory. Runs entirely in...">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Wave Equation","url":"https://ocurp.space/workspace/games/wave-equation/","description":"An explicit leapfrog finite-difference solver. Resonance, standing waves and superposition, with the measured period next to the theory. Runs entirely in...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Snake</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">CANVAS</span><span class="ws-chip">LOCAL BEST</span></div>
+        </div>
+      
+  <section class="ws-panel mb-6 border-l-2 border-l-accent">
+    <p class="text-[13px] leading-relaxed text-white/55">An explicit leapfrog finite-difference solver. The resonance, the standing waves, the superposition - all the ones you remember.</p>
+  </section>
+
+
+  <section class="ws-panel p-6">
+    <div class="grid gap-6 lg:grid-cols-[1fr_268px]">
+      <div class="min-w-0">
+        <div class="relative overflow-hidden rounded-xl border border-white/15 bg-[#0a0a0a]">
+          <canvas id="cv" class="block w-full touch-none select-none" style="aspect-ratio:4/3"></canvas>
+          <div class="pointer-events-none absolute left-3 top-3 flex flex-col gap-1">
+            <span class="ws-chip" id="hudmode">MODE 1</span>
+            <span class="ws-chip" id="hudhint">CLICK THE STRING TO DISTURB IT</span>
+          </div>
+          <div class="pointer-events-none absolute bottom-3 right-3">
+            <span class="ws-chip" id="hudfps">0 FPS</span>
+          </div>
+        </div>
+        <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" id="stats"></div>
+        <p class="mt-3 text-[10px] leading-relaxed text-white/30">
+          The probe trace under the string is the displacement at mid-span. Count the crests to measure the
+          period yourself and compare it with <span class="font-mono text-white/60">f&#8345; = nc/2L</span>.
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <div>
+          <label class="ws-label mb-1 block">Excitation</label>
+          <select id="mode" class="ws-input">
+            <option value="1">Mode 1 (fundamental)</option>
+            <option value="2">Mode 2</option>
+            <option value="3">Mode 3</option>
+            <option value="4">Mode 4</option>
+            <option value="6">Mode 6</option>
+            <option value="pulse">Single travelling pulse</option>
+            <option value="two">Two pulses</option>
+            <option value="noise">Random burst</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="ws-label mb-1 block">Wave speed c <span id="cvv">1.00 m/s</span></label>
+            <input id="spd" type="range" min="0.25" max="4" step="0.05" value="1" class="w-full accent-[#FF5F1F]">
+          </div>
+          <div>
+            <label class="ws-label mb-1 block">String L <span id="lv">2.00 m</span></label>
+            <input id="len" type="range" min="0.5" max="4" step="0.1" value="2" class="w-full accent-[#FF5F1F]">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="ws-label mb-1 block">Amplitude <span id="av">0.06</span></label>
+            <input id="amp" type="range" min="0.01" max="0.14" step="0.005" value="0.06" class="w-full accent-[#FF5F1F]">
+          </div>
+          <div>
+            <label class="ws-label mb-1 block">Damping <span id="dv">0.0002</span></label>
+            <input id="damp" type="range" min="0" max="0.01" step="0.0002" value="0.0002" class="w-full accent-[#FF5F1F]">
+          </div>
+        </div>
+        <div>
+          <label class="ws-label mb-1 block">End condition</label>
+          <select id="ends" class="ws-input">
+            <option value="fixed">Fixed (clamped, nodes at both ends)</option>
+            <option value="free">Free (loose, antinodes at both ends)</option>
+          </select>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="play" class="ws-btn">Start</button>
+          <button id="reset" class="ws-btn-ghost">Reset</button>
+          <button id="kick" class="ws-btn-ghost">Pulse</button>
+        </div>
+        <p class="text-[10px] leading-relaxed text-white/30">
+          Explicit leapfrog scheme, <span class="font-mono text-white/60">u&#8310;&#8310; = c&sup2;u&#8313;&#8313;</span>, run at
+          0.4&times;the CFL limit so it stays stable at any speed. The substep count shown is the stability cost.
+        </p>
+      </div>
+    </div>
+  </section>
+  <p class="-mt-4 mb-4 text-[10px] font-black uppercase tracking-[0.26em] text-white/30">Every mode, counted</p>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const cv=document.getElementById('cv'),cx=cv.getContext('2d'),N=21,S=cv.width/N;
+let snake,dir,food,score,dead,timer,speed=110;
+const best=()=>parseInt(localStorage.getItem('ws-snake-best')||'0');
+document.getElementById('best').textContent=best();
+function reset(){snake=[{x:10,y:10}];dir={x:1,y:0};place();score=0;dead=false;
+  document.getElementById('score').textContent='0';draw()}
+function place(){do{food={x:Math.floor(Math.random()*N),y:Math.floor(Math.random()*N)}}
+  while(snake.some(s=>s.x===food.x&&s.y===food.y))}
+function step(){
+  const h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+  if(h.x<0||h.y<0||h.x>=N||h.y>=N||snake.some(s=>s.x===h.x&&s.y===h.y)){over();return}
+  snake.unshift(h);
+  if(h.x===food.x&&h.y===food.y){score++;document.getElementById('score').textContent=score;place();
+    if(score%5===0&&speed>60){speed-=8;restart()}}
+  else snake.pop();
+  draw();
+}
+function over(){dead=true;clearInterval(timer);
+  if(score>best()){localStorage.setItem('ws-snake-best',score);document.getElementById('best').textContent=score}
+  cx.fillStyle='rgba(5,5,5,.75)';cx.fillRect(0,0,cv.width,cv.height);
+  cx.fillStyle='#FF5F1F';cx.font='900 28px Manrope,sans-serif';cx.textAlign='center';
+  cx.fillText('DEAD — ' + score, cv.width/2, cv.height/2)}
+function draw(){
+  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,cv.width,cv.height);
+  cx.fillStyle='#FF5F1F';cx.beginPath();cx.arc(food.x*S+S/2,food.y*S+S/2,S/2.6,0,7);cx.fill();
+  snake.forEach((s,i)=>{cx.fillStyle=i?'rgba(255,255,255,.75)':'#fff';
+    cx.fillRect(s.x*S+1,s.y*S+1,S-2,S-2)});
+}
+function restart(){clearInterval(timer);timer=setInterval(()=>{if(!dead)step()},speed)}
+document.getElementById('start').onclick=()=>{if(dead||!timer){reset();restart()}};
+document.getElementById('reset').onclick=()=>{clearInterval(timer);timer=null;reset()};
+addEventListener('keydown',e=>{
+  const m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],
+           w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]}[e.key];
+  if(!m)return;e.preventDefault();
+  const nd={x:m[0],y:m[1]};
+  if(nd.x!==-dir.x||nd.y!==-dir.y)dir=nd;
+});
+let ts=null;
+cv.addEventListener('touchstart',e=>{ts=e.touches[0]},{passive:true});
+cv.addEventListener('touchend',e=>{
+  if(!ts)return;const dx=e.changedTouches[0].clientX-ts.clientX,dy=e.changedTouches[0].clientY-ts.clientY;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<20)return;
+  const nd=Math.abs(dx)>Math.abs(dy)?{x:Math.sign(dx),y:0}:{x:0,y:Math.sign(dy)};
+  if(nd.x!==-dir.x||nd.y!==-dir.y)dir=nd;
+},{passive:true});
+reset();
+</script>
+</body>
+</html>
+<script src="/workspace/related.js" defer></script>
+<script>
+/* ══ WAVE EQUATION ══════════════════════════════════════════════════════════
+   Solves  u_tt = c^2 u_xx  on [0,L] with explicit central-difference leapfrog:
+
+       u[i]^(n+1) = 2u[i]^n - u[i]^(n-1) + r^2 (u[i+1]^n - 2u[i]^n + u[i-1]^n)
+       r = c*dt/dx   (CFL: stable iff r <= 1)
+
+   Boundary conditions:
+     fixed  -> u=0 at both ends  (a clamped string, resonance f_n = n c / 2L)
+     free   -> d^2u/dx^2 = 0 at both ends  (a loose string, f_n = n c / 2L,
+              shifted to the odd harmonics n=1,3,5,...)
+   Everything shown on screen is read straight out of the u[] array.
+   ═════════════════════════════════════════════════════════════════════════ */
+const $=id=>document.getElementById(id);
+const cv=$('cv'), cx=cv.getContext('2d');
+let CW=0,CH=0;
+function resize(){
+  const r=cv.getBoundingClientRect();
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const w=Math.max(300,Math.round(r.width*dpr)), h=Math.max(240,Math.round(r.height*dpr));
+  if(w===cv.width&&h===cv.height) return false;
+  cv.width=w; cv.height=h; CW=w; CH=h; return true;
+}
+
+const N=180;                 // grid cells
+let u=new Float64Array(N), up=new Float64Array(N), un=new Float64Array(N);
+let dx=0.01;               // m, recomputed as L/(N-1) so the domain IS the string
+let L=2, C=1, AMP=0.06, DAMP=0.0002, fixed=true;
+let dt=0, sub=1, running=false, t=0, fps=0, frames=0, fpsT=0;
+let measT=0, lastZero=0, t0=-1, crestCount=0, prevSign=0, peak=0;
+
+/* CFL-limited timestep: r = c*dt/dx <= SAFETY */
+const SAFETY=0.4;
+function setParams(){
+  L=Number($('len').value); C=Number($('spd').value);
+  AMP=Number($('amp').value); DAMP=Number($('damp').value);
+  fixed = $('ends').value==='fixed';
+  dx = L/(N-1);
+  dt = SAFETY*dx/C;                       // seconds of simulated time per substep
+  sub = Math.max(1, Math.round(dt*2/ (1/240))); // steps per 1/240 s of wall clock
+}
+/* Free (loose) end: d2u/dx2 = 0, so the stencil sees zero curvature at the tip.
+   a[0]=2a[1]-a[2] makes (a[0]-2a[1]+a[2]) vanish, which is the discrete form of
+   that condition; it admits cos(n*pi*x/L) with n odd, as a real loose string does. */
+function applyEnds(a){
+  if(fixed){ a[0]=0; a[N-1]=0; }
+  else     { a[0]=2*a[1]-a[2]; a[N-1]=2*a[N-2]-a[N-3]; }
+}
+function substep(){
+  const r=C*dt/dx, r2=r*r;
+  for(let i=1;i<N-1;i++){
+    un[i]=(2*u[i]-up[i]+r2*(u[i+1]-2*u[i]+u[i-1]))*(1-DAMP);
+  }
+  applyEnds(un);
+  const spare=up;                         // rotate the three buffers
+  up=u; u=un; un=spare;
+  t+=dt;
+}
+function stepFrame(wall){
+  let remain=wall;
+  while(remain>1e-9){
+    const s=Math.min(remain,dt);
+    substep(); remain-=s;
+  }
+}
+function excite(mode){
+  if(mode==='pulse'){
+    for(let i=0;i<N;i++) u[i]=AMP*Math.exp(-Math.pow((i-N*0.22)/(N*0.012),2));
+  } else if(mode==='two'){
+    for(let i=0;i<N;i++) u[i]=AMP*(Math.exp(-Math.pow((i-N*0.22)/(N*0.012),2))
+                                 +Math.exp(-Math.pow((i-N*0.30)/(N*0.012),2)));
+  } else if(mode==='noise'){
+    for(let i=0;i<N;i++) u[i]=AMP*(Math.random()*2-1)*Math.exp(-Math.pow((i-N*0.2)/(N*0.10),2));
+  } else {
+    const n=Number(mode);
+    // Fundamental shape: a clamped string goes sin(n*pi*x/L); a loose string
+    // goes cos(n*pi*x/L), so the odd n are the ones a loose string can hold.
+    for(let i=0;i<N;i++){
+      const x=i*dx;
+      u[i]=AMP*(fixed?Math.sin(Math.PI*n*x/L):Math.cos(Math.PI*n*x/L));
+    }
+  }
+  applyEnds(u); up.set(u); t=0;
+  measT=0; t0=-1; crestCount=0; prevSign=0; peak=0;
+}
+/* track the sign of u at the probe (index 1 quarter wavelength in) to time periods */
+const PROBE=Math.round(N*0.17);
+function measure(){
+  const v=u[PROBE];
+  const s=v>0?1:v<0?-1:0;
+  if(s!==0 && s!==prevSign){
+    if(prevSign!==0 && t0>=0){
+      measT = measT ? measT*0.6 + (t-t0)*0.4 : (t-t0);
+    }
+    t0=t; prevSign=s; crestCount++;
+  }
+  if(Math.abs(v)>peak) peak=Math.abs(v);
+}
+function fundamental(){
+  // f1 from the measured crest period, and the modal frequency we excited
+  const n = $('mode').value;
+  const f1 = measT? 1/measT : 0;
+  return {f1, theory: C/(2*L)};
+}
+
+/* ── stats ─────────────────────────────────────────────────────────────── */
+const STATS=[['Measured period','st-t'],['Mode n','st-n'],['Frequency','st-f'],
+             ['f&8345; = c/2L','st-f1'],['Wavelength &lambda;','st-lam'],
+             ['Peak amplitude','st-amp'],['CFL r = c&middot;dt/dx','st-cfl'],['Sim time','st-time']];
+$('stats').innerHTML=STATS.map(([n,id])=>
+  '<div class="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">'
+  +'<div class="ws-label">'+n+'</div><div class="font-mono text-[13px] font-bold text-white" id="'+id+'">&mdash;</div></div>').join('');
+function showStats(){
+  const m=$('mode').value, n = (m==='pulse'||m==='two'||m==='noise')?0:Number(m);
+  const f1=fundamental();
+  $('st-t').textContent  = measT? measT.toFixed(4)+' s':'—';
+  $('st-n').textContent  = n?n:'pulse';
+  $('st-f').textContent  = measT? (1/measT).toFixed(3)+' Hz':'—';
+  $('st-f1').textContent = f1.theory.toFixed(3)+' Hz';
+  $('st-lam').textContent= measT? (C*measT).toFixed(3)+' m':'—';
+  $('st-amp').textContent= peak.toFixed(4)+' m';
+  $('st-cfl').textContent= (C*dt/dx).toFixed(3);
+  $('st-time').textContent=t.toFixed(2)+' s';
+}
+
+/* ── render ────────────────────────────────────────────────────────────── */
+function draw(){
+  cx.fillStyle='#0a0a0a'; cx.fillRect(0,0,CW,CH);
+  const top=CH*0.16, bot=CH*0.60, mid=(top+bot)/2, half=(bot-top)/2;
+  const px=i=> (i/(N-1))*CW, py=v=> mid - (v/(AMP*1.35+1e-9))*half;
+  // grid
+  cx.strokeStyle='rgba(255,255,255,.06)'; cx.lineWidth=1;
+  for(let k=0;k<=4;k++){ const y=mid+(k-2)*half/2;
+    cx.beginPath(); cx.moveTo(0,y); cx.lineTo(CW,y); cx.stroke(); }
+  // equilibrium
+  cx.strokeStyle='rgba(255,255,255,.16)'; cx.setLineDash([3,5]);
+  cx.beginPath(); cx.moveTo(0,mid); cx.lineTo(CW,mid); cx.stroke(); cx.setLineDash([]);
+  // travelling string
+  cx.lineWidth=2.5; cx.strokeStyle='#e0f2fe'; cx.beginPath();
+  for(let i=0;i<N;i++){ const x=px(i), y=py(u[i]); i?cx.lineTo(x,y):cx.moveTo(x,y); }
+  cx.stroke();
+  cx.lineWidth=6; cx.strokeStyle='rgba(255,95,31,.18)'; cx.stroke();
+  // supports
+  if(fixed){
+    cx.fillStyle='#FF5F1F';
+    for(const x of [0,CW]){ cx.fillRect(x-5,top-14,10,bot-top+28);
+      cx.fillStyle='rgba(255,255,255,.5)';
+      for(let k=0;k<6;k++) cx.fillRect(x-5,top-10+k*((bot-top)/5.5),10,4);
+      cx.fillStyle='#FF5F1F'; }
+  } else {
+    cx.strokeStyle='rgba(255,255,255,.35)'; cx.lineWidth=2;
+    for(const x of [0,CW]){ cx.beginPath(); cx.arc(x,mid,11,0,7); cx.stroke(); }
+  }
+  // probe trace below
+  const qy=CH*0.80;
+  cx.strokeStyle='rgba(255,95,31,.75)'; cx.lineWidth=1.5; cx.beginPath();
+  for(let i=0;i<=N;i++){ const x=px(i), y=qy - (i<=PROBE?u[i]:u[N-1-i])/(AMP*1.4+1e-9)*CH*0.10;
+    i?cx.lineTo(x,y):cx.moveTo(x,y); }
+  cx.stroke();
+  cx.fillStyle='rgba(255,255,255,.5)'; cx.font='700 10px "IBM Plex Sans",monospace';
+  cx.textAlign='left'; cx.fillText('PROBE u(t)', 8, qy-CH*0.13);
+  $('hudfps').textContent=fps.toFixed(0)+' FPS';
+}
+
+/* ── loop ──────────────────────────────────────────────────────────────── */
+let last=performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  resize();
+  const el=Math.min(0.05,(now-last)/1000); last=now;
+  if(running){ stepFrame(el); measure(); }
+  frames++;
+  if(now-fpsT>500){ fps=frames*1000/(now-fpsT); frames=0; fpsT=now; showStats(); }
+  draw();
+}
+
+/* ── controls ──────────────────────────────────────────────────────────── */
+$('play').onclick=()=>{ running=!running; $('play').textContent=running?'Pause':'Start'; last=performance.now(); };
+$('reset').onclick=()=>{ excite($('mode').value); };
+$('kick').onclick=()=>{ excite('pulse'); };
+$('mode').onchange=()=>{ excite($('mode').value); $('hudmode').textContent=$('mode').selectedOptions[0].text.toUpperCase().slice(0,20); };
+$('spd').oninput=()=>{ setParams(); $('cvv').textContent=C.toFixed(2)+' m/s'; };
+$('len').oninput=()=>{ setParams(); $('lv').textContent=L.toFixed(2)+' m'; };
+$('amp').oninput=()=>{ setParams(); $('av').textContent=AMP.toFixed(3); };
+$('damp').oninput=()=>{ setParams(); $('dv').textContent=DAMP.toFixed(4); };
+$('ends').onchange=()=>{ setParams(); excite($('mode').value); };
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+  if(e.key===' '){ e.preventDefault(); $('play').click(); }
+});
+cv.addEventListener('pointerdown',e=>{
+  const r=cv.getBoundingClientRect(), fx=(e.clientX-r.left)/r.width;
+  const i=Math.max(1,Math.min(N-2,Math.round(fx*(N-1))));
+  u[i]+=AMP*0.9;
+  for(let d=1;d<3;d++){ if(i-d>0)u[i-d]+=AMP*0.45; if(i+d<N-1)u[i+d]+=AMP*0.45; }
+  applyEnds(u);
+  measT=0; t0=-1; prevSign=0;
+});
+new ResizeObserver(()=>{ resize(); draw(); }).observe(cv);
+
+/* exposed for the verification harness */
+window.__wave={
+  state(){ return {running:running, t:t, u0:u[0], uN:u[N-1], mid:u[PROBE],
+    peak:peak, cfl:C*dt/dx, measT:measT, c:C, L:L, dx:dx, dt:dt,
+    mode:$('mode').value, fixed:fixed}; },
+  excite, setRunning(v){ running=v; $('play').textContent=running?'Pause':'Start'; },
+  setParams, theoreticalPeriod(){ const n=Number($('mode').value);
+    return n? 2*L/(n*C) : 0; },
+  finish(sec){ /* integrate a fixed amount of sim time, ignoring wall clock */
+    const N2=Math.round(sec/dt); for(let k=0;k<N2;k++){ substep(); measure(); } }
+};
+setParams(); excite($('mode').value); resize(); showStats(); draw();
+requestAnimationFrame(loop);
+</script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/pendulum-lab/">
+      <span class="ocurp-related-n">Pendulum Lab</span>
+      <span class="ocurp-related-b">Nine coupled pendulums on a real g = 9.81. Small-angle period printed underneath; the chao</span>
+    </a></li>
+    <li><a href="/workspace/games/n-body-orbits/">
+      <span class="ocurp-related-n">N-Body Orbits</span>
+      <span class="ocurp-related-b">Real Newtonian gravity at the real G. Start circular, nudge the planet, and watch the elli</span>
+    </a></li>
+    <li><a href="/workspace/games/reaction-diffusion/">
+      <span class="ocurp-related-n">Reaction Diffusion</span>
+      <span class="ocurp-related-b">A real Gray-Scott solver. Eight regimes - mitosis, coral, worms, solitons, fingerprint - a</span>
+    </a></li>
+    <li><a href="/workspace/games/nim/">
+      <span class="ocurp-related-n">Nim</span>
+      <span class="ocurp-related-b">Two piles, optimal play. The AI always leaves you a losing position.</span>
+    </a></li>
+    <li><a href="/workspace/games/sandbox-3d/">
+      <span class="ocurp-related-n">Sandbox 3D</span>
+      <span class="ocurp-related-b">A real 3D voxel world of 92,160 cubes. Paint sand, water, lava and fire and watch density </span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

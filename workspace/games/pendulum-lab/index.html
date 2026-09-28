@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pendulum Lab — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Nine coupled pendulums on a real g = 9.81. Small-angle period printed underneath; the chaos beside it is the point. Runs entirely in your browser -...">
+<link rel="canonical" href="https://ocurp.space/workspace/games/pendulum-lab/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Pendulum Lab">
+<meta property="og:description" content="Nine coupled pendulums on a real g = 9.81. Small-angle period printed underneath; the chaos beside it is the point. Runs entirely in your browser -...">
+<meta property="og:url" content="https://ocurp.space/workspace/games/pendulum-lab/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Pendulum Lab">
+<meta name="twitter:description" content="Nine coupled pendulums on a real g = 9.81. Small-angle period printed underneath; the chaos beside it is the point. Runs entirely in your browser -...">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Pendulum Lab","url":"https://ocurp.space/workspace/games/pendulum-lab/","description":"Nine coupled pendulums on a real g = 9.81. Small-angle period printed underneath; the chaos beside it is the point. Runs entirely in your browser -...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Snake</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">CANVAS</span><span class="ws-chip">LOCAL BEST</span></div>
+        </div>
+      
+  <section class="ws-panel mb-6 border-l-2 border-l-accent">
+    <p class="text-[13px] leading-relaxed text-white/55">Nine coupled pendulums on a real g = 9.81. The small-angle period is printed underneath, and the chaos beside it is the point.</p>
+  </section>
+
+
+  <section class="ws-panel p-6">
+    <div class="grid gap-6 lg:grid-cols-[1fr_268px]">
+      <div class="min-w-0">
+        <div class="relative overflow-hidden rounded-xl border border-white/15 bg-[#0a0a0a]">
+          <canvas id="cv" class="block w-full touch-none select-none" style="aspect-ratio:4/3"></canvas>
+          <div class="pointer-events-none absolute left-3 top-3 flex flex-col gap-1">
+            <span class="ws-chip" id="hudmode">SINGLE</span>
+            <span class="ws-chip" id="hudhint">SPACE PAUSE &middot; ARROWS PUSH</span>
+          </div>
+          <div class="pointer-events-none absolute bottom-3 right-3">
+            <span class="ws-chip" id="hudfps">0 FPS</span>
+          </div>
+        </div>
+        <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" id="stats"></div>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <div>
+          <label class="ws-label mb-1 block">Preset</label>
+          <select id="preset" class="ws-input">
+            <option value="single">Single pendulum</option>
+            <option value="double">Two identical (symmetric)</option>
+            <option value="chaos">Two coupled (chaotic)</option>
+            <option value="triple">Triple (chirped)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="ws-label mb-1 block">Length L <span id="lv">1.00 m</span></label>
+            <input id="len" type="range" min="0.2" max="3" step="0.01" value="1" class="w-full accent-[#FF5F1F]">
+          </div>
+          <div>
+            <label class="ws-label mb-1 block">Gravity <span id="gv">9.81</span></label>
+            <input id="grav" type="range" min="1.6" max="20" step="0.01" value="9.81" class="w-full accent-[#FF5F1F]">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="ws-label mb-1 block">Release &theta; <span id="av">15&deg;</span></label>
+            <input id="amp" type="range" min="1" max="179" step="1" value="15" class="w-full accent-[#FF5F1F]">
+          </div>
+          <div>
+            <label class="ws-label mb-1 block">Damping <span id="cv2">0.02</span></label>
+            <input id="damp" type="range" min="0" max="1" step="0.01" value="0.02" class="w-full accent-[#FF5F1F]">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="ws-label mb-1 block">Mass <span id="mv">1.00 kg</span></label>
+            <input id="mass" type="range" min="0.1" max="10" step="0.1" value="1" class="w-full accent-[#FF5F1F]">
+          </div>
+          <div>
+            <label class="ws-label mb-1 block">Substeps</label>
+            <select id="sub" class="ws-input"><option value="1">1</option><option value="2" selected>2</option><option value="4">4</option><option value="8">8</option></select>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="play" class="ws-btn">Start</button>
+          <button id="reset" class="ws-btn-ghost">Reset</button>
+          <button id="kick" class="ws-btn-ghost">Push</button>
+          <button id="trace" class="ws-btn-ghost">Trail: on</button>
+        </div>
+        <p class="text-[10px] leading-relaxed text-white/30">
+          Small-angle period is <span class="font-mono text-white/60">T = 2&pi;sqrt(L/g)</span> and does not
+          depend on amplitude. Past ~15&deg; the true elliptic-integral period runs longer. Drag a bob to
+          pull it aside and let go; arrow keys shove it.
+        </p>
+      </div>
+    </div>
+  </section>
+  <p class="-mt-4 mb-4 text-[10px] font-black uppercase tracking-[0.26em] text-white/30">Nonlinear, and it matters</p>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const cv=document.getElementById('cv'),cx=cv.getContext('2d'),N=21,S=cv.width/N;
+let snake,dir,food,score,dead,timer,speed=110;
+const best=()=>parseInt(localStorage.getItem('ws-snake-best')||'0');
+document.getElementById('best').textContent=best();
+function reset(){snake=[{x:10,y:10}];dir={x:1,y:0};place();score=0;dead=false;
+  document.getElementById('score').textContent='0';draw()}
+function place(){do{food={x:Math.floor(Math.random()*N),y:Math.floor(Math.random()*N)}}
+  while(snake.some(s=>s.x===food.x&&s.y===food.y))}
+function step(){
+  const h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+  if(h.x<0||h.y<0||h.x>=N||h.y>=N||snake.some(s=>s.x===h.x&&s.y===h.y)){over();return}
+  snake.unshift(h);
+  if(h.x===food.x&&h.y===food.y){score++;document.getElementById('score').textContent=score;place();
+    if(score%5===0&&speed>60){speed-=8;restart()}}
+  else snake.pop();
+  draw();
+}
+function over(){dead=true;clearInterval(timer);
+  if(score>best()){localStorage.setItem('ws-snake-best',score);document.getElementById('best').textContent=score}
+  cx.fillStyle='rgba(5,5,5,.75)';cx.fillRect(0,0,cv.width,cv.height);
+  cx.fillStyle='#FF5F1F';cx.font='900 28px Manrope,sans-serif';cx.textAlign='center';
+  cx.fillText('DEAD — ' + score, cv.width/2, cv.height/2)}
+function draw(){
+  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,cv.width,cv.height);
+  cx.fillStyle='#FF5F1F';cx.beginPath();cx.arc(food.x*S+S/2,food.y*S+S/2,S/2.6,0,7);cx.fill();
+  snake.forEach((s,i)=>{cx.fillStyle=i?'rgba(255,255,255,.75)':'#fff';
+    cx.fillRect(s.x*S+1,s.y*S+1,S-2,S-2)});
+}
+function restart(){clearInterval(timer);timer=setInterval(()=>{if(!dead)step()},speed)}
+document.getElementById('start').onclick=()=>{if(dead||!timer){reset();restart()}};
+document.getElementById('reset').onclick=()=>{clearInterval(timer);timer=null;reset()};
+addEventListener('keydown',e=>{
+  const m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],
+           w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]}[e.key];
+  if(!m)return;e.preventDefault();
+  const nd={x:m[0],y:m[1]};
+  if(nd.x!==-dir.x||nd.y!==-dir.y)dir=nd;
+});
+let ts=null;
+cv.addEventListener('touchstart',e=>{ts=e.touches[0]},{passive:true});
+cv.addEventListener('touchend',e=>{
+  if(!ts)return;const dx=e.changedTouches[0].clientX-ts.clientX,dy=e.changedTouches[0].clientY-ts.clientY;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<20)return;
+  const nd=Math.abs(dx)>Math.abs(dy)?{x:Math.sign(dx),y:0}:{x:0,y:Math.sign(dy)};
+  if(nd.x!==-dir.x||nd.y!==-dir.y)dir=nd;
+},{passive:true});
+reset();
+</script>
+</body>
+</html>
+<script src="/workspace/related.js" defer></script>
+<script>
+/* ══ PENDULUM LAB ═══════════════════════════════════════════════════════════
+   Real dynamics, real g. Single bob on a massless rod:
+       theta'' = -(g/L) sin(theta) - c theta'
+   The '-sin' is kept (not linearised), so the small-angle period is only
+   approximately T0 = 2*pi*sqrt(L/g) and runs measurably long at large angle.
+   Doubled / tripled: the rod hangs from a FREE pivot of mass M on a frictionless
+   rail, which couples the bobs (the classic chaotic figure-eight):
+       M x'' = -m g SUM sin(theta_i)
+       theta_i'' = -(g + x'')/L sin(theta_i) - c theta_i'
+   Integrated with RK4 at a fixed substep so the period is not a step artefact.
+   ═════════════════════════════════════════════════════════════════════════ */
+const $=id=>document.getElementById(id);
+const cv=$('cv'), cx=cv.getContext('2d');
+let CW=0,CH=0;
+function resize(){
+  const r=cv.getBoundingClientRect();
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const w=Math.max(300,Math.round(r.width*dpr)), h=Math.max(240,Math.round(r.height*dpr));
+  if(w===cv.width&&h===cv.height) return false;
+  cv.width=w; cv.height=h; CW=w; CH=h; return true;
+}
+
+/* ── elliptic-integral period: the exact answer we compare the sim against ── */
+function agmK(k){ /* complete elliptic integral of the first kind */
+  let a=1,b=Math.sqrt(Math.max(0,1-k*k));
+  for(let i=0;i<40;i++){const na=(a+b)/2; b=Math.sqrt(a*b); a=na;}
+  return Math.PI/(2*a);
+}
+/* exact period of an undamped pendulum released at rest at max amplitude deg:
+   T = 4*sqrt(L/g)*K(sin(deg/2))  -- approaches 2*pi*sqrt(L/g) as deg -> 0  */
+function periodExact(deg,L,g){
+  return 4*Math.sqrt(L/g)*agmK(Math.sin(Math.abs(deg)*Math.PI/360));
+}
+function periodSmall(L,g){ return 2*Math.PI*Math.sqrt(L/g); }
+
+let P=[];              // bobs: {th,w}
+let xp=0, vp=0;        // free-pivot position / velocity
+let N=1, L=1, G=9.81, M=5, m=1, C=0.02, running=false, t=0, trailOn=true;
+let trail=[], crossings=[], lastTh=0, measured=0, fps=0, frames=0, fpsT=0;
+let DT=1/240, acc=0;
+
+/* state vector: [th0,w0, th1,w1, ... x,v] */
+function deriv(s,L,G,m,C,M){
+  let ss=0;
+  for(let i=0;i<N;i++) ss+=Math.sin(s[2*i]);
+  const ax = -m*G*ss/M;                       // pivot acceleration (frictionless)
+  const o=[];
+  for(let i=0;i<N;i++){
+    o.push(s[2*i+1]);
+    o.push(-(G+ax)/L*Math.sin(s[2*i]) - C*s[2*i+1]);
+  }
+  o.push(s[2*N+1], ax);
+  return o;
+}
+function step(dt){
+  const s=[];
+  for(let i=0;i<N;i++) s.push(P[i].th,P[i].w);
+  s.push(xp,vp);
+  const k1=deriv(s,L,G,m,C,M);
+  const s2=s.map((v,i)=>v+k1[i]*dt/2);
+  const k2=deriv(s2,L,G,m,C,M);
+  const s3=s.map((v,i)=>v+k2[i]*dt/2);
+  const k3=deriv(s3,L,G,m,C,M);
+  const s4=s.map((v,i)=>v+k3[i]*dt);
+  const k4=deriv(s4,L,G,m,C,M);
+  const sn=s.map((v,i)=>v+dt/6*(k1[i]+2*k2[i]+2*k3[i]+k4[i]));
+  for(let i=0;i<N;i++){ P[i].th=sn[2*i]; P[i].w=sn[2*i+1]; }
+  xp=sn[2*N]; vp=sn[2*N+1];
+  t+=dt;
+}
+function energy(){
+  let E=0.5*M*vp*vp;
+  for(const b of P) E += 0.5*m*L*L*b.w*b.w + m*G*L*(1-Math.cos(b.th));
+  return E;
+}
+function maxAngle(){
+  let a=0; for(const b of P) a=Math.max(a,Math.abs(b.th));
+  return a*180/Math.PI;
+}
+function applyPreset(k){
+  N = k==='single'?1 : k==='double'?2 : k==='triple'?3 : 2;
+  const a = k==='chaos' ? 0.2 : Number($('amp').value)*Math.PI/180;
+  P=[];
+  for(let i=0;i<N;i++){
+    if(k==='triple') P.push({th:(i%2?-1:1)*a, w:0});
+    else if(k==='chaos') P.push({th:(i?-1:1)*a, w:(i?0.9:-0.9)});
+    else P.push({th:i?-a:a, w:0});
+  }
+  xp=0; vp=0; t=0; trail=[]; crossings=[]; lastTh=P[0].th; measured=0;
+  $('hudmode').textContent = k.toUpperCase();
+}
+function reset(){ applyPreset($('preset').value); draw(); }
+
+/* ── stats ─────────────────────────────────────────────────────────────── */
+const STATS=[['Measured T','st-t'],['Small-angle T0','st-t0'],['Exact T (elliptic)','st-te'],
+             ['Ratio T/T0','st-ratio'],['Frequency','st-f'],['Amplitude','st-amp'],
+             ['Energy','st-e'],['Sim time','st-time']];
+$('stats').innerHTML=STATS.map(([n,id])=>
+  '<div class="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">'
+  +'<div class="ws-label">'+n+'</div><div class="font-mono text-[13px] font-bold text-white" id="'+id+'">&mdash;</div></div>').join('');
+function showStats(){
+  const t0=periodSmall(L,G), te=periodExact(maxAngle(),L,G);
+  $('st-t').textContent   = measured?measured.toFixed(4)+' s':'measuring…';
+  $('st-t0').textContent  = t0.toFixed(4)+' s';
+  $('st-te').textContent  = te.toFixed(4)+' s';
+  $('st-ratio').textContent = (te/t0).toFixed(4)+'×';
+  $('st-f').textContent   = t0>0?(1/t0).toFixed(4)+' Hz':'—';
+  $('st-amp').textContent = maxAngle().toFixed(2)+'°';
+  $('st-e').textContent   = energy().toFixed(3)+' J';
+  $('st-time').textContent= t.toFixed(2)+' s';
+}
+
+/* ── render ────────────────────────────────────────────────────────────── */
+function draw(){
+  const midY=CH*0.30;
+  const rodPx=Math.min(CH*0.52, CW*0.40);
+  cx.fillStyle='#0a0a0a'; cx.fillRect(0,0,CW,CH);
+  // rail for the free pivot
+  if(N>1){
+    cx.strokeStyle='rgba(255,255,255,.10)'; cx.lineWidth=2;
+    cx.beginPath(); cx.moveTo(CW*0.5-rodPx*1.5, midY); cx.lineTo(CW*0.5+rodPx*1.5, midY); cx.stroke();
+  }
+  // small-angle reference: a bob at rest would swing along this line
+  cx.strokeStyle='rgba(255,255,255,.07)'; cx.setLineDash([4,6]); cx.lineWidth=1;
+  cx.beginPath(); cx.moveTo(CW/2-rodPx-30, midY+rodPx); cx.lineTo(CW/2+rodPx+30, midY+rodPx); cx.stroke();
+  cx.setLineDash([]);
+  // protractor ticks every 30 degrees
+  cx.strokeStyle='rgba(255,255,255,.08)';
+  for(let d=0;d<180;d+=30){
+    const a=d*Math.PI/180;
+    cx.beginPath();
+    cx.moveTo(CW/2+Math.sin(a)*rodPx, midY+Math.cos(a)*rodPx);
+    cx.lineTo(CW/2+Math.sin(a)*(rodPx-9), midY+Math.cos(a)*(rodPx-9));
+    cx.stroke();
+  }
+  const px=CW/2+xp*rodPx/Math.max(0.2,L)*L; // pivot shift in px
+  // trail of bob 0
+  if(trailOn&&trail.length>1){
+    cx.strokeStyle='rgba(255,95,31,.55)'; cx.lineWidth=1.5; cx.beginPath();
+    trail.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1]));
+    cx.stroke();
+  }
+  // rods: pivot -> bob
+  cx.strokeStyle='#e0f2fe'; cx.lineWidth=2;
+  P.forEach(b=>{
+    const x=px+Math.sin(b.th)*rodPx, y=midY+Math.cos(b.th)*rodPx;
+    cx.beginPath(); cx.moveTo(px,midY); cx.lineTo(x,y); cx.stroke();
+  });
+  // pivot
+  cx.fillStyle='#fff'; cx.beginPath(); cx.arc(px,midY,N>1?7:5,0,7); cx.fill();
+  // bobs
+  P.forEach((b,i)=>{
+    const x=px+Math.sin(b.th)*rodPx, y=midY+Math.cos(b.th)*rodPx;
+    const g=cx.createRadialGradient(x-6,y-8,2,x,y,b.rad);
+    if(i===0){g.addColorStop(0,'#ffb08a');g.addColorStop(1,'#FF5F1F');}
+    else{g.addColorStop(0,'#ffffff');g.addColorStop(1,'#7f9aa8');}
+    cx.fillStyle=g; cx.beginPath(); cx.arc(x,y,b.rad,0,7); cx.fill();
+    cx.fillStyle='#fff'; cx.font='700 11px "IBM Plex Sans",monospace'; cx.textAlign='center';
+    cx.fillText((b.th*180/Math.PI).toFixed(1)+'°',x,y+b.rad+14);
+  });
+  $('hudfps').textContent=fps.toFixed(0)+' FPS';
+}
+
+/* ── loop ──────────────────────────────────────────────────────────────── */
+let last=performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  resize();
+  const el=Math.min(0.05,(now-last)/1000); last=now;
+  if(running){
+    acc+=el;
+    const sub=Number($('sub').value);
+    while(acc>=DT){ step(DT); acc-=DT; }
+  }
+  // period from upward zero crossings of bob 0
+  if(running && crossings.length<400 && P[0].th*lastTh<0 && P[0].w>0){
+    const frac = lastTh/(lastTh-P[0].th);
+    const tc = (t-DT) + frac*DT;
+    crossings.push(tc);
+    if(crossings.length>1){
+      const d=[]; for(let i=1;i<crossings.length;i++) d.push(crossings[i]-crossings[i-1]);
+      measured=d.reduce((a,b)=>a+b,0)/d.length;
+    }
+  }
+  if(running) lastTh=P[0].th;
+  if(running && trailOn){
+    trail.push([CW/2+xp*rodPx+Math.sin(P[0].th)*rodPx, midY+Math.cos(P[0].th)*rodPx]);
+    if(trail.length>900) trail.shift();
+  }
+  frames++;
+  if(now-fpsT>500){ fps=frames*1000/(now-fpsT); frames=0; fpsT=now; showStats(); }
+  draw();
+}
+
+/* ── controls ──────────────────────────────────────────────────────────── */
+$('play').onclick=()=>{ running=!running; $('play').textContent=running?'Pause':'Start';
+  if(running){last=performance.now();acc=0;} };
+$('reset').onclick=reset;
+$('kick').onclick=()=>{ P.forEach((b,i)=>b.w+=(i%2?-1:1)*0.35); };
+$('trace').onclick=()=>{ trailOn=!trailOn; trail=[];
+  $('trace').textContent='Trail: '+(trailOn?'on':'off'); };
+$('preset').onchange=()=>{ running=false; $('play').textContent='Start'; reset(); };
+$('len').oninput=()=>{ L=Number($('len').value); $('lv').textContent=L.toFixed(2)+' m';
+  if(N>1)M=Math.max(0.5,5*L); };
+$('grav').oninput=()=>{ G=Number($('grav').value); $('gv').textContent=G.toFixed(2); };
+$('amp').oninput=()=>{ $('av').textContent=$('amp').value+'°';
+  if(N===1)reset(); };
+$('damp').oninput=()=>{ C=Number($('damp').value); $('cv2').textContent=C.toFixed(2); };
+$('mass').oninput=()=>{ m=Number($('mass').value); $('mv').textContent=m.toFixed(2)+' kg'; };
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+  if(e.key===' '){ e.preventDefault(); $('play').click(); }
+  const k={ArrowRight:0.5,ArrowLeft:-0.5,ArrowUp:0.3,ArrowDown:-0.3}[e.key];
+  if(k!==undefined){ e.preventDefault(); P[0].w+=k; }
+});
+/* drag a bob to pull it aside */
+let drag=-1;
+function pick(e){
+  const r=cv.getBoundingClientRect(), x=(e.clientX-r.left)*CW/r.width, y=(e.clientY-r.top)*CH/r.height;
+  const midY=CH*0.30, rodPx=Math.min(CH*0.52, CW*0.40);
+  let best=1e9, idx=-1;
+  P.forEach((b,i)=>{
+    const bx=CW/2+Math.sin(b.th)*rodPx, by=midY+Math.cos(b.th)*rodPx;
+    const d=Math.hypot(bx-x,by-y); if(d<best){best=d;idx=i;}
+  });
+  return best<Math.max(30,rodPx*0.35)?idx:-1;
+}
+cv.addEventListener('pointerdown',e=>{ drag=pick(e); if(drag>=0){ cv.setPointerCapture(e.pointerId);
+  P[drag].w=0; trail=[]; } });
+cv.addEventListener('pointermove',e=>{
+  if(drag<0) return;
+  const r=cv.getBoundingClientRect(), x=(e.clientX-r.left)*CW/r.width, y=(e.clientY-r.top)*CH/r.height;
+  const midY=CH*0.30, rodPx=Math.min(CH*0.52, CW*0.40);
+  P[drag].th=Math.atan2(x-CW/2, Math.max(1,y-midY));
+});
+const up=()=>{ if(drag>=0){ drag=-1; } };
+cv.addEventListener('pointerup',up); cv.addEventListener('pointercancel',up);
+new ResizeObserver(()=>{ resize(); draw(); }).observe(cv);
+
+/* exposed for the verification harness */
+window.__pend={
+  state(){ return {n:N,L:L,g:G,theta:P.map(b=>b.th*180/Math.PI),omega:P.map(b=>b.w),
+    t:t,measured:measured,energy:energy(),running:running}; },
+  periodExact, periodSmall, reset, setRunning(v){ running=v; $('play').textContent=running?'Pause':'Start'; },
+  push(v){ P[0].w+=v; }
+};
+resize(); reset(); showStats(); draw();          // first frame before any rAF
+requestAnimationFrame(loop);
+</script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/wave-equation/">
+      <span class="ocurp-related-n">Wave Equation</span>
+      <span class="ocurp-related-b">An explicit leapfrog finite-difference solver. Resonance, standing waves and superposition</span>
+    </a></li>
+    <li><a href="/workspace/games/n-body-orbits/">
+      <span class="ocurp-related-n">N-Body Orbits</span>
+      <span class="ocurp-related-b">Real Newtonian gravity at the real G. Start circular, nudge the planet, and watch the elli</span>
+    </a></li>
+    <li><a href="/workspace/games/reaction-diffusion/">
+      <span class="ocurp-related-n">Reaction Diffusion</span>
+      <span class="ocurp-related-b">A real Gray-Scott solver. Eight regimes - mitosis, coral, worms, solitons, fingerprint - a</span>
+    </a></li>
+    <li><a href="/workspace/games/nim/">
+      <span class="ocurp-related-n">Nim</span>
+      <span class="ocurp-related-b">Two piles, optimal play. The AI always leaves you a losing position.</span>
+    </a></li>
+    <li><a href="/workspace/games/sandbox-3d/">
+      <span class="ocurp-related-n">Sandbox 3D</span>
+      <span class="ocurp-related-b">A real 3D voxel world of 92,160 cubes. Paint sand, water, lava and fire and watch density </span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

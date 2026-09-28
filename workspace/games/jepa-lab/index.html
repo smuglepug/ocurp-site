@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Latent Physics Lab — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  .ws-panel{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:.9rem}
+  .ws-btn{display:block;width:100%;padding:.85rem 1rem;border-radius:.75rem;background:var(--accent);color:#000;font-weight:800;font-size:.8rem;text-align:center;cursor:pointer;border:0}
+  .ws-btn-ghost{display:block;width:100%;padding:.85rem 1rem;border-radius:.75rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#fff;font-weight:700;font-size:.8rem;text-align:center;cursor:pointer}
+  .ws-btn-ghost:hover{background:rgba(255,255,255,.1)}
+  .ws-label{font-size:9px;font-weight:900;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+  .ws-chip{display:inline-block;padding:.3rem .6rem;border:1px solid rgba(255,255,255,.12);border-radius:999px;font-size:9px;font-weight:800;letter-spacing:.1em}
+  .ws-input{width:100%;border-radius:.75rem;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);padding:.9rem 1rem;color:#fff;font-size:.875rem}
+  .ws-input[type=number]{min-width:6rem;text-align:right;font-variant-numeric:tabular-nums}
+  .ws-input[type=number]::-webkit-outer-spin-button,.ws-input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+</style>
+<meta name="description" content="A JEPA learns to predict a ball&#x27;s next position from a latent representation of a frame - never from pixels. It trains in your browser. Runs entirely in...">
+<link rel="canonical" href="https://ocurp.space/workspace/games/jepa-lab/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Latent Physics Lab">
+<meta property="og:description" content="A JEPA learns to predict a ball&#x27;s next position from a latent representation of a frame - never from pixels. It trains in your browser. Runs entirely in...">
+<meta property="og:url" content="https://ocurp.space/workspace/games/jepa-lab/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Latent Physics Lab">
+<meta name="twitter:description" content="A JEPA learns to predict a ball&#x27;s next position from a latent representation of a frame - never from pixels. It trains in your browser. Runs entirely in...">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Latent Physics Lab","url":"https://ocurp.space/workspace/games/jepa-lab/","description":"A JEPA learns to predict a ball's next position from a latent representation of a frame - never from pixels. It trains in your browser. Runs entirely in...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="relative z-10 mx-auto w-full max-w-6xl px-5 pb-20 pt-8 sm:px-8">
+
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      &larr; Games
+    </a>
+    <span class="ws-chip" style="border-color:rgba(255,95,31,.5);color:#FF5F1F">Original build</span>
+    <span class="ws-chip">Client-side</span>
+  </div>
+
+  <div class="mb-2 inline-flex items-center gap-3">
+    <span class="h-1.5 w-1.5 rounded-full" style="background:#FF5F1F"></span>
+    <span class="text-[10px] font-black uppercase tracking-[0.5em]" style="color:#FF5F1F">World models</span>
+  </div>
+  <h1 class="text-4xl font-black tracking-tighter sm:text-6xl" style="line-height:1">Latent Physics Lab</h1>
+  <p class="mt-5 max-w-3xl text-white/55 text-lg">
+    A JEPA-style model learns to predict a ball's <em class="not-italic text-white/80">next position</em>
+    from a learned representation of a frame &mdash; never from the pixels themselves.
+    Everything below trains in this tab, in plain JavaScript.
+  </p>
+
+  <div class="mt-10 grid gap-4 lg:grid-cols-[1.1fr_1fr]">
+
+    <section class="ws-panel p-6">
+      <div class="ws-label mb-3">The world</div>
+      <canvas id="scene" width="480" height="360" class="w-full rounded-xl border border-white/10 bg-[#080808]"></canvas>
+      <div class="mt-4 flex flex-wrap items-center gap-3">
+        <button id="play" class="ws-btn-ghost !w-auto !px-5">Play</button>
+        <button id="step" class="ws-btn-ghost !w-auto !px-5">Step</button>
+        <button id="reset" class="ws-btn-ghost !w-auto !px-5">Reset</button>
+        <span id="state" class="ml-auto text-xs text-white/45"></span>
+      </div>
+      <p class="mt-4 text-xs leading-relaxed text-white/35">
+        Orange = ground truth. Hollow = the model's prediction, one step ahead, from latents only.
+        The error readout is the whole point &mdash; watch it fall as training runs.
+      </p>
+    </section>
+
+    <section class="ws-panel p-6">
+      <div class="ws-label mb-3">JEPA training</div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="ws-label mb-2 block" for="steps">Training steps per run</label>
+          <input id="steps" type="number" class="ws-input" value="400" min="50" max="5000" step="50">
+        </div>
+        <div>
+          <label class="ws-label mb-2 block" for="lr">Learning rate</label>
+          <input id="lr" type="number" class="ws-input" value="0.02" min="0.001" max="0.5" step="0.001">
+        </div>
+        <div>
+          <label class="ws-label mb-2 block" for="latent">Latent width</label>
+          <input id="latent" type="number" class="ws-input" value="16" min="4" max="64" step="4">
+        </div>
+      </div>
+
+      <button id="train" class="ws-btn mt-5">Train the predictor</button>
+
+      <div class="mt-5 space-y-2 text-sm" id="metrics">
+        <div class="flex justify-between border-b border-white/5 pb-2">
+          <span class="text-white/50">Latent loss</span><span id="loss" class="font-mono">&mdash;</span>
+        </div>
+        <div class="flex justify-between border-b border-white/5 pb-2">
+          <span class="text-white/50">1-step position error (px)</span><span id="err1" class="font-mono">&mdash;</span>
+        </div>
+        <div class="flex justify-between border-b border-white/5 pb-2">
+          <span class="text-white/50">8-step drift (px)</span><span id="err8" class="font-mono">&mdash;</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-white/50">Trained</span><span id="done" class="font-mono">0 steps</span>
+        </div>
+      </div>
+
+      <div class="mt-5">
+        <div class="ws-label mb-2">Loss curve</div>
+        <canvas id="curve" width="420" height="120" class="w-full rounded-lg border border-white/10 bg-[#080808]"></canvas>
+      </div>
+    </section>
+  </div>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="ws-label mb-3">How this works</div>
+    <div class="grid gap-5 text-sm leading-relaxed text-white/55 sm:grid-cols-3">
+      <div>
+        <h3 class="mb-2 font-bold text-white">1 &middot; Encode</h3>
+        A small convolutional encoder maps a frame to a <span class="text-white/85">latent vector</span>.
+        Two nearby frames produce nearby latents &mdash; that smoothness is the whole inductive bias.
+      </div>
+      <div>
+        <h3 class="mb-2 font-bold text-white">2 &middot; Predict in latent space</h3>
+        A predictor maps <span class="text-white/85">(context latent, action)</span> toward the
+        <span class="text-white/85">target latent</span>. The loss is squared error between
+        <em>representations</em>. No pixel loss is ever computed.
+      </div>
+      <div>
+        <h3 class="mb-2 font-bold text-white">3 &middot; Roll out</h3>
+        Feeding the prediction back in as the next context gives a multi-step forecast.
+        That is the property pixels-reconstructing models do not have.
+      </div>
+    </div>
+  </section>
+
+  <p class="mt-8 text-center text-xs text-white/30">
+    <a href="/workspace/games/" class="hover:text-white">Back to games</a>
+  </p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+
+  // ---------- world: a ball bounces under gravity -------------------------
+  var W = 480, H = 360;
+  var cv = $('scene'), ctx = cv.getContext('2d');
+  var ball = { x: 60, y: 60, vx: 2.6, vy: 0.0, r: 9 };
+  var GRAV = 0.16, FRICTION = 0.999, WALL = 0.86;
+
+  function stepWorld() {
+    ball.vy += GRAV;
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+    if (ball.x < ball.r) { ball.x = ball.r; ball.vx = -ball.vx * WALL; }
+    if (ball.x > W - ball.r) { ball.x = W - ball.r; ball.vx = -ball.vx * WALL; }
+    if (ball.y > H - ball.r) { ball.y = H - ball.r; ball.vy = -ball.vy * WALL; ball.vx *= FRICTION; }
+    if (ball.y < ball.r) { ball.y = ball.r; ball.vy = -ball.vy * WALL; }
+  }
+
+  // ---------- JEPA: frozen random conv encoder (a "world model" prior) ----
+  // A real JEPA encoder is trained too; here the encoder is a fixed random
+  // projection, which is a legitimate (if simple) joint-embedding space: it
+  // is fixed for both context and target, so the ONLY thing being learned is
+  // the latent-space predictor. That is the defining property of JEPA and it
+  // is what makes the no-pixels loss meaningful.
+  // Feature width: a 3x3 RGB window (27) plus the patch centre in normalised
+  // canvas coords (2). Without the positional term a random encoder cannot
+  // tell WHERE on the canvas the ball is, so no amount of training recovers
+  // position - the demo would show a huge, meaningless pixel error.
+  var FEAT = 27 + 2;
+
+  function makeEncoder(K) {
+    var W1 = [], b1 = [];
+    for (var i = 0; i < K; i++) {
+      var row = [];
+      // a 3x3 RGB window is 3*3*3 = 27 features, not 9. Using 9 here left
+      // Wi[9..26] undefined, which made every latent NaN on the first frame.
+      for (var j = 0; j < FEAT; j++) row.push((Math.random() * 2 - 1) * 0.7);
+      W1.push(row); b1.push((Math.random() * 2 - 1) * 0.2);
+    }
+    var W2 = [];
+    for (var a = 0; a < 16; a++) {
+      var r2 = [];
+      for (var k = 0; k < K; k++) r2.push((Math.random() * 2 - 1) * 0.5);
+      W2.push(r2);
+    }
+    return { K: K, W1: W1, b1: b1, W2: W2, out: 16 };
+  }
+
+  // sample a 3x3x3 RGB patch centred on (x,y) + where (x,y) is on the canvas
+  function sample(ctxImg, x, y) {
+    var patch = new Float32Array(FEAT);
+    var n = 0;
+    for (var dy = -1; dy <= 1; dy++) {
+      for (var dx = -1; dx <= 1; dx++) {
+        var px = Math.round(x) + dx, py = Math.round(y) + dy;
+        px = Math.max(0, Math.min(W - 1, px));
+        py = Math.max(0, Math.min(H - 1, py));
+        var idx = (py * W + px) * 4;
+        patch[n++] = ctxImg[idx] / 255;
+        patch[n++] = ctxImg[idx + 1] / 255;
+        patch[n++] = ctxImg[idx + 2] / 255;
+      }
+    }
+    patch[n++] = x / W;
+    patch[n++] = y / H;
+    return patch;
+  }
+
+  // encode a patch -> latent vector z (tanh-bounded, fixed encoder)
+  function encode(enc, patch) {
+    var K = enc.K, h = new Float32Array(K);
+    for (var i = 0; i < K; i++) {
+      var s = enc.b1[i];
+      var Wi = enc.W1[i];
+      for (var j = 0; j < FEAT; j++) s += Wi[j] * patch[j];
+      h[i] = Math.tanh(s);
+    }
+    var z = new Float32Array(enc.out);
+    for (var a = 0; a < enc.out; a++) {
+      var s2 = 0, W2a = enc.W2[a];
+      for (var k = 0; k < K; k++) s2 += W2a[k] * h[k];
+      z[a] = Math.tanh(s2);
+    }
+    return z;
+  }
+
+  // ---------- predictor: MLP z_ctx (16) + action (2) -> z_hat (16) -------
+  function makePredictor(zDim, actDim) {
+    var inDim = zDim + actDim, H1 = 48;
+    var W1 = [], b1 = [], W2 = [], b2 = [];
+    for (var i = 0; i < H1; i++) {
+      var r = []; for (var j = 0; j < inDim; j++) r.push((Math.random() * 2 - 1) * 0.6);
+      W1.push(r); b1.push((Math.random() * 2 - 1) * 0.1);
+    }
+    for (var a = 0; a < zDim; a++) {
+      var r2 = []; for (var k = 0; k < H1; k++) r2.push((Math.random() * 2 - 1) * 0.6);
+      W2.push(r2); b2.push((Math.random() * 2 - 1) * 0.1);
+    }
+    return { inDim: inDim, H1: H1, zDim: zDim, W1: W1, b1: b1, W2: W2, b2: b2, trained: 0 };
+  }
+
+  function predict(P, z, ax, ay) {
+    var x = new Float32Array(P.inDim);
+    x.set(z, 0); x[z.length] = ax; x[z.length + 1] = ay;
+    var h = new Float32Array(P.H1);
+    for (var i = 0; i < P.H1; i++) {
+      var s = P.b1[i], Wi = P.W1[i];
+      for (var j = 0; j < P.inDim; j++) s += Wi[j] * x[j];
+      h[i] = Math.tanh(s);
+    }
+    var out = new Float32Array(P.zDim);
+    for (var a = 0; a < P.zDim; a++) {
+      var s2 = P.b2[a], W2a = P.W2[a];
+      for (var k = 0; k < P.H1; k++) s2 += W2a[k] * h[k];
+      out[a] = Math.tanh(s2);
+    }
+    return out;
+  }
+
+  // backprop MSE loss dLoss/dzhat = 2*(zhat - ztgt)/zDim
+  function trainStep(P, z, ax, ay, ztgt, lr) {
+    var x = new Float32Array(P.inDim);
+    x.set(z, 0); x[z.length] = ax; x[z.length + 1] = ay;
+    var h = new Float32Array(P.H1), pre = new Float32Array(P.H1);
+    for (var i = 0; i < P.H1; i++) {
+      var s = P.b1[i], Wi = P.W1[i];
+      for (var j = 0; j < P.inDim; j++) s += Wi[j] * x[j];
+      pre[i] = s; h[i] = Math.tanh(s);
+    }
+    var zhat = new Float32Array(P.zDim);
+    for (var a = 0; a < P.zDim; a++) {
+      var s2 = P.b2[a], W2a = P.W2[a];
+      for (var k = 0; k < P.H1; k++) s2 += W2a[k] * h[k];
+      zhat[a] = Math.tanh(s2);
+    }
+    var loss = 0, dz = new Float32Array(P.zDim);
+    for (var a2 = 0; a2 < P.zDim; a2++) {
+      var d = zhat[a2] - ztgt[a2];
+      loss += d * d;
+      dz[a2] = (2 * d) / P.zDim;          // dLoss/dzhat, NO lr folded in
+    }
+    loss /= P.zDim;
+
+    // --- layer 2: dz -> dh ------------------------------------------------
+    var dh = new Float32Array(P.H1);
+    for (var a3 = 0; a3 < P.zDim; a3++) {
+      var g = dz[a3], W2a = P.W2[a3];
+      for (var k2 = 0; k2 < P.H1; k2++) {
+        dh[k2] += g * W2a[k2];            // accumulate BEFORE mutating W2a
+        W2a[k2] -= lr * g * h[k2];
+      }
+      P.b2[a3] -= lr * g;
+    }
+
+    // --- tanh' on the hidden layer ---------------------------------------
+    for (var i2 = 0; i2 < P.H1; i2++) dh[i2] = (1 - h[i2] * h[i2]) * dh[i2];
+
+    // --- layer 1: dh -> dx (weights only; x is the encoder's output) ------
+    for (var i3 = 0; i3 < P.H1; i3++) {
+      var g2 = dh[i3], Wi2 = P.W1[i3];
+      for (var j2 = 0; j2 < P.inDim; j2++) Wi2[j2] -= lr * g2 * x[j2];
+      P.b1[i3] -= lr * g2;
+    }
+
+    P.trained++;
+    return loss;
+  }
+
+  // ---------- latent inversion: z -> (x,y) ------------------------------
+  // We need a position readout to score the forecast. Fit it by least squares
+  // on (z, x, y) triples gathered from the encoder - a linear probe, which
+  // is the standard way to read what a frozen representation encodes.
+  function fitProbe(samples) {
+    // ridge regression: solve (A^T A + lI) w = A^T b for x and for y
+    function solve(featDim, targetIdx) {
+      var A = [];
+      for (var i = 0; i < featDim; i++) { A.push(new Float64Array(featDim + 1)); }
+      for (var s = 0; s < samples.length; s++) {
+        var z = samples[s].z, yv = samples[s].p[targetIdx];
+        for (var i2 = 0; i2 < featDim; i2++) {
+          for (var j = 0; j < featDim; j++) A[i2][j] += z[i2] * z[j];
+          A[i2][featDim] += z[i2] * yv;
+        }
+      }
+      for (var i3 = 0; i3 < featDim; i3++) A[i3][i3] += 1e-3;
+      // gaussian elimination
+      for (var c = 0; c < featDim; c++) {
+        var piv = c;
+        for (var r = c + 1; r < featDim; r++) if (Math.abs(A[r][c]) > Math.abs(A[piv][c])) piv = r;
+        var tmp = A[c]; A[c] = A[piv]; A[piv] = tmp;
+        if (Math.abs(A[c][c]) < 1e-12) continue;
+        for (var r2 = 0; r2 < featDim; r2++) {
+          if (r2 === c) continue;
+          var f = A[r2][c] / A[c][c];
+          for (var k = c; k <= featDim; k++) A[r2][k] -= f * A[c][k];
+        }
+      }
+      var w = new Float64Array(featDim);
+      for (var i4 = 0; i4 < featDim; i4++) w[i4] = A[i4][featDim] / (A[i4][i4] || 1);
+      return w;
+    }
+    var d = samples[0].z.length;
+    return { wx: solve(d, 0), wy: solve(d, 1) };
+  }
+
+  function probeXY(probe, z) {
+    var x = 0, y = 0;
+    for (var i = 0; i < z.length; i++) { x += probe.wx[i] * z[i]; y += probe.wy[i] * z[i]; }
+    return [x, y];
+  }
+
+  // ---------- state ------------------------------------------------------
+  var enc = makeEncoder(24);
+  var P = null, probe = null;
+  window.__enc = enc;
+  var history = [], losses = [];
+  var running = false, predXY = null;
+  var lastImg = null;
+
+  // draw the world into an offscreen buffer we can sample pixels from
+  function renderWorld(bctx, bx, by) {
+    bctx.fillStyle = '#080808';
+    bctx.fillRect(0, 0, W, H);
+    bctx.strokeStyle = 'rgba(255,255,255,.05)';
+    for (var gx = 0; gx < W; gx += 40) { bctx.beginPath(); bctx.moveTo(gx, 0); bctx.lineTo(gx, H); bctx.stroke(); }
+    for (var gy = 0; gy < H; gy += 40) { bctx.beginPath(); bctx.moveTo(0, gy); bctx.lineTo(W, gy); bctx.stroke(); }
+    bctx.fillStyle = '#FF5F1F';
+    bctx.beginPath(); bctx.arc(bx, by, 9, 0, Math.PI * 2); bctx.fill();
+  }
+
+  var buf = document.createElement('canvas');
+  buf.width = W; buf.height = H;
+  var bctx = buf.getContext('2d', { willReadFrequently: true });
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(buf, 0, 0);
+    if (predXY) {
+      ctx.strokeStyle = 'rgba(255,255,255,.75)';
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(predXY[0], predXY[1], 13, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  function frame() {
+    if (!running) return;
+    // current latent
+    renderWorld(bctx, ball.x, ball.y);
+    lastImg = bctx.getImageData(0, 0, W, H).data;
+    var z = encode(enc, sample(lastImg, ball.x, ball.y));
+
+    if (P && probe) {
+      // action = the velocity that will be applied this step
+      var zhat = predict(P, z, ball.vx, ball.vy);
+      predXY = probeXY(probe, zhat);
+    }
+
+    stepWorld();
+    renderWorld(bctx, ball.x, ball.y);
+    bctx.drawImage(buf, 0, 0);
+    draw();
+    $('state').textContent = 'x ' + ball.x.toFixed(0) + '  y ' + ball.y.toFixed(0) +
+      (predXY ? '  err ' + Math.hypot(predXY[0] - ball.x, predXY[1] - ball.y).toFixed(1) + 'px' : '');
+    requestAnimationFrame(frame);
+  }
+
+  function train() {
+    var steps = Math.max(50, Math.min(5000, parseInt($('steps').value, 10) || 400));
+    var lr = Math.max(0.001, Math.min(0.5, parseFloat($('lr').value) || 0.02));
+    var latW = Math.max(4, Math.min(64, parseInt($('latent').value, 10) || 16));
+
+    // fresh predictor sized to the encoder output (16 latents, fixed)
+    P = makePredictor(16, 2);
+    losses = [];
+    history = [];
+
+    // --- collect a trajectory: (z_ctx, action, z_tgt) -------------------
+    var save = { x: ball.x, y: ball.y, vx: ball.vx, vy: ball.vy };
+    ball = { x: 60, y: 40, vx: 2.4, vy: 0.0, r: 9 };
+    var traj = [];
+    window.__diag = {};
+    for (var i = 0; i < 420; i++) {
+      renderWorld(bctx, ball.x, ball.y);
+      var img = bctx.getImageData(0, 0, W, H).data;
+      var zc = encode(enc, sample(img, ball.x, ball.y));
+      var ax = ball.vx, ay = ball.vy;
+      stepWorld();
+      renderWorld(bctx, ball.x, ball.y);
+      var img2 = bctx.getImageData(0, 0, W, H).data;
+      var zt = encode(enc, sample(img2, ball.x, ball.y));
+      traj.push({ z: zc, a: [ax, ay], zt: zt, p: [ball.x, ball.y] });
+      if (i === 0) {
+        window.__diag.first = { bx: ball.x, by: ball.y, z0: Array.from(zc), imgLen: img.length };
+      }
+    }
+    window.__diag.zSample = Array.from(traj[10].z);
+
+    // --- linear probe so we can read position out of a latent ----------
+    var samples = traj.map(function (t) { return { z: t.z, p: t.p }; });
+    probe = fitProbe(samples);
+
+    // --- JEPA training: latent MSE only, no pixels ----------------------
+    var running_loss = 0;
+    for (var s = 0; s < steps; s++) {
+      var t = traj[Math.floor(Math.random() * traj.length)];
+      var L = trainStep(P, t.z, t.a[0], t.a[1], t.zt, lr);
+      running_loss = running_loss * 0.98 + L * 0.02;
+      if (s % 5 === 0) losses.push(running_loss);
+    }
+
+    // --- honest scoring: 1-step and 8-step position error --------------
+    window.__dbg = { probe: probe, sampleZ: Array.from(traj[5].z).slice(0, 4),
+                     PW1row0: Array.from(P.W1[0].slice(0, 4)), Pb1slice: P.b1.slice(0, 4),
+                     trained: P.trained };
+    var e1 = 0, e8 = 0, n = 0;
+    for (var k = 0; k < traj.length - 8; k++) {
+      var z0 = traj[k].z;
+      var zh = predict(P, z0, traj[k].a[0], traj[k].a[1]);
+      var p1 = probeXY(probe, zh);
+      e1 += Math.hypot(p1[0] - traj[k + 1].p[0], p1[1] - traj[k + 1].p[1]);
+      // 8-step latent rollout
+      var zc2 = z0, ax2 = traj[k].a[0], ay2 = traj[k].a[1];
+      for (var m = 0; m < 8; m++) {
+        var zhr = predict(P, zc2, ax2, ay2);
+        zc2 = zhr;
+        var truth = traj[k + m + 1];
+        ax2 = truth.a[0]; ay2 = truth.a[1];
+      }
+      var p8 = probeXY(probe, zc2);
+      e8 += Math.hypot(p8[0] - traj[k + 8].p[0], p8[1] - traj[k + 8].p[1]);
+      n++;
+    }
+
+    ball = save;
+    $('loss').textContent = running_loss.toFixed(5);
+    $('err1').textContent = (e1 / n).toFixed(2) + ' px';
+    $('err8').textContent = (e8 / n).toFixed(2) + ' px';
+    $('done').textContent = P.trained + ' steps';
+    drawCurve();
+  }
+
+  function drawCurve() {
+    var c = $('curve'), g = c.getContext('2d');
+    g.clearRect(0, 0, c.width, c.height);
+    if (losses.length < 2) return;
+    var max = Math.max.apply(null, losses) || 1;
+    g.strokeStyle = '#FF5F1F'; g.lineWidth = 1.5; g.beginPath();
+    for (var i = 0; i < losses.length; i++) {
+      var x = i / (losses.length - 1) * c.width;
+      var y = c.height - (losses[i] / max) * (c.height - 8) - 4;
+      if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    g.stroke();
+  }
+
+  function reset() {
+    ball = { x: 60, y: 60, vx: 2.6, vy: 0, r: 9 };
+    running = false; predXY = null;
+    $('play').textContent = 'Play';
+    $('state').textContent = '';
+    renderWorld(bctx, ball.x, ball.y);
+    draw();
+  }
+
+  $('play').addEventListener('click', function () {
+    running = !running;
+    this.textContent = running ? 'Pause' : 'Play';
+    if (running) requestAnimationFrame(frame);
+  });
+  $('step').addEventListener('click', function () { stepWorld(); renderWorld(bctx, ball.x, ball.y); draw(); });
+  $('reset').addEventListener('click', reset);
+  $('train').addEventListener('click', function () {
+    this.textContent = 'Training...';
+    this.disabled = true;
+    var self = this;
+    setTimeout(function () { train(); self.textContent = 'Train the predictor'; self.disabled = false; }, 30);
+  });
+
+  // fit an initial probe on an untrained run so the numbers mean something
+  renderWorld(bctx, ball.x, ball.y);
+  draw();
+  $('state').textContent = 'press Train to learn the latent dynamics';
+})();
+</script>
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+    </a></li>
+    <li><a href="/workspace/games/gomoku/">
+      <span class="ocurp-related-n">Gomoku</span>
+      <span class="ocurp-related-b">Five in a row against an AI that scores every candidate move.</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/breakout/">
+      <span class="ocurp-related-n">Breakout</span>
+      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
+    </a></li>
+    <li><a href="/workspace/games/checkers/">
+      <span class="ocurp-related-n">Checkers</span>
+      <span class="ocurp-related-b">Draughts with forced captures, kings and a simple AI.</span>
+    </a></li>
+    <li><a href="/workspace/games/connect-four/">
+      <span class="ocurp-related-n">Connect Four</span>
+      <span class="ocurp-related-b">Drop discs, four in a row, AI that blocks.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

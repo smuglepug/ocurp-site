@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Adjustments — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Brightness, contrast, saturation, temperature, highlights and shadows applied to the real pixels. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/image-adjust/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Image Adjustments">
+<meta property="og:description" content="Brightness, contrast, saturation, temperature, highlights and shadows applied to the real pixels. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/image-adjust/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Image Adjustments">
+<meta name="twitter:description" content="Brightness, contrast, saturation, temperature, highlights and shadows applied to the real pixels. Runs entirely in your browser - nothing is uploaded.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Adjustments","url":"https://ocurp.space/workspace/tools/image-adjust/","description":"Brightness, contrast, saturation, temperature, highlights and shadows applied to the real pixels. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Image Adjustments</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">IMAGE</span><span class="ws-chip">COLOUR</span><span class="ws-chip">CLIENT-SIDE</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div id="drop" class="border-2 border-dashed border-white/15 rounded-xl p-8 text-center cursor-pointer transition-colors hover:border-accent/50">
+      <p class="text-sm text-white/50">Drop or click to load an image</p>
+      <p class="mt-1 text-[10px] text-white/30">Each slider is a real per-channel transform, not a CSS filter</p>
+    </div>
+    <input id="file" type="file" accept="image/*" class="hidden">
+    <div id="controls" class="mt-6 hidden">
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div><label class="ws-label mb-2 block">Brightness <span id="bv">0</span></label>
+          <input id="b" type="range" min="-100" max="100" value="0" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Contrast <span id="cv2">0</span></label>
+          <input id="c" type="range" min="-100" max="100" value="0" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Saturation <span id="sv">0</span></label>
+          <input id="s" type="range" min="-100" max="100" value="0" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Temperature <span id="tv">0</span></label>
+          <input id="t" type="range" min="-100" max="100" value="0" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Highlights <span id="hv">0</span></label>
+          <input id="h" type="range" min="-100" max="100" value="0" class="w-full accent-[#FF5F1F]"></div>
+        <div><label class="ws-label mb-2 block">Shadows <span id="wv">0</span></label>
+          <input id="sh" type="range" min="-100" max="100" value="0" class="w-full accent-[#FF5F1F]"></div>
+      </div>
+      <div class="mt-5 flex flex-wrap items-center gap-3">
+        <button id="dl" class="ws-btn">Download PNG</button>
+        <button id="rst" class="ws-btn-ghost">Reset all</button>
+        <span class="ws-chip" id="stamp">ORIGINAL</span>
+      </div>
+      <div class="mt-6 grid gap-4 lg:grid-cols-2">
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+          <div class="ws-label mb-2">Before</div>
+          <img id="src" class="mx-auto max-h-64 rounded-lg" alt="before">
+          <div class="mt-2 text-center text-xs text-white/50" id="meta"></div>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+          <div class="ws-label mb-2">After</div>
+          <canvas id="cv" class="mx-auto max-h-64 rounded-lg"></canvas>
+          <div class="mt-2 text-center text-xs text-white/50" id="odim"></div>
+        </div>
+      </div>
+      <div class="ws-panel ws-copy mt-4 p-4">
+        <div class="mb-2 flex items-center justify-between">
+          <span class="ws-label">Measured change</span>
+          <button class="ws-btn-ghost !px-3 !py-1.5" id="cpy">Copy</button>
+        </div>
+        <pre id="out" class="ws-out min-h-[110px]"></pre>
+      </div>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d',{willReadFrequently:true});
+let base=null,w=0,h=0,nm='';
+const SIDS=['b','c','s','t','h','sh'],LAB={b:'Brightness',c:'Contrast',s:'Saturation',t:'Temperature',h:'Highlights',sh:'Shadows'};
+function rgb2hsl(r,g,b){
+  r/=255;g/=255;b/=255;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;
+  let H=0,S=0;const L=(mx+mn)/2;
+  if(d){
+    S=L>.5?d/(2-mx-mn):d/(mx+mn);
+    if(mx===r)H=((g-b)/d+(g<b?6:0));
+    else if(mx===g)H=(b-r)/d+2;
+    else H=(r-g)/d+4;
+    H*=60;
+  }
+  return [H,S,L];
+}
+function hue2rgb(p,q,t){
+  if(t<0)t+=1;if(t>1)t-=1;
+  if(t<1/6)return p+(q-p)*6*t;
+  if(t<1/2)return q;
+  if(t<2/3)return p+(q-p)*(2/3-t)*6;
+  return p;
+}
+function hsl2rgb(H,S,L){
+  if(S===0)return [L*255,L*255,L*255];
+  const q=L<.5?L*(1+S):L+S-L*S,p=2*L-q;
+  return [hue2rgb(p,q,H/360)*255,hue2rgb(p,q,(H+120)/360)*255,hue2rgb(p,q,(H+240)/360)*255];
+}
+function apply(d,vals){
+  const br=vals.b/100,ct=vals.c/100,sa=vals.s/100,tp=vals.t/100,hi=vals.h/100,shd=vals.sh/100;
+  const contrast=ct>=0?1+ct:1+ct;
+  for(let i=0;i<d.data.length;i+=4){
+    let r=d.data[i],g=d.data[i+1],b=d.data[i+2];
+    if(br){const f=1+br;r=r*f+(br<0?-br*128:0);g=g*f+(br<0?-br*128:0);b=b*f+(br<0?-br*128:0);}
+    if(ct!==0){const f=(259*(contrast*255+255))/(255*(259-contrast*255));
+      r=f*(r-128)+128;g=f*(g-128)+128;b=f*(b-128)+128;}
+    if(tp!==0){
+      r+=tp*70;g+=tp*6;b-=tp*70;
+    }
+    if(sa!==0){
+      const H=rgb2hsl(r,g,b);
+      const rgb=hsl2rgb(H[0],Math.max(0,Math.min(1,H[1]*(1+sa))),H[2]);
+      r=rgb[0];g=rgb[1];b=rgb[2];
+    }
+    if(hi!==0||shd!==0){
+      const l=(0.299*r+0.587*g+0.114*b)/255;
+      const mask=hi>0?Math.pow(l,1.7):(1-Math.pow(1-l,1.7));
+      const amt=hi>0?hi:shd;
+      const t=r*amt*mask*0.8+(l*255)*(1-amt*mask*0.8);
+      r=r+(t-r);g=g+(t-g);b=b+(t-b);
+    }
+    d.data[i]=Math.max(0,Math.min(255,r));
+    d.data[i+1]=Math.max(0,Math.min(255,g));
+    d.data[i+2]=Math.max(0,Math.min(255,b));
+  }
+  return d;
+}
+function readVals(){
+  const v={};SIDS.forEach(k=>v[k]=parseInt($(k).value));
+  SIDS.forEach(k=>$({b:'bv',c:'cv2',s:'sv',t:'tv',h:'hv',sh:'wv'}[k]).textContent=$(k).value);
+  return v;
+}
+function meanRGB(d){
+  let r=0,g=0,b=0,n=0;
+  for(let i=0;i<d.data.length;i+=4){if(d.data[i+3]<16)continue;r+=d.data[i];g+=d.data[i+1];b+=d.data[i+2];n++;}
+  return n?[r/n,g/n,b/n]:[0,0,0];
+}
+function luma(d){const m=meanRGB(d);return 0.299*m[0]+0.587*m[1]+0.114*m[2];}
+function render(){
+  if(!base) return;
+  const vals=readVals();
+  const out=apply(new ImageData(new Uint8ClampedArray(base.data),base.width,base.height),vals);
+  ctx.putImageData(out,0,0);
+  const a=meanRGB(base),z=meanRGB(out);
+  const sl=[];
+  SIDS.forEach(k=>{if(vals[k]!==0)sl.push(LAB[k]+' '+vals[k]);});
+  $('stamp').textContent=sl.length?sl.join(' · ').toUpperCase():'ORIGINAL';
+  let d=0,n=0;
+  for(let i=0;i<base.data.length;i+=4){d+=Math.abs(base.data[i]-out.data[i])+Math.abs(base.data[i+1]-out.data[i+1])+Math.abs(base.data[i+2]-out.data[i+2]);n+=3;}
+  const md=n?d/n:0;
+  const lines=[];
+  lines.push('Image      '+w+'\u00d7'+h+'  '+nm);
+  lines.push('Changes    '+(sl.length?sl.join(', '):'none (pixels identical)'));
+  lines.push('Mean RGB   '+a.map(v=>v.toFixed(1)).join(', ')+'  \u2192  '+z.map(v=>v.toFixed(1)).join(', '));
+  lines.push('Mean luma  '+luma(base).toFixed(2)+'  \u2192  '+luma(out).toFixed(2)+'   (delta '+(luma(out)-luma(base)>=0?'+':'')+(luma(out)-luma(base)).toFixed(2)+')');
+  lines.push('Mean \u0394    '+md.toFixed(3)+' / 255 per channel');
+  lines.push('Channels   R '+(z[0]-a[0]>=0?'+':'')+(z[0]-a[0]).toFixed(1)
+    +'   G '+(z[1]-a[1]>=0?'+':'')+(z[1]-a[1]).toFixed(1)
+    +'   B '+(z[2]-a[2]>=0?'+':'')+(z[2]-a[2]).toFixed(1));
+  lines.push('Identity   '+(md<0.001?'IDENTICAL \u2014 no transform applied':'transform confirmed, pixels differ'));
+  $('out').textContent=lines.join('\n');
+  $('odim').textContent=w+'\u00d7'+h+' · '+$('stamp').textContent;
+  $('dl').onclick=()=>{const a2=document.createElement('a');a2.href=cv.toDataURL('image/png');
+    a2.download=(nm||'image').replace(/\.[^.]+$/,'')+'-adjusted.png';a2.click();};
+}
+function load(f){
+  nm=f.name;
+  const url=URL.createObjectURL(f),im=new Image();
+  im.onload=()=>{
+    const MAX=1400;
+    w=im.naturalWidth;h=im.naturalHeight;
+    if(w>MAX||h>MAX){const s=Math.min(MAX/w,MAX/h);w=Math.round(w*s);h=Math.round(h*s);}
+    cv.width=w;cv.height=h;
+    ctx.drawImage(im,0,0,w,h);
+    base=ctx.getImageData(0,0,w,h);
+    $('src').src=url;
+    $('src').style.maxWidth=Math.min(520,w)+'px';
+    $('meta').textContent=im.naturalWidth+'\u00d7'+im.naturalHeight+' · '+(f.size/1024).toFixed(1)+' KB';
+    $('controls').classList.remove('hidden');
+    render();
+  };
+  im.onerror=()=>{$('meta').textContent='That file could not be decoded as an image.';};
+  im.src=url;
+}
+const drop=$('drop'),file=$('file');
+drop.onclick=()=>file.click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('border-accent');};
+drop.ondragleave=()=>drop.classList.remove('border-accent');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('border-accent');if(e.dataTransfer.files[0])load(e.dataTransfer.files[0]);};
+file.onchange=e=>{if(e.target.files[0])load(e.target.files[0]);};
+SIDS.forEach(k=>$(k).addEventListener('input',render));
+$('rst').onclick=()=>{SIDS.forEach(k=>$(k).value=0);render();};
+$('cpy').onclick=function(){navigator.clipboard.writeText($('out').textContent);this.classList.add('ok');setTimeout(()=>this.classList.remove('ok'),1200);};
+window.__adjust={load:load,render:render,apply:apply,canvas:cv,
+  pixel:(x,y)=>{const d=ctx.getImageData(0,0,cv.width,cv.height).data;const i=(y*cv.width+x)*4;return [d[i],d[i+1],d[i+2],d[i+3]];},
+  basePixel:(x,y)=>{const i=(y*w+x)*4;return [base.data[i],base.data[i+1],base.data[i+2],base.data[i+3]];},
+  setSliders:v=>{SIDS.forEach(k=>{if(v[k]!==undefined)$(k).value=v[k];});render();}};
+</script>
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/image-histogram/">
+      <span class="ocurp-related-n">Image Histogram</span>
+      <span class="ocurp-related-b">Real per-channel histograms with mean, standard deviation, median and quartiles from the d</span>
+    </a></li>
+    <li><a href="/workspace/tools/background-remover/">
+      <span class="ocurp-related-n">Background Remover</span>
+      <span class="ocurp-related-b">Cut the background off a photo in your browser — no upload, no watermark.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base64-to-image/">
+      <span class="ocurp-related-n">Base64 to Image</span>
+      <span class="ocurp-related-b">Paste a data URI and preview or download the image.</span>
+    </a></li>
+    <li><a href="/workspace/tools/batch-compressor/">
+      <span class="ocurp-related-n">Batch Image Compressor</span>
+      <span class="ocurp-related-b">Compress many images at once, see the quality loss per file, save as ZIP.</span>
+    </a></li>
+    <li><a href="/workspace/tools/contrast-checker/">
+      <span class="ocurp-related-n">Contrast Checker</span>
+      <span class="ocurp-related-b">Check any two colours against the WCAG contrast rules and see which levels pass.</span>
+    </a></li>
+    <li><a href="/workspace/tools/heic-to-jpg/">
+      <span class="ocurp-related-n">HEIC to JPG</span>
+      <span class="ocurp-related-b">Decode HEIC in-browser via heic2any, no upload.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

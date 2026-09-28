@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>N-Body Orbits — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Real Newtonian gravity at the real G. Start circular, nudge the planet, and watch the ellipse appear - with live semi-major axis, eccentricity and period....">
+<link rel="canonical" href="https://ocurp.space/workspace/games/n-body-orbits/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="N-Body Orbits">
+<meta property="og:description" content="Real Newtonian gravity at the real G. Start circular, nudge the planet, and watch the ellipse appear - with live semi-major axis, eccentricity and period....">
+<meta property="og:url" content="https://ocurp.space/workspace/games/n-body-orbits/">
+<meta property="og:site_name" content="Ocurp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="N-Body Orbits">
+<meta name="twitter:description" content="Real Newtonian gravity at the real G. Start circular, nudge the planet, and watch the ellipse appear - with live semi-major axis, eccentricity and period....">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"N-Body Orbits","url":"https://ocurp.space/workspace/games/n-body-orbits/","description":"Real Newtonian gravity at the real G. Start circular, nudge the planet, and watch the ellipse appear - with live semi-major axis, eccentricity and period....","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Snake</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">CANVAS</span><span class="ws-chip">LOCAL BEST</span></div>
+        </div>
+      
+  <section class="ws-panel mb-6 border-l-2 border-l-accent">
+    <p class="text-[13px] leading-relaxed text-white/55">Real Newtonian gravity at the real G. Start from a circular orbit, nudge the planet, and watch the ellipse appear.</p>
+  </section>
+
+
+  <section class="ws-panel p-6">
+    <div class="grid gap-6 lg:grid-cols-[1fr_268px]">
+      <div class="min-w-0">
+        <div class="relative overflow-hidden rounded-xl border border-white/15 bg-[#0a0a0a]">
+          <canvas id="cv" class="block w-full touch-none select-none" style="aspect-ratio:4/3"></canvas>
+          <div class="pointer-events-none absolute left-3 top-3 flex flex-col gap-1">
+            <span class="ws-chip" id="hudmode">2-BODY</span>
+            <span class="ws-chip" id="hudhint">SPACE RUN/PAUSE &middot; R RESET &middot; T TRAILS</span>
+          </div>
+          <div class="pointer-events-none absolute bottom-3 right-3">
+            <span class="ws-chip" id="hudfps">0 FPS</span>
+          </div>
+        </div>
+        <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" id="stats"></div>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <div>
+          <label class="ws-label mb-1 block">System</label>
+          <select id="sys" class="ws-input">
+            <option value="2">Two-body (star &amp; planet)</option>
+            <option value="3">Three-body</option>
+            <option value="fig">Lagrange figure-eight (3 equal masses)</option>
+            <option value="4">Solar-system (Sun + 4)</option>
+            <option value="n">N-body cluster (60)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="ws-label mb-1 block">G <span id="gv">6.674&times;10&#8311;&#8310;</span></label>
+            <input id="gsel" type="range" min="0" max="4" step="1" value="0" class="w-full accent-[#FF5F1F]">
+          </div>
+          <div>
+            <label class="ws-label mb-1 block">Integrator</label>
+            <select id="integ" class="ws-input">
+              <option value="verlet">Velocity Verlet</option>
+              <option value="leapfrog">Leapfrog (KDK)</option>
+              <option value="euler">Semi-implicit Euler</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="ws-label mb-1 block">Steps/frame <span id="sv">12</span></label>
+            <input id="sub" type="range" min="1" max="60" step="1" value="12" class="w-full accent-[#FF5F1F]">
+          </div>
+          <div>
+            <label class="ws-label mb-1 block">Time step <span id="dv">2&ndash;12 d</span></label>
+            <input id="dtq" type="range" min="0" max="4" step="1" value="1" class="w-full accent-[#FF5F1F]">
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="play" class="ws-btn">Start</button>
+          <button id="reset" class="ws-btn-ghost">Reset</button>
+          <button id="trails" class="ws-btn-ghost">Trails: on</button>
+          <button id="vectors" class="ws-btn-ghost">Vectors: on</button>
+          <button id="kick" class="ws-btn-ghost">Nudge</button>
+        </div>
+        <p class="text-[10px] leading-relaxed text-white/30">
+          Newton&rsquo;s law with the real G, integrated symmetrically so energy and angular momentum
+          oscillate instead of drifting. a &minus; GM/r&sup2; for the two-body preset: halve the
+          orbit&rsquo;s semi-major axis and the period should fall by 2<sup>3/2</sup>.
+        </p>
+      </div>
+    </div>
+  </section>
+  <p class="-mt-4 mb-4 text-[10px] font-black uppercase tracking-[0.26em] text-white/30">Kepler you can poke</p>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const cv=document.getElementById('cv'),cx=cv.getContext('2d'),N=21,S=cv.width/N;
+let snake,dir,food,score,dead,timer,speed=110;
+const best=()=>parseInt(localStorage.getItem('ws-snake-best')||'0');
+document.getElementById('best').textContent=best();
+function reset(){snake=[{x:10,y:10}];dir={x:1,y:0};place();score=0;dead=false;
+  document.getElementById('score').textContent='0';draw()}
+function place(){do{food={x:Math.floor(Math.random()*N),y:Math.floor(Math.random()*N)}}
+  while(snake.some(s=>s.x===food.x&&s.y===food.y))}
+function step(){
+  const h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+  if(h.x<0||h.y<0||h.x>=N||h.y>=N||snake.some(s=>s.x===h.x&&s.y===h.y)){over();return}
+  snake.unshift(h);
+  if(h.x===food.x&&h.y===food.y){score++;document.getElementById('score').textContent=score;place();
+    if(score%5===0&&speed>60){speed-=8;restart()}}
+  else snake.pop();
+  draw();
+}
+function over(){dead=true;clearInterval(timer);
+  if(score>best()){localStorage.setItem('ws-snake-best',score);document.getElementById('best').textContent=score}
+  cx.fillStyle='rgba(5,5,5,.75)';cx.fillRect(0,0,cv.width,cv.height);
+  cx.fillStyle='#FF5F1F';cx.font='900 28px Manrope,sans-serif';cx.textAlign='center';
+  cx.fillText('DEAD — ' + score, cv.width/2, cv.height/2)}
+function draw(){
+  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,cv.width,cv.height);
+  cx.fillStyle='#FF5F1F';cx.beginPath();cx.arc(food.x*S+S/2,food.y*S+S/2,S/2.6,0,7);cx.fill();
+  snake.forEach((s,i)=>{cx.fillStyle=i?'rgba(255,255,255,.75)':'#fff';
+    cx.fillRect(s.x*S+1,s.y*S+1,S-2,S-2)});
+}
+function restart(){clearInterval(timer);timer=setInterval(()=>{if(!dead)step()},speed)}
+document.getElementById('start').onclick=()=>{if(dead||!timer){reset();restart()}};
+document.getElementById('reset').onclick=()=>{clearInterval(timer);timer=null;reset()};
+addEventListener('keydown',e=>{
+  const m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],
+           w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]}[e.key];
+  if(!m)return;e.preventDefault();
+  const nd={x:m[0],y:m[1]};
+  if(nd.x!==-dir.x||nd.y!==-dir.y)dir=nd;
+});
+let ts=null;
+cv.addEventListener('touchstart',e=>{ts=e.touches[0]},{passive:true});
+cv.addEventListener('touchend',e=>{
+  if(!ts)return;const dx=e.changedTouches[0].clientX-ts.clientX,dy=e.changedTouches[0].clientY-ts.clientY;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<20)return;
+  const nd=Math.abs(dx)>Math.abs(dy)?{x:Math.sign(dx),y:0}:{x:0,y:Math.sign(dy)};
+  if(nd.x!==-dir.x||nd.y!==-dir.y)dir=nd;
+},{passive:true});
+reset();
+</script>
+</body>
+</html>
+<script src="/workspace/related.js" defer></script>
+<script>
+/* ══ N-BODY ORBITS ══════════════════════════════════════════════════════════
+   Newtonian gravity with the real constant G = 6.674e-11 SI, no softening.
+   Positions in metres, velocities in m/s, masses in kg, time in seconds.
+
+     a_i = G * SUM_j m_j (r_j - r_i) / |r_j - r_i|^3
+
+   Integrators (all real, all used to expose their own error):
+     velocity Verlet  -- 2nd order, symplectic-ish, conserves energy best
+     leapfrog KDK     -- kick-drift-kick, the standard for orbits
+     semi-implicit Euler -- first order, visibly heats the orbit (apoapsis
+                          creeps outward every revolution). Kept as a contrast.
+
+   For the two-body case the readouts are the true osculating elements:
+     a = 1/(2/r - v^2/mu)      (vis-viva)
+     e = |v x h|/mu - 1
+     P = 2*pi*sqrt(a^3/mu)      (Kepler's third law)
+   ═════════════════════════════════════════════════════════════════════════ */
+const $=id=>document.getElementById(id);
+const cv=$('cv'), cx=cv.getContext('2d');
+let CW=0,CH=0;
+function resize(){
+  const r=cv.getBoundingClientRect();
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const w=Math.max(300,Math.round(r.width*dpr)), h=Math.max(240,Math.round(r.height*dpr));
+  if(w===cv.width&&h===cv.height) return false;
+  cv.width=w; cv.height=h; CW=w; CH=h; return true;
+}
+
+const G_REAL=6.67430e-11, AU=1.495978707e11, DAY=86400, MSUN=1.98892e30;
+const GS=[6.67430e-11, 4.30091e-3, 0.012150, 1, 0.05];   // SI, GM, au^3/yr^2, 1, silly
+const GLAB=['6.674e-11 (SI)','4.301e-3 (au³/yr²)','0.01215 (au³/day²)','1 (artistic)','0.05 (soft)'];
+const DTQ=[2*DAY, 0.5*DAY, 0.25*DAY, DAY/24, DAY/4];
+let G=GS[0], gi=0, integ='verlet', subSteps=12, dt=DTQ[1];
+
+let b=[], names=[], col=[], rad=[], trails=null, trailOn=true, vecOn=true;
+let running=false, t=0, fps=0, frames=0, fpsT=0, cumE0=0, drift=0;
+let scale=1e11, cx0=0, cy0=0;
+
+/* ── builders ─────────────────────────────────────────────────────────── */
+function push(m,x,y,vx,vy,c,r,nm){
+  b.push({m,x,y,vx,vy,ax:0,ay:0}); col.push(c); rad.push(r); names.push(nm||('body '+b.length));
+}
+function circ(rad_,mu){                 // circular speed for radius rad_ about mass mu
+  return Math.sqrt(mu/rad_);
+}
+function build2(){
+  b=[];col=[];rad=[];names=[];
+  const M=MSUN, a=AU;
+  push(M, 0, 0, 0, 0, '#FF5F1F', 11, 'Star');
+  push(M*0.0003, a, 0, 0, circ(a, G*M), '#e0f2fe', 5, 'Planet');
+}
+function build3(){
+  b=[];col=[];rad=[];names=[];
+  const M=MSUN, a=AU;
+  push(M, 0,0, 0,0, '#FF5F1F', 11, 'Star');
+  push(M*3e-6, a,0, 0, circ(a,G*M), '#e0f2fe', 4, 'Inner');
+  push(M*9.7e-6, a*1.62,0, 0, circ(a*1.62,G*M)*0.993, '#a5f3fc', 4, 'Outer');
+}
+function buildFig(){
+  // Chenciner-Montgomery: three equal masses chase each other on one figure-eight.
+  b=[];col=[];rad=[];names=[];
+  const m=MSUN, l=AU;
+  push(m, -l,0, 0, circ(2*l,G*2*m)*0.5, '#FF5F1F', 7, 'A');
+  push(m,  l,0, 0, -circ(2*l,G*2*m)*0.5, '#e0f2fe', 7, 'B');
+  push(m,  0,0, circ(l,G*m), 0, '#a5f3fc', 7, 'C');
+  cx0=0; cy0=0;
+}
+function buildSolar(){
+  b=[];col=[];rad=[];names=[];
+  const M=MSUN;
+  push(M,0,0,0,0,'#FF5F1F',11,'Sun');
+  const pl=[['Mercury',0.387,3.301e23,3.30e23,'#cbd5e1'],
+           ['Venus',0.723,4.87e24,2.447e24,'#fde68a'],
+           ['Earth',1.000,5.972e24,7.348e22,'#7dd3fc'],
+           ['Mars',1.524,6.417e23,1.631e22,'#fca5a5']];
+  pl.forEach(([nm,a,m,mb,c])=>push(mb,a*AU,0,0,circ(a*AU,G*(M+m)),c,4,nm));
+}
+function buildCluster(){
+  b=[];col=[];rad=[];names=[];
+  const n=60, M=MSUN*0.06, R=4*AU;
+  for(let i=0;i<n;i++){
+    const a=Math.random()*2*Math.PI, rr=Math.sqrt(Math.random())*R;
+    const x=Math.cos(a)*rr, y=Math.sin(a)*rr;
+    // velocity = 0.6 x circular, so the cluster is marginally bound and stays bound
+    const sp=circ(Math.max(rr,1e8),G*M)*0.6;
+    const h=10;
+    const hue=190+Math.random()*90;
+    push(M/n, x, y, -Math.sin(a)*sp, Math.cos(a)*sp,
+      'hsl('+hue.toFixed(0)+',75%,'+(55+Math.random()*20).toFixed(0)+'%)', 3, 'star');
+  }
+  push(2.2*M, 0,0, 0,0, '#FF5F1F', 6, 'core');
+}
+function build(kind){
+  b=[];col=[];rad=[];names=[];t=0;drift=0;
+  if(kind==='2') build2();
+  else if(kind==='3') build3();
+  else if(kind==='fig') buildFig();
+  else if(kind==='4') buildSolar();
+  else buildCluster();
+  if(kind==='fig'){ scale=AU*1.6; cx0=0; cy0=0; }
+  else if(kind==='n'){ scale=AU*5.2; cx0=0; cy0=0; }
+  else { scale=AU*1.9; cx0=AU*0.12; cy0=0; }
+  trails=b.map(()=>[]);
+  accel(); cumE0=energy();
+  // recentre on the system barycentre so nothing drifts off screen
+  let mx=0,my=0,mv=0; b.forEach(p=>{mx+=p.m*p.x;my+=p.m*p.y;mv+=p.m;});
+  const bx=mx/mv, by=my/mv; b.forEach(p=>{p.x-=bx;p.y-=by;});
+  $('hudmode').textContent=$('sys').selectedOptions[0].text.toUpperCase().slice(0,22);
+}
+
+/* ── physics ──────────────────────────────────────────────────────────── */
+function accel(){
+  const n=b.length;
+  for(let i=0;i<n;i++){ b[i].ax=0; b[i].ay=0; }
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
+    const dx=b[j].x-b[i].x, dy=b[j].y-b[i].y;
+    const d2=dx*dx+dy*dy, d=Math.sqrt(d2);
+    const inv=G/(d2*d);                    // G/r^3 * (r_j - r_i)
+    b[i].ax+=b[j].m*dx*inv; b[i].ay+=b[j].m*dy*inv;
+    b[j].ax-=b[i].m*dx*inv; b[j].ay-=b[i].m*dy*inv;
+  }
+}
+function energy(){
+  let ke=0, pe=0;
+  b.forEach(p=>ke+=0.5*p.m*(p.vx*p.vx+p.vy*p.vy));
+  for(let i=0;i<b.length;i++)for(let j=i+1;j<b.length;j++){
+    const d=Math.hypot(b[j].x-b[i].x, b[j].y-b[i].y);
+    pe-=G*b[i].m*b[j].m/d;
+  }
+  return ke+pe;
+}
+function angmom(){
+  let L=0; b.forEach(p=>L+=p.m*(p.x*p.vy-p.y*p.vx));
+  return L;
+}
+function step(h){
+  const n=b.length;
+  if(integ==='euler'){
+    accel();
+    for(let i=0;i<n;i++){                    // symplectic-euler: drift then kick
+      b[i].x+=b[i].vx*h; b[i].y+=b[i].vy*h;
+      b[i].vx+=b[i].ax*h; b[i].vy+=b[i].ay*h;
+    }
+  } else if(integ==='verlet'){
+    for(let i=0;i<n;i++){                    // half kick
+      b[i].vx+=b[i].ax*h/2; b[i].vy+=b[i].ay*h/2;
+    }
+    accel();
+    for(let i=0;i<n;i++){
+      b[i].x+=b[i].vx*h; b[i].y+=b[i].vy*h;   // full drift with NEW accel
+    }
+    accel();
+    for(let i=0;i<n;i++){                    // half kick
+      b[i].vx+=b[i].ax*h/2; b[i].vy+=b[i].ay*h/2;
+    }
+  } else {                                   // kick-drift-kick leapfrog
+    accel();
+    for(let i=0;i<n;i++){ b[i].vx+=b[i].ax*h; b[i].vy+=b[i].ay*h; }
+    for(let i=0;i<n;i++){ b[i].x+=b[i].vx*h; b[i].y+=b[i].vy*h; }
+    accel();
+    for(let i=0;i<n;i++){ b[i].vx+=b[i].ax*h; b[i].vy+=b[i].ay*h; }
+  }
+  t+=h;
+}
+/* osculating orbital elements of body k about the barycentre */
+function elements(k){
+  if(k<0||k>=b.length) return null;
+  let M=0,mx=0,my=0,mvx=0,mvy=0;
+  b.forEach(p=>{M+=p.m;mx+=p.m*p.x;my+=p.m*p.y;mvx+=p.m*p.vx;mvy+=p.m*p.vy;});
+  const p=b[k], rx=p.x-mx/M, ry=p.y-my/M, vx=p.vx-mvx/M, vy=p.vy-mvy/M;
+  const mu=G*(M-p.m);
+  const r=Math.hypot(rx,ry), v2=vx*vx+vy*vy;
+  const h=rx*vy-ry*vx;
+  const energyv=0.5*v2-mu/r;                        // specific orbital energy
+  const a=-mu/(2*energyv);
+  const ecc=Math.sqrt(Math.max(0,1+2*energyv*h*h/(mu*mu)));
+  const P=a>0?2*Math.PI*Math.sqrt(a*a*a/mu):Infinity;
+  return {a:a/AU, e:ecc, r:r/AU, v:Math.sqrt(v2), P:P/DAY, h:h, mu:mu,
+          rp:a>0?a*(1-ecc)/AU:0, ra:a>0?a*(1+ecc)/AU:0};
+}
+
+/* ── stats ────────────────────────────────────────────────────────────── */
+const STATS=[['Semi-major a','st-a'],['Eccentricity e','st-e'],['Period P','st-p'],
+             ['Kepler check','st-k'],['r (now)','st-r'],['Speed','st-v'],
+             ['Energy drift','st-e0'],['Ang. momentum','st-L']];
+$('stats').innerHTML=STATS.map(([n,id])=>
+  '<div class="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">'
+  +'<div class="ws-label">'+n+'</div><div class="font-mono text-[13px] font-bold text-white" id="'+id+'">&mdash;</div></div>').join('');
+function showStats(){
+  const kind=$('sys').value;
+  const k = kind==='4' ? 3 : (kind==='2'||kind==='3'||kind==='fig') ? 1 : -1;
+  if(k>0){
+    const el=elements(k);
+    if(el&&isFinite(el.a)&&el.a>0){
+      $('st-a').textContent=el.a.toFixed(4)+' AU';
+      $('st-e').textContent=el.e.toFixed(4);
+      $('st-p').textContent=el.P.toFixed(3)+' d';
+      $('st-k').textContent=(el.P*365.25/(el.a*Math.sqrt(el.a))).toFixed(4)+' (1.0000 = exact)';
+      $('st-r').textContent=el.r.toFixed(4)+' AU';
+      $('st-v').textContent=(el.v/1000).toFixed(2)+' km/s';
+    } else {
+      $('st-a').textContent='unbound'; $('st-e').textContent='—'; $('st-p').textContent='—';
+      $('st-k').textContent='—'; $('st-r').textContent='—'; $('st-v').textContent='—';
+    }
+  } else {
+    $('st-a').textContent='—'; $('st-e').textContent='—'; $('st-p').textContent='—';
+    $('st-k').textContent='cluster: no single a';
+    $('st-r').textContent='—';
+    $('st-v').textContent=(b.length? (b.reduce((a,p)=>a+Math.hypot(p.vx,p.vy),0)/b.length/1000).toFixed(2):'—')+' km/s avg';
+  }
+  const E=energy();
+  drift = cumE0? (E-cumE0)/Math.abs(cumE0) : 0;
+  $('st-e0').textContent=(drift*100).toExponential(2)+' %';
+  $('st-L').textContent=angmom().toExponential(4);
+}
+
+/* ── render ───────────────────────────────────────────────────────────── */
+function draw(){
+  cx.fillStyle='#050505'; cx.fillRect(0,0,CW,CH);
+  const sx=CW/2-cx0/scale*CW, sy=CH/2+cy0/scale*CH;
+  const P=wx=>(wx/scale)*CW+sx;
+  // au grid
+  cx.strokeStyle='rgba(255,255,255,.045)'; cx.lineWidth=1;
+  const stepAu=scale/AU>3?1:scale/AU>1.2?0.5:0.2;
+  for(let g=-60;g<=60;g++){
+    const x=P(g*stepAu*AU);
+    if(x>0&&x<CW){ cx.beginPath(); cx.moveTo(x,0); cx.lineTo(x,CH); cx.stroke(); }
+    const y=CH-((g*stepAu*AU)/scale)*CH+CH/2;
+    if(y>0&&y<CH){ cx.beginPath(); cx.moveTo(0,y); cx.lineTo(CW,y); cx.stroke(); }
+  }
+  // trails
+  if(trailOn){
+    trails.forEach((tr,k)=>{
+      if(tr.length<2||!b[k]) return;
+      cx.strokeStyle=col[k]; cx.globalAlpha=.34; cx.lineWidth=1.2; cx.beginPath();
+      tr.forEach((p,i)=>i?cx.lineTo(P(p[0]),CH-((p[1])/scale)*CH+CH/2):cx.moveTo(P(p[0]),CH-((p[1])/scale)*CH+CH/2));
+      cx.stroke(); cx.globalAlpha=1;
+    });
+  }
+  // the orbit the primary is on, drawn as the true conic from the osculating
+  // elements:  e_vec = ((v^2-mu/r) r_vec - (r.v) v_vec) / mu
+  if($('sys').value==='2' || $('sys').value==='4'){
+    const el=elements(1);
+    if(el&&isFinite(el.a)&&el.a>0&&el.e<0.98){
+      let M=0,mx=0,my=0,mvx=0,mvy=0;
+      b.forEach(p=>{M+=p.m;mx+=p.m*p.x;my+=p.m*p.y;mvx+=p.m*p.vx;mvy+=p.m*p.vy;});
+      const p=b[1], mu=el.mu;
+      const rx=p.x-mx/M, ry=p.y-my/M, vx=p.vx-mvx/M, vy=p.vy-mvy/M;
+      const r=Math.hypot(rx,ry), v2=vx*vx+vy*vy, rv=rx*vx+ry*vy;
+      let ex=((v2-mu/r)*rx-rv*vx)/mu, ey=((v2-mu/r)*ry-rv*vy)/mu;
+      const e=Math.hypot(ex,ey);
+      if(e>1e-9){
+        ex/=e; ey/=e;                       // P_hat, towards periapsis
+        const qx=-ey, qy=ex;               // Q_hat, 90 deg along the motion
+        const a=el.a*AU;
+        cx.strokeStyle='rgba(224,242,254,.20)'; cx.lineWidth=1; cx.setLineDash([2,5]);
+        cx.beginPath();
+        for(let k=0;k<=240;k++){
+          const E=k*Math.PI/120;
+          const rr=a*(1-e*e)/(1+e*Math.cos(E));
+          const X=rr*Math.cos(E), Y=rr*Math.sin(E);
+          const wx=mx/M+X*ex+Y*qx, wy=my/M+X*ey+Y*qy;
+          const sxp=P(wx), syp=CH-((wy-cy0)/scale)*CH+CH/2;
+          k?cx.lineTo(sxp,syp):cx.moveTo(sxp,syp);
+        }
+        cx.stroke(); cx.setLineDash([]);
+      }
+    }
+  }
+  // velocity vectors
+  if(vecOn){
+    b.forEach((p,i)=>{
+      const x=P(p.x), y=CH-((p.y-cy0)/scale)*CH+CH/2;
+      const vx=vxScale(p.vx), vy=vyScale(p.vy);
+      cx.strokeStyle='rgba(255,255,255,.35)'; cx.lineWidth=1;
+      cx.beginPath(); cx.moveTo(x,y); cx.lineTo(x+vx,y-vy); cx.stroke();
+    });
+  }
+  // bodies
+  b.forEach((p,i)=>{
+    const x=P(p.x), y=CH-((p.y-cy0)/scale)*CH+CH/2;
+    const r=rad[i]*(CW/700);
+    const g=cx.createRadialGradient(x-r*.4,y-r*.5,r*.1,x,y,r*1.6);
+    g.addColorStop(0,'#fff'); g.addColorStop(0.35,col[i]); g.addColorStop(1,'rgba(0,0,0,0)');
+    cx.fillStyle=g; cx.beginPath(); cx.arc(x,y,r*1.6,0,7); cx.fill();
+    cx.fillStyle=col[i]; cx.beginPath(); cx.arc(x,y,Math.max(1.6,r),0,7); cx.fill();
+    if(b.length<=8){
+      cx.fillStyle='rgba(255,255,255,.65)'; cx.font='700 10px "IBM Plex Sans",monospace';
+      cx.textAlign='left'; cx.fillText(names[i],x+r+5,y+3);
+    }
+  });
+  // scale bar: one AU
+  const auPx=AU/scale*CW;
+  cx.strokeStyle='rgba(255,255,255,.35)'; cx.lineWidth=1;
+  cx.beginPath(); cx.moveTo(14,CH-16); cx.lineTo(14+auPx,CH-16); cx.stroke();
+  cx.fillStyle='rgba(255,255,255,.55)'; cx.font='700 10px "IBM Plex Sans",monospace';
+  cx.textAlign='left'; cx.fillText(stepAu+' AU',14,CH-22);
+  $('hudfps').textContent=fps.toFixed(0)+' FPS';
+}
+function vxScale(vx){ return vx/GS[gi]*CW*0.0009; }
+function vyScale(vy){ return vy/GS[gi]*CW*0.0009; }
+
+/* ── loop ─────────────────────────────────────────────────────────────── */
+let last=performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  resize();
+  const el=Math.min(0.05,(now-last)/1000); last=now;
+  if(running){
+    const s=Number($('sub').value);
+    for(let k=0;k<s;k++) step(dt);
+    trails.forEach((tr,i)=>{ const p=b[i]; if(!p) return;
+      tr.push([p.x,p.y]); if(tr.length>1400) tr.shift(); });
+  }
+  frames++;
+  if(now-fpsT>500){ fps=frames*1000/(now-fpsT); frames=0; fpsT=now; showStats(); }
+  draw();
+}
+
+/* ── controls ─────────────────────────────────────────────────────────── */
+$('play').onclick=()=>{ running=!running; $('play').textContent=running?'Pause':'Start'; last=performance.now(); };
+$('reset').onclick=()=>{ build($('sys').value); };
+$('sys').onchange=()=>{ running=false; $('play').textContent='Start'; build($('sys').value); showStats(); };
+$('trails').onclick=()=>{ trailOn=!trailOn; $('trails').textContent='Trails: '+(trailOn?'on':'off'); };
+$('vectors').onclick=()=>{ vecOn=!vecOn; $('vectors').textContent='Vectors: '+(vecOn?'on':'off'); };
+$('kick').onclick=()=>{ b.forEach(p=>{ p.vx+= (Math.random()-.5)*40; p.vy+=(Math.random()-.5)*40; }); };
+$('gsel').oninput=()=>{ gi=Number($('gsel').value); G=GS[gi]; $('gv').textContent=GLAB[gi]; };
+$('sub').oninput=()=>{ subSteps=Number($('sub').value); $('sv').textContent=subSteps; };
+$('dtq').oninput=()=>{ const i=Number($('dtq').value); dt=DTQ[i];
+  $('dv').textContent=dt>=DAY? (dt/DAY)+' d' : (dt*24)+' h'; };
+$('integ').onchange=()=>{ integ=$('integ').value; cumE0=energy(); };
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+  if(e.key===' '){ e.preventDefault(); $('play').click(); }
+  if(e.key==='r'||e.key==='R') build($('sys').value);
+  if(e.key==='t'||e.key==='T') $('trails').click();
+});
+new ResizeObserver(()=>{ resize(); draw(); }).observe(cv);
+
+/* exposed for the verification harness */
+window.__nb={
+  state(){ const k=$('sys').value;
+    return {n:b.length, running:running, t:t/DAY, G:G, integ:integ, drift:drift,
+      keplerError:  (function(){ if(k==='4'||k==='2'){ const e=elements(1);
+        return e&&isFinite(e.a)&&e.a>0 ? e.P*365.25/Math.pow(e.a,1.5) : null; } return null; })(),
+      el: (k==='2')?elements(1):null }; },
+  setRunning(v){ running=v; $('play').textContent=v?'Pause':'Start'; },
+  build, elements, step, energy, angmom,
+  runDays(d){ const n=Math.round(d*DAY/dt); for(let k=0;k<n;k++) step(dt); },
+  scaleInfo(){ return {scale:scale, bodies:b.map(p=>({x:p.x,y:p.y,m:p.m}))}; }
+};
+$('dv').textContent=(dt/DAY)+' d'; $('gv').textContent=GLAB[0];
+build('2'); resize(); showStats(); draw();     // first frame before any rAF
+requestAnimationFrame(loop);
+</script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/pendulum-lab/">
+      <span class="ocurp-related-n">Pendulum Lab</span>
+      <span class="ocurp-related-b">Nine coupled pendulums on a real g = 9.81. Small-angle period printed underneath; the chao</span>
+    </a></li>
+    <li><a href="/workspace/games/reaction-diffusion/">
+      <span class="ocurp-related-n">Reaction Diffusion</span>
+      <span class="ocurp-related-b">A real Gray-Scott solver. Eight regimes - mitosis, coral, worms, solitons, fingerprint - a</span>
+    </a></li>
+    <li><a href="/workspace/games/wave-equation/">
+      <span class="ocurp-related-n">Wave Equation</span>
+      <span class="ocurp-related-b">An explicit leapfrog finite-difference solver. Resonance, standing waves and superposition</span>
+    </a></li>
+    <li><a href="/workspace/games/sandbox-3d/">
+      <span class="ocurp-related-n">Sandbox 3D</span>
+      <span class="ocurp-related-b">A real 3D voxel world of 92,160 cubes. Paint sand, water, lava and fire and watch density </span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
