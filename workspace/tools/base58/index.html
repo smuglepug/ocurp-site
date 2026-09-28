@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base58 Encoder | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Base58 Encoder</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">BASE58</span><span class="ws-chip">BITCOIN</span><span class="ws-chip">ENCODE</span></div>
+        </div>
+      <section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Base58 Encoder / Decoder</span></div><div class="mb-4 flex gap-2"><button id="enc" class="ws-btn">Encode to Base58</button><button id="dec" class="ws-btn-ghost">Decode from Base58</button><button id="tohex" class="ws-btn-ghost">Base58 &rarr; Hex</button><button id="tob64" class="ws-btn-ghost">Base58 &rarr; Base64</button></div><div><label class="ws-label mb-2 block" for="src">Input</label><textarea id="src" rows="5" class="ws-input font-mono text-xs" placeholder="Hello, world!">Hello, world!</textarea></div><div class="mt-3 flex flex-wrap items-center gap-3"><button id="copy" class="ws-btn-ghost">Copy output</button><span class="text-xs text-white/50" id="note"></span></div><div class="mt-5"><div class="ws-label mb-2">Output</div><div id="out" class="ws-out"></div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">What this is</span></div><p class="text-sm text-white/70">Base58 is Bitcoin's alphabet: it drops <code>0</code>, <code>O</code>, <code>I</code> and <code>l</code> so a mistyped address is obvious. Unlike Base64 it has no padding, and the leading <code>1</code> in a Bitcoin address encodes leading zero bytes.</p><p class="mt-3 text-sm text-white/70">Unicode input is encoded as UTF-8 first, so emoji and accents round-trip correctly.</p></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const A='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+const MAP={}; for(let i=0;i<A.length;i++) MAP[A[i]]=i;
+const b64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const te=new TextEncoder(), td=new TextDecoder();
+
+function b64toBytes(s){
+  s=s.replace(/=+$/,'');
+  const out=[];
+  let bits=0, val=0;
+  for(const ch of s){
+    const v=b64.indexOf(ch);
+    if(v<0) throw new Error('bad base64 character: '+ch);
+    val=(val<<6)|v; bits+=6;
+    if(bits>=8){ bits-=8; out.push((val>>bits)&255); }
+  }
+  return new Uint8Array(out);
+}
+function bytesToB64(b){
+  let s='', bits=0, val=0;
+  for(const x of b){ val=(val<<8)|x; bits+=8;
+    while(bits>=6){ bits-=6; s+=b64[(val>>bits)&63]; } }
+  if(bits) s+=b64[(val<<(6-bits))&63];
+  while(s.length%4) s+='=';
+  return s;
+}
+// leading-zero bytes become leading '1' characters, exactly like Bitcoin
+function encode(bytes){
+  if(bytes.length===0) return '';
+  let zeros=0; while(zeros<bytes.length && bytes[zeros]===0) zeros++;
+  const digits=[0];
+  for(const byte of bytes){
+    let carry=byte;
+    for(let i=0;i<digits.length;i++){
+      carry+=digits[i]<<8; digits[i]=carry%58; carry=(carry/58)|0;
+    }
+    while(carry>0){ digits.push(carry%58); carry=(carry/58)|0; }
+  }
+  return '1'.repeat(zeros)+digits.reverse().map(d=>A[d]).join('');
+}
+function decode(s){
+  if(s.length===0) return new Uint8Array(0);
+  let zeros=0; while(zeros<s.length && s[zeros]==='1') zeros++;
+  const bytes=[0];
+  for(const ch of s){
+    const v=MAP[ch];
+    if(v===undefined) throw new Error("'"+ch+"' is not a Base58 character");
+    let carry=v;
+    for(let i=0;i<bytes.length;i++){
+      carry+=bytes[i]*58; bytes[i]=carry&255; carry>>=8;
+    }
+    while(carry>0){ bytes.push(carry&255); carry>>=8; }
+  }
+  const out=new Uint8Array(zeros+bytes.length);
+  for(let i=0;i<bytes.length;i++) out[zeros+i]=bytes[bytes.length-1-i];
+  return out;
+}
+function show(txt,note){
+  $('out').textContent=txt;
+  $('out').classList.toggle('break-all', txt.length>60);
+  $('note').textContent=note||'';
+}
+$('enc').addEventListener('click',()=>{
+  try{
+    const b=te.encode($('src').value);
+    const e=encode(b);
+    show(e, b.length+' UTF-8 bytes -> '+e.length+' Base58 chars. Round-trip: '
+      +(td.decode(decode(e))===$('src').value ? 'OK' : 'FAILED'));
+  }catch(err){ show('Encode failed: '+err.message); }
+});
+$('dec').addEventListener('click',()=>{
+  try{
+    const t=td.decode(decode($('src').value.trim()));
+    show(t, t.length+' characters decoded.');
+  }catch(err){ show('Decode failed: '+err.message); }
+});
+$('tohex').addEventListener('click',()=>{
+  try{
+    const b=decode($('src').value.trim());
+    show(Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join(' '),
+         b.length+' bytes.');
+  }catch(err){ show('Decode failed: '+err.message); }
+});
+$('tob64').addEventListener('click',()=>{
+  try{
+    const b=decode($('src').value.trim());
+    show(bytesToB64(b), b.length+' bytes.');
+  }catch(err){ show('Decode failed: '+err.message); }
+});
+$('copy').addEventListener('click',()=>{
+  navigator.clipboard.writeText($('out').textContent)
+    .then(()=>{ $('note').textContent='Copied.'; }, ()=>{ $('note').textContent='Clipboard blocked.'; });
+});
+$('enc').click();
+</script>
+</body>
+</html>

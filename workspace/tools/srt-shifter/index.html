@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRT Shifter | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">SRT Shifter</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">SUBTITLES</span><span class="ws-chip">SRT</span><span class="ws-chip">TIMING</span></div>
+        </div>
+      <section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">SRT Shifter</span></div><div class="grid gap-4 md:grid-cols-3"><div><label class="ws-label mb-2 block" for="off">Shift by (seconds, may be negative)</label><input id="off" type="number" class="ws-input" placeholder="1.5" value="1.5"></div><div><label class="ws-label mb-2 block" for="cps">Max speed (chars per second)</label><input id="cps" type="number" class="ws-input" placeholder="20" value="20"></div><div><label class="ws-label mb-2 block" for="gap">Line gap (extra ms between cues)</label><input id="gap" type="number" class="ws-input" placeholder="0" value="0"></div></div><div class="mt-5 flex flex-wrap items-center gap-3"><button id="go" class="ws-btn">Shift and re-time</button><button id="norm" class="ws-btn-ghost">Renumber from 1</button><a id="dl" class="ws-btn-ghost pointer-events-none opacity-40">Download .srt</a><span class="text-xs text-white/50" id="status"></span></div><div class="mt-5"><div class="ws-label mb-2">Output</div><div id="out" class="ws-out"></div></div><p class="mt-3 text-xs text-white/60">Cues longer than their text can be read at the given speed are shortened so subtitles never overlap. Nothing is shifted past 00:00:00,000.</p></section><div><label class="ws-label mb-2 block" for="src">Subtitle text (.srt)</label><textarea id="src" rows="8" class="ws-input font-mono text-xs" placeholder="1
+00:00:01,000 --> 00:00:04,000
+The quick brown fox jumps.
+
+2
+00:00:05,500 --> 00:00:07,000
+Second line here.
+">1
+00:00:01,000 --> 00:00:04,000
+The quick brown fox jumps.
+
+2
+00:00:05,500 --> 00:00:07,000
+Second line here.
+</textarea></div>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const TC=/(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})\s*-->\s*(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})([^\n]*)/g;
+const parse=ts=>{ // "01:02:03,456" -> ms
+  // Split on colons, then split the SECONDS field on its , or . separator.
+  // The separator has to be a delimiter, not something to strip: removing the
+  // comma from '01,000' leaves '01000', i.e. 1000 seconds, and replacing it
+  // with a dot glues the fraction onto the field so Number() gives NaN.
+  const p=ts.trim().split(':');
+  const sec=String(p[2]||0).split(/[,.]/);
+  const whole=Number(sec[0]||0);
+  const frac=Number(String(sec[1]===undefined?'0':sec[1]).slice(0,3).padEnd(3,'0'));
+  return Math.round(((Number(p[0]||0)*60+Number(p[1]||0))*60+whole)*1000+frac);
+};
+const fmt=ms=>{
+  if(ms<0) ms=0;
+  const h=Math.floor(ms/3600000); ms-=h*3600000;
+  const m=Math.floor(ms/60000); ms-=m*60000;
+  const sec=Math.floor(ms/1000); ms-=sec*1000;
+  const p=(n,w)=>String(n).padStart(w,'0');
+  return p(h,2)+':'+p(m,2)+':'+p(sec,2)+','+p(ms,3);
+};
+// cue text = every non-empty line between a timing line and the next blank line
+function parseCues(src){
+  const text=src.replace(/\r/g,'');
+  const lines=text.split('\n');
+  const cues=[]; let i=0;
+  while(i<lines.length){
+    // TC is a /g regex, so exec() would carry lastIndex between cues and
+    // silently skip every other timestamp. Reset it before every test.
+    TC.lastIndex=0;
+    const t=TC.exec(lines[i]);
+    if(t){
+      const start=parse(t[1]), end=parse(t[2]);
+      const settings=t[3].trim();
+      const body=[];
+      i++;
+      while(i<lines.length && lines[i].trim()!==''){
+        if(!/^\d+$/.test(lines[i].trim())) body.push(lines[i]);
+        i++;
+      }
+      if(end>start) cues.push({start:start,end:end,settings:settings,text:body});
+    } else i++;
+  }
+  return cues;
+}
+function render(cues){
+  return cues.map((c,i)=>(i+1)+'\n'+fmt(c.start)+' --> '+fmt(c.end)
+    +(c.settings?' '+c.settings:'')+'\n'+c.text.join('\n')).join('\n\n')+'\n';
+}
+function run(){
+  const off=Math.round(parseFloat($('off').value||'0')*1000);
+  const cps=Math.max(1,parseInt($('cps').value||'20',10));
+  const gap=Math.round(parseInt($('gap').value||'0',10));
+  const cues=parseCues($('src').value);
+  if(!cues.length){ $('status').textContent='No cues found - check the timestamps.'; $('out').textContent=''; return; }
+  const before=cues[0].start, last=cues[cues.length-1].end;
+  let prevEnd=null, shortened=0, clipped=0;
+  for(const c of cues){
+    c.start=Math.max(0,c.start+off);
+    c.end=Math.max(0,c.end+off);
+    if(prevEnd!==null && c.start<prevEnd+gap){ c.start=prevEnd+gap; shortened++; }
+    if(c.start===0 && c.end===0) { c.end=0; }
+    if(c.end<=c.start) c.end=c.start+1;
+    // reading speed: at least chars/cps seconds on screen
+    const chars=c.text.join(' ').replace(/<[^>]*>/g,'').length;
+    const need=Math.ceil(chars/cps*1000);
+    if(c.end-c.start<need){ c.end=c.start+need; shortened++; }
+    if(prevEnd!==null && c.start<prevEnd){ clipped++; }
+    prevEnd=c.end;
+  }
+  // renumber so the indexes are sequential again
+  const out=render(cues);
+  $('out').textContent=out;
+  $('dl').href='data:text/plain;charset=utf-8,'+encodeURIComponent(out);
+  $('dl').download='shifted.srt';
+  $('dl').classList.remove('pointer-events-none','opacity-40');
+  const net=off>=0?('+'+off+'ms'):(off+'ms');
+  $('status').textContent=cues.length+' cues, shift '+net+', '
+    +shortened+' adjusted, start was '+fmt(before)+', end now '+fmt(last+off)+'.';
+}
+$('go').addEventListener('click',run);
+$('norm').addEventListener('click',()=>{
+  $('off').value='0'; $('cps').value='0'; $('gap').value='0';
+  const cues=parseCues($('src').value);
+  $('out').textContent=render(cues);
+  $('dl').href='data:text/plain;charset=utf-8,'+encodeURIComponent($('out').textContent);
+  $('dl').classList.remove('pointer-events-none','opacity-40');
+  $('status').textContent='Renumbered only - timings untouched.';
+});
+run();
+</script>
+</body>
+</html>
