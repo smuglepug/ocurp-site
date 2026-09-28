@@ -111,10 +111,10 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>
 const cv=document.getElementById('cv'),cx=cv.getContext('2d'),N=21,S=cv.width/N;
-let snake,dir,food,score,dead,timer,speed=110;
+let snake,dir,food,score,dead,timer,speed=110,won=false;
 const best=()=>parseInt(localStorage.getItem('ws-snake-best')||'0');
 document.getElementById('best').textContent=best();
-function reset(){snake=[{x:10,y:10}];dir={x:1,y:0};place();score=0;dead=false;
+function reset(){snake=[{x:10,y:10}];dir={x:1,y:0};place();score=0;dead=false;won=false;
   document.getElementById('score').textContent='0';draw()}
 function place(){do{food={x:Math.floor(Math.random()*N),y:Math.floor(Math.random()*N)}}
   while(snake.some(s=>s.x===food.x&&s.y===food.y))}
@@ -126,7 +126,14 @@ function step(){
     if(score%5===0&&speed>60){speed-=8;restart()}}
   else snake.pop();
   draw();
+  if(!dead&&snake.length>=N*N)win();
 }
+function win(){won=true;dead=true;clearInterval(timer);
+  cx.fillStyle='rgba(5,5,5,.82)';cx.fillRect(0,0,cv.width,cv.height);
+  cx.fillStyle='#FF5F1F';cx.font='900 26px Manrope,sans-serif';cx.textAlign='center';
+  cx.fillText('BOARD CLEARED',cv.width/2,cv.height/2-10);
+  cx.fillStyle='#fff';cx.font='600 14px Inter,sans-serif';
+  cx.fillText('You filled all '+N*N+' squares.',cv.width/2,cv.height/2+16)}
 function over(){dead=true;clearInterval(timer);
   if(score>best()){localStorage.setItem('ws-snake-best',score);document.getElementById('best').textContent=score}
   cx.fillStyle='rgba(5,5,5,.75)';cx.fillRect(0,0,cv.width,cv.height);
@@ -140,6 +147,7 @@ function draw(){
 }
 function restart(){clearInterval(timer);timer=setInterval(()=>{if(!dead)step()},speed)}
 document.getElementById('start').onclick=()=>{if(dead||!timer){reset();restart()}};
+window.__snake={get len(){return snake.length},get score(){return score},get dead(){return dead},get won(){return won},N:N,reset:reset};
 document.getElementById('reset').onclick=()=>{clearInterval(timer);timer=null;reset()};
 addEventListener('keydown',e=>{
   const m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],
@@ -158,6 +166,8 @@ cv.addEventListener('touchend',e=>{
 },{passive:true});
 reset();
 </script>
+
+
 
 
 

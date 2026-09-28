@@ -91,16 +91,29 @@ tailwind.config = { theme: { extend: {
 </div>
 <script src="/workspace/related.js" defer></script>
 <script>const $=id=>document.getElementById(id);
-let W,H,M,g,revealed,flags,over;
+let W,H,M,g,revealed,flags,over,won,started;
 function reset(){const [w,h,m]=$('lvl').value.split(',').map(Number);W=w;H=h;M=m;
   g=Array(H).fill().map(()=>Array(W).fill(0));revealed=Array(H).fill().map(()=>Array(W).fill(false));
-  flags=Array(H).fill().map(()=>Array(W).fill(false));over=false;
-  let placed=0;while(placed<M){const r=Math.floor(Math.random()*H),c=Math.floor(Math.random()*W);
-    if(g[r][c]!==-1){g[r][c]=-1;placed++}}
+  flags=Array(H).fill().map(()=>Array(W).fill(false));over=false;won=false;
+  started=false;$('left').textContent=M;draw()}
+function lay(safeR,safeC){started=true;
+  // Never place a mine under the first click, and never in its neighbourhood,
+  // so opening a square can never lose the game on turn one.
+  const banned=new Set();
+  for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+    const nr=safeR+dr,nc=safeC+dc;if(nr>=0&&nr<H&&nc>=0&&nc<W)banned.add(nr+','+nc)}
+  let placed=0,guard=0;
+  while(placed<M&&guard++<H*W*40){const r=Math.floor(Math.random()*H),c=Math.floor(Math.random()*W);
+    if(g[r][c]===-1||banned.has(r+','+c))continue;g[r][c]=-1;placed++}
   for(let r=0;r<H;r++)for(let c=0;c<W;c++){if(g[r][c]===-1)continue;
     let n=0;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;
       if(nr>=0&&nr<H&&nc>=0&&nc<W&&g[nr][nc]===-1)n++}g[r][c]=n}
-  $('left').textContent=M;draw()}
+  $('left').textContent=M}
+function checkWin(){if(over||won)return;
+  for(let r=0;r<H;r++)for(let c=0;c<W;c++){if(g[r][c]!==-1&&!revealed[r][c])return}
+  won=true;
+  $('status').textContent='Cleared - every safe square is open. '+leftCount()+' seconds.'}
+function leftCount(){return Math.max(0,M-flags.flat().filter(Boolean).length)}
 function draw(){$('grid').style.gridTemplateColumns='repeat('+W+',1fr)';
   let html='';
   for(let r=0;r<H;r++)for(let c=0;c<W;c++){
@@ -116,14 +129,20 @@ function draw(){$('grid').style.gridTemplateColumns='repeat('+W+',1fr)';
   $('grid').querySelectorAll('button').forEach(b=>{
     b.onclick=()=>reveal(+b.dataset.r,+b.dataset.c);
     b.oncontextmenu=e=>{e.preventDefault();flag(+b.dataset.r,+b.dataset.c)}})}
-function reveal(r,c){if(over||revealed[r][c]||flags[r][c])return;revealed[r][c]=true;
+function reveal(r,c){if(over||revealed[r][c]||flags[r][c])return;
+  if(!started)lay(r,c);
+  revealed[r][c]=true;
   if(g[r][c]===-1){over=true;for(let i=0;i<H;i++)for(let j=0;j<W;j++)revealed[i][j]=true;draw();return}
   if(g[r][c]===0)for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;
     if(nr>=0&&nr<H&&nc>=0&&nc<W&&!revealed[nr][nc])reveal(nr,nc)}
-  draw()}
+  draw();checkWin()}
 function flag(r,c){if(over||revealed[r][c])return;flags[r][c]=!flags[r][c];
   $('left').textContent=M-flags.flat().filter(Boolean).length;draw()}
-$('new').onclick=reset;$('lvl').onchange=reset;reset();</script>
+$('new').onclick=reset;$('lvl').onchange=reset;reset();
+window.__ms={get won(){return won},get over(){return over},reveal:reveal,flag:flag,grid:function(){return g},rev:function(){return revealed}};
+if(!$('status'))$('grid').insertAdjacentHTML('afterend','<p id=\'status\' class=\'mt-4 text-sm text-white/60\'>Reveal every safe square. Right-click to flag a mine.</p>');</script>
+
+
 
 
 
