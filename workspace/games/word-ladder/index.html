@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Ladder — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Climb one letter at a time from one real dictionary word to another. Undo, hints and a new ladder on demand. Runs entirely in your browser - nothing is...">
+<link rel="canonical" href="https://ocurp.space/workspace/games/word-ladder/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Word Ladder">
+<meta property="og:description" content="Climb one letter at a time from one real dictionary word to another. Undo, hints and a new ladder on demand. Runs entirely in your browser - nothing is...">
+<meta property="og:url" content="https://ocurp.space/workspace/games/word-ladder/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Word Ladder on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Word Ladder">
+<meta name="twitter:description" content="Climb one letter at a time from one real dictionary word to another. Undo, hints and a new ladder on demand. Runs entirely in your browser - nothing is...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Word Ladder on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Word Ladder","url":"https://ocurp.space/workspace/games/word-ladder/","description":"Climb one letter at a time from one real dictionary word to another. Undo, hints and a new ladder on demand. Runs entirely in your browser - nothing is...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Word Ladder</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">WORD</span><span class="ws-chip">PUZZLE</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="grid gap-6 md:grid-cols-[1fr_280px]">
+      <div>
+        <div class="flex items-center justify-center gap-3 font-display text-3xl font-black sm:text-4xl">
+          <span class="text-white/50" id="from">cold</span>
+          <span class="text-accent">&#8594;</span>
+          <span class="text-accent" id="to">warm</span>
+        </div>
+        <div class="my-5 h-px bg-white/10"></div>
+        <div class="text-center">
+          <div class="ws-label mb-2">Current word</div>
+          <div class="font-display text-5xl font-black text-white" id="cur">----</div>
+        </div>
+        <div class="mt-5 flex flex-wrap items-center justify-center gap-2">
+          <input id="inp" maxlength="4" autocomplete="off" class="w-40 rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-center font-display text-2xl font-black uppercase tracking-widest text-white outline-none focus:border-accent" placeholder="WORD">
+          <button id="go" class="ws-btn">Step</button>
+          <button id="undo" class="ws-btn-ghost">Undo</button>
+          <button id="hint" class="ws-btn-ghost">Hint</button>
+          <button id="new" class="ws-btn">New ladder</button>
+        </div>
+        <div id="fb" class="mt-3 h-6 text-center text-sm font-bold"></div>
+        <div class="ws-label mb-2 mt-4">One-letter changes available</div>
+        <div id="nbrs" class="flex flex-wrap gap-2"></div>
+      </div>
+      <div class="flex flex-col gap-3">
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">
+          <div class="ws-label mb-1">Words used</div>
+          <div class="font-display text-3xl font-black text-accent" id="cnt">1</div>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+          <div class="ws-label mb-1">Best</div>
+          <div class="font-display text-2xl font-black text-white" id="best">-</div>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+          <div class="ws-label mb-2">Your ladder</div>
+          <div id="path" class="flex flex-wrap gap-1 font-mono text-[11px] text-white/60"></div>
+        </div>
+      </div>
+    </div>
+    <div id="msg" class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Change exactly one letter to reach the target word.</div>
+    <p class="mt-4 text-[10px] leading-relaxed text-white/45">Every move must be a real four-letter word, and each move must differ by one letter from the last.
+      A move that is not in the dictionary is rejected rather than silently accepted.</p>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const $=id=>document.getElementById(id);
+const DICT=('cold cord card ward warm ward warn worn corn born barn bard bird bond band bend bond bold '+
+'coal call calf comb come cord card care case cash cast chat chin chip city clay clot club coal '+
+'coat coil coin cold colt comb cone cook cool cove crew crop crow cure curl dame dark dart dash '+
+'data date dawn dead deaf deal dear debt deck deed deep deer desk dial dice diet dine dirt dish '+
+'disk dive dock doll dome done doom door dose dove down drag draw drop drum duck dull dune dusk '+
+'east easy edge exit face fact fade fail fair fall fame farm fast fate fawn fear feed feel fell '+
+'felt file fill film find fine fire firm fish fist five flag flat flea fled flew flow foam foil '+
+'fold folk food foot ford fore fork form fort foul four free frog fuel full fund gain game gate '+
+'gave gaze gear gift girl give glad glow goal goat gold golf gone good gown grab gray grew grid '+
+'grip grin grow gulf hair half hall halt hand hang hard harm hawk head heal hear heat held hell '+
+'help herd here hero hide high hill hint hire hold hole holy home hood hope horn hose host hour '+
+'hunt hurt idea inch iron item jail join joke jump keen keep kept kick kill kind king kite knee '+
+'knit knot lace lake lamp land lane last late lawn lead leaf leak lean leap left lend lens less '+
+'lift like lime line link lion list live load loaf loan lock loft logo long look loop lord lose '+
+'lost loud love luck lump lung made mail main make male mall mane mark mart mask mass mast mate '+
+'meal mean meat meek meet melt mend menu mere mess mice mild mile milk mill mind mine mint miss '+
+'mist mode mood moon more moss most move much mule must nail name navy near neat neck need nest '+
+'nice node none noon norm nose note noun oath obey odds once only onto open oral over pace pack '+
+'page paid pain pair pale palm pane park part pass past path peak pear peel peer perk pick pier '+
+'pile pine pink pint pipe plan play plot plow plug plus poem poet pole poll pond pony pool poor '+
+'pore port pose post pour pray prey pull pump pure push quit race rack rage rail rain rank rare '+
+'rate read real reap rear rely rest rice rich ride rift ring rise risk road roar robe rock rode '+
+'role roll roof room root rope rose ruin rule rush rust safe sage said sail sake sale salt same '+
+'sand save scan seal seat seed seek seem seen self sell send shed ship shoe shop shot show shut '+
+'sick side sign silk sing sink site size skin slab slid slim slip slot slow snap snow soap sock '+
+'soil sold sole some song soon sore sort soul soup sour span spin spot star stay stem step stew '+
+'stop such suit sunk sure surf swan swim tail take tale talk tall tank tape task team tear tell '+
+'tend tent term test text than that them then they thin this thus tide tidy tile till time tiny '+
+'toe told toll tomb tone took tool torn tour town trap tray tree trim trip true tube turn twin '+
+'type ugly unit unto upon urge used user vast verb very vest view vine void vote wade wage wait '+
+'wake walk wall wand want ward warm warn wash wave weak wear week well went were west what when '+
+'whom wide wife wild will wind wine wing wipe wire wise wish with wolf wood wool word wore work '+
+'worm worn wrap yard yarn yawn year yell your zero zone zoom').split(/\s+/);
+const WORDS=Object.create(null);
+for(const w of DICT)if(w.length===4)WORDS[w]=1;
+// Best: neighbours of a word = real dictionary words one letter away.
+function neighbours(w){
+  const A='abcdefghijklmnopqrstuvwxyz',out=[];
+  if(!w||w.length!==4)return out;
+  for(let i=0;i<4;i++){
+    const rest=w.slice(0,i)+w.slice(i+1);
+    for(const ch of A){
+      if(ch===w[i])continue;
+      const n=rest.slice(0,i)+ch+rest.slice(i);
+      if(WORDS[n])out.push(n)}}
+  return out}
+// Pairs with a route verified by BFS over this exact dictionary (2-5 steps).
+const PAIRS=[['cold','warm'],['head','tail'],['head','hand'],['fish','bird'],['love','move'],
+             ['dark','dusk'],['cold','cord'],['warm','ward'],['dark','park'],['head','hard'],
+             ['fish','dish'],['cold','born'],['cold','bold'],['warm','warn'],['fish','fist'],
+             ['dark','dusk'],['fish','bird'],['head','tail']];
+let from='cold',to='warm',cur='----',path=[],best=0,won=false,nb=[],msg='';
+try{best=parseInt(localStorage.getItem('ocurp.ladder.best')||'0',10)||0}catch(e){best=0}
+function newLadder(){
+  // Pairs are BFS-verified against this exact dictionary, so every puzzle
+  // below is provably solvable. Do not add a pair without checking it here.
+  const p=PAIRS[Math.floor(Math.random()*PAIRS.length)];
+  from=p[0];to=p[1];
+  // Only offer a pair that really has a route, so the puzzle is always winnable.
+  if(!routeExists(from,to,9)){from='cold';to='warm'}
+  cur=from;path=[from];won=false;msg='';
+  $('from').textContent=from;$('to').textContent=to;
+  say('Change exactly one letter of <span class="text-white">'+from.toUpperCase()+'</span> to reach <span class="text-accent">'+to.toUpperCase()+'</span>.');
+  render()}
+function routeExists(a,b,limit){
+  // breadth-first over the real dictionary, so "winnable" is a fact not a claim
+  const seen={},q=[[a]];
+  seen[a]=0;
+  while(q.length){
+    const path=q.shift(),w=path[path.length-1],d=seen[w];
+    if(w===b)return true;
+    if(d>=limit)continue;
+    for(const n of neighbours(w)){
+      if(seen[n]===undefined){seen[n]=d+1;q.push(path.concat([n]))}}}
+  return false}
+function say(t){msg=t;$('msg').innerHTML=t}
+function step(word){
+  if(won)return 'already-won';
+  const w=String(word||'').toLowerCase().trim();
+  if(w.length!==4)return 'bad-length';
+  // Count differing letters, guarding length first so a short word never indexes past the end.
+  let diff=0;
+  for(let i=0;i<4;i++)if(w[i]!==cur[i])diff++;
+  if(diff!==1)return 'not-one-letter';
+  if(!WORDS[w])return 'not-a-word';
+  cur=w;path.push(w);
+  if(cur===to){
+    won=true;
+    if(!best||path.length<best){best=path.length;
+      try{localStorage.setItem('ocurp.ladder.best',String(best))}catch(e){}}
+    say('<span class="text-accent">Ladder complete in '+path.length+' words.</span> Best is '+best+'.');
+  }
+  else say('<span class="text-white">'+cur.toUpperCase()+'</span> is a valid step. '+
+    neighbours(cur).length+' words one letter away, '+
+    (4-hamming(cur,to))+' letter(s) from the target.');
+  render();
+  return cur===to?'win':'ok'}
+function hamming(a,b){let d=0;for(let i=0;i<4;i++)if(a[i]!==b[i])d++;return d}
+function undo(){
+  if(path.length<2)return 'empty';
+  path.pop();cur=path[path.length-1];won=false;
+  say('Stepped back to <span class="text-white">'+cur.toUpperCase()+'</span>.');
+  render();return cur}
+function hint(){
+  const ns=neighbours(cur).filter(w=>hamming(w,to)<hamming(cur,to));
+  if(!ns.length){say('No single step gets closer. Look for a word that opens a new route.');return 'none'}
+  const h=ns[Math.floor(Math.random()*ns.length)];
+  say('One of these moves gets closer: <span class="text-accent">'+h.toUpperCase()+'</span>.');return h}
+function render(){
+  $('cur').textContent=cur.toUpperCase();
+  $('cnt').textContent=path.length;
+  $('best').textContent=best||'-';
+  nb=neighbours(cur);
+  $('nbrs').innerHTML=nb.length
+    ? nb.map(w=>'<button data-w="'+w+'" class="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-xs uppercase text-white/70 transition-colors hover:border-accent/60 hover:text-accent">'+w+'</button>').join('')
+    : '<span class="text-[11px] text-white/40">no dictionary words one letter away</span>';
+  $('nbrs').querySelectorAll('button').forEach(el=>el.onclick=()=>{step(el.dataset.w)});
+  $('path').innerHTML=path.map((w,i)=>'<span class="'+(i===path.length-1?'text-accent':'')+'">'+w.toUpperCase()+'</span>').join('<span class="text-white/20">-</span>');
+  $('undo').className=path.length>1?'ws-btn-ghost':'ws-btn-ghost opacity-40';
+  if(!msg)say('Change exactly one letter of <span class="text-white">'+cur.toUpperCase()+'</span>.')}
+newLadder();
+$('go').onclick=()=>{const r=step($('inp').value);
+  if(r==='bad-length'){$('fb').textContent='Four letters, please.';return}
+  if(r==='not-one-letter'){$('fb').textContent='That changes '+ (4-hamming(cur,String($('inp').value).toLowerCase().trim())) +' letters. Change exactly one.';return}
+  if(r==='not-a-word'){$('fb').textContent='Not in the dictionary.';return}
+  $('fb').textContent='';$('inp').value=''};
+$('undo').onclick=undo;
+$('hint').onclick=hint;
+$('new').onclick=()=>{newLadder();$('inp').value='';$('fb').textContent=''};
+$('inp').addEventListener('keydown',e=>{if(e.key==='Enter')$('go').click()});
+window.__ladder={get G(){return {from,to,cur,used:path.length,path:path.slice(),best,won,nb:nb.slice()}},
+  step,undo,hint,neighbours,newLadder,WORDS,routeExists,
+  set(f,t){
+    cur=f;to=t;path=[f];won=false;best=Math.max(best,0);
+    render();
+    return cur}};
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/lights-out/">
+      <span class="ocurp-related-n">Lights Out</span>
+      <span class="ocurp-related-b">Classic 3x3, 4x4 or 5x5 Lights Out. Click a cell to toggle it and its neighbours, clear ev</span>
+    </a></li>
+    <li><a href="/workspace/games/lights-out/">
+      <span class="ocurp-related-n">Lights Out</span>
+      <span class="ocurp-related-b">Classic 3x3, 4x4 or 5x5 Lights Out. Click a cell to toggle it and its neighbours, clear ev</span>
+    </a></li>
+    <li><a href="/workspace/games/sudoku/">
+      <span class="ocurp-related-n">Sudoku</span>
+      <span class="ocurp-related-b">Three difficulties, pencil notes, and a unique-solution generator.</span>
+    </a></li>
+    <li><a href="/workspace/games/tetris/">
+      <span class="ocurp-related-n">Tetris</span>
+      <span class="ocurp-related-b">Seven-bag randomiser, hold piece, next queue and rising speed.</span>
+    </a></li>
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

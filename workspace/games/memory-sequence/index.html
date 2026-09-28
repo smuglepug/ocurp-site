@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Sequence — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Simon-style: watch the pads flash, repeat the order, and beat your best level on this device. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/memory-sequence/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Memory Sequence">
+<meta property="og:description" content="Simon-style: watch the pads flash, repeat the order, and beat your best level on this device. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/memory-sequence/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Memory Sequence on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Memory Sequence">
+<meta name="twitter:description" content="Simon-style: watch the pads flash, repeat the order, and beat your best level on this device. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Memory Sequence on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Memory Sequence","url":"https://ocurp.space/workspace/games/memory-sequence/","description":"Simon-style: watch the pads flash, repeat the order, and beat your best level on this device. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Memory Sequence</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">MEMORY</span><span class="ws-chip">ARCADE</span></div>
+        </div>
+      
+  <style>
+    .pad{aspect-ratio:1;border-radius:1.1rem;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.05);
+         transition:transform .07s ease, background .07s ease, box-shadow .07s ease, filter .2s ease}
+    .pad.lit{filter:brightness(1.25)}
+    .pad.bad{filter:grayscale(.7) brightness(.6)}
+  </style>
+  <section class="ws-panel p-6">
+    <div id="board" class="mx-auto grid w-fit max-w-[420px] grid-cols-2 gap-3"></div>
+    <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Level</div><div class="font-display text-xl font-black text-accent" id="lvl">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Input</div><div class="font-display text-xl font-black text-white" id="inp">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Best</div><div class="font-display text-xl font-black text-white" id="best">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">State</div><div class="font-display text-xl font-black text-white" id="st">idle</div></div>
+    </div>
+    <div class="mt-4 flex flex-wrap items-center gap-2">
+      <button id="go" class="ws-btn">Start</button>
+      <button id="replay" class="ws-btn-ghost">Replay sequence</button>
+    </div>
+    <div id="msg" class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Press Start. The pads flash in order; repeat the order.</div>
+    <p class="mt-4 text-[10px] leading-relaxed text-white/45">The sequence grows by one pad every level and the flashes speed up. A wrong pad ends the run
+      and the level you reached is written to this device's local storage as your best.</p>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const $=id=>document.getElementById(id);
+// Muted versions of the four pad hues so they sit on #050505 instead of glaring.
+const HUES=['#c0392b','#b8912f','#3f8f5c','#3b6ea8'];
+const NAMES=['red','yellow','green','blue'];
+let seq=[],pos=0,level=0,phase='idle',best=0,busy=false;
+try{best=parseInt(localStorage.getItem('ocurp.simon.best')||'0',10)||0}catch(e){best=0}
+function paintPad(i,on){
+  const el=$('board').children[i];
+  if(!el)return;
+  el.style.background=on?HUES[i]:'rgba(255,255,255,.05)';
+  el.style.boxShadow=on?'0 0 28px '+HUES[i]:'none';
+  el.style.transform=on?'scale(1.05)':'scale(1)'}
+function allOff(){for(let i=0;i<4;i++)paintPad(i,false)}
+function showState(t){$('st').textContent=t;
+  $('st').className='font-display text-xl font-black '+(t==='fail'?'text-accent':'text-white')}
+function render(){
+  $('lvl').textContent=level;$('inp').textContent=pos+'/'+seq.length;
+  $('best').textContent=best}
+function clearBad(){for(const el of $('board').querySelectorAll('.pad'))el.classList.remove('bad')}
+function buildBoard(){
+  const b=$('board');
+  b.innerHTML=HUES.map((h,i)=>'<button class="pad" data-i="'+i+'" style="background:rgba(255,255,255,.05)"><span class="sr-only">'+NAMES[i]+'</span></button>').join('');
+  b.querySelectorAll('.pad').forEach(el=>el.onclick=()=>hit(parseInt(el.dataset.i,10)));
+  allOff()}
+function step(n){
+  // The single step the timers call, so a test can drive the run without
+  // waiting on real time (background tabs are timer-throttled).
+  for(let i=0;i<n;i++)tick()}
+let si=0,tickT=null;
+function tick(){
+  if(phase!=='show')return;
+  if(si<seq.length){
+    paintPad(seq[si],true);
+    const shown=si;
+    si++;
+    setTimeout(()=>{if(phase==='show')paintPad(seq[shown],false)},Math.max(140,420-level*22))}
+  else{allOff();phase='input';showState('your turn');
+    $('msg').innerHTML='Level '+(level+1)+'. Repeat the <span class="text-accent">'+seq.length+'</span> flashes.'}}
+function play(){
+  clearBad();
+  phase='show';si=0;showState('watch');render();
+  setTimeout(tick,520)}
+function hit(i){
+  if(phase!=='input'||busy)return 'ignored';
+  paintPad(i,true);
+  if(seq[pos]===i){
+    pos++;render();
+    setTimeout(()=>paintPad(i,false),110);
+    if(pos>=seq.length){
+      level++;phase='idle';showState('idle');
+      $('msg').innerHTML='<span class="text-accent">Level '+level+' cleared.</span> Press Start for the next one.';
+      if(level>best){best=level;try{localStorage.setItem('ocurp.simon.best',String(best))}catch(e){}}
+      render();return 'right-level:'+level}
+    return 'right'}
+  busy=true;phase='fail';showState('fail');
+  for(let k=0;k<4;k++)$('board').children[k].classList.add('bad');
+  $('msg').innerHTML='<span class="text-accent">Wrong pad.</span> You reached level '+level+'. Best is '+best+'.';
+  render();return 'wrong'}
+$('go').onclick=()=>{if(phase==='fail'||phase==='idle'){seq=[];pos=0;level=0;busy=false;render()}play()};
+$('replay').onclick=()=>{if(seq.length)play()};
+buildBoard();render();
+window.__seq={get G(){return {seq:seq.slice(),pos,level,phase,best}},
+  hit,step,play,next:()=>{seq.push(Math.floor(Math.random()*4));play()},
+  grow:n=>{for(let i=0;i<n;i++)seq.push(Math.floor(Math.random()*4));return seq.length}};
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/breakout/">
+      <span class="ocurp-related-n">Breakout</span>
+      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
+    </a></li>
+    <li><a href="/workspace/games/flappy-bird/">
+      <span class="ocurp-related-n">Flappy Bird</span>
+      <span class="ocurp-related-b">Thread the gaps. Your best score is saved on this device.</span>
+    </a></li>
+    <li><a href="/workspace/games/math-sprint/">
+      <span class="ocurp-related-n">Math Sprint</span>
+      <span class="ocurp-related-b">60 seconds of arithmetic. Type the answers, watch accuracy and score, and the difficulty r</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

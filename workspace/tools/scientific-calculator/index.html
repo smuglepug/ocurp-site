@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scientific Calculator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="A real expression parser: tokenise, shunting-yard to postfix, then evaluate, with trig, logs, roots and degrees or radians. Runs entirely in your browser...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/scientific-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Scientific Calculator">
+<meta property="og:description" content="A real expression parser: tokenise, shunting-yard to postfix, then evaluate, with trig, logs, roots and degrees or radians. Runs entirely in your browser...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/scientific-calculator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Scientific Calculator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Scientific Calculator">
+<meta name="twitter:description" content="A real expression parser: tokenise, shunting-yard to postfix, then evaluate, with trig, logs, roots and degrees or radians. Runs entirely in your browser...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Scientific Calculator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Scientific Calculator","url":"https://ocurp.space/workspace/tools/scientific-calculator/","description":"A real expression parser: tokenise, shunting-yard to postfix, then evaluate, with trig, logs, roots and degrees or radians. Runs entirely in your browser...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Scientific Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">MATHS</span><span class="ws-chip">ALGEBRA</span><span class="ws-chip">TRIGONOMETRY</span></div>
+        </div>
+      <style>
+.ws-in{width:100%}
+.ws-num{min-width:6rem;text-align:right}
+.ws-out{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;min-height:1.4rem;
+  word-break:break-all}
+.ws-big{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.25rem;
+  color:#FF5F1F;word-break:break-all}
+.ws-step{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+  padding:2px 0;border-top:1px solid rgba(255,255,255,0.06)}
+.ws-input option{background-color:#141414 !important;color:#fff !important}
+</style>
+<section class="ws-panel p-6"><div class="grid items-end gap-4 md:grid-cols-[2fr_1fr]"><div><label class="ws-label mb-2 block" for="ex">Expression</label><input id="ex" class="ws-input ws-in" style="text-align:left" value="2+3*4"></div><div><label class="ws-label mb-2 block" for="ang">Angle unit</label><select id="ang" class="ws-input !w-full"><option value="deg" selected>Degrees</option><option value="rad">Radians</option></select></div></div><div class="mt-4 flex flex-wrap gap-2" id="presets"></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="main" onclick="cp(this)">Copy</button></div><div class="ws-big" id="main">-</div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">How it was parsed</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="rpn" onclick="cp(this)">Copy</button></div><div class="grid gap-3 md:grid-cols-2"><div><div class="ws-label mb-1">Tokens</div><div id="toks" class="text-sm text-white/70"></div></div><div><div class="ws-label mb-1">RPN (postfix)</div><div id="rpn" class="text-sm text-white/70"></div></div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Evaluation stack</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="steps" onclick="cp(this)">Copy</button></div><div id="steps" class="mt-1 text-sm text-white/70"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Syntax and functions</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="note" onclick="cp(this)">Copy</button></div><div id="note" class="mt-1 text-sm text-white/60"></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+/* ── tokeniser ──────────────────────────────────────────────────────────
+   No Math.eval anywhere: the string becomes tokens, tokens become RPN via
+   shunting-yard, RPN is walked with an explicit stack. */
+var FUNCS={sin:1,cos:1,tan:1,asin:1,acos:1,atan:1,
+           log:1,log10:1,ln:1,log2:1,sqrt:1,cbrt:1,abs:1,exp:1};
+var CONSTS={pi:Math.PI,'π':Math.PI,e:Math.E};
+// neg is attached to the following operand during rewrite, not pushed here.
+var PREC={'+':1,'-':1,'*':2,'/':2,'%':2,'^':3};
+function degToRad(x){ return x*Math.PI/180; }
+function isNameStart(ch){ return /[A-Za-zπ]/.test(ch); }
+function isNameChar(ch){ return /[A-Za-z0-9π]/.test(ch); }
+function isDigit(ch){ return ch>='0'&&ch<='9'; }
+function tokenise(src){
+  var t=[], i=0, s=String(src);
+  while(i<s.length){
+    var ch=s.charAt(i);
+    if(/\s/.test(ch)){ i++; continue; }
+    if(isDigit(ch)||(ch==='.'&&isDigit(s.charAt(i+1)))){
+      var j=i, seen=false;
+      while(j<s.length&&(isDigit(s.charAt(j))||s.charAt(j)==='.')){
+        if(s.charAt(j)==='.'){ if(seen) throw new Error('two decimal points'); seen=true; }
+        j++;
+      }
+      t.push({t:'num',v:parseFloat(s.slice(i,j)),raw:s.slice(i,j)});
+      i=j; continue;
+    }
+    if(isNameStart(ch)){
+      var k=i;
+      while(k<s.length&&isNameChar(s.charAt(k))) k++;
+      var name=s.slice(i,k).toLowerCase();
+      if(FUNCS[name]) t.push({t:'fn',v:name,raw:name});
+      else if(CONSTS[name]!==undefined) t.push({t:'num',v:CONSTS[name],raw:s.slice(i,k)});
+      else if(name==='x'||name==='t') t.push({t:'num',v:NaN,raw:name});
+      else throw new Error('unknown name "'+name+'"');
+      i=k; continue;
+    }
+    if(ch==='*'&&s.charAt(i+1)==='*'){ t.push({t:'op',v:'^',raw:'**'}); i+=2; continue; }
+    if('+-*/^%()'.indexOf(ch)>=0){ t.push({t:ch==='('||ch===')'?'par':(ch==='+'||ch==='-'||ch==='*'||ch==='/'||ch==='^'||ch==='%')?'op':'op',v:ch,raw:ch}); i++; continue; }
+    throw new Error('unexpected character "'+ch+'"');
+  }
+  return t;
+}
+/* ── shunting-yard ──────────────────────────────────────────────────────
+   Unary minus and implicit multiplication are handled by rewriting the
+   token list. A unary minus is attached to the FOLLOWING operand rather than
+   pushed as an operator of its own: a prefix operator on the op stack would
+   be flushed before its operand, producing RPN that negates nothing. */
+function rewrite(tokens){
+  var out=[], prev=null, pendingNeg=false;
+  for(var i=0;i<tokens.length;i++){
+    var tk=tokens[i];
+    // prev is the previous ORIGINAL token: the synthetic brackets emitted for
+    // a unary minus must not be mistaken for the end of a group, or the next
+    // real operand would pick up a spurious implicit '*'.
+    var prevEnd = prev && (prev.t==='num'||(prev.t==='par'&&prev.v===')'));
+    var isOperand = (tk.t==='num'||tk.t==='fn'||(tk.t==='par'&&tk.v==='('));
+    if((tk.t==='op'&&(tk.v==='+'||tk.v==='-'))&&!prevEnd){
+      if(tk.v==='-') pendingNeg=true;
+      continue;                       // a unary sign is not a real operator
+    } else if(prevEnd&&isOperand){
+      out.push({t:'op',v:'*',raw:'*'});
+    }
+    if(pendingNeg&&isOperand){ tk.neg=true; pendingNeg=false; }
+    out.push(tk);
+    prev=tk;
+  }
+  if(pendingNeg) throw new Error('nothing to negate');
+  return out;
+}
+function toRPN(tokens){
+  var toks=rewrite(tokens), out=[], ops=[];
+  for(var i=0;i<toks.length;i++){
+    var tk=toks[i];
+    if(tk.t==='num'){ out.push(tk); continue; }
+    if(tk.t==='fn'){
+      if(tk.neg){ out.push({t:'num',v:-1,raw:'-1'}); out.push({t:'op',v:'*',raw:'*'}); }
+      ops.push(tk); continue;
+    }
+    if(tk.t==='par'&&tk.v==='('){
+      // A negated group, (-3), becomes -1 * (3) so the multiply can never
+      // swallow a function that sits outside the bracket.
+      if(tk.neg){ out.push({t:'num',v:-1,raw:'-1'}); out.push({t:'op',v:'*',raw:'*'}); }
+      ops.push(tk); continue;
+    }
+    if(tk.t==='par'&&tk.v===')'){
+      while(ops.length&&!(ops[ops.length-1].t==='par'&&ops[ops.length-1].v==='('))
+        out.push(ops.pop());
+      if(!ops.length) throw new Error('unbalanced brackets');
+      ops.pop();
+      continue;
+    }
+    // ^ is right-associative.
+    var o1=PREC[tk.v], r=(tk.v==='^');
+    while(ops.length){
+      var top=ops[ops.length-1];
+      if(top.t==='par') break;
+      if(top.t==='fn'){ out.push(ops.pop()); continue; }
+      var o2=PREC[top.v];
+      if(o2>o1||(o2===o1&&!r)) out.push(ops.pop()); else break;
+    }
+    ops.push(tk);
+  }
+  while(ops.length){
+    var top=ops.pop();
+    if(top.t==='par') throw new Error('unbalanced brackets');
+    out.push(top);
+  }
+  return out;
+}
+/* ── evaluator ────────────────────────────────────────────────────────── */
+function degreeMode(){ return $('ang') && $('ang').value==='deg'; }
+function toRad(x){ return degreeMode()? degToRad(x) : x; }
+function fromRad(x){ return degreeMode()? x*180/Math.PI : x; }
+function applyFn(name,arg){
+  switch(name){
+    case 'sin': return Math.sin(toRad(arg));
+    case 'cos': return Math.cos(toRad(arg));
+    case 'tan': return Math.tan(toRad(arg));
+    case 'asin': return fromRad(Math.asin(arg));
+    case 'acos': return fromRad(Math.acos(arg));
+    case 'atan': return fromRad(Math.atan(arg));
+    case 'log10': return Math.log10(arg);
+    case 'log': return Math.log10(arg);
+    case 'log2': return Math.log2(arg);
+    case 'ln': return Math.log(arg);
+    case 'sqrt': return Math.sqrt(arg);
+    case 'cbrt': return Math.cbrt(arg);
+    case 'abs': return Math.abs(arg);
+    case 'exp': return Math.exp(arg);
+  }
+  throw new Error('unknown function '+name);
+}
+function evaluateRPN(rpn){
+  var st=[], log=[];
+  for(var i=0;i<rpn.length;i++){
+    var tk=rpn[i];
+    if(tk.t==='num'){ st.push(tk.neg?-tk.v:tk.v); log.push('push '+tk.raw); continue; }
+    if(tk.t==='fn'){
+      if(!st.length) throw new Error(tk.v+' has no argument');
+      var a=st.pop();
+      st.push(applyFn(tk.v,a));
+      log.push(tk.v+'('+fmt(a)+') = '+fmt(st[st.length-1]));
+      continue;
+    }
+    if(st.length<2) throw new Error('missing operand for '+tk.v);
+    var y=st.pop(), z=st.pop(), res;
+    switch(tk.v){
+      case '+': res=z+y; break;
+      case '-': res=z-y; break;
+      case '*': res=z*y; break;
+      case '/': res=z/y; break;
+      case '%': res=z%y; break;
+      case '^': res=Math.pow(z,y); break;
+      default: throw new Error('unknown operator '+tk.v);
+    }
+    st.push(res);
+    log.push(fmt(z)+' '+tk.v+' '+fmt(y)+' = '+fmt(res));
+  }
+  if(st.length!==1) throw new Error('malformed expression');
+  return {value:st[0],log:log};
+}
+function fmt(n){
+  if(typeof n!=='number') return String(n);
+  if(Number.isInteger(n)) return String(n);
+  return String(r(n,12));
+}
+function evalExpr(src){
+  var toks=tokenise(src);
+  if(!toks.length) throw new Error('type an expression');
+  var rpn=toRPN(toks);
+  var res=evaluateRPN(rpn);
+  return {value:res.value,tokens:toks,rpn:rpn,log:res.log};
+}
+function run(){
+  var src=$('ex').value;
+  try{
+    var res=evalExpr(src);
+    seterr('err','');
+    $('main').textContent=esc(String(res.value));
+    $('toks').innerHTML=res.tokens.map(function(t){
+      return '<span class="ws-chip" style="display:inline-block;margin:2px">'
+        +esc(t.raw===undefined?t.v:t.raw)+'</span>';}).join('');
+    $('rpn').textContent=res.rpn.map(function(t){
+      return t.t==='num'?t.raw:(t.t==='fn'?t.v:t.v);}).join(' ');
+    var sh='';
+    for(var i=0;i<res.log.length;i++){
+      sh+='<div class="ws-step"><span class="text-[#FF5F1F]">'+(i+1)+'</span> '
+        +esc(res.log[i])+'</div>';
+    }
+    $('steps').innerHTML=sh;
+    $('note').innerHTML=[
+      'The expression is tokenised, converted to RPN by the shunting-yard algorithm '
+      +'and then walked with an explicit stack - never passed to eval.',
+      'Operators: + - * / % and ^ for power. Brackets group, and ^ is right-associative.',
+      'Functions: sin cos tan asin acos atan log log10 log2 ln sqrt cbrt abs exp. '
+      +'Constants: pi and e.',
+      'Implicit multiplication works: 2pi, 3(4+5) and 2(3)4 are all accepted, and a '
+      +'leading - is a unary minus, so -5+2 is negative three.',
+      'A minus directly in front of a value negates that value, so -5^2 reads as '
+      +'(-5)^2 = 25; write -(5^2) for the other reading. 2^-3 is 0.125, and 2^3^2 '
+      +'is 512 because ^ works right to left.'
+    ].map(function(t){return '<div class="py-1">'+esc(t)+'</div>';}).join('');
+    window.__sci={evalExpr:evalExpr,tokenise:tokenise,toRPN:toRPN,
+      evaluateRPN:evaluateRPN,applyFn:applyFn,run:run,
+      last:{src:src,value:res.value,tokens:res.tokens.length,
+        rpn:res.rpn.map(function(t){return t.t==='num'?t.raw:t.v;})}};
+    return window.__sci.last;
+  }catch(e){
+    $('main').textContent='-';
+    $('toks').innerHTML=''; $('rpn').textContent=''; $('steps').innerHTML='';
+    seterr('err',e.message);
+    return null;
+  }
+}
+var PRESETS=['2+3*4','(2+3)*4','2^10','sqrt(144)','2pi','sin(90)','log10(1000)',
+             'ln(e)','-5+2','3(4+5)','2^3^2','sin(30)','e^ln(2)','1/0','tan(45)'];
+$('presets').innerHTML=PRESETS.map(function(p,i){
+  return '<button class="ws-btn-ghost !px-3 !py-1.5" data-p="'+i+'" onclick="preset('+i+')">'
+    +esc(p)+'</button>';}).join('');
+function preset(i){ $('ex').value=PRESETS[i]; run(); }
+bind(['ex','ang'],run);
+window.__sci={evalExpr:evalExpr,tokenise:tokenise,toRPN:toRPN,
+  evaluateRPN:evaluateRPN,applyFn:applyFn};
+run();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+    </a></li>
+    <li><a href="/workspace/tools/factor-calculator/">
+      <span class="ocurp-related-n">Factor Calculator</span>
+      <span class="ocurp-related-b">Prime factorisation by trial division, every division step, the full divisor list, plus GC</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi/">
+      <span class="ocurp-related-n">BMI Calculator</span>
+      <span class="ocurp-related-b">Body mass index with healthy-range context.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calculator/">
+      <span class="ocurp-related-n">Scientific Calculator</span>
+      <span class="ocurp-related-b">Full expression evaluation in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

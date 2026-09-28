@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base Converter — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by side plus a Roman numeral readout. Runs entirely in your browser -...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/base-converter/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Base Converter">
+<meta property="og:description" content="Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by side plus a Roman numeral readout. Runs entirely in your browser -...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/base-converter/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Base Converter on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Base Converter">
+<meta name="twitter:description" content="Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by side plus a Roman numeral readout. Runs entirely in your browser -...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Base Converter on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Base Converter","url":"https://ocurp.space/workspace/tools/base-converter/","description":"Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by side plus a Roman numeral readout. Runs entirely in your browser -...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Base Converter</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">MATHS</span><span class="ws-chip">BASES</span><span class="ws-chip">NUMBERS</span></div>
+        </div>
+      <style>
+.ws-in{width:100%}
+.ws-num{min-width:6rem;text-align:right}
+.ws-out{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;min-height:1.4rem;
+  word-break:break-all}
+.ws-big{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.25rem;
+  color:#FF5F1F;word-break:break-all}
+.ws-step{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+  padding:2px 0;border-top:1px solid rgba(255,255,255,0.06)}
+.ws-input option{background-color:#141414 !important;color:#fff !important}
+</style>
+<section class="ws-panel p-6"><div class="grid items-end gap-4 md:grid-cols-3"><div class="md:col-span-2"><label class="ws-label mb-2 block" for="val">Value</label><input id="val" class="ws-input ws-num ws-in" value="255"></div><div><label class="ws-label mb-2 block" for="fromb">Value is in base</label><select id="fromb" class="ws-input !w-full"><option value="2">Binary (2)</option><option value="8">Octal (8)</option><option value="10" selected>Decimal (10)</option><option value="16">Hex (16)</option></select></div><div><label class="ws-label mb-2 block" for="lo">Show every base from</label><select id="lo" class="ws-input !w-full"><option value="2" selected>Base 2</option><option value="3">Base 3</option><option value="4">Base 4</option><option value="5">Base 5</option><option value="6">Base 6</option><option value="7">Base 7</option><option value="8">Base 8</option><option value="9">Base 9</option></select></div><div><label class="ws-label mb-2 block" for="hi">to</label><select id="hi" class="ws-input !w-full"><option value="10">Base 10</option><option value="11">Base 11</option><option value="12">Base 12</option><option value="13">Base 13</option><option value="14">Base 14</option><option value="15">Base 15</option><option value="16" selected>Base 16</option><option value="17">Base 17</option><option value="18">Base 18</option><option value="19">Base 19</option><option value="20">Base 20</option><option value="21">Base 21</option><option value="22">Base 22</option><option value="23">Base 23</option><option value="24">Base 24</option><option value="25">Base 25</option><option value="26">Base 26</option><option value="27">Base 27</option><option value="28">Base 28</option><option value="29">Base 29</option><option value="30">Base 30</option><option value="31">Base 31</option><option value="32">Base 32</option><option value="33">Base 33</option><option value="34">Base 34</option><option value="35">Base 35</option><option value="36">Base 36</option></select></div></div><div class="mt-4 flex flex-wrap gap-2" id="presets"></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Converted value</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="main" onclick="cp(this)">Copy</button></div><div class="ws-big" id="main">-</div><div class="mt-3 text-sm text-white/60" id="romanline">-</div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">All bases</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="bases" onclick="cp(this)">Copy</button></div><div id="bases" class="mt-1 text-sm"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">How the conversion works</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="steps" onclick="cp(this)">Copy</button></div><div id="steps" class="mt-1 text-sm text-white/70"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Reading the number</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="note" onclick="cp(this)">Copy</button></div><div id="note" class="mt-1 text-sm text-white/60"></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+var DIG='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+/* Any base 2-36 to a Number. Rejects digits >= the base, so "8" is not octal. */
+function parseIn(str,base){
+  str=String(str).trim().replace(/\s+/g,'');
+  if(str==='') return NaN;
+  var neg=str.charAt(0)==='-';
+  if(neg||str.charAt(0)==='+') str=str.slice(1);
+  if(str==='') return NaN;
+  var n=0;
+  for(var i=0;i<str.length;i++){
+    var ch=str.charAt(i).toUpperCase();
+    var d=DIG.indexOf(ch);
+    if(d<0||d>=base) return NaN;
+    n=n*base+d;
+  }
+  return neg?-n:n;
+}
+/* The zero case is the one that bites: the loop body never runs, so start at '0'. */
+function toBase(n,base){
+  if(n===0) return '0';
+  var neg=n<0, m=Math.abs(Math.floor(n)), s='';
+  while(m>0){ s=DIG.charAt(m%base)+s; m=Math.floor(m/base); }
+  return (neg?'-':'')+s;
+}
+/* Repeated division by the target base: quotient goes up, remainder is one digit. */
+function stepsTo(n,base){
+  if(n===0) return [['0 / '+base,'= 0 remainder 0']];
+  var out=[], m=Math.abs(n), k=0;
+  while(m>0){
+    var q=Math.floor(m/base), r=m%base;
+    out.push([grp(m,0)+' / '+base+' = '+grp(q,0)+' remainder '+r,
+              'digit '+k+' is '+DIG.charAt(r)]);
+    m=q; k++;
+  }
+  return out;
+}
+var ROM=[[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],
+         [50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+function roman(n){
+  if(!isFinite(n)) return '-';
+  if(n===0) return '0';
+  n=Math.round(n);
+  if(n>3999999||n<-3999999) return 'out of range';
+  var neg=n<0; n=Math.abs(n), s='';
+  for(var i=0;i<ROM.length;i++){
+    while(n>=ROM[i][0]){ s+=ROM[i][1]; n-=ROM[i][0]; }
+  }
+  return (neg?'-':'')+s;
+}
+function run(){
+  var raw=$('val').value;
+  var fb=parseInt($('fromb').value,10);
+  var n=parseIn(raw,fb);
+  if(isNaN(n)){ seterr('err','that is not a valid base '+fb+' number'); return; }
+  seterr('err','');
+  var lo=parseInt($('lo').value,10), hi=parseInt($('hi').value,10);
+  if(lo>hi){ var t=lo; lo=hi; hi=t; }
+  var main=toBase(n,fb===10?16:10);
+  $('main').textContent=grp(n,0)+' (base 10) = '+main+' (base '+(fb===10?16:10)+')';
+  $('romanline').textContent='Roman numerals: '+roman(n);
+  show([['Decimal',grp(n,0)],['Binary',toBase(n,2)],['Octal',toBase(n,8)],
+        ['Hexadecimal',toBase(n,16)]]);
+  var html='';
+  for(var b=lo;b<=hi;b++){
+    if(b===fb) continue;
+    html+=row(['Base '+b, '<span style="color:#FF5F1F">'+esc(toBase(n,b))+'</span>',
+               esc(DIG.slice(0,b).length>20?DIG.slice(0,10)+'...'+DIG.slice(-1):DIG.slice(0,b)),
+               b===2?'one bit each':(b===8?'3 bits each':(b===16?'4 bits each':''))]);
+  }
+  $('bases').innerHTML='<table class="w-full text-left text-sm">'
+    +'<thead class="ws-label"><tr><th class="py-2 pr-4">Base</th>'
+    +'<th class="py-2 pr-4">Value</th><th class="py-2 pr-4">Digit set</th></tr></thead>'
+    +'<tbody>'+html+'</tbody></table>';
+  var rows=stepsTo(n,fb);
+  var sh='';
+  for(var i=0;i<rows.length;i++){
+    sh+='<div class="ws-step"><span class="text-[#FF5F1F]">'+i+'.</span> '+esc(rows[i][0])
+       +' <span class="text-white/40">- '+esc(rows[i][1])+'</span></div>';
+  }
+  $('steps').innerHTML=sh;
+  $('note').innerHTML=['Dividing repeatedly by '+fb+' gives the digits from the '
+    +'least significant upward: '+rows.map(function(p){return p[1].split(' ').pop();})
+    .join('')+'. Read that back to front and you have the digits of base '+fb+'.',
+    'The digit set for base '+fb+' is '+DIG.slice(0,fb)+'. Digit values stop at '
+    +DIG.charAt(fb-1)+' = '+(fb-1)+', which is why "8" is not a valid octal number.',
+    'Binary is base 2 (two digits, 0 and 1), octal is base 8 and hexadecimal is base '
+    +'16 - each one packs exactly 3 bits and 4 bits per digit, which is why they '
+    +'convert to each other without arithmetic.',
+    'A value of 0 is written as a single 0 in every base, never as an empty string.']
+    .map(function(t){return '<div class="py-1">'+esc(t)+'</div>';}).join('');
+  window.__base={parseIn:parseIn,toBase:toBase,roman:roman,run:run,
+    last:{input:raw,from:fb,decimal:n}};
+  return window.__base.last;
+}
+var PRESETS=[['255','10'],['0','10'],['100','10'],['1987','10'],['255','16'],['377','8']];
+$('presets').innerHTML=PRESETS.map(function(p,i){
+  return '<button class="ws-btn-ghost !px-3 !py-1.5" data-p="'+i+'" onclick="preset('+i+')">'
+    +esc(p[0]+' base '+p[1])+'</button>';}).join('');
+function preset(i){ var p=PRESETS[i]; $('val').value=p[0]; $('fromb').value=p[1]; run(); }
+bind(['val','fromb','lo','hi'],run);
+window.__base={parseIn:parseIn,toBase:toBase,roman:roman,run:run};
+run();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/factor-calculator/">
+      <span class="ocurp-related-n">Factor Calculator</span>
+      <span class="ocurp-related-b">Prime factorisation by trial division, every division step, the full divisor list, plus GC</span>
+    </a></li>
+    <li><a href="/workspace/tools/roman-numerals/">
+      <span class="ocurp-related-n">Roman Numeral Converter</span>
+      <span class="ocurp-related-b">Convert 1-3999 both ways, see how each numeral adds up and catch non-standard forms like I</span>
+    </a></li>
+    <li><a href="/workspace/tools/scientific-calculator/">
+      <span class="ocurp-related-n">Scientific Calculator</span>
+      <span class="ocurp-related-b">A real expression parser: tokenise, shunting-yard to postfix, then evaluate, with trig, lo</span>
+    </a></li>
+    <li><a href="/workspace/tools/number-to-words/">
+      <span class="ocurp-related-n">Number to Words</span>
+      <span class="ocurp-related-b">Spell any number out in words, and hear it spoken aloud.</span>
+    </a></li>
+    <li><a href="/workspace/tools/pdf-page-numbers/">
+      <span class="ocurp-related-n">Add Page Numbers</span>
+      <span class="ocurp-related-b">Add page numbers in 6 positions with multiple formats including Roman numerals.</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

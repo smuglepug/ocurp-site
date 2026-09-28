@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Palette Generator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Build a complementary, analogous, triadic, split-complementary or monochromatic palette from one base colour, with the hue offsets shown and the...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/palette-generator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Palette Generator">
+<meta property="og:description" content="Build a complementary, analogous, triadic, split-complementary or monochromatic palette from one base colour, with the hue offsets shown and the...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/palette-generator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Palette Generator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Palette Generator">
+<meta name="twitter:description" content="Build a complementary, analogous, triadic, split-complementary or monochromatic palette from one base colour, with the hue offsets shown and the...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Palette Generator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Palette Generator","url":"https://ocurp.space/workspace/tools/palette-generator/","description":"Build a complementary, analogous, triadic, split-complementary or monochromatic palette from one base colour, with the hue offsets shown and the...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Palette Generator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">COLOUR</span><span class="ws-chip">PALETTE</span><span class="ws-chip">WCAG</span><span class="ws-chip">CLIENT-SIDE</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid items-end gap-4 md:grid-cols-4"><div><label class="ws-label mb-2 block" for="base">Base colour</label><div class="flex items-center gap-2"><input id="base_c" type="color" value="#FF5F1F" class="h-10 w-10 shrink-0 cursor-pointer rounded-lg border border-white/10 bg-transparent"><input id="base" type="text" value="#FF5F1F" class="ws-input font-mono !text-xs"></div></div><div><label class="ws-label mb-2 block" for="harmony">Harmony</label><select id="harmony" class="ws-input !w-56"><option value="Complementary">Complementary</option><option value="Analogous">Analogous</option><option value="Triadic" selected>Triadic</option><option value="Split-complementary">Split-complementary</option><option value="Monochromatic">Monochromatic</option></select></div><div><label class="ws-label mb-2 block" for="steps">Shade steps</label><select id="steps" class="ws-input !w-32"><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option></select></div><div><label class="ws-label mb-2 block" for="sat">Saturation % <span id="satv" class="text-white/60"></span></label><input id="sat" type="range" min="0" max="100" step="1" value="100" class="ws-input"></div><div><label class="ws-label mb-2 block" for="light">Base lightness % <span id="lightv" class="text-white/60"></span></label><input id="light" type="range" min="5" max="95" step="1" value="56" class="ws-input"></div><div class="flex flex-wrap items-end gap-4 pb-1"><label class="flex items-center gap-2 text-sm text-white/70"><input id="sitemode" type="checkbox" class="accent-[#FF5F1F]" checked> Hold the site palette</label></div></div><p class="mt-3 text-[11px] leading-relaxed text-white/40" id="harmonyNote"></p><p class="mt-1 text-[11px] leading-relaxed text-white/40" id="modeNote"></p><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><style>.ws-input option { background-color:#141414 !important; color:#fff !important } .font-mono { font-family:'IBM Plex Sans',monospace }</style><div id="pal" class="mt-4 grid gap-2 sm:grid-cols-5"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Contrast-checked accent</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="accverdict" onclick="cp(this)"> </button></div><div class="flex items-center gap-4"><div id="accSw" class="h-16 w-16 shrink-0 rounded-xl border border-white/10"></div><div class="min-w-0"><div class="font-mono text-sm" id="accHex">#FF5F1F</div><div class="mt-1 font-mono text-[11px] text-white/45" id="accRgb"></div><div class="mt-1 font-mono text-[11px] text-white/45" id="accHsl"></div></div><div class="ml-auto text-right"><div id="accRatio" class="font-display text-2xl font-black text-accent"></div><div class="ws-label mt-1">vs page background</div></div></div><p id="accVerdict" class="mt-3 text-[11px] font-black uppercase tracking-[0.2em]"></p></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Hue offsets used</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="offsets" onclick="cp(this)"> </button></div><div id="offsets" class="space-y-2"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">CSS custom properties</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="cssout" onclick="cp(this)">Copy</button></div><pre id="cssout" class="ws-out"></pre></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var el=document.getElementById('stats');if(el)el.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){try{fn()}catch(e){seterr('err',e.message)}}
+
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var el=document.getElementById('stats');if(el)el.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){try{fn()}catch(e){seterr('err',e.message)}}
+
+// WCAG 2.x relative luminance. sRGB channels are linearised first; a naive
+// average of the 8-bit values is wrong for every colour that is not pure grey.
+function hexToRgb(h){
+  h=String(h||'').trim().replace(/^#/,'');
+  if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  if(!/^[0-9a-fA-F]{6}$/.test(h)) return null;
+  return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];
+}
+function rgbToHex(r,g,b){
+  function p(v){v=Math.max(0,Math.min(255,Math.round(v)));return ('0'+v.toString(16)).slice(-2);}
+  return ('#'+p(r)+p(g)+p(b)).toLowerCase();
+}
+function srgbToLin(c){
+  c=c/255;
+  return c<=0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055,2.4);
+}
+function relLuminance(rgb){
+  // A null channel means the caller handed over a colour it could not parse.
+  // Returning null lets contrastRatio() report "not a colour" instead of
+  // throwing and blanking the whole page.
+  if(!rgb) return null;
+  return 0.2126*srgbToLin(rgb[0])+0.7152*srgbToLin(rgb[1])+0.0722*srgbToLin(rgb[2]);
+}
+function contrastRatio(a,b){
+  var la=relLuminance(hexToRgb(a)), lb=relLuminance(hexToRgb(b));
+  if(la===null||lb===null) return null;
+  var hi=Math.max(la,lb), lo=Math.min(la,lb);
+  return (hi+0.05)/(lo+0.05);
+}
+function luminanceHex(h){
+  var L=relLuminance(hexToRgb(h));
+  return L===null?null:Math.round(L*10000)/10000;
+}
+// HSL is an sRGB-space convention: hue/saturation come from the raw 8-bit
+// channels. Running them on linearised values skews the hue (orange reads as
+// yellow) and inflates saturation, so this stays in sRGB.
+function rgbToHsl(rgb){
+  var R=rgb[0]/255, G=rgb[1]/255, B=rgb[2]/255;
+  var mx=Math.max(R,G,B), mn=Math.min(R,G,B), d=mx-mn, l=(mx+mn)/2, h=0, s=0;
+  if(d!==0){
+    s=l>0.5 ? d/(2-mx-mn) : d/(mx+mn);
+    if(mx===R) h=((G-B)/d+(G<B?6:0));
+    else if(mx===G) h=((B-R)/d+2);
+    else h=((R-G)/d+4);
+    h*=60;
+  }
+  return [h,s*100,l*100];
+}
+// HSL is defined directly on gamma-encoded sRGB, so there is NO inverse-gamma
+// step here - applying one is what makes a faithful round-trip of #FF5F1F come
+// back as #ffa462. R,G,B below are already sRGB channel values.
+function hslToRgb(hsl){
+  var h=((hsl[0]%360)+360)%360, s=Math.max(0,Math.min(100,hsl[1]))/100,
+      l=Math.max(0,Math.min(100,hsl[2]))/100;
+  var c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2, R=0,G=0,B=0;
+  if(h<60){R=c;G=x}else if(h<120){R=x;G=c}else if(h<180){G=c;B=x}
+  else if(h<240){G=x;B=c}else if(h<300){R=x;B=c}else{R=c;B=x}
+  return [(R+m)*255,(G+m)*255,(B+m)*255];
+}
+function hslHex(h,s,l){
+  var rgb=hslToRgb([h,s,l]);
+  if(!isFinite(rgb[0])||!isFinite(rgb[1])||!isFinite(rgb[2])) return '#000000';
+  return rgbToHex(rgb[0],rgb[1],rgb[2]);
+}
+function luma(rgb){return 0.299*rgb[0]+0.587*rgb[1]+0.114*rgb[2];}
+function bestInk(bg){
+  var rgb=hexToRgb(bg); if(!rgb) return '#000000';
+  return contrastRatio(bg,'#ffffff')>=contrastRatio(bg,'#000000')?'#ffffff':'#000000';
+}
+
+var HARM=[["Complementary", [0, 180], "0\u00b0 and its opposite, 180\u00b0 away"], ["Analogous", [0, -30, 30], "0\u00b0 with its neighbours at \u00b130\u00b0"], ["Triadic", [0, 120, 240], "0\u00b0, +120\u00b0, +240\u00b0 \u2014 an even split of the wheel"], ["Split-complementary", [0, 150, 210], "0\u00b0 with the two hues 30\u00b0 off its opposite"], ["Monochromatic", [0, 0, 0], "one hue, five lightnesses"]];
+var PAGE_BG='#050505';
+function baseHsl(){
+  var rgb=hexToRgb($('base').value);
+  if(!rgb) return null;
+  var h=rgbToHsl(rgb);
+  return {h:h[0], s:h[1], l:h[2]};
+}
+// A hue wheel is continuous, so H+150 must wrap rather than run past 360. This
+// is the single most common bug in a hand-rolled palette generator.
+function wrapHue(h){ return ((Math.round(h)%360)+360)%360; }
+function harmonyHues(kind, h){
+  var found=null;
+  for(var i=0;i<HARM.length;i++) if(HARM[i][0]===kind) found=HARM[i];
+  if(!found) return [wrapHue(h)];
+  return found[1].map(function(off){ return wrapHue(h+off); });
+}
+function noteFor(kind){
+  for(var i=0;i<HARM.length;i++) if(HARM[i][0]===kind) return HARM[i][2];
+  return '';
+}
+// Saturation cannot rescue this. A triadic rotation of an ember orange is
+// hue 137 (green) and 257 (violet) at ANY saturation - at 30% it is a sage and
+// a dusty mauve, still two competing hue families. So the only honest way to
+// hold the one-accent rule is to MAP the rotated hues back onto the accent
+// axis, and say so on screen rather than pretending the maths produced them.
+var ACCENT_HUE=17;
+// Warm ramp keyed to how far a hue sits from the accent, so a near neighbour
+// stays recognisably related and a distant one lands on the accent itself.
+function warmMapHue(hue,baseHue){
+  var d=wrapHue(hue-baseHue);
+  var signed=d>180?d-360:d;
+  var mag=Math.abs(signed)/180;               // 0 = base, 1 = full rotation
+  return wrapHue(ACCENT_HUE + (signed>0?1:-1)*mag*8);
+}
+// satFor is only for the reduced form. A mapped hue that lands on the accent
+// keeps full saturation; the ones nudged either side are dialled back a little
+// so the ramp has depth instead of three identical oranges.
+function satFor(hue,baseHue,sat){
+  var d=wrapHue(hue-baseHue);
+  var signed=d>180?d-360:d;
+  return Math.round(signed===0?sat:sat*0.7);
+}
+// buildPalette returns the swatches AND the hue numbers that produced them, so
+// the UI can display the arithmetic rather than assert a result.
+function buildPalette(baseHex,kind,steps,sat,light,siteMode){
+  var rgb=hexToRgb(baseHex);
+  if(!rgb||!steps) return null;
+  var b=rgbToHsl(rgb);
+  sat=Math.max(0,Math.min(100,sat));
+  var hues=harmonyHues(kind,b.h);
+  var out=[];
+  for(var i=0;i<steps;i++){
+    var hue=hues[i%hues.length];
+    var l=light;
+    if(kind==='Monochromatic') l=Math.max(6,Math.min(94,light-24+i*(48/Math.max(1,steps-1))));
+    else l=Math.max(8,Math.min(92,light-18+i*(36/Math.max(1,steps-1))));
+    var shown=siteMode?warmMapHue(hue,b.h):hue;
+    var s=kind==='Monochromatic'?Math.round(sat*0.55):satFor(shown,b.h,sat);
+    var hx=rgbToHex.apply(null,hexToRgb(hslHex(shown,s,l)));
+    out.push({hex:hx, hue:wrapHue(hue), shownHue:wrapHue(shown),
+      mapped:wrapHue(hue)!==wrapHue(shown), sat:Math.round(s), light:Math.round(l),
+      base:wrapHue(hue)===wrapHue(b.h),
+      contrast:contrastRatio(hx,PAGE_BG)});
+  }
+  return {hues:hues, baseHue:wrapHue(b.h), baseHex:baseHex,
+    swatches:out, baseLight:b[2], baseSat:b[1], harmony:kind, steps:steps,
+    siteMode:!!siteMode};
+}
+// pickAccent is the "contrast-checked" part, and it needs a real rule. Highest
+// contrast alone always returns the palest swatch, which is not what a
+// designer means by "the accent". So: keep the swatch that stays on the base
+// hue, and only fall through to the others if nothing on that hue clears 4.5:1.
+// A palette with no accessible swatch says so instead of pretending.
+function pickAccent(pal){
+  var AA=4.5, onHue=pal.swatches.filter(function(s){return s.base;});
+  var pool=onHue.length?onHue:pal.swatches;
+  var best=pool[0];
+  for(var i=1;i<pool.length;i++) if(pool[i].contrast>best.contrast) best=pool[i];
+  return {hex:best.hex, contrast:best.contrast, passes:best.contrast>=AA,
+          hue:best.hue, onBase:!!best.base, swatch:best};
+}
+function buildCss(pal,acc){
+  var lines=[':root {'];
+  pal.swatches.forEach(function(s,i){
+    lines.push('  --palette-'+(i+1)+': '+s.hex+';  /* hsl('+s.hue+' '+s.sat+'% '+s.light+'%) */');
+  });
+  lines.push('  --accent: '+acc.hex+';  /* contrast '+r(acc.contrast,2)+':1 on '+PAGE_BG+' */');
+  lines.push('}');
+  return lines.join(String.fromCharCode(10));
+}
+window.__pal={buildPalette:buildPalette,pickAccent:pickAccent,wrapHue:wrapHue,
+  warmMapHue:warmMapHue,ACCENT_HUE:ACCENT_HUE,
+  buildCss:buildCss,harmonyHues:harmonyHues,harmonies:HARM,contrastRatio:contrastRatio};
+window.__palette=window.__pal;
+function n(id,d){var el=$(id); if(!el) return d; var v=parseFloat(el.value); return isFinite(v)?v:d;}
+function run(){
+  var hex=$('base').value;
+  if(!hexToRgb(hex)){ seterr('err','base colour must be a hex like #FF5F1F'); return; }
+  seterr('err','');
+  var kind=$('harmony').value;
+  var pal=buildPalette(hex,kind,parseInt($('steps').value,10),n('sat',100),n('light',56),$('sitemode').checked);
+  if(!pal){ seterr('err','could not build a palette from that colour'); return; }
+  $('harmonyNote').textContent=noteFor(kind);
+  var mapped=pal.swatches.filter(function(x){return x.mapped;}).length;
+  $('modeNote').textContent=pal.siteMode
+    ? 'On: the maths above is exact, but the '+mapped+' rotated hue'
+      +(mapped===1?' is':'s are')+' shown on an ember accent instead, so the page keeps '
+      +'its one accent colour. Switch it off to see the literal harmony.'
+    : 'Off: swatches are the literal harmony at the hues listed above.';
+  $('pal').innerHTML=pal.swatches.map(function(s){
+    return '<div class="rounded-xl border border-white/10 p-4 text-center" style="background:'+s.hex+'">'
+      +'<div class="font-mono text-xs" style="color:'+bestInk(s.hex)+'">'+s.hex+'</div>'
+      +'<div class="mt-1 font-mono text-[10px]" style="color:'+bestInk(s.hex)+';opacity:.65">'
+      +'h '+s.shownHue+'° · '+s.light+'%</div></div>';
+  }).join('');
+  var acc=pickAccent(pal);
+  $('accSw').style.background=acc.hex;
+  $('accHex').textContent=acc.hex;
+  $('accRgb').textContent='rgb('+hexToRgb(acc.hex).join(', ')+')';
+  $('accHsl').textContent='hsl('+acc.hue+', '+acc.swatch.sat+'%, '+acc.swatch.light+'%)';
+  $('accRatio').textContent=r(acc.contrast,2)+':1';
+  $('accVerdict').textContent=(acc.passes?'PASS AA':'FAIL AA')
+    +(acc.onBase?' — on the base hue':' — no swatch held the base hue, so this is the best available');
+  $('accVerdict').style.color=acc.passes?'#FF5F1F':'#f87171';
+  $('offsets').innerHTML='<div class="font-mono text-[11px] leading-relaxed text-white/60">'
+    +'Base hue '+pal.baseHue+'° (from '+pal.baseHex+', hsl('+r(pal.baseHue,0)+', '
+    +r(pal.baseSat,0)+'%, '+r(pal.baseLight,0)+'%))'+String.fromCharCode(10)
+    +pal.hues.map(function(h,i){
+      var d=wrapHue(h-pal.baseHue);
+      var signed=d>180?d-360:d;
+      return (i?String.fromCharCode(10):'')+'  '+(signed===0?'base':(signed>0?'+':'')+signed+'°')
+        +'  →  '+h+'°  →  '+pal.swatches[i%pal.swatches.length].hex;
+    }).join('')+'</div>';
+  show([['Hues',pal.hues.length],['Swatches',pal.swatches.length],
+        ['Base hue',pal.baseHue+'°'],['Best accent',acc.hex]]);
+  $('cssout').textContent=buildCss(pal,acc);
+  window.__palLast={palette:pal,accent:acc,css:buildCss(pal,acc)};
+}
+var bt=$('base'), bc=$('base_c');
+if(bt) bt.addEventListener('input',function(){ if(hexToRgb(bt.value)&&bc) bc.value=bt.value.toLowerCase(); run(); });
+if(bc) bc.addEventListener('input',function(){ if(bt) bt.value=bc.value; run(); });
+bind(['harmony','steps','sat','light','sitemode'],run);
+wire(run);
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/color-scheme-generator/">
+      <span class="ocurp-related-n">Colour Scheme Generator</span>
+      <span class="ocurp-related-b">Generate a balanced five-colour palette and check the contrast of every pairing.</span>
+    </a></li>
+    <li><a href="/workspace/tools/contrast-checker/">
+      <span class="ocurp-related-n">Contrast Checker</span>
+      <span class="ocurp-related-b">Check any two colours against the WCAG contrast rules and see which levels pass.</span>
+    </a></li>
+    <li><a href="/workspace/tools/button-maker/">
+      <span class="ocurp-related-n">Button Maker</span>
+      <span class="ocurp-related-b">Design a button&#x27;s colours, padding, radius, border and shadow with a live preview, and get</span>
+    </a></li>
+    <li><a href="/workspace/tools/color-blindness-simulator/">
+      <span class="ocurp-related-n">Colour Blindness Simulator</span>
+      <span class="ocurp-related-b">See any picture through protanopia, deuteranopia, tritanopia or total colour blindness.</span>
+    </a></li>
+    <li><a href="/workspace/tools/color-picker/">
+      <span class="ocurp-related-n">Colour Picker</span>
+      <span class="ocurp-related-b">One colour in, every notation out - HEX, RGB, HSL and CMYK - with WCAG contrast ratios and</span>
+    </a></li>
+    <li><a href="/workspace/tools/hex-to-rgb/">
+      <span class="ocurp-related-n">HEX to RGB Converter</span>
+      <span class="ocurp-related-b">Convert HEX, RGB, HSL and HSV with WCAG contrast ratios and a full tint scale.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
