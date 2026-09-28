@@ -77,7 +77,7 @@ tailwind.config = { theme: { extend: {
           </div>
           <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">SEO</span><span class="ws-chip">META</span><span class="ws-chip">CLIENT-SIDE</span></div>
         </div>
-      <section class="grid gap-4 lg:grid-cols-2"><div class="ws-panel p-6 space-y-3"><div><label class="ws-label mb-2 block">Page title</label><input id="t" class="ws-input" value="Owen Osayi — THE FOUNDER"></div><div><label class="ws-label mb-2 block">Description</label><textarea id="d" class="ws-input min-h-[70px]">Developer building products on the web.</textarea></div><div><label class="ws-label mb-2 block">URL</label><input id="u" class="ws-input" value="https://ocurp.space"></div><div><label class="ws-label mb-2 block">Image URL</label><input id="i" class="ws-input" value="https://ocurp.space/og.png"></div><div class="grid grid-cols-2 gap-3"><div><label class="ws-label mb-2 block">Twitter @</label><input id="tw" class="ws-input" value="@OsayiiOwen"></div><div><label class="ws-label mb-2 block">Theme colour</label><input id="c" type="color" value="#FF5F1F" class="h-11 w-full cursor-pointer rounded-lg border border-white/10 bg-transparent"></div></div></div><div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">HTML</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div></section>
+      <section class="grid gap-4 lg:grid-cols-2"><div class="ws-panel p-6 space-y-3"><div><label class="ws-label mb-2 block">Page title</label><input id="t" class="ws-input" value="Owen Osayi — THE FOUNDER"></div><div><label class="ws-label mb-2 block">Description</label><textarea id="d" class="ws-input min-h-[70px]">Developer building products on the web.</textarea></div><div><label class="ws-label mb-2 block">URL</label><input id="u" class="ws-input" value="https://ocurp.space"></div><div><label class="ws-label mb-2 block">Image URL</label><input id="i" class="ws-input" value="https://ocurp.space/og.png"></div><div class="grid grid-cols-2 gap-3"><div><label class="ws-label mb-2 block">Twitter @</label><input id="tw" class="ws-input" value="@OsayiiOwen"></div><div><label class="ws-label mb-2 block">Theme colour</label><input id="c" type="color" value="#FF5F1F" class="h-11 w-full cursor-pointer rounded-lg border border-white/10 bg-transparent"></div></div><div class="flex flex-wrap items-center gap-4 pt-1"><label class="flex items-center gap-2 text-sm text-white/70"><input id="canon" type="checkbox" checked class="accent-[#FF5F1F]"> Canonical</label><label class="flex items-center gap-2 text-sm text-white/70"><input id="og" type="checkbox" checked class="accent-[#FF5F1F]"> Open Graph</label><label class="flex items-center gap-2 text-sm text-white/70"><input id="tc" type="checkbox" checked class="accent-[#FF5F1F]"> Twitter card</label></div></div><div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">HTML</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div></section>
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
@@ -85,24 +85,43 @@ tailwind.config = { theme: { extend: {
 </div>
 <script src="/workspace/related.js" defer></script>
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}const $=id=>document.getElementById(id);
-function run(){const t=$('t').value,d=$('d').value,u=$('u').value,i=$('i').value,tw=$('tw').value,c=$('c').value;
-  $('out').textContent=[
-    '<title>'+t+'</title>',
-    '',
-    '',
-    '<meta name="theme-color" content="'+c+'">',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    ''
-  ].join('\n')}
-['t','d','u','i','tw','c'].forEach(id=>$(id).addEventListener('input',run));run();</script>
+const attr=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function run(){
+  const t=$('t').value,d=$('d').value,u=$('u').value,i=$('i').value,tw=$('tw').value,c=$('c').value;
+  const canon=$('canon').checked,og=$('og').checked,tc=$('tc').checked;
+  const L=[];
+  L.push('<title>'+attr(t)+'</title>');
+  L.push('');
+  if(d.trim())L.push('<meta name="description" content="'+attr(d.trim())+'">');
+  L.push('');
+  if(canon&&u.trim())L.push('<link rel="canonical" href="'+attr(u.trim())+'">');
+  L.push('');
+  if(og){
+    L.push('<!-- Open Graph -->');
+    L.push('<meta property="og:type" content="website">');
+    L.push('<meta property="og:title" content="'+attr(t)+'">');
+    if(d.trim())L.push('<meta property="og:description" content="'+attr(d.trim())+'">');
+    if(u.trim())L.push('<meta property="og:url" content="'+attr(u.trim())+'">');
+    if(i.trim())L.push('<meta property="og:image" content="'+attr(i.trim())+'">');
+    if(i.trim())L.push('<meta property="og:image:alt" content="'+attr(t)+'">');
+    L.push('<meta property="og:site_name" content="Owen Osayi">');
+    L.push('');
+  }
+  if(tc){
+    L.push('<!-- Twitter -->');
+    L.push('<meta name="twitter:card" content="summary_large_image">');
+    if(tw.trim())L.push('<meta name="twitter:site" content="'+attr(tw.trim())+'">');
+    if(tw.trim())L.push('<meta name="twitter:creator" content="'+attr(tw.trim())+'">');
+    L.push('<meta name="twitter:title" content="'+attr(t)+'">');
+    if(d.trim())L.push('<meta name="twitter:description" content="'+attr(d.trim())+'">');
+    if(i.trim())L.push('<meta name="twitter:image" content="'+attr(i.trim())+'">');
+    L.push('');
+  }
+  L.push('<meta name="theme-color" content="'+attr(c)+'">');
+  $('out').textContent=L.join('\n').replace(/\n{3,}/g,'\n\n').trim()+"\n";
+}
+['t','d','u','i','tw','c'].forEach(id=>$(id).addEventListener('input',run));
+['canon','og','tc'].forEach(id=>$(id).addEventListener('change',run));run();</script>
 
 
 

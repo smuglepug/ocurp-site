@@ -164,18 +164,22 @@ function rowsToYaml(rows, useHeader, numeric, sequence){
     var width=0; rows.forEach(function(r){ if(r.length>width) width=r.length; });
     headers=[]; for(var i=0;i<width;i++) headers.push('column_'+(i+1));
   }
-  var out=[], pad='';
+  var out=[];
   if(sequence) out.push('---');
-  body.forEach(function(r,ri){
+  // Every data row is emitted as a list item. The old code wrote the FIRST row
+  // as a bare block mapping and then started a sequence on the second one, which
+  // mixes a mapping and a sequence at the same level - PyYAML rejects that with
+  // "expected <block end>, but found '-'" and no other parser round-trips it
+  // either. A list of maps is the only shape that stays valid for 1..N rows.
+  body.forEach(function(r){
     var lines=[];
     for(var c=0;c<headers.length;c++){
       var v = r[c]===undefined ? '' : r[c];
       var key = yq(headers[c]);
-      lines.push(pad+key+': '+yScalar(v, numeric));
+      lines.push('  '+key+': '+yScalar(v, numeric));
     }
-    if(!lines.length) lines.push(pad+'- null');
-    if(ri>0 || sequence) out.push('- '+lines[0].slice(pad.length));
-    else out.push(lines[0]);
+    if(!lines.length){ out.push('- null'); return; }
+    out.push('- '+lines[0].slice(2));
     for(var k=1;k<lines.length;k++) out.push(lines[k]);
   });
   return out.join('\n');

@@ -130,12 +130,13 @@ function findTagEnd(s, from){
   return -1;
 }
 function parseAttrs(s){
-  var list=[], re=/([^\s=\/>]+)\s*(?:=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g, m;
+  var list=[], re=/([^\s=\/>]+)\s*(?:=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g, m, end=0;
   while((m=re.exec(s))!==null){
     var v = m[2]!==undefined?m[2] : (m[3]!==undefined?m[3] : m[4]);
     list.push({name:m[1], val: v===undefined?null:unescXml(v)});
+    end=re.lastIndex;
   }
-  if(/[^\s]/.test(s.slice(re.lastIndex))) return {err:'unexpected text in tag: '+s.slice(re.lastIndex).trim()};
+  if(/[^\s]/.test(s.slice(end))) return {err:'unexpected text in tag: '+s.slice(end).trim()};
   return {list:list};
 }
 function parseXml(src){

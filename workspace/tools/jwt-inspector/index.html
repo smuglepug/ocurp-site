@@ -105,6 +105,18 @@ function b64urlToText(seg){
   var bytes=[]; for(var i=0;i<bin.length;i++) bytes.push(bin.charCodeAt(i));
   return new TextDecoder('utf-8',{fatal:false}).decode(new Uint8Array(bytes));
 }
+// Exact decoded byte count of a base64url segment. The old cards used
+// Math.floor(chars*3/4), which silently over-counts any segment that carries
+// '=' padding (".QQ==" reported 3 bytes when the signature is 1 byte).
+// Unpadded base64url happens to agree with that shortcut, so decode for real.
+function segBytes(seg){
+  var s=String(seg==null?'':seg).replace(/-/g,'+').replace(/_/g,'/');
+  s=s.replace(/=+$/,'');
+  if(!s.length) return 0;
+  while(s.length%4) s+='=';
+  try{ return atob(s).length; }
+  catch(e){ return Math.floor(s.replace(/=+$/,'').length*3/4); }
+}
 function textToB64url(obj){
   var s=typeof obj==='string'?obj:JSON.stringify(obj);
   var bytes=new TextEncoder().encode(s), bin='';
@@ -146,7 +158,8 @@ function decode(token){
   catch(e){ throw new Error('header is not valid base64url JSON'); }
   try{ payload=JSON.parse(b64urlToText(parts[1])); }
   catch(e){ throw new Error('payload is not valid base64url JSON'); }
-  return {header:header, payload:payload, signature:parts[2]};
+  return {header:header, payload:payload, signature:parts[2],
+          headerRaw:parts[0], payloadRaw:parts[1]};
 }
 function inspect(token, nowMs){
   var d=decode(token);
@@ -184,6 +197,7 @@ function inspect(token, nowMs){
   var unknown=Object.keys(d.payload).filter(function(k){ return !CLAIM_HELP[k]; });
   if(unknown.length) notes.push('Custom claims: '+unknown.join(', ')+'.');
   return {header:d.header, payload:d.payload, signature:d.signature, alg:alg,
+          headerRaw:d.headerRaw, payloadRaw:d.payloadRaw,
           notes:notes, timeline:timeline, parts:3,
           expState: (typeof d.payload.exp!=='number') ? 'no exp'
                     : (d.payload.exp<=nowSec ? 'EXPIRED' : 'valid')};
@@ -219,14 +233,14 @@ function run(){
       +'<span class="font-mono text-xs" style="color:'+colour+'">'+it.state+'</span></div>';
   }).join('') || '<div class="text-white/30">No date claims in this token.</div>';
   show([['Algorithm', r.alg],['State', r.expState],['Claims', Object.keys(r.payload).length],
-        ['Signature bytes', Math.floor(r.signature.length*3/4)],
-        ['Payload bytes', Math.floor(String(raw).split('.')[1].length*3/4)],
-        ['Header bytes', Math.floor(String(raw).split('.')[0].length*3/4)]]);
+        ['Signature bytes', segBytes(r.signature)],
+        ['Payload bytes', segBytes(r.payloadRaw)],
+        ['Header bytes', segBytes(r.headerRaw)]]);
 }
 $('sample').onclick=function(){ $('src').value=sampleToken(); run(); };
 $('clr').onclick=function(){ $('src').value=''; run(); };
 $('src').addEventListener('input',run);
-window.__jwt={inspect:inspect,decode:decode,fmtUtc:fmtUtc,relative:relative,
+window.__jwt={inspect:inspect,decode:decode,fmtUtc:fmtUtc,relative:relative,segBytes:segBytes,
               sampleToken:sampleToken,textToB64url:textToB64url,b64urlToText:b64urlToText,run:run};
 $('src').value=sampleToken();
 run();

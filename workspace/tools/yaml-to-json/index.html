@@ -181,12 +181,21 @@ function parseYaml(text){
       const indent=line.length-line.trimStart().length;
       if(indent<minIndent)break;
       if(indent>minIndent){
-        if(result===null){result=[];isArray=true}
+        // Lines indented past this block's base are the value of the key or
+        // sequence item we are currently inside. When nothing has been
+        // collected at this level yet the sub-block IS this level's content,
+        // so adopt it instead of nesting it one level deeper (that is what
+        // turned `nums:\n  - 1` into [[1]]). Never push onto a plain object.
         const sub=parseBlock(indent);
-        if(Array.isArray(result)&&typeof sub==='object'&&!Array.isArray(sub)&&Object.keys(sub).length===0){
-          // skip empty
-        } else {
+        if(result===null){
+          result=sub;
+          isArray=Array.isArray(result);
+        } else if(Array.isArray(sub)&&sub.length===0){
+          // sub-block collected nothing meaningful
+        } else if(isArray){
           result.push(sub);
+        } else {
+          throw new Error('unexpected indentation');
         }
         continue;
       }
@@ -231,7 +240,7 @@ function parseYaml(text){
       if(isArray)break;
       if(result===null)result={};
       const colonIdx=findColon(trimmed);
-      if(colonIdx<0)continue;
+      if(colonIdx<0) throw new Error('could not read \"'+trimmed.slice(0,40)+'\" as \"key: value\"');
       const key=trimmed.slice(0,colonIdx).trim().replace(/^["']|["']$/g,'');
       const valStr=trimmed.slice(colonIdx+1).trim();
       if(valStr===''){

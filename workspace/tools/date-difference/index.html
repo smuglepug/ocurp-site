@@ -92,11 +92,21 @@ function calc(){
   const a=$('d1').value, b=$('d2').value;
   if(!a||!b){ $('res').innerHTML='<span class="text-white/40">Pick both dates.</span>'; return; }
   const x=new Date(a+'T00:00:00'), y=new Date(b+'T00:00:00');
-  const diff=Math.round((y-x)/86400000);
+  // Count whole calendar days, not elapsed milliseconds. A fixed 86400000ms step
+  // drifts by an hour across a DST change, which lands some days on the wrong
+  // date and therefore the wrong weekday (e.g. 2026-10-30 -> 2026-11-02 reported
+  // 0 weekdays instead of 1 in America/New_York).
+  const xd=Date.UTC(x.getFullYear(),x.getMonth(),x.getDate());
+  const yd=Date.UTC(y.getFullYear(),y.getMonth(),y.getDate());
+  const diff=Math.round((yd-xd)/86400000);
   const abs=Math.abs(diff);
-  let bus=0; const step=diff<0?-1:1;
-  for(let i=0;i<abs;i++){
-    const d=new Date(+x+(i+1)*86400000*step);
+  const step=diff<0?-1:1;
+  let bus=0;
+  for(let i=1;i<=abs;i++){
+    // Rebuild each calendar date from its UTC anchor so the local offset can
+    // never shift the day-of-week.
+    const t=new Date(xd+i*86400000*step);
+    const d=new Date(t.getUTCFullYear(),t.getUTCMonth(),t.getUTCDate());
     if(d.getDay()!==0&&d.getDay()!==6) bus++;
   }
   const rows=[['Days',abs.toLocaleString('en-US')],['Weeks',(abs/7).toFixed(2)],

@@ -345,7 +345,10 @@ function dab(x,y){
       A[j*S+i]=0.30; B[j*S+i]=0.60;
     }
 }
-cv.addEventListener('pointerdown',e=>{ painting=true; cv.setPointerCapture(e.pointerId);
+cv.addEventListener('pointerdown',e=>{ painting=true;
+  // setPointerCapture throws NotFoundError when the id has no live pointer
+  // (synthetic events, some touch stacks). Painting still works without it.
+  try{ cv.setPointerCapture(e.pointerId); }catch(_){}
   const [x,y]=toCell(e); dab(x,y); });
 cv.addEventListener('pointermove',e=>{ if(!painting) return;
   const [x,y]=toCell(e); dab(x,y); });
