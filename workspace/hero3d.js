@@ -66,7 +66,60 @@
     }
   }
 
+  /* link every pair closer than 1.15x the shortest gap - gives correct edges for any
+     reasonably regular solid without hardcoding an edge list */
+  function autoEdges(from) {
+    var min = Infinity, i, j, dx, dy, dz, d;
+    for (i = 0; i < P.length; i++) for (j = i + 1; j < P.length; j++) {
+      dx = P[i][0] - P[j][0]; dy = P[i][1] - P[j][1]; dz = P[i][2] - P[j][2];
+      d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (d > 0.0001 && d < min) min = d;
+    }
+    for (i = 0; i < P.length; i++) for (j = i + 1; j < P.length; j++) {
+      dx = P[i][0] - P[j][0]; dy = P[i][1] - P[j][1]; dz = P[i][2] - P[j][2];
+      d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (d > 0.0001 && d <= min * 1.15) link(i, j);
+    }
+  }
+
+  /* dodecahedron - for the projects section */
+  function buildDodeca() {
+    var PHI = (1 + Math.sqrt(5)) / 2, i = 1 / PHI;
+    var v = [];
+    [-1, 1].forEach(function (x) { [-1, 1].forEach(function (y) { [-1, 1].forEach(function (z) { v.push([x, y, z]); }); }); });
+    [-i, i].forEach(function (a) { [-PHI, PHI].forEach(function (b) {
+      v.push([0, a, b]); v.push([a, b, 0]); v.push([b, 0, a]);
+    }); });
+    v.forEach(function (p) { var s = 0.72; pt(p[0] * s, p[1] * s, p[2] * s); });
+    autoEdges();
+  }
+
+  /* node network on a sphere - for the websites section */
+  function buildNetwork() {
+    var n = 26, pts = [];
+    for (var k = 0; k < n; k++) {
+      var y = 1 - (k / (n - 1)) * 2;
+      var r = Math.sqrt(Math.max(0, 1 - y * y));
+      var th = k * 2.399963229728653;
+      pts.push([Math.cos(th) * r, y, Math.sin(th) * r]);
+    }
+    pts.forEach(function (p) { pt(p[0] * 1.15, p[1] * 1.15, p[2] * 1.15); });
+    var min = Infinity, i, j, dx, dy, dz, d;
+    for (i = 0; i < pts.length; i++) for (j = i + 1; j < pts.length; j++) {
+      dx = pts[i][0] - pts[j][0]; dy = pts[i][1] - pts[j][1]; dz = pts[i][2] - pts[j][2];
+      d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (d < min) min = d;
+    }
+    for (i = 0; i < pts.length; i++) for (j = i + 1; j < pts.length; j++) {
+      dx = pts[i][0] - pts[j][0]; dy = pts[i][1] - pts[j][1]; dz = pts[i][2] - pts[j][2];
+      d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (d <= min * 1.55) link(i, j);
+    }
+  }
+
   if (shape === 'torus') buildTorus(1, 0.44, 20, 10);
+  else if (shape === 'network') buildNetwork();
+  else if (shape === 'dodeca') buildDodeca();
   else buildCubes([1, 0.58, 0.26]);
 
   function project(p, ry, rx) {

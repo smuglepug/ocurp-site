@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in — Ocurp</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background:#050505; color:#fff; font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:9999px; background:#FF5F1F; padding:.95rem 1.6rem; font-size:11px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:#000; cursor:pointer; width:100% }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:9999px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.03); padding:.9rem 1.6rem; font-size:10px; font-weight:900; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.6); cursor:pointer; width:100% }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+</style>
+</head>
+<body class="min-h-screen">
+<header class="border-b border-white/10">
+  <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 md:px-6">
+    <a href="/" class="flex items-center gap-3">
+      <span class="h-8 w-1 rounded-full" style="background:#FF5F1F"></span>
+      <span class="flex flex-col justify-center">
+        <span class="text-sm font-black tracking-widest leading-none">OWEN OSAYI</span>
+        <span class="mt-1 text-[10px] font-medium uppercase tracking-wider text-white/50">THE FOUNDER</span>
+      </span>
+    </a>
+    <nav class="hidden items-center gap-10 text-sm font-bold tracking-wide md:flex">
+      <a href="/workspace/tools/" class="text-white/60 transition-colors hover:text-white">Tools</a>
+      <a href="/workspace/games/" class="text-white/60 transition-colors hover:text-white">Games</a>
+      <a href="/workspace/websites/" class="text-white/60 transition-colors hover:text-white">Websites</a>
+      <a href="#" data-ocurp-account class="text-white/60 transition-colors hover:text-white">Sign In</a>
+    </nav>
+  </div>
+</header>
+
+<main class="mx-auto flex max-w-7xl items-center justify-center px-4 py-16 md:px-6">
+  <div class="w-full max-w-md">
+    <div class="mb-8">
+      <div class="mb-4 inline-flex items-center gap-3">
+        <span class="h-1.5 w-1.5 rounded-full" style="background:#FF5F1F"></span>
+        <span class="text-[10px] font-black uppercase tracking-[0.5em]" style="color:#FF5F1F">Account</span>
+      </div>
+      <h1 class="font-black tracking-tighter" style="font-size:clamp(2rem,6vw,3rem);line-height:1">Initiate</h1>
+      <p class="mt-4 text-white/50" id="lead">Sign in once and your projects, imports and favourites follow you.</p>
+    </div>
+
+    <div class="ws-panel p-7" id="signedOut">
+      <button id="google" class="ws-btn">Continue with Google</button>
+      <div class="my-5 flex items-center gap-4">
+        <span class="h-px flex-1 bg-white/10"></span>
+        <span class="ws-label">or</span>
+        <span class="h-px flex-1 bg-white/10"></span>
+      </div>
+      <button id="local" class="ws-btn-ghost">Continue on this device</button>
+      <p class="mt-5 text-xs leading-relaxed text-white/35" id="note"></p>
+    </div>
+
+    <div class="ws-panel hidden p-7" id="signedIn">
+      <div class="ws-label mb-2">Signed in</div>
+      <h2 class="text-xl font-bold" id="who">—</h2>
+      <p class="mt-2 text-sm text-white/50" id="meta"></p>
+      <a href="/ocurp/profile/" class="ws-btn mt-6">Go to profile</a>
+      <button id="signout" class="ws-btn-ghost mt-3">Sign out</button>
+    </div>
+
+    <p class="mt-6 text-center text-xs text-white/35">
+      <a href="/workspace/" class="hover:text-white">Owen's Workspace</a>
+    </p>
+  </div>
+</main>
+
+<script src="/workspace/auth.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var A = window.OcurpAuth;
+
+  function render() {
+    var u = A.user();
+    $('signedOut').className = 'ws-panel p-7' + (u ? ' hidden' : '');
+    $('signedIn').className = 'ws-panel p-7' + (u ? '' : ' hidden');
+    if (u) {
+      $('who').textContent = u.name || 'Signed in';
+      $('meta').textContent = u.email ? u.email : 'Device-only account — saved in this browser.';
+      $('lead').textContent = 'You are signed in.';
+    } else {
+      $('lead').textContent = 'Sign in once and your projects, imports and favourites follow you.';
+    }
+  }
+
+  $('note').textContent = A.supabaseReady()
+    ? 'You will be sent to Google and brought straight back here.'
+    : 'Google sign-in turns on once the Supabase project keys are connected. Until then the device option keeps everything saved in this browser.';
+
+  $('google').addEventListener('click', function () {
+    if (!A.supabaseReady()) {
+      $('note').textContent = 'Not connected yet — use the device option below for now.';
+      $('note').style.color = 'rgba(255,95,31,.85)';
+      return;
+    }
+    var c = window.OCURP_SUPABASE;
+    location.href = c.url + '/auth/v1/authorize?provider=google&redirect_to=' +
+      encodeURIComponent(location.origin + '/ocurp/profile/');
+  });
+
+  $('local').addEventListener('click', function () {
+    A.signIn({ name: 'Device account', email: '', device: true });
+    render();
+  });
+
+  $('signout').addEventListener('click', function () { A.signOut(); render(); });
+  window.addEventListener('ocurp:auth', render);
+  render();
+})();
+</script>
+</body>
+</html>
