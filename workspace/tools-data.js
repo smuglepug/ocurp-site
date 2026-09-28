@@ -153,4 +153,12 @@ const RAW = [
   {slug:"base32",name:"Base32 Encoder",cat:"data",blurb:"Encode text to RFC 4648 Base32 and decode it back, with padding control and a byte count.",tags:["BASE32","RFC 4648","ENCODE","CLIENT-SIDE"],ready:true},
   {slug:"palindrome-checker",name:"Palindrome Checker",cat:"text",blurb:"Check any phrase as a palindrome, ignoring case, accents and punctuation, and see the first mismatch.",tags:["PALINDROME","TEXT","LIVE","CLIENT-SIDE"],ready:true},
   {slug:"css-clip-path-generator",name:"CSS Clip Path Generator",cat:"design",blurb:"Pick a shape or drag the points, then copy the exact clip-path polygon CSS.",tags:["CSS","CLIP-PATH","SHAPE","CLIENT-SIDE"],ready:true},
+  {slug:"random-number",name:"Random Number Generator",cat:"math",blurb:"Draw random whole numbers in any range, with unique and sorted modes and a cryptographic source.",tags:["RANDOM","CRYPTO","UNIQUE","CLIENT-SIDE"],ready:true},
+  {slug:"roman-numerals",name:"Roman Numeral Converter",cat:"math",blurb:"Convert 1-3999 both ways, see how each numeral adds up and catch non-standard forms like IIII.",tags:["ROMAN","NUMBERS","LIVE","CLIENT-SIDE"],ready:true},
+  {slug:"prime-checker",name:"Prime Checker & Factoriser",cat:"math",blurb:"Test any number for primality with Miller-Rabin, then get its prime factorisation and every divisor.",tags:["PRIME","FACTORS","MILLER-RABIN","CLIENT-SIDE"],ready:true},
+  {slug:"statistics-calculator",name:"Statistics Calculator",cat:"math",blurb:"Mean, median, mode, quartiles, range and standard deviation for any list of numbers.",tags:["MEAN","MEDIAN","STD DEV","CLIENT-SIDE"],ready:true},
+  {slug:"vat-calc",name:"VAT & GST Calculator",cat:"math",blurb:"Add tax to a net amount or strip it back out of a gross amount, with common rates one click away.",tags:["VAT","GST","TAX","CLIENT-SIDE"],ready:true},
+  {slug:"css-shadow",name:"CSS Box Shadow Builder",cat:"design",blurb:"Layer up to three shadows with x, y, blur, spread, opacity and inset, then copy the CSS.",tags:["CSS","SHADOW","LIVE","CLIENT-SIDE"],ready:true},
+  {slug:"cubic-bezier",name:"Cubic Bezier Editor",cat:"design",blurb:"Drag the two control points on a curve, watch the easing play and copy the cubic-bezier CSS.",tags:["CSS","EASING","CANVAS","CLIENT-SIDE"],ready:true},
+  {slug:"stopwatch",name:"Stopwatch",cat:"study",blurb:"Millisecond stopwatch with lap splits, fastest lap and keyboard start/stop.",tags:["TIMER","LAPS","PRECISION","CLIENT-SIDE"],ready:true},
 ];
