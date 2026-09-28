@@ -141,4 +141,10 @@ const RAW = [
   {slug:"markdown-table-generator",name:"Markdown Table Generator",cat:"data",blurb:"Paste CSV, TSV or pipe data and get a clean Markdown table with alignment options.",tags:["MARKDOWN","TABLE","CSV","CLIENT-SIDE"],ready:true},
   {slug:"vtt-to-srt",name:"VTT to SRT",cat:"data",blurb:"Convert WebVTT subtitles into SRT, with an optional timing shift and a .srt download.",tags:["SUBTITLES","VTT","SRT","CLIENT-SIDE"],ready:true},
   {slug:"invoice-generator",name:"Invoice Generator",cat:"document",blurb:"Build a tax invoice with line items, discount and tax, then print or save it as PDF.",tags:["INVOICE","BILLING","TAX","CLIENT-SIDE"],ready:true},
+  {slug:"csv-to-json",name:"CSV to JSON",cat:"data",blurb:"Turn CSV or TSV into clean JSON, correctly handling quoted fields, escaped quotes and blank lines.",tags:["CSV","JSON","CONVERT","CLIENT-SIDE"],ready:true},
+  {slug:"jwt-decoder",name:"JWT Decoder",cat:"data",blurb:"Decode a JWT into its header, payload and claims timeline, and see at a glance whether it has expired.",tags:["JWT","BASE64","AUTH","CLIENT-SIDE"],ready:true},
+  {slug:"css-border-radius-generator",name:"Border Radius Generator",cat:"design",blurb:"Dial in all eight corner radii, watch the shape change and copy the exact CSS.",tags:["CSS","SHAPE","DESIGN","CLIENT-SIDE"],ready:true},
+  {slug:"gradient-text-generator",name:"Gradient Text Generator",cat:"design",blurb:"Build linear, radial or conic gradient text and copy the CSS or the ready-made HTML span.",tags:["CSS","GRADIENT","TYPE","CLIENT-SIDE"],ready:true},
+  {slug:"timestamp-diff",name:"Timestamp Difference",cat:"math",blurb:"Difference between two Unix timestamps or dates, broken down into days, hours, weeks and years.",tags:["UNIX","TIME","DIFF","CLIENT-SIDE"],ready:true},
+  {slug:"braille-translator",name:"Braille Translator",cat:"text",blurb:"Convert text to Grade 1 Unicode Braille and back, with capital and number signs handled properly.",tags:["BRAILLE","ACCESSIBILITY","TEXT","CLIENT-SIDE"],ready:true},
 ];
