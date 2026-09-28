@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Find & Replace | Owen's Workspace</title>
+<title>YAML Validator | Owen's Workspace</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -61,60 +61,124 @@ tailwind.config = { theme: { extend: {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Find & Replace</h1>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">YAML Validator</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">TEXT</span><span class="ws-chip">REGEX</span><span class="ws-chip">REPLACE</span><span class="ws-chip">CLIENT-SIDE</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">YAML</span><span class="ws-chip">VALIDATE</span><span class="ws-chip">CONFIG</span></div>
         </div>
-      
-  <section class="ws-panel p-6">
-    <label class="ws-label mb-2 block">Text</label>
-    <textarea id="src" class="ws-input min-h-[120px]" placeholder="Paste your text">The quick brown fox jumps over the lazy dog. The dog was not amused.</textarea>
-    <div class="mt-4 grid gap-4 sm:grid-cols-2">
-      <div><label class="ws-label mb-2 block">Find</label><input id="find" class="ws-input" placeholder="dog"></div>
-      <div><label class="ws-label mb-2 block">Replace with</label><input id="rep" class="ws-input" placeholder="cat"></div>
-    </div>
-    <div class="mt-3 flex flex-wrap items-end gap-3">
-      <label class="flex items-center gap-2 text-sm text-white/70"><input id="re" type="checkbox" class="accent-[#FF5F1F]"> Regex</label>
-      <label class="flex items-center gap-2 text-sm text-white/70"><input id="ci" type="checkbox" class="accent-[#FF5F1F]"> Case-insensitive</label>
-      <label class="flex items-center gap-2 text-sm text-white/70"><input id="gl" type="checkbox" checked class="accent-[#FF5F1F]"> Replace all</label>
-      <button id="go" class="ws-btn">Replace</button>
-    </div>
-    <div class="mt-3 text-[11px] font-mono" id="cnt"></div>
-    <div class="ws-panel ws-copy mt-4 p-4"><div class="mb-2 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button></div><pre id="out" class="ws-out min-h-[80px]"></pre></div>
-  </section>
-
+      <section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">YAML</span></div><div><label class="ws-label mb-2 block" for="src">YAML document</label><textarea id="src" rows="10" class="ws-input font-mono text-xs" placeholder="name: Owen
+age: 27
+tags:
+  - design
+  - data
+nested:
+  ok: true
+  list: [1, 2, 3]">name: Owen
+age: 27
+tags:
+  - design
+  - data
+nested:
+  ok: true
+  list: [1, 2, 3]</textarea></div><div class="mt-4 flex flex-wrap items-center gap-3"><button id="go" class="ws-btn">Validate</button><button id="fix" class="ws-btn-ghost">Strip tabs</button><label class="flex items-center gap-2 text-xs text-white/70"><input id="strict" type="checkbox" class="ws-input" style="width:auto"> Strict indentation</label><span class="text-xs text-white/50" id="cnt"></span></div></section><div class="mt-5"><div class="ws-label mb-2">Errors and warnings</div><div id="out" class="ws-out"></div></div><div class="mt-5"><div class="ws-label mb-2">Parsed structure</div><div id="tree" class="ws-out"></div></div>
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
   </div>
 </div>
 <script src="/workspace/related.js" defer></script>
-<script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
+<script>
 const $=id=>document.getElementById(id);
-function run(){
-  const src=$('src').value, find=$('find').value, rep=$('rep').value;
-  const useRe=$('re').checked, ci=$('ci').checked, all=$('gl').checked;
-  if(!find){$('out').textContent=src;$('cnt').textContent='0 replacements';return}
-  let count=0,result;
-  if(useRe){
-    try{
-      const flags=ci?'gi':'g';
-      const re=new RegExp(find,all?flags:ci?'i':'');
-      result=src.replace(re,m=>{count++;return rep});
-    }catch(e){$('out').textContent='✗ '+e.message;$('cnt').textContent='';return}
-  } else {
-    const esc=s=>{const codes=[46,45,42,43,63,94,36,123,125,40,41,124,91,93,92];let r='';for(const c of s){if(codes.includes(c.charCodeAt(0)))r+=String.fromCharCode(92);r+=c}return r}
-    const re=new RegExp(esc(find),all?(ci?'gi':'g'):(ci?'i':''));
-    result=src.replace(re,m=>{count++;return rep});
+// Small YAML reader: block maps, block lists, inline flow, scalars, comments.
+// Enough to validate and draw the structure of hand-written config files.
+function tokenize(src){
+  const raw=src.split(/\r?\n/), items=[];
+  for(let i=0;i<raw.length;i++){
+    const line=raw[i];
+    if(/^\s*$/.test(line)){ items.push({n:i+1,blank:true}); continue; }
+    if(/^\s*#/.test(line)){ items.push({n:i+1,comment:line.trim()}); continue; }
+    if(/^\s*---/.test(line)||/^\s*\.\.\.\s*$/.test(line)){ items.push({n:i+1,doc:true}); continue; }
+    const m=line.match(/^(\s*)(.*)$/);
+    const indent=m[1].replace(/\t/g,'  ').length;
+    items.push({n:i+1,indent:indent,text:m[2],tab:/\t/.test(m[1])});
   }
-  $('out').textContent=result;
-  $('cnt').textContent=count+' replacement'+(count!==1?'s':'');
+  return items;
 }
-$('go').onclick=run;
+function scalar(v){
+  v=v.trim();
+  if(v==='' ) return null;
+  if(/^"[^"]*"$/.test(v)||/^'[^']*'$/.test(v)) return v.slice(1,-1);
+  if(/^-?\d+$/.test(v)) return parseInt(v,10);
+  if(/^-?\d*\.\d+$/.test(v)) return parseFloat(v);
+  if(v==='true'||v==='True') return true;
+  if(v==='false'||v==='False') return false;
+  if(v==='null'||v==='~') return null;
+  if(/^\[.*\]$/.test(v)) return v.slice(1,-1).split(',').map(s=>scalar(s));
+  if(/^\{.*\}$/.test(v)){
+    const o={}; v.slice(1,-1).split(',').forEach(p=>{const k=p.split(':');if(k.length>1)o[k[0].trim()]=scalar(k.slice(1).join(':'));});
+    return o;
+  }
+  return v;
+}
+function run(){
+  const src=$('src').value, items=tokenize(src), errs=[];
+  const strict=$('strict').checked;
+  for(const it of items){
+    if(it.tab) errs.push({lvl:'error',n:it.n,m:'Tab character in indentation - YAML forbids tabs.'});
+    if(!it.text||it.blank||it.comment||it.doc) continue;
+    if(/^\s*-/.test(it.text)){
+      const rest=it.text.replace(/^\s*-\s*/,'');
+      if(rest && !/^[\w"'\-[\{]/.test(rest)) errs.push({lvl:'error',n:it.n,m:'Unexpected character after the list dash.'});
+      continue;
+    }
+    if(!/^[^\s:][^:]*:(\s|$)/.test(it.text)){
+      errs.push({lvl:'error',n:it.n,m:'Not a "key: value" pair and not a list item.'});
+      continue;
+    }
+    if(/:\s*$/.test(it.text)===false && /:(?! )/.test(it.text)){
+      errs.push({lvl:'warn',n:it.n,m:'No space after the colon - add one.'});
+    }
+    if(strict){
+      const prev=items.filter(p=>p.text&&!p.blank&&!p.comment).slice(-1)[0];
+    }
+  }
+  // duplicate keys at the same indent
+  const seen={};
+  for(const it of items){
+    if(!it.text||it.blank||it.comment||it.doc) continue;
+    const m=it.text.match(/^([^\s:#][^:]*):/);
+    if(!m) continue;
+    const k=it.indent+'|'+m[1].trim();
+    if(seen[k]) errs.push({lvl:'error',n:it.n,m:'Duplicate key "'+m[1].trim()+'" (first seen on line '+seen[k]+').'});
+    else seen[k]=it.n;
+  }
+  if(!errs.length) errs.push({lvl:'ok',n:0,m:'Valid YAML - no structural problems found.'});
+  $('out').textContent=errs.map(e=>(e.n?'Line '+e.n+': ':'')+'['+e.lvl.toUpperCase()+'] '+e.m).join('\n');
+  // structure tree
+  const lines=[];
+  let lastIndent=null;
+  for(const it of items){
+    if(it.blank||it.doc) continue;
+    if(it.comment){ lines.push('  '.repeat(Math.max(0,it.indent))+'# '+it.comment.slice(1)); continue; }
+    if(it.text && /^[\w"'\-/.]/.test(it.text) && it.text.includes(':')){
+      const i=it.text.indexOf(':'), k=it.text.slice(0,i), v=it.text.slice(i+1).trim();
+      lines.push('  '.repeat(it.indent)+k+': '+(v||'{...}'));
+    } else if(it.text && /^\s*-/.test(it.text)){
+      lines.push('  '.repeat(it.indent)+'- '+it.text.replace(/^\s*-\s*/,''));
+    } else {
+      lines.push('  '.repeat(it.indent||0)+it.text);
+    }
+    lastIndent=it.indent;
+  }
+  $('tree').textContent=lines.join('\n')||'(empty document)';
+  $('cnt').textContent=items.filter(i=>!i.blank).length+' line'+(items.filter(i=>!i.blank).length===1?'':'s')+', '
+    +errs.filter(e=>e.lvl==='error').length+' error'+(errs.filter(e=>e.lvl==='error').length===1?'':'s')+'.';
+}
+$('go').addEventListener('click',run);
 $('src').addEventListener('input',run);
-$('find').addEventListener('input',run);
-$('rep').addEventListener('input',run);
+$('fix').addEventListener('click',()=>{
+  $('src').value=$('src').value.replace(/\t/g,'  '); run();
+});
 run();
 </script>
 </body>

@@ -204,4 +204,10 @@ const RAW = [
   {slug:"type-portrait",name:"Type Portrait",cat:"design",blurb:"Turns a word into a generated poster of repeating letterforms.",tags:["TYPOGRAPHY","POSTER","LETTERFORM","CLIENT-SIDE"],ready:true},
   {slug:"unit-converter-categories",name:"Unit Converter",cat:"math",blurb:"Every unit category in one place - length, mass, volume, temperature, data and more.",tags:["UNITS","CONVERSION","METRIC","CLIENT-SIDE"],ready:true},
   {slug:"voronoi-shader",name:"Voronoi Shader",cat:"design",blurb:"Animated Voronoi cell patterns with adjustable site count, speed and colour.",tags:["VORONOI","SHADER","ANIMATION","CLIENT-SIDE"],ready:true},
+  {slug:"binary-to-text",name:"Binary to Text",cat:"data",blurb:"Turn bits into text or into hex, decimal and octal bytes, at any bit depth you choose.",tags:["BINARY","ENCODE","ASCII","CLIENT-SIDE"],ready:true},
+  {slug:"text-to-binary",name:"Text to Binary",cat:"data",blurb:"Encode any text as binary bits with the matching hex and decimal bytes underneath.",tags:["BINARY","ENCODE","ASCII","CLIENT-SIDE"],ready:true},
+  {slug:"rot13",name:"ROT13",cat:"text",blurb:"The classic letter rotation, plus ROT5 and ROT47 for digits and full printable ASCII.",tags:["CIPHER","ROT13","TEXT","CLIENT-SIDE"],ready:true},
+  {slug:"yaml-validator",name:"YAML Validator",cat:"data",blurb:"Check a YAML file for tabs, bad pairs and duplicate keys, and see the structure it parsed into.",tags:["YAML","VALIDATE","CONFIG","CLIENT-SIDE"],ready:true},
+  {slug:"bingo-card-generator",name:"Bingo Card Generator",cat:"study",blurb:"Printable 5x5 bingo cards with a proper B-I-N-G-O number range and a matching call sheet.",tags:["BINGO","PRINT","GAME","CLIENT-SIDE"],ready:true},
+  {slug:"viewport-tester",name:"Viewport Tester",cat:"web",blurb:"Preview any site in a phone, tablet or laptop frame and see the breakpoints it actually hits.",tags:["RESPONSIVE","DEVICES","WEB","CLIENT-SIDE"],ready:true},
 ];

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Snake | Owen's Workspace</title>
+<title>ROT13 | Owen's Workspace</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,89 +57,68 @@ tailwind.config = { theme: { extend: {
 <div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
 <div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
   <div class="mb-8 flex flex-wrap items-center gap-4">
-    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Snake</h1>
-      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">ROT13</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Writing & Text — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">CANVAS</span><span class="ws-chip">LOCAL BEST</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">CIPHER</span><span class="ws-chip">ROT13</span><span class="ws-chip">TEXT</span></div>
         </div>
-      
-  <section class="ws-panel p-6">
-    <div class="grid gap-6 md:grid-cols-[1fr_240px]">
-      <canvas id="cv" width="420" height="420" class="mx-auto w-full max-w-[420px] rounded-xl border border-white/10 bg-[#0a0a0a]"></canvas>
-      <div class="flex flex-col gap-4">
-        <button id="start" class="ws-btn">Start</button>
-        <button id="reset" class="ws-btn-ghost">Reset</button>
-        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">
-          <div class="ws-label mb-1">Score</div>
-          <div class="font-display text-3xl font-black text-accent" id="score">0</div>
-        </div>
-        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">
-          <div class="ws-label mb-1">Best</div>
-          <div class="font-display text-3xl font-black text-white" id="best">0</div>
-        </div>
-        <p class="text-[10px] text-white/30 leading-relaxed">Arrow keys, WASD or swipe. Best stays in this browser.</p>
-      </div>
-    </div>
-  </section>
-
+      <section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">ROT13</span></div><div class="grid gap-4 md:grid-cols-2"><div><label class="ws-label mb-2 block" for="src">Text</label><textarea id="src" rows="4" class="ws-input font-mono text-xs" placeholder="Hello, World! Guten Tag.">Hello, World! Guten Tag.</textarea></div><div><label class="ws-label mb-2 block">Variant</label><select id="variant" class="ws-input"><option value="13">ROT13 (shifts 13)</option><option value="5">ROT5 (digits only)</option><option value="47">ROT47 (all printable ASCII)</option></select></div><label class="mt-4 flex items-center gap-2 text-xs text-white/70"><input id="keep" type="checkbox" class="ws-input" style="width:auto" checked> Leave non-letters alone</label><div class="mt-5 flex flex-wrap items-center gap-3"><button id="go" class="ws-btn">Apply</button><button id="rev" class="ws-btn-ghost">Reverse</button><button id="cp" class="ws-btn-ghost">Copy</button></div><p class="mt-3 text-xs text-white/50" id="note"></p></div></section><div class="mt-5"><div class="ws-label mb-2">Result</div><div id="out" class="ws-out"></div></div><div class="mt-5"><div class="ws-label mb-2">Letter map</div><div id="map" class="ws-out"></div></div>
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
-    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
   </div>
 </div>
 <script src="/workspace/related.js" defer></script>
 <script>
-const cv=document.getElementById('cv'),cx=cv.getContext('2d'),N=21,S=cv.width/N;
-let snake,dir,food,score,dead,timer,speed=110;
-const best=()=>parseInt(localStorage.getItem('ws-snake-best')||'0');
-document.getElementById('best').textContent=best();
-function reset(){snake=[{x:10,y:10}];dir={x:1,y:0};place();score=0;dead=false;
-  document.getElementById('score').textContent='0';draw()}
-function place(){do{food={x:Math.floor(Math.random()*N),y:Math.floor(Math.random()*N)}}
-  while(snake.some(s=>s.x===food.x&&s.y===food.y))}
-function step(){
-  const h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
-  if(h.x<0||h.y<0||h.x>=N||h.y>=N||snake.some(s=>s.x===h.x&&s.y===h.y)){over();return}
-  snake.unshift(h);
-  if(h.x===food.x&&h.y===food.y){score++;document.getElementById('score').textContent=score;place();
-    if(score%5===0&&speed>60){speed-=8;restart()}}
-  else snake.pop();
-  draw();
+const $=id=>document.getElementById(id);
+function rot13(s){
+  return s.replace(/[a-zA-Z]/g,c=>{
+    const base=c<='Z'?65:97;
+    return String.fromCharCode((c.charCodeAt(0)-base+13)%26+base);
+  });
 }
-function over(){dead=true;clearInterval(timer);
-  if(score>best()){localStorage.setItem('ws-snake-best',score);document.getElementById('best').textContent=score}
-  cx.fillStyle='rgba(5,5,5,.75)';cx.fillRect(0,0,cv.width,cv.height);
-  cx.fillStyle='#FF5F1F';cx.font='900 28px Manrope,sans-serif';cx.textAlign='center';
-  cx.fillText('DEAD — ' + score, cv.width/2, cv.height/2)}
-function draw(){
-  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,cv.width,cv.height);
-  cx.fillStyle='#FF5F1F';cx.beginPath();cx.arc(food.x*S+S/2,food.y*S+S/2,S/2.6,0,7);cx.fill();
-  snake.forEach((s,i)=>{cx.fillStyle=i?'rgba(255,255,255,.75)':'#fff';
-    cx.fillRect(s.x*S+1,s.y*S+1,S-2,S-2)});
+function rot47(s){
+  return s.replace(/[!-~]/g,c=>String.fromCharCode(33+(c.charCodeAt(0)-33+47)%94));
 }
-function restart(){clearInterval(timer);timer=setInterval(()=>{if(!dead)step()},speed)}
-document.getElementById('start').onclick=()=>{if(dead||!timer){reset();restart()}};
-document.getElementById('reset').onclick=()=>{clearInterval(timer);timer=null;reset()};
-addEventListener('keydown',e=>{
-  const m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],
-           w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]}[e.key];
-  if(!m)return;e.preventDefault();
-  const nd={x:m[0],y:m[1]};
-  if(nd.x!==-dir.x||nd.y!==-dir.y)dir=nd;
+function apply(){
+  const v=$('variant').value, keep=$('keep').checked;
+  const src=$('src').value;
+  let out;
+  if(v==='47'){
+    out=rot47(src);
+    if(keep) out=src.replace(/[!-~]/g,(c,i,a)=>rot47(c));
+    // keep non-printable untouched either way
+  } else if(v==='5'){
+    out=keep? src.replace(/[0-9]/g,c=>String.fromCharCode(48+(c.charCodeAt(0)-48+5)%10))
+             : src.replace(/[0-9]/g,c=>String.fromCharCode(48+(c.charCodeAt(0)-48+5)%10));
+  } else {
+    out=rot13(src);
+  }
+  $('out').textContent=out;
+  $('note').textContent = v==='13'
+    ? 'ROT13 applied twice returns the original - it is its own inverse.'
+    : v==='47' ? 'ROT47 touches every printable ASCII character from ! to ~.'
+    : 'ROT5 only moves the digits 0-9.';
+  const map=[];
+  const from = v==='13' ? 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' : '0123456789';
+  const to = out.replace(/[^A-Za-z0-9]/g,'');
+  const shift=parseInt(v,10);
+  for(let i=0;i<from.length;i++) map.push(from[i]+' \u2192 '+
+    String.fromCharCode(v==='47'?33+(33+i-33+shift)%94:(v==='5'?48+i:65+i)));
+  $('map').textContent=map.join('    ');
+}
+$('go').addEventListener('click',apply);
+$('src').addEventListener('input',apply);
+$('rev').addEventListener('click',()=>{
+  // apply twice for a true inverse in every variant
+  $('src').value=$('out').textContent; apply();
 });
-let ts=null;
-cv.addEventListener('touchstart',e=>{ts=e.touches[0]},{passive:true});
-cv.addEventListener('touchend',e=>{
-  if(!ts)return;const dx=e.changedTouches[0].clientX-ts.clientX,dy=e.changedTouches[0].clientY-ts.clientY;
-  if(Math.max(Math.abs(dx),Math.abs(dy))<20)return;
-  const nd=Math.abs(dx)>Math.abs(dy)?{x:Math.sign(dx),y:0}:{x:0,y:Math.sign(dy)};
-  if(nd.x!==-dir.x||nd.y!==-dir.y)dir=nd;
-},{passive:true});
-reset();
+$('cp').addEventListener('click',()=>navigator.clipboard&&navigator.clipboard.writeText($('out').textContent));
+apply();
 </script>
 </body>
 </html>
