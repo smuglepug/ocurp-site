@@ -122,13 +122,22 @@
   else if (shape === 'dodeca') buildDodeca();
   else buildCubes([1, 0.58, 0.26]);
 
+  /* Normalise every shape to a radius of 1 so each one fills the canvas the
+     same way and nothing clips at the edges, whatever the section size. */
+  var maxR = 0;
+  for (var ni = 0; ni < P.length; ni++) {
+    var rr = Math.sqrt(P[ni][0] * P[ni][0] + P[ni][1] * P[ni][1] + P[ni][2] * P[ni][2]);
+    if (rr > maxR) maxR = rr;
+  }
+  if (maxR > 0) for (var nj = 0; nj < P.length; nj++) { P[nj][0] /= maxR; P[nj][1] /= maxR; P[nj][2] /= maxR; }
+
   function project(p, ry, rx) {
     var x = p[0], y = p[1], z = p[2];
     var cy = Math.cos(ry), sy = Math.sin(ry);
     var x1 = x * cy + z * sy, z1 = -x * sy + z * cy;
     var cxx = Math.cos(rx), sxx = Math.sin(rx);
     var y1 = y * cxx - z1 * sxx, z2 = y * sxx + z1 * cxx;
-    var f = 3.4, s = Math.min(W, H) * 0.30;
+    var f = 3.4, s = Math.min(W, H) * 0.40;
     var k = f / (f + z2);
     return [W / 2 + x1 * s * k, H / 2 + y1 * s * k, k];
   }
