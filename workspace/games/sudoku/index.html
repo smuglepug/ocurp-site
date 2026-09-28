@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sudoku | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Sudoku</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">PUZZLE</span><span class="ws-chip">SOLVER</span><span class="ws-chip">NOTES</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="grid gap-6 md:grid-cols-[auto_1fr]">
+      <div>
+        <div id="board" class="grid grid-cols-9 gap-1 rounded-xl border border-white/15 bg-[#0a0a0a] p-2"></div>
+        <p class="mt-2 max-w-[340px] text-[10px] leading-relaxed text-white/45">Click a cell, type 1&ndash;9. Arrow keys move,
+          Backspace erases. Every puzzle is generated with a solver and checked for a unique answer.</p>
+      </div>
+      <div class="flex flex-col gap-3">
+        <div class="flex flex-wrap gap-2">
+          <button id="easy" class="ws-btn">Easy</button>
+          <button id="med" class="ws-btn">Medium</button>
+          <button id="hard" class="ws-btn">Hard</button>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="notes" class="ws-btn-ghost">Pencil notes: on</button>
+          <button id="check" class="ws-btn-ghost">Check</button>
+          <button id="new" class="ws-btn-ghost">New puzzle</button>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Time</div><div class="font-display text-lg font-black text-white" id="time">0:00</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Filled</div><div class="font-display text-lg font-black text-accent" id="filled">0/0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Mistakes</div><div class="font-display text-lg font-black text-white" id="mis">0</div></div>
+        </div>
+        <div id="dif" class="ws-chip w-fit">Easy</div>
+        <div id="msg" class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Pick a difficulty to start.</div>
+        <div id="numpad" class="grid max-w-[240px] grid-cols-9 gap-1"></div>
+        <p class="text-[10px] text-white/30" id="sol">Solution loads after the first entry.</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const $=id=>document.getElementById(id);
+const DIFF={easy:{g:38,t:3},med:{g:46,t:2},hard:{g:52,t:1}};
+const st={puzzle:[],sol:[],givens:[],notes:[],sel:-1,pencil:true,notesMode:false,mistakes:0,time:0,
+  level:'easy',done:false,tick:null};
+window.sudokuState=st;
+function blank(){return Array.from({length:81},()=>0)}
+function valid(g,i,v){
+  const r=Math.floor(i/9),c=i%9;
+  for(let k=0;k<9;k++){if(g[r*9+k]===v||g[k*9+c]===v)return false}
+  const br=Math.floor(r/3)*3,bc=Math.floor(c/3)*3;
+  for(let y=0;y<3;y++)for(let x=0;x<3;x++)if(g[(br+y)*9+bc+x]===v)return false;
+  return true}
+function solve(g){
+  const idx=[];for(let i=0;i<81;i++)if(!g[i])idx.push(i);
+  let steps=0;
+  function rec(k){
+    if(k===idx.length)return true;
+    if(++steps>4e6)return false;
+    const i=idx[k];
+    for(let v=1;v<=9;v++){if(valid(g,i,v)){g[i]=v;if(rec(k+1))return true;g[i]=0}}
+    return false}
+  return rec(0)}
+function countSolutions(g,limit){
+  const idx=[];for(let i=0;i<81;i++)if(!g[i])idx.push(i);
+  let found=0;
+  (function rec(k){
+    if(found>=limit)return;
+    if(k===idx.length){found++;return}
+    const i=idx[k];
+    for(let v=1;v<=9;v++){if(valid(g,i,v)){g[i]=v;rec(k+1);g[i]=0;if(found>=limit)return}}})(0);
+  return found}
+function perm(a){a=a.slice();for(let i=a.length-1;i>0;i--){const k=Math.floor(Math.random()*(i+1));const t=a[i];a[i]=a[k];a[k]=t}return a}
+function full(){
+  for(let attempt=0;attempt<80;attempt++){
+    const g=blank();let ok=true;
+    for(let b=0;b<9&&ok;b++){
+      const br=Math.floor(b/3)*3,bc=(b%3)*3;
+      const cells=[];for(let y=0;y<3;y++)for(let x=0;x<3;x++)cells.push((br+y)*9+bc+x);
+      const order=perm([1,2,3,4,5,6,7,8,9]);
+      for(let t=0;t<9&&ok;t++){
+        let placed=false;
+        for(let q=0;q<9&&!placed;q++)if(valid(g,cells[t],order[(q+t)%9])){g[cells[t]]=order[(q+t)%9];placed=true}
+        if(!placed)ok=false}
+      if(!ok)break;
+      if(!solve(g.slice())){ok=false;break}}
+    if(!ok)continue;
+    const map=perm([0,1,2,3,4,5,6,7,8,9]);
+    for(let i=0;i<81;i++)g[i]=map[g[i]];
+    return g}
+  return full();
+}
+function make(level){
+  st.level=level;
+  const cfg=DIFF[level];
+  const sol=full();
+  const g=sol.slice();
+  const order=Array.from({length:81},(_,i)=>i);
+  for(let i=80;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=order[i];order[i]=order[j];order[j]=t}
+  let removed=0;
+  for(const i of order){
+    if(removed>=cfg.g)break;
+    const keep=g[i];g[i]=0;
+    if(countSolutions(g.slice(),2)===1)removed++;else g[i]=keep}
+  st.sol=sol;st.givens=g.slice();st.puzzle=g.slice();
+  st.notes=Array.from({length:81},()=>new Set());
+  st.sel=-1;st.mistakes=0;st.time=0;st.done=false;
+  $('dif').textContent=level[0].toUpperCase()+level.slice(1);
+  $('mis').textContent='0';
+  $('sol').textContent='Solution loads after the first entry.';
+  $('msg').textContent=level[0].toUpperCase()+level.slice(1)+' — '+cfg.g+' cells removed, unique solution.';
+  clearInterval(st.tick);st.tick=setInterval(()=>{if(!st.done){st.time++;$('time').textContent=fmt(st.time)}},1000);
+  render()}
+function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function render(){
+  let h='';
+  for(let i=0;i<81;i++){
+    const r=Math.floor(i/9),c=i%9;
+    const bw=(c%3===2&&c!==8),bh=(r%3===2&&r!==8);
+    const v=st.puzzle[i],giv=st.givens[i];
+    const w=st.wrong&&st.wrong[i];
+    let cls='flex aspect-square items-center justify-center rounded-[3px] border text-sm font-black';
+    cls+=' '+(w?'bg-[#FF5F1F]/25 text-[#FF5F1F] ':giv?'bg-white/[0.12] text-white ':'bg-white/[0.04] text-white ');
+    cls+=(st.sel===i?'border-[#FF5F1F] ':bw?'border-white/30 ':'border-white/10 ');
+    if(bh)cls+='border-b-2 border-b-white/30 ';
+    if(v)h+='<button data-i="'+i+'" class="'+cls+'">'+v+'</button>';
+    else{
+      const n=[...st.notes[i]].sort();
+      h+='<button data-i="'+i+'" class="'+cls+'"><span class="grid w-full grid-cols-3 text-[8px] leading-none font-bold text-white/40">';
+      for(let d=1;d<=9;d++)h+='<span>'+(n.includes(d)?d:'')+'</span>';
+      h+='</span></button>'}}
+  $('board').innerHTML=h;
+  $('board').querySelectorAll('button').forEach(b=>b.onclick=()=>{st.sel=+b.dataset.i;render()});
+  $('numpad').innerHTML=Array.from({length:9},(_,i)=>'<button data-n="'+(i+1)+'" class="ws-btn-ghost !px-1 !py-2 text-xs">'+(i+1)+'</button>').join('');
+  $('numpad').querySelectorAll('button').forEach(b=>b.onclick=()=>put(+b.dataset.n));
+  const need=st.givens.filter(v=>!v).length;
+  const have=st.puzzle.filter((v,i)=>v&&!st.givens[i]).length;
+  $('filled').textContent=have+'/'+need;
+  $('notes').textContent='Pencil notes: '+(st.notesMode?'on':'off')}
+function put(v){
+  if(st.sel<0){$('msg').textContent='Click a square first.';return}
+  const i=st.sel;
+  if(st.givens[i]){$('msg').textContent='That is a given clue — cannot change it.';return}
+  if(st.done)return;
+  if(st.notesMode&&st.puzzle[i]){st.notes[i].has(v)?st.notes[i].delete(v):st.notes[i].add(v);render();return}
+  if(v===0){st.puzzle[i]=0;st.notes[i].clear();st.wrong={};render();return}
+  st.puzzle[i]=v;st.notes[i].clear();
+  if(st.sol[i]&&st.sol[i]!==v){st.mistakes++;$('mis').textContent=st.mistakes;st.wrong[i]=1;
+    $('msg').textContent='That digit clashes with the solution. '+st.mistakes+' mistake'+(st.mistakes>1?'s':'')+'.'}
+  else{
+    const peers=peerList(i);
+    peers.forEach(p=>{st.notes[p].delete(v);st.notes[p].add(v)});
+    $('sol').textContent='Answer key: '+st.sol.join('');
+    $('msg').textContent='Good placement.'}
+  render();
+  if(st.puzzle.every((v,k)=>v===st.sol[k])){st.done=true;clearInterval(st.tick);
+    $('msg').textContent='Solved in '+fmt(st.time)+' with '+st.mistakes+' mistake'+(st.mistakes===1?'':'s')+'.';
+    $('time').textContent=fmt(st.time)}}
+function peerList(i){
+  const r=Math.floor(i/9),c=i%9,out=new Set();
+  for(let k=0;k<9;k++){out.add(r*9+k);out.add(k*9+c)}
+  const br=Math.floor(r/3)*3,bc=Math.floor(c/3)*3;
+  for(let y=0;y<3;y++)for(let x=0;x<3;x++)out.add((br+y)*9+bc+x);
+  out.delete(i);return [...out]}
+$('easy').onclick=()=>make('easy');
+$('med').onclick=()=>make('med');
+$('hard').onclick=()=>make('hard');
+$('new').onclick=()=>make(st.level);
+$('notes').onclick=()=>{st.notesMode=!st.notesMode;render()};
+$('check').onclick=()=>{
+  const bad=st.puzzle.map((v,i)=>v&&v!==st.sol[i]?i:-1).filter(i=>i>=0);
+  st.wrong={};bad.forEach(i=>st.wrong[i]=1);render();
+  $('msg').textContent=bad.length?bad.length+' square'+(bad.length>1?'s':'')+' disagree with the answer key.':'Every digit you entered matches the key.'};
+addEventListener('keydown',e=>{
+  if(e.key>='1'&&e.key<='9'){put(+e.key);e.preventDefault();return}
+  if(e.key==='Backspace'||e.key==='Delete'){put(0);e.preventDefault();return}
+  const d={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];
+  if(d&&st.sel>=0){
+    const r=Math.floor(st.sel/9),c=st.sel%9;
+    let nr=r+d[0],nc=c+d[1];
+    if(nr<0)nr=8;if(nr>8)nr=0;if(nc<0)nc=8;if(nc>8)nc=0;
+    st.sel=nr*9+nc;render();e.preventDefault()}});
+make('easy');</script>
+</body>
+</html>

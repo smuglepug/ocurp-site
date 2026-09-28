@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tetris | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Tetris</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">7-BAG</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="grid gap-5 md:grid-cols-[1fr_180px]">
+      <div class="grid grid-cols-[1fr_78px] gap-3">
+        <canvas id="cv" width="252" height="504" class="mx-auto w-full max-w-[252px] rounded-xl border border-white/15 bg-[#0a0a0a]"></canvas>
+        <div class="flex flex-col gap-2">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-2 text-center">
+            <div class="ws-label mb-1">Hold</div><canvas id="hold" width="72" height="72" class="mx-auto"></canvas>
+          </div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-2 text-center">
+            <div class="ws-label mb-1">Next</div><canvas id="next" width="72" height="330" class="mx-auto"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col gap-3">
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+          <div class="ws-label mb-1">Score</div><div class="font-display text-2xl font-black text-accent" id="score">0</div></div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+          <div class="ws-label mb-1">Lines</div><div class="font-display text-xl font-black text-white" id="lines">0</div></div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+          <div class="ws-label mb-1">Level</div><div class="font-display text-xl font-black text-white" id="level">1</div></div>
+        <button id="start" class="ws-btn">Start</button>
+        <button id="pause" class="ws-btn-ghost">Pause</button>
+        <button id="reset" class="ws-btn-ghost">Reset</button>
+        <div class="ws-chip w-fit" id="best">Best 0</div>
+        <p class="text-[10px] leading-relaxed text-white/40">Left / Right move, Up or X rotate, Z rotate back,
+          C hold, Space hard drop, Down soft drop. Pieces come from a 7-bag so nothing repeats unfairly.</p>
+      </div>
+    </div>
+    <div id="msg" class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Press Start.</div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const $=id=>document.getElementById(id);
+const COLS=10,ROWS=20,CELL=25.2;
+const SHAPES={
+ I:[[[0,1],[1,1],[2,1],[3,1]],[[2,0],[2,1],[2,2],[2,3]],[[0,2],[1,2],[2,2],[3,2]],[[1,0],[1,1],[1,2],[1,3]]],
+ J:[[[0,0],[0,1],[1,1],[2,1]],[[1,0],[2,0],[1,1],[1,2]],[[0,1],[1,1],[2,1],[2,2]],[[1,0],[1,1],[0,2],[1,2]]],
+ L:[[[2,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[1,2],[2,2]],[[0,1],[1,1],[2,1],[0,2]],[[0,0],[1,0],[1,1],[1,2]]],
+ O:[[[1,0],[2,0],[1,1],[2,1]]],
+ S:[[[1,0],[2,0],[0,1],[1,1]],[[1,0],[1,1],[2,1],[2,2]],[[1,1],[2,1],[0,2],[1,2]],[[0,0],[0,1],[1,1],[1,2]]],
+ T:[[[1,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[2,1],[1,2]],[[1,0],[0,1],[1,1],[1,2]]],
+ Z:[[[0,0],[1,0],[1,1],[2,1]],[[2,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[1,2],[2,2]],[[1,0],[0,1],[1,1],[0,2]]]};
+const KEY=Object.keys(SHAPES);
+const cv=$('cv'),cx=cv.getContext('2d');
+const st={board:[],cur:null,next:[],hold:null,canHold:true,score:0,lines:0,level:1,
+  running:false,paused:false,over:false,drop:0,raf:null,clears:0,bags:0,lastClear:0};
+window.tetrisState=st;
+const best=()=>parseInt(localStorage.getItem('ws-tetris-best')||'0');
+function resetBoard(){st.board=Array.from({length:ROWS},()=>Array(COLS).fill(0))}
+function bag(){const b=KEY.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=b[i];b[i]=b[j];b[j]=t}st.bags++;return b}
+function fillQueue(){while(st.next.length<5)st.next.push(bag())}
+function spawn(type){
+  const t=type||st.next.shift();fillQueue();
+  st.cur={t:type||t,rot:0,x:Math.floor((COLS-SHAPES[t][0].length)/2),y:-1};
+  st.drop=0;st.canHold=true;
+  if(collides(st.cur.x,st.cur.y,st.cur.rot)){gameOver();return false}
+  draw();return true}
+function cellsAt(t,rot){
+  if(t==='O')return SHAPES.O[0];
+  return SHAPES[t][rot%4]}
+function collides(x,y,rot){
+  const cs=cellsAt(st.cur.t,rot);
+  for(const c of cs){
+    const nx=x+c[0],ny=y+c[1];
+    if(nx<0||nx>=COLS||ny>=ROWS)return true;
+    if(ny>=0&&st.board[ny][nx])return true}
+  return false}
+function lock(){
+  const cs=cellsAt(st.cur.t,st.cur.rot);
+  let topOut=false;
+  cs.forEach(c=>{const nx=st.cur.x+c[0],ny=st.cur.y+c[1];
+    if(ny<0)topOut=true;else st.board[ny][nx]=st.cur.t});
+  const cleared=clearLines();
+  if(cleared){
+    st.lastClear=cleared;
+    st.clears++;
+    st.lines+=cleared;st.score+=[0,100,300,500,800][cleared]*st.level;
+    const nl=Math.floor(st.lines/10)+1;
+    if(nl!==st.level){st.level=nl}
+  } else st.lastClear=0;
+  hud();
+  if(topOut){gameOver();return}
+  spawn()}
+function clearLines(){
+  let n=0;
+  for(let r=ROWS-1;r>=0;r--){
+    if(st.board[r].every(v=>v)){
+      st.board.splice(r,1);st.board.unshift(Array(COLS).fill(0));n++;r++}}
+  return n}
+function move(dx){
+  if(!st.running||st.paused||st.over)return false;
+  if(!collides(st.cur.x+dx,st.cur.y,st.cur.rot)){st.cur.x+=dx;draw();return true}
+  return false}
+function rotate(dir){
+  if(!st.running||st.paused||st.over||st.cur.t==='O')return false;
+  const nr=(st.cur.rot+dir+4)%4;
+  const kicks=[[0,0],[-1,0],[1,0],[-2,0],[2,0],[0,-1]];
+  for(const k of kicks){
+    if(!collides(st.cur.x+k[0],st.cur.y+k[1],nr)){
+      st.cur.x+=k[0];st.cur.y+=k[1];st.cur.rot=nr;draw();return true}}
+  return false}
+function soft(){
+  if(!st.running||st.paused||st.over)return 0;
+  if(collides(st.cur.x,st.cur.y+1,st.cur.rot)){lock();return 1}
+  st.cur.y++;st.score+=1;st.drop=0;draw();return 1}
+function hard(){
+  if(!st.running||st.paused||st.over)return 0;
+  let d=0;
+  while(!collides(st.cur.x,st.cur.y+1,st.cur.rot)){st.cur.y++;d++}
+  st.score+=d*2;lock();return d}
+function holdPiece(){
+  if(!st.running||st.paused||st.over||!st.canHold)return false;
+  const cur=st.cur.t;
+  if(st.hold){const h=st.hold;st.hold=cur;spawn(h)}
+  else{st.hold=cur;spawn()}
+  st.canHold=false;draw();return true}
+function start(){
+  if(st.running&&!st.paused)return;
+  if(st.over||!st.cur){resetBoard();st.next=[];st.hold=null;st.clears=0;st.score=0;st.lines=0;st.level=1;st.clears=0;st.over=false;fillQueue();st.hold=null;spawn()}
+  st.running=true;st.paused=false;
+  $('msg').textContent='Running. Clear lines to climb.';
+  loop()}
+function gameOver(){
+  st.over=true;st.running=false;
+  const b=best();
+  if(st.score>b){localStorage.setItem('ws-tetris-best',st.score);$('best').textContent='Best '+st.score}
+  $('msg').textContent='Game over — '+st.score+' points, '+st.lines+' lines. Press Start.';
+  draw()}
+function reset(){
+  st.running=false;st.over=false;st.paused=false;st.cur=null;st.next=[];st.hold=null;
+  st.score=0;st.lines=0;st.level=1;st.clears=0;
+  resetBoard();fillQueue();spawn();hud();
+  $('msg').textContent='Press Start.'}
+function hud(){
+  $('score').textContent=st.score;$('lines').textContent=st.lines;$('level').textContent=st.level;
+  $('best').textContent='Best '+best()}
+function block(g,col,row,size){
+  g.fillStyle=col;
+  g.fillRect(col*size+1,row*size+1,size-2,size-2);
+  g.fillStyle='rgba(255,255,255,.22)';
+  g.fillRect(col*size+1,row*size+1,size-2,2);
+  g.fillRect(col*size+1,row*size+1,2,size-2)}
+const COLORS={I:'#FF5F1F',J:'#c9521c',L:'#e0692a',O:'#ff7a3d',S:'#d95d20',T:'#ff5f1f',Z:'#b8481a'};
+function draw(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,cv.width,cv.height);
+  cx.strokeStyle='rgba(255,255,255,.06)';
+  for(let c=1;c<COLS;c++){cx.beginPath();cx.moveTo(c*CELL,0);cx.lineTo(c*CELL,cv.height);cx.stroke()}
+  for(let r=1;r<ROWS;r++){cx.beginPath();cx.moveTo(0,r*CELL);cx.lineTo(cv.width,r*CELL);cx.stroke()}
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(st.board[r][c])block(cx,COLORS[st.board[r][c]],c,r,CELL);
+  if(st.cur){
+    const cs=cellsAt(st.cur.t,st.cur.rot);
+    cs.forEach(k=>{if(st.cur.y+k[1]>=0)block(cx,COLORS[st.cur.t],st.cur.x+k[0],st.cur.y+k[1],CELL)})}
+  const hx=$('hold').getContext('2d');
+  hx.clearRect(0,0,72,72);
+  if(st.hold){const cs=cellsAt(st.hold,0);
+    const w=Math.max(...cs.map(c=>c[0]))+1,h=Math.max(...cs.map(c=>c[1]))+1;
+    const s=Math.min(16,(60/Math.max(w,h)))|0;
+    cs.forEach(k=>{hx.fillStyle=COLORS[st.hold];hx.fillRect(6+k[0]*s,6+k[1]*s,s-2,s-2)})}
+  const nx=$('next').getContext('2d');
+  nx.clearRect(0,0,72,330);
+  st.next.forEach((t,i)=>{
+    const cs=cellsAt(t,0);
+    const w=Math.max(...cs.map(c=>c[0]))+1,h=Math.max(...cs.map(c=>c[1]))+1;
+    const s=Math.min(14,(60/Math.max(w,h)))|0;
+    cs.forEach(k=>{nx.fillStyle=COLORS[t];nx.fillRect(8+k[0]*s,6+i*64+k[1]*s,s-2,s-2)})});
+  if(st.paused){cx.fillStyle='rgba(10,10,10,.75)';cx.fillRect(0,0,cv.width,cv.height);
+    cx.fillStyle='#FF5F1F';cx.font='900 22px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('PAUSED',cv.width/2,cv.height/2)}
+  if(st.over){cx.fillStyle='rgba(10,10,10,.8)';cx.fillRect(0,0,cv.width,cv.height);
+    cx.fillStyle='#FF5F1F';cx.font='900 22px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('GAME OVER',cv.width/2,cv.height/2-8);
+    cx.fillStyle='#fff';cx.font='700 13px Manrope,sans-serif';
+    cx.fillText(st.score+' pts / '+st.lines+' lines',cv.width/2,cv.height/2+16)}}
+let last=0;
+function loop(t){
+  st.raf=requestAnimationFrame(loop);
+  if(!st.running)return;
+  if(!last)last=t;
+  const dt=t-last;last=t;
+  if(st.paused||st.over)return;
+  st.drop+=dt;
+  const sp=Math.max(90,800-(st.level-1)*70);
+  if(st.drop>sp){st.drop=0;
+    if(collides(st.cur.x,st.cur.y+1,st.cur.rot))lock();else st.cur.y++}
+  draw()}
+$('start').onclick=start;
+$('reset').onclick=reset;
+$('pause').onclick=()=>{
+  if(!st.running){start();return}
+  st.paused=!st.paused;
+  $('pause').textContent=st.paused?'Resume':'Pause';
+  $('msg').textContent=st.paused?'Paused.':'Running. Clear lines to climb.';
+  draw()};
+addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='arrowleft'||k==='a'){move(-1);e.preventDefault()}
+  else if(k==='arrowright'||k==='d'){move(1);e.preventDefault()}
+  else if(k==='arrowup'||k==='x'||k==='w'){rotate(1);e.preventDefault()}
+  else if(k==='z'){rotate(-1);e.preventDefault()}
+  else if(k===' '){hard();e.preventDefault()}
+  else if(k==='arrowdown'||k==='s'){soft();e.preventDefault()}
+  else if(k==='c'){holdPiece();e.preventDefault()}});
+reset();st.raf=requestAnimationFrame(loop);
+$('best').textContent='Best '+best();</script>
+</body>
+</html>

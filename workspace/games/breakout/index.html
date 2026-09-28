@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breakout | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Breakout</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">POWER-UPS</span><span class="ws-chip">CANVAS</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="grid gap-5 md:grid-cols-[1fr_190px]">
+      <canvas id="cv" width="480" height="360" class="mx-auto w-full max-w-[520px] rounded-xl border border-white/15 bg-[#0a0a0a]"></canvas>
+      <div class="flex flex-col gap-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Score</div><div class="font-display text-2xl font-black text-accent" id="score">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Lives</div><div class="font-display text-2xl font-black text-white" id="lives">3</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Level</div><div class="font-display text-xl font-black text-white" id="level">1</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Bricks</div><div class="font-display text-xl font-black text-white" id="left">0</div></div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="start" class="ws-btn">Start</button>
+          <button id="pause" class="ws-btn-ghost">Pause</button>
+          <button id="reset" class="ws-btn-ghost">Reset</button>
+        </div>
+        <div id="pups" class="flex flex-col gap-1.5"></div>
+        <div class="ws-chip w-fit" id="best">Best 0</div>
+        <p class="text-[10px] leading-relaxed text-white/40">Move with the mouse, touch or arrow keys. Bricks take
+          two hits on the tougher rows. Catch falling capsules for a wider paddle, three balls, or slow motion.</p>
+      </div>
+    </div>
+    <div id="msg" class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Press Start.</div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const $=id=>document.getElementById(id);
+const cv=$('cv'),cx=cv.getContext('2d');
+const W=cv.width,H=cv.height,COLS=10,BR=14,BH=18,LEFT=6,TOP=34;
+const PUPS=[{id:'wide',label:'Wide paddle',tone:'#FF5F1F'},{id:'multi',label:'Multiball',tone:'#fff'},{id:'slow',label:'Slow motion',tone:'rgba(255,255,255,.6)'}];
+const st={bricks:[],balls:[],px:W/2,py:H-30,pw:76,score:0,lives:3,level:1,running:false,paused:false,
+  over:false,cleared:0,pup:null,pupT:0,keys:{},hits:0,raf:null,active:[false,false,false],started:false};
+window.breakoutState=st;
+const best=()=>parseInt(localStorage.getItem('ws-breakout-best')||'0');
+function build(){
+  st.bricks=[];
+  for(let r=0;r<5;r++)for(let c=0;c<COLS;c++){
+    const cw=(W-LEFT*2-COLS*4)/COLS;
+    st.bricks.push({x:LEFT+c*(cw+4),y:TOP+r*(BH+4),w:cw,h:BH,
+      hp:r<1?1:r<3?2:3,max:r<1?1:r<3?2:3})}}
+function reset(){
+  st.score=0;st.lives=3;st.level=1;st.cleared=0;st.pw=76;st.px=W/2;st.hits=0;
+  st.balls=[];st.pup=null;st.active=[false,false,false];
+  st.running=false;st.paused=false;st.over=false;st.started=false;
+  build();hud();$('msg').textContent='Press Start.';draw()}
+function newBall(x,y,vx,vy){
+  st.balls.push({x:x===undefined?st.px:x,y:y===undefined?st.py:y,vx:vx===undefined?2.6*Math.random()+1.4*(Math.random()<.5?1:-1):vx,vy:vy===undefined?-3.4:vy,r:6})}
+function start(){
+  if(st.running&&!st.paused)return;
+  if(st.over||!st.balls.length){reset();newBall();st.started=true}
+  st.running=true;st.paused=false;$('msg').textContent='Go. Knock out every brick.'}
+function hud(){
+  $('score').textContent=st.score;$('lives').textContent=st.lives;$('level').textContent=st.level;
+  $('left').textContent=st.bricks.filter(b=>b.hp>0).length;
+  $('best').textContent='Best '+best();
+  $('pups').innerHTML=PUPS.map(p=>{
+    const on=st.active[PUPS.indexOf(p)];
+    return '<span class="ws-chip"'+(on?' style="color:'+p.tone+';border-color:'+p.tone+'"':'')+'>'+p.label+(on?' &check;':'')+'</span>'}).join('')}
+function brickHit(b,fromTop){
+  b.hp--;st.hits++;
+  const pts=10*st.level*(b.max||1);
+  st.score+=pts;
+  if(b.hp<=0){st.cleared++;st.score+=25*st.level}
+  if(st.cleared>=st.bricks.length*0.12){st.cleared=0;st.level++;build();bricksLeft()}
+  hud();draw();void fromTop}
+function bricksLeft(){
+  if(st.bricks.every(b=>b.hp<=0)){
+    st.level++;
+    if(st.level>3)st.level=3;
+    build();
+    st.balls.forEach(b=>{b.vy=-Math.abs(b.vy)*1.05;b.vx*=.98});
+    $('msg').textContent='Level '+st.level+' — faster ball, new wall.'}}
+function dropPup(x){
+  const p=PUPS[Math.floor(Math.random()*PUPS.length)];
+  st.pup={p:p,x:x,y:st.pup?st.pup.y:TOP,vx:0.4,vy:1.1};
+  st.pupT=900}
+function paddle(b){
+  if(b.vy<=0)return;
+  if(b.y+b.r<st.py-2||b.y-b.r>st.py+10)return;
+  if(b.x<st.px-st.pw/2-b.r||b.x>st.px+st.pw/2+b.r)return;
+  const d=(b.x-st.px)/(st.pw/2);
+  b.y=st.py-b.r-1;
+  b.vy=-Math.abs(b.vy);
+  const off=Math.max(-1,Math.min(1,d));
+  b.vx=off*4.8+b.vx*0.2;
+  if(Math.abs(b.vx)<1)b.vx=(b.vx<0?-1:1)*1;
+  st.hits++}
+function step(dt){
+  if(!st.running||st.paused||st.over)return;
+  if(st.keys.arrowleft||st.keys.a)st.px-=6;
+  if(st.keys.arrowright||st.keys.d)st.px+=6;
+  st.px=Math.max(st.pw/2+2,Math.min(W-st.pw/2-2,st.px));
+  const ramp=1+(st.level-1)*0.18;
+  for(let i=st.balls.length-1;i>=0;i--){
+    const b=st.balls[i];
+    b.x+=b.vx*ramp;b.y+=b.vy*ramp;
+    if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx)}
+    if(b.x>W-b.r){b.x=W-b.r;b.vx=-Math.abs(b.vx)}
+    if(b.y<b.r){b.y=b.r;b.vy=Math.abs(b.vy)}
+    if(b.y>H+b.r*2){
+      st.balls.splice(i,1);
+      if(!st.balls.length){
+        st.lives--;
+        hud();
+        if(st.lives<=0){
+          st.over=true;st.running=false;
+          const bs=best();
+          if(st.score>bs){localStorage.setItem('ws-breakout-best',st.score)}
+          $('msg').textContent='Out of balls. Final score '+st.score+'. Press Start.';
+          draw();return}
+        $('msg').textContent='Ball lost — '+st.lives+' left.';newBall();
+        break}}
+      continue}
+    paddle(b);
+    for(const br of st.bricks){
+      if(br.hp<=0)continue;
+      if(b.x+bs(br)>br.x&&b.x-bs(br)<br.x+br.w&&b.y+b.r>br.y&&b.y-b.r<br.y+br.h){
+        b.vy=-b.vy;b.y=b.vy>0?br.y-b.r:br.y+br.h+b.r;
+        brickHit(br,b.vy>0);
+        if(!st.balls.length)break}}}
+  if(st.pup){
+    st.pup.y+=st.pup.vy;st.pup.x+=st.pup.vx;
+    if(st.pup.x<4||st.pup.x>W-4)st.pup.vx*=-1;
+    st.pupT-=dt/16;
+    if(st.pup.y>st.py-14&&st.pup.y<st.py+8&&Math.abs(st.pup.x-st.px)<st.pw/2+8){applyPup(st.pup.p);st.pup=null}
+    else if(st.pup.y>H+20||st.pupT<=0)st.pup=null}
+  if(Math.random()<0.0016&&!st.pup&&st.balls.length)dropPup(Math.random()*W)}
+function applyPup(p){
+  const i=PUPS.indexOf(p);
+  st.active[i]=true;
+  if(p.id==='wide'){st.pw=Math.min(140,st.pw*1.5)}
+  if(p.id==='multi'){for(let k=0;k<2&&st.balls.length<5;k++)newBall(st.balls[0].x,st.balls[0].y,(Math.random()<.5?-1:1)*(1.6+Math.random()*2.4),-3)}
+  if(p.id==='slow'){st.balls.forEach(b=>{b.vx*=.7;b.vy*=.7})}
+  $('msg').textContent=p.label+' active.';hud();
+  setTimeout(()=>{st.active[i]=false;if(st.pw>76)st.pw=Math.max(76,st.pw/1.5);hud()},7000)}
+function draw(){
+  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,W,H);
+  st.bricks.forEach(b=>{
+    if(b.hp<=0)return;
+    const frac=b.hp/b.max;
+    cx.fillStyle=frac>0.99?'#fff':frac>0.6?'#FF5F1F':'rgba(255,95,31,.55)';
+    cx.fillRect(b.x,b.y,b.w,b.h)});
+  cx.fillStyle='#FF5F1F';cx.fillRect(st.px-st.pw/2,st.py,st.pw,8);
+  cx.fillStyle='rgba(255,255,255,.16)';cx.fillRect(st.px-st.pw/2,st.py,st.pw,2);
+  st.balls.forEach(b=>{cx.fillStyle='#fff';cx.beginPath();cx.arc(b.x,b.y,b.r,0,7);cx.fill()});
+  if(st.pup){
+    cx.fillStyle=st.pup.p.tone;cx.fillRect(st.pup.x-5,st.pup.y-5,10,10);
+    cx.fillStyle='rgba(0,0,0,.6)';cx.font='900 8px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText(st.pup.p.id[0].toUpperCase(),st.pup.x,st.pup.y+3)}
+  if(!st.running&&!st.over){
+    cx.fillStyle='rgba(10,10,10,.72)';cx.fillRect(0,0,W,H);
+    cx.fillStyle='#FF5F1F';cx.font='900 20px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('PRESS START',W/2,H/2)}
+  if(st.paused){
+    cx.fillStyle='rgba(10,10,10,.6)';cx.fillRect(0,0,W,H);
+    cx.fillStyle='#FF5F1F';cx.font='900 20px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('PAUSED',W/2,H/2)}
+  if(st.over){
+    cx.fillStyle='rgba(10,10,10,.78)';cx.fillRect(0,0,W,H);
+    cx.fillStyle='#FF5F1F';cx.font='900 20px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('GAME OVER',W/2,H/2-8);
+    cx.fillStyle='#fff';cx.font='700 13px Manrope,sans-serif';
+    cx.fillText(st.score+' points',W/2,H/2+16)}}
+function loop(t){
+  st.raf=requestAnimationFrame(loop);step(t);draw()}
+cv.addEventListener('pointermove',e=>{
+  const r=cv.getBoundingClientRect();
+  st.px=((e.clientX-r.left)/r.width)*W});
+cv.addEventListener('pointerdown',e=>{
+  const r=cv.getBoundingClientRect();
+  st.px=((e.clientX-r.left)/r.width)*W;
+  if(!st.running&&!st.over)start()});
+addEventListener('keydown',e=>{
+  st.keys[e.key.toLowerCase()]=true;
+  if(e.key===' '&&!st.running&&!st.over){start();e.preventDefault()}});
+addEventListener('keyup',e=>{st.keys[e.key.toLowerCase()]=false});
+$('start').onclick=start;
+$('reset').onclick=reset;
+$('pause').onclick=()=>{
+  if(!st.running){start();return}
+  st.paused=!st.paused;$('pause').textContent=st.paused?'Resume':'Pause';
+  $('msg').textContent=st.paused?'Paused.':'Go. Knock out every brick.'};
+reset();st.raf=requestAnimationFrame(loop);
+$('best').textContent='Best '+best();</script>
+</body>
+</html>
