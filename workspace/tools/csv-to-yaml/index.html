@@ -184,8 +184,11 @@ function run(){
   var err=$('err'), raw=$('src').value;
   err.textContent=''; err.style.color='';
   if(!raw.trim()){ $('out').textContent=''; show([]); return; }
-  var dsel=$('delim').value;
-  var d = dsel==='auto'? detectDelimiter(raw) : (dsel==='tab'?'\t':dsel);
+  var dsel=$('delim').value.trim();
+  // An EMPTY field means auto-detect too, not the empty string. Passing ''
+  // through made parseCsv split on every single character, collapsing each
+  // row to one key.
+  var d = (!dsel || dsel==='auto') ? detectDelimiter(raw) : (dsel==='tab' ? '\t' : dsel);
   var rows;
   try{ rows=parseCsv(raw,d); }
   catch(e){ err.textContent='\u2717 '+e.message; err.style.color='#f87171';
