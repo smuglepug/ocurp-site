@@ -97,32 +97,38 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/related.js" defer></script>
 <script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
 const $=id=>document.getElementById(id);
-const MM=72/25.4; // PDF user space is 1/72 inch, CSS wants 96dpi
+const PT_PER_IN=72; // PDF user space is 1/72 inch per unit, so this converts pt -> in
+const PT_PER_MM=72/25.4;
 async function run(){
   const f=$('f').files[0];
   if(!f)return;
   $('msg').textContent='Reading '+f.name+' ('+Math.round(f.size/1024)+' KB)...';
   $('msg').style.color='#fff';
   try{
-    const lib=await import('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.es.js');
+    // pdf-lib ships a UMD bundle at dist/pdf-lib.min.js, NOT an ES module -
+    // dist/pdf-lib.es.js is a 404 on jsDelivr, so import() of it always failed.
+    const lib=await import('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm');
     const doc=await lib.PDFDocument.load(await f.arrayBuffer(),{ignoreEncryption:true,updateMetadata:false});
     const pages=doc.getPages();
     const sizes=pages.map((p,i)=>{
       const s=p.getSize();
-      return (i+1)+'.  '+(s.width/MM).toFixed(2)+' x '+(s.height/MM).toFixed(2)+' in   ('+
-        Math.round(s.width)+' x '+Math.round(s.height)+' pt)';
+      return (i+1)+'.  '+(s.width/PT_PER_IN).toFixed(2)+' x '+(s.height/PT_PER_IN).toFixed(2)+' in   ('+
+        Math.round(s.width)+' x '+Math.round(s.height)+' pt, '+
+        (s.width/PT_PER_MM).toFixed(0)+' x '+(s.height/PT_PER_MM).toFixed(0)+' mm)';
     });
     const first=pages.length?pages[0].getSize():{width:0,height:0};
     const orient=(s)=>s.width===s.height?'Square':(s.width>s.height?'Landscape':'Portrait');
     const counts={};
     pages.forEach(p=>{const k=Math.round(p.getSize().width)+'x'+Math.round(p.getSize().height);counts[k]=(counts[k]||0)+1});
     const uniq=Object.keys(counts).length;
+    // The ESM build has no getVersion(); the version lives in the file header.
+    const vm=/%PDF-(\d\.\d)/.exec(await f.slice(0,8).text());
     $('stats').innerHTML=[
       ['Pages',pages.length],
       ['File size',(f.size/1024).toFixed(1)+' KB'],
       ['Encrypted',doc.isEncrypted?'Yes':'No'],
-      ['PDF version',doc.getVersion()||'\u2014'],
-      ['Page size',(first.width/MM).toFixed(2)+' x '+(first.height/MM).toFixed(2)+' in'],
+      ['PDF version',vm?vm[1]:'unknown'],
+      ['Page size',(first.width/PT_PER_IN).toFixed(2)+' x '+(first.height/PT_PER_IN).toFixed(2)+' in'],
       ['Orientation',pages.length?orient(first):'\u2014'],
       ['Distinct sizes',uniq],
       ['Bytes per page',pages.length?Math.round(f.size/pages.length):0],

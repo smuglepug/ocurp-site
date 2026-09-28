@@ -478,13 +478,16 @@ function draw(fn,a,b,val,ref){
   for(kk=0;kk<n;kk+=2){
     var x0=a+kk*h, x1=a+(kk+1)*h, x2=a+(kk+2)*h;
     var y0=fn(x0), y1=fn(x1), y2=fn(x2);
-    var L2=((x-x1)*(x-x2))/((x0-x1)*(x0-x2));
-    var L1=((x-x0)*(x-x2))/((x1-x0)*(x1-x2));
-    var L0=((x-x0)*(x-x1))/((x2-x0)*(x2-x1));
     ctx.beginPath();
     for(var s=0;s<=12;s++){
       var x=x0+(x1-x0)*s/12;
-      var y=y0*L2(x)+y1*L1(x)+y2*L0(x);
+      // Lagrange basis weights depend on x, so they must be evaluated HERE.
+      // Computing them in the outer loop used the hoisted (undefined) x and
+      // produced NaN, which is what threw "L2 is not a function".
+      var L2=((x-x1)*(x-x2))/((x0-x1)*(x0-x2));
+      var L1=((x-x0)*(x-x2))/((x1-x0)*(x1-x2));
+      var L0=((x-x0)*(x-x1))/((x2-x0)*(x2-x1));
+      var y=y0*L2+y1*L1+y2*L0;
       var qx=X(x), qy=Y(y);
       s?ctx.lineTo(qx,qy):ctx.moveTo(qx,qy);
     }
@@ -519,6 +522,18 @@ window.__int = { simpson:simpson, trap:trap, midp:midp, gauss:gauss, richardson:
 run();
 
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

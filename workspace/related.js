@@ -6,6 +6,11 @@
   document.addEventListener('error', function (e) {
     var t = e.target;
     if (!t || t.tagName !== 'IMG' || t.dataset.fallback) return;
+    // Only ever touch images this script created. A page that deliberately
+    // references a /workspace/logos/ path for its own purposes (the Open Graph
+    // preview card, for example) was having its element deleted here and
+    // replaced with a '?' tile, which broke that page's own JS.
+    if (!t.closest || !t.closest('#ws-more')) return;
     if (t.getAttribute('src').indexOf('/workspace/logos/') === -1) return;
     t.dataset.fallback = '1';
     var span = document.createElement('span');
