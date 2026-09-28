@@ -135,4 +135,10 @@ const RAW = [
   {slug:"timezone-converter",name:"Time Zone Converter",cat:"web",blurb:"Convert a date and time between any two time zones, including daylight saving.",tags:["TIME","ZONES","CLIENT-SIDE"],ready:true},
   {slug:"coin-flip",name:"Coin Flip",cat:"math",blurb:"Flip up to 500 coins at once and get the heads and tails tally.",tags:["RANDOM","FLIP","CLIENT-SIDE"],ready:true},
   {slug:"frequency-generator",name:"Frequency Generator",cat:"audio",blurb:"Play any frequency from 1 Hz to 22 kHz, pick a waveform, run a sweep and see the wave live.",tags:["AUDIO","TONE","HZ","CLIENT-SIDE"],ready:true},
+  {slug:"contrast-checker",name:"Contrast Checker",cat:"design",blurb:"Check any two colours against the WCAG contrast rules and see which levels pass.",tags:["WCAG","ACCESSIBILITY","COLOUR","CLIENT-SIDE"],ready:true},
+  {slug:"caesar-cipher",name:"Caesar Cipher",cat:"data",blurb:"Shift text through the alphabet, run ROT13 or brute-force every one of the 25 keys.",tags:["CIPHER","ROT13","TEXT","CLIENT-SIDE"],ready:true},
+  {slug:"dice-roller",name:"Dice Roller",cat:"math",blurb:"Roll up to 500 dice of any size, with a modifier and a full tally of the results.",tags:["RANDOM","DICE","RPG","CLIENT-SIDE"],ready:true},
+  {slug:"markdown-table-generator",name:"Markdown Table Generator",cat:"data",blurb:"Paste CSV, TSV or pipe data and get a clean Markdown table with alignment options.",tags:["MARKDOWN","TABLE","CSV","CLIENT-SIDE"],ready:true},
+  {slug:"vtt-to-srt",name:"VTT to SRT",cat:"data",blurb:"Convert WebVTT subtitles into SRT, with an optional timing shift and a .srt download.",tags:["SUBTITLES","VTT","SRT","CLIENT-SIDE"],ready:true},
+  {slug:"invoice-generator",name:"Invoice Generator",cat:"document",blurb:"Build a tax invoice with line items, discount and tax, then print or save it as PDF.",tags:["INVOICE","BILLING","TAX","CLIENT-SIDE"],ready:true},
 ];
