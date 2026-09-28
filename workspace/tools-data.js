@@ -210,4 +210,6 @@ const RAW = [
   {slug:"yaml-validator",name:"YAML Validator",cat:"data",blurb:"Check a YAML file for tabs, bad pairs and duplicate keys, and see the structure it parsed into.",tags:["YAML","VALIDATE","CONFIG","CLIENT-SIDE"],ready:true},
   {slug:"bingo-card-generator",name:"Bingo Card Generator",cat:"study",blurb:"Printable 5x5 bingo cards with a proper B-I-N-G-O number range and a matching call sheet.",tags:["BINGO","PRINT","GAME","CLIENT-SIDE"],ready:true},
   {slug:"viewport-tester",name:"Viewport Tester",cat:"web",blurb:"Preview any site in a phone, tablet or laptop frame and see the breakpoints it actually hits.",tags:["RESPONSIVE","DEVICES","WEB","CLIENT-SIDE"],ready:true},
+  {slug:"subnet-calculator",name:"Subnet Calculator",cat:"web",blurb:"Mask, wildcard, network and broadcast addresses, first and last usable host, and how many hosts a prefix really gives you.",tags:["NETWORK","CIDR","IP","CLIENT-SIDE"],ready:true},
+  {slug:"robots-txt-generator",name:"robots.txt Generator",cat:"web",blurb:"Write a correct robots.txt with your sitemap attached, and optionally block AI training crawlers by name.",tags:["SEO","ROBOTS","CRAWLERS","CLIENT-SIDE"],ready:true},
 ];
