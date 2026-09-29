@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financial Health Score — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Score your finances out of 100 from five weighted components - savings rate, debt to income, utilisation, housing burden and emergency fund - with every...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/financial-health-score/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Financial Health Score">
+<meta property="og:description" content="Score your finances out of 100 from five weighted components - savings rate, debt to income, utilisation, housing burden and emergency fund - with every...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/financial-health-score/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Financial Health Score on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Financial Health Score">
+<meta name="twitter:description" content="Score your finances out of 100 from five weighted components - savings rate, debt to income, utilisation, housing burden and emergency fund - with every...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Financial Health Score on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Financial Health Score","url":"https://ocurp.space/workspace/tools/financial-health-score/","description":"Score your finances out of 100 from five weighted components - savings rate, debt to income, utilisation, housing burden and emergency fund - with every...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Financial Health Score</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">FINANCE</span><span class="ws-chip">SCORE</span><span class="ws-chip">PLANNING</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div><label class="ws-label mb-2 block" for="inc">Monthly income</label>
+        <input id="inc" type="number" class="ws-input" value="4200" step="any"></div>
+      <div><label class="ws-label mb-2 block" for="exp">Monthly expenses</label>
+        <input id="exp" type="number" class="ws-input" value="2900" step="any"></div>
+      <div><label class="ws-label mb-2 block" for="sav">Savings balance</label>
+        <input id="sav" type="number" class="ws-input" value="8400" step="any"></div>
+      <div><label class="ws-label mb-2 block" for="debt">Total debt</label>
+        <input id="debt" type="number" class="ws-input" value="8400" step="any"></div>
+      <div><label class="ws-label mb-2 block" for="util">Credit utilisation %</label>
+        <input id="util" type="number" class="ws-input" value="35" step="any" min="0" max="100"></div>
+      <div><label class="ws-label mb-2 block" for="hous">Rent / housing %</label>
+        <input id="hous" type="number" class="ws-input" value="30" step="any" min="0" max="100"></div>
+    </div>
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <button id="ex1" class="ws-btn-ghost" onclick="preset(0)">Typical month</button>
+      <button id="ex2" class="ws-btn-ghost" onclick="preset(1)">Strong position</button>
+      <button id="ex3" class="ws-btn-ghost" onclick="preset(2)">Under pressure</button>
+    </div>
+    <div id="err" class="mt-3 font-mono text-[11px]" style="color:#FF5F1F"></div>
+  </section>
+
+  <section class="ws-panel mt-6 p-6">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <div class="ws-label mb-1">Financial health score</div>
+        <div id="score" class="font-display text-6xl font-black text-accent">0</div>
+      </div>
+      <div class="text-right">
+        <span id="band" class="ws-chip !border-accent/40 !text-accent">-</span>
+        <p id="verdict" class="mt-2 max-w-sm text-sm text-white/60"></p>
+      </div>
+    </div>
+    <div class="mt-5 h-2 w-full overflow-hidden rounded-full bg-white/[0.06]">
+      <div id="bar" class="h-full bg-accent" style="width:0%"></div>
+    </div>
+  </section>
+
+  <section class="ws-panel mt-6 p-6">
+    <div class="ws-label mb-4">Score breakdown &mdash; five weighted components</div>
+    <div id="parts"></div>
+  </section>
+
+  <section class="ws-panel mt-6 p-6">
+    <div class="ws-label mb-3">The derived numbers behind the score</div>
+    <div id="raw"></div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function clamp(x){ return Math.max(0, Math.min(1, x)); }
+function num(id){ var v = parseFloat($(id).value); return isFinite(v) ? v : NaN; }
+
+/* Each component is a 0..1 sub-score. Bands are linear ramps between a
+   "good" threshold and a "zero" threshold, so every number is reproducible:
+   good value scores 1, zero value scores 0, worse is clamped at 0. */
+var SPEC = [
+  {key:'savings',   name:'Savings rate',    weight:25, good:0.20, zero:0.00,
+   unit:'of income saved',  better:'higher is better'},
+  {key:'dti',       name:'Debt-to-income',  weight:25, good:0.05, zero:0.30,
+   unit:'of annual income', better:'lower is better'},
+  {key:'util',      name:'Utilisation',     weight:20, good:0,    zero:50,
+   unit:'% of credit used', better:'lower is better'},
+  {key:'housing',   name:'Housing burden',  weight:15, good:20,   zero:45,
+   unit:'% of income',      better:'lower is better'},
+  {key:'fund',      name:'Emergency fund',  weight:15, good:6,    zero:0,
+   unit:'months of expenses',better:'higher is better'}
+];
+
+/* score(v, spec): 1 at the good value, 0 at the zero value, clamped outside.
+   For a "lower is better" component the ramp runs from good down to zero;
+   for a "higher is better" component it runs from zero up to good. */
+function ramp(v, good, zero){
+  if(good === zero) return v >= good ? 1 : 0;
+  if(good > zero) return clamp((v - zero) / (good - zero));  // higher is better
+  return clamp((zero - v) / (zero - good));                  // lower is better
+}
+
+function band(score){
+  if(score >= 80) return 'Strong';
+  if(score >= 65) return 'Solid';
+  if(score >= 50) return 'Steady';
+  if(score >= 35) return 'Stretched';
+  return 'Fragile';
+}
+
+var VERDICTS = {
+  Strong:   'You have real headroom: money is left over each month, the debt load is small against income, and a shock would not rattle you.',
+  Solid:    'The basics are covered with room to spare. Tightening utilisation or the housing share would move this into the top band.',
+  Steady:   'It works, but there is no cushion. A month of lost income would show up immediately in the numbers.',
+  Stretched:'Spending or debt is crowding out saving. One fix at a time - the emergency fund is usually the cheapest first win.',
+  Fragile:  'Expenses are at or above income and there is no buffer. The priority is cutting fixed costs before anything else.'
+};
+
+function compute(){
+  var inc = num('inc'), exp = num('exp'), sav = num('sav'),
+      debt = num('debt'), util = num('util'), hous = num('hous');
+  if([inc,exp,sav,debt,util,hous].some(function(v){ return isNaN(v); })){
+    $('err').textContent = 'every box needs a number';
+    return null;
+  }
+  if(inc <= 0){
+    $('err').textContent = 'monthly income must be above zero';
+    return null;
+  }
+  $('err').textContent = '';
+
+  var rate    = (inc - exp) / inc;     // share of income not spent
+  var dti     = debt / (inc * 12);     // monthly debt service, approximated as balance / annual income
+  var months  = exp > 0 ? sav / exp : 0; // emergency fund runway in months
+
+  var vals = {savings:rate, dti:dti, util:util, housing:hous, fund:months};
+
+  var parts = SPEC.map(function(s){
+    var sub = ramp(vals[s.key], s.good, s.zero);
+    return {key:s.key, name:s.name, weight:s.weight, sub:sub,
+            contrib:s.weight * sub, raw:vals[s.key],
+            good:s.good, zero:s.zero, unit:s.unit, better:s.better};
+  });
+
+  var total = parts.reduce(function(a,p){ return a + p.contrib; }, 0);
+  var score = Math.round(total * 10) / 10;
+  var b = band(total);
+  return {score:score, band:b, parts:parts, total:total,
+          rate:rate, dti:dti, months:months, inc:inc, exp:exp,
+          sav:sav, debt:debt, util:util, hous:hous};
+}
+
+function render(){
+  var r = compute();
+  if(!r) return null;
+  $('score').textContent = r.score.toFixed(1);
+  $('bar').style.width = Math.max(0, Math.min(100, r.total)) + '%';
+  $('band').textContent = r.band;
+  $('verdict').textContent = VERDICTS[r.band];
+
+  var html = '';
+  r.parts.forEach(function(p){
+    var pct = Math.round(p.sub * 100);
+    html += '<div class="mb-5 last:mb-0">'
+      + '<div class="mb-1 flex items-baseline justify-between gap-3">'
+      + '<span class="text-sm font-bold text-white">'+p.name
+      + ' <span class="text-white/30">×'+p.weight+'</span></span>'
+      + '<span class="font-mono text-[11px] text-white/50">'+p.contrib.toFixed(2)
+      + ' / '+p.weight+'</span></div>'
+      + '<div class="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">'
+      + '<div class="h-full" style="width:'+pct+'%;background:#FF5F1F"></div></div>'
+      + '<div class="mt-1 font-mono text-[10px] text-white/35">'
+      + p.raw.toFixed(4)+' '+p.unit+' &middot; '+p.better
+      + ' &middot; sub-score '+pct+'%</div></div>';
+  });
+  $('parts').innerHTML = html;
+
+  var rows = [
+    ['Savings rate', (r.rate*100).toFixed(2)+'%'],
+    ['Annual income', r.inc.toFixed(2)],
+    ['Monthly surplus', (r.inc - r.exp).toFixed(2)],
+    ['Debt-to-income', (r.dti*100).toFixed(2)+'%'],
+    ['Emergency fund', r.months.toFixed(4)+' months'],
+    ['Exact total', r.total.toFixed(6)],
+    ['Rounded score', r.score.toFixed(1)+' / 100']
+  ];
+  $('raw').innerHTML = rows.map(function(p){
+    return '<div class="ws-kv"><span>'+p[0]+'</span><span>'+p[1]+'</span></div>';
+  }).join('');
+
+  var out = {score:r.score, band:r.band, total:r.total,
+             parts:r.parts.map(function(p){ return {name:p.name, weight:p.weight,
+               sub:p.sub, contrib:p.contrib}; }),
+             rate:r.rate, dti:r.dti, months:r.months};
+  window.__financial_health_score_state = out;
+  return out;
+}
+
+function preset(i){
+  var P = [[4200,2900,8400,8400,35,30],[6000,3600,15000,6000,12,22],[3000,3300,1200,9000,78,45]];
+  var p = P[i];
+  ['inc','exp','sav','debt','util','hous'].forEach(function(k, j){ $(k).value = p[j]; });
+  render();
+}
+
+['inc','exp','sav','debt','util','hous'].forEach(function(id){
+  $(id).addEventListener('input', render);
+});
+render();
+
+window.__financial_health_score = {
+  ramp: ramp,
+  band: band,
+  compute: compute,
+  render: render,
+  set: function(o){
+    var map = {income:'inc', expenses:'exp', savings:'sav', debt:'debt',
+               utilisation:'util', housing:'hous'};
+    Object.keys(map).forEach(function(k){
+      if(o[k] !== undefined && o[k] !== null) $(map[k]).value = String(o[k]);
+    });
+    return render();
+  },
+  get: function(){ return window.__financial_health_score_state; }
+};
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/loan-calc/">
+      <span class="ocurp-related-n">Loan &amp; Interest Simulator</span>
+      <span class="ocurp-related-b">Compound interest and repayment schedules, charted.</span>
+    </a></li>
+    <li><a href="/workspace/tools/retirement-calculator/">
+      <span class="ocurp-related-n">Retirement Calculator</span>
+      <span class="ocurp-related-b">Project a pot to a retirement age, with contributions and growth per year.</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

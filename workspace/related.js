@@ -20,9 +20,24 @@
     t.replaceWith(span);
   }, true);
   var isGames = location.pathname.indexOf('/workspace/games/') !== -1;
-  var s = document.createElement('script');
-  s.src = isGames ? '/workspace/games-data.js' : '/workspace/tools-data.js';
-  s.onload = function () {
+  var url = isGames ? '/workspace/games-data.js' : '/workspace/tools-data.js';
+  // The data files declare top-level consts (CATS, RAW). Injecting them as a
+  // real <script> puts them in the page's global scope, where a page that
+  // happens to use the same name dies with "Identifier has already been
+  // declared" and the strip below never renders. Fetch the text and evaluate
+  // it in a function scope instead: same data, zero globals.
+  fetch(url).then(function (r) {
+    return r.ok ? r.text() : '';
+  }).then(function (src) {
+    if (!src) return;
+    // A bare function body: the consts stay local to it, so nothing leaks
+    // into the page. (Do NOT name the parameters CATS/RAW - that collides
+    // with the const declarations in the file and throws.)
+    var data;
+    try {
+      data = new Function(src + '\n;return {RAW:RAW,CATS:CATS};')();
+    } catch (e) { return; }
+    var RAW = data.RAW, CATS = data.CATS;
     if (typeof RAW === 'undefined') return;
     var cur = location.pathname.replace(/\/+$/, '').split('/').pop();
     var me = RAW.filter(function (e) { return e.slug === cur; })[0];
@@ -38,6 +53,5 @@
           + '<span class="min-w-0"><span class="block truncate font-display text-sm font-bold text-white transition-colors group-hover:text-accent">' + e.name + '</span>'
           + '<span class="block truncate text-[10px] font-black uppercase tracking-[0.2em] text-white/30">' + cat + '</span></span></a>';
       }).join('') + '</div>';
-  };
-  document.body.appendChild(s);
+  });
 })();

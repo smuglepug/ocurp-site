@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boggle | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Boggle</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">WORDS</span></div>
+        </div>
+      
+<style>
+.bgb{display:grid;grid-template-columns:repeat(4,52px);grid-auto-rows:52px;gap:4px}
+.bgc{border:1px solid #262626;background:#0e0e0e;border-radius:5px;font-size:20px;
+  font-weight:800;color:rgba(255,255,255,.8);transition:background .1s ease}
+.bgc:hover{background:#1c1c1c}
+.bgc.on{background:#FF5F1F;border-color:#FF5F1f;color:#050505}
+.bgc.used{background:#2a0d02;border-color:#7a3a1c;color:#FF9B6B}
+</style>
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button class="bd ws-btn" data-i="0">Board 1</button>
+      <button class="bd ws-btn-ghost" data-i="1">Board 2</button>
+      <button class="bd ws-btn-ghost" data-i="2">Board 3</button>
+      <button id="start" class="ws-btn">Start 3:00 round</button>
+      <button id="clear" class="ws-btn-ghost">Clear path</button>
+      <span class="ws-chip">FIND 10 WORDS</span>
+    </div>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)]">
+      <div>
+        <div id="board" class="bgb"></div>
+        <p class="mt-3 text-[11px] text-white/40">Click cells in order. Neighbours
+          include the diagonals. Click the last cell again to step back.</p>
+      </div>
+      <div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Time</div>
+            <div class="font-display text-xl font-black text-accent" id="clock">3:00</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Found</div>
+            <div class="font-display text-xl font-black text-white" id="found">0/10</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Available here</div>
+            <div class="font-display text-xl font-black text-white" id="avail">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Status</div>
+            <div class="font-display text-sm font-black text-white" id="status">Ready</div></div>
+        </div>
+        <div class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3">
+          <div class="ws-label mb-1">Current path</div>
+          <div class="font-display text-lg font-black tracking-widest text-accent" id="path">&mdash;</div>
+        </div>
+        <div id="log" class="mt-3 flex flex-wrap gap-1.5"></div>
+      </div>
+    </div>
+  </section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const BG={N:4,TARGET:10,LIMIT:180,MIN:3,
+  BOARDS:[["TPUO","IOFW","CEQA","UTPF"],["EPCI","TLMD","WOWE","CAFG"],["ISBG","BTJI","JANW","SMAR"]],DICT:["ACE", "ACT", "ADD", "AGE", "AIR", "ALE", "ANT", "APE", "ARC", "ARE", "ARK", "ARM", "ART", "ASH", "ATE", "AWE", "AXE", "BAD", "BAG", "BAN", "BAR", "BAT", "BED", "BEE", "BET", "BIB", "BIG", "BIN", "BIT", "BOA", "BOG", "BOW", "BOX", "BOY", "BUD", "BUG", "BUN", "BUS", "BUT", "BUY", "CAB", "CAD", "CAM", "CAN", "CAP", "CAR", "CAT", "COD", "COG", "CON", "COO", "COP", "COT", "COW", "COY", "CUB", "CUD", "CUE", "CUP", "CUT", "DAB", "DAD", "DAM", "DAY", "DEN", "DEW", "DID", "DIE", "DIG", "DIM", "DIP", "DOE", "DOG", "DON", "DOT", "DRY", "DUB", "DUD", "DUE", "DUG", "DUO", "DYE", "EAR", "EAT", "EBB", "EEL", "EGG", "EGO", "ELF", "ELK", "ELM", "END", "ERA", "ERR", "EVE", "EWE", "EYE", "FAD", "FAN", "FAR", "FAT", "FED", "FEE", "FEN", "FEW", "FIG", "FIN", "FIR", "FIT", "FIX", "FLU", "FLY", "FOE", "FOG", "FOR", "FOX", "FRY", "FUN", "FUR", "GAP", "GEL", "GEM", "GET", "GIG", "GIN", "GNU", "GOT", "GUM", "GUN", "GUT", "GUY", "GYM", "HAM", "HAS", "HAT", "HAY", "HEM", "HEN", "HER", "HEW", "HEY", "HID", "HIM", "HIP", "HIS", "HIT", "HOB", "HOE", "HOP", "HOT", "HOW", "HUB", "HUE", "HUG", "HUM", "HUT", "ICE", "ICK", "ILL", "IMP", "INK", "INN", "ION", "IRE", "IRK", "IVY", "JAB", "JAM", "JAR", "JAW", "JET", "JIG", "JOB", "JOG", "JOT", "JOY", "JUG", "JUT", "KEG", "KEN", "KEY", "KID", "KIN", "KIT", "LAB", "LAC", "LAD", "LAG", "LAP", "LAW", "LAY", "LEA", "LED", "LEG", "LET", "LID", "LIE", "LIP", "LIT", "LOB", "LOG", "LOT", "LOW", "MAD", "MAN", "MAP", "MAR", "MAT", "MAW", "MAY", "MEN", "MET", "MID", "MIX", "MOB", "MOD", "MOM", "MOP", "MOW", "MUD", "MUG", "MUM", "NAB", "NAG", "NAP", "NET", "NEW", "NIB", "NIL", "NIP", "NIT", "NOD", "NOR", "NOT", "NOW", "NUB", "NUN", "NUT", "OAF", "OAK", "OAR", "OAT", "ODD", "ODE", "OFF", "OFT", "OIL", "OLD", "ONE", "OPT", "ORB", "ORE", "OUR", "OUT", "OWE", "OWL", "OWN", "PAD", "PAL", "PAN", "PAR", "PAT", "PAW", "PAY", "PEA", "PEG", "PEN", "PEP", "PER", "PET", "PEW", "PIE", "PIG", "PIN", "PIP", "PIT", "PLY", "POD", "POP", "POT", "PRO", "PRY", "PUB", "PUG", "PUN", "PUP", "PUT", "RAG", "RAM", "RAN", "RAP", "RAT", "RAW", "RAY", "RED", "RIB", "RID", "RIG", "RIM", "RIP", "ROB", "ROD", "ROE", "ROT", "ROW", "RUB", "RUG", "RUM", "RUN", "RUT", "RYE", "SAD", "SAG", "SAP", "SAT", "SAW", "SAY", "SEA", "SEE", "SET", "SEW", "SHE", "SHY", "SIN", "SIP", "SIR", "SIT", "SIX", "SKI", "SKY", "SLY", "SOB", "SOD", "SON", "SOW", "SOY", "SPA", "SPY", "STY", "SUB", "SUE", "SUM", "SUN", "TAB", "TAG", "TAN", "TAP", "TAR", "TAX", "TEA", "TEE", "TEN", "THE", "THY", "TIC", "TIE", "TIN", "TIP", "TOE", "TON", "TOP", "TOW", "TOY", "TRY", "TUB", "TUG", "TWO", "URN", "USE", "VAN", "VAT", "VET", "VOW", "WAD", "WAG", "WAR", "WAS", "WAX", "WAY", "WEB", "WED", "WEE", "WET", "WHO", "WHY", "WIG", "WIN", "WIT", "WOE", "WOK", "WON", "WOO", "WOW", "YAK", "YAM", "YAP", "YAW", "YEA", "YES", "YET", "YEW", "ZIP", "ZOO"]};
+// WIN: TARGET words accepted.  FAIL: the 180s clock reaches 0 first.
+// A path is legal while every consecutive pair of cells is one of the 8
+// neighbours and no cell repeats. Submitting a legal path whose letters are in
+// DICT and not already found scores it and clears the path.
+const LEX=new Set(BG.DICT);
+const N8=[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
+let bg={b:0,found:[],status:'ready',left:BG.LIMIT,score:0,path:[],timer:null};
+const $=id=>document.getElementById(id);
+const letters=()=>BG.BOARDS[bg.b].join('');
+
+function bgAdj(a,b){
+  const ar=Math.floor(a/BG.N),ac=a%BG.N,br=Math.floor(b/BG.N),bc=b%BG.N;
+  return N8.some(d=>ar+d[0]===br&&ac+d[1]===bc)}
+function bgLegal(path){
+  for(let i=1;i<path.length;i++)if(!bgAdj(path[i-1],path[i]))return false;
+  return new Set(path).size===path.length}
+function bgStop(){if(bg.timer){clearInterval(bg.timer);bg.timer=null}}
+function bgStart(){
+  bgStop();
+  bg={b:bg.b,found:[],status:'playing',left:BG.LIMIT,score:0,path:[],timer:null};
+  bg.timer=setInterval(()=>{bg.left--;
+    if(bg.left<=0){bg.left=0;bg.status='lost';bgStop()}
+    render()},1000);
+  render()}
+function submit(){
+  const s=bg.path.map(i=>letters()[i]).join('');
+  if(s.length<BG.MIN||!bgLegal(bg.path)||!LEX.has(s)||bg.found.includes(s))return null;
+  bg.found.push(s);
+  bg.score+=100+4*bg.left;
+  bg.path=[];
+  if(bg.found.length>=BG.TARGET){bg.status='won';bgStop()}
+  return s}
+// Every word still reachable on THIS board from any start cell - the honest
+// "how much is left" number, computed with the same adjacency rule.
+function reachable(){
+  const L=letters(),out=new Set();
+  for(let i=0;i<L.length;i++){(function walk(i,used,s){
+    if(s.length>=BG.MIN&&LEX.has(s))out.add(s);
+    for(const d of N8){
+      const r=Math.floor(i/BG.N)+d[0],c=i%BG.N+d[1];
+      if(r<0||c<0||r>=BG.N||c>=BG.N)continue;
+      const j=r*BG.N+c;
+      if(used&(1<<j))continue;
+      walk(j,used|(1<<j),s+L[j])}
+  })(i,1<<i,L[i])}
+  return out.size}
+function render(){
+  const L=letters();
+  $('board').innerHTML=Array.from(L).map((ch,i)=>
+    '<button class="bgc" data-i="'+i+'">'+ch+'</button>').join('');
+  const on=new Set(bg.path);
+  $('board').querySelectorAll('.bgc').forEach(el=>{
+    const i=+el.dataset.i;
+    el.className='bgc'+(i===bg.path[bg.path.length-1]?' on':(on.has(i)?' used':''));
+    el.onclick=()=>{
+      if(bg.status!=='playing')return;
+      if(bg.path.length&&i===bg.path[bg.path.length-1]){bg.path.pop();render();return}
+      if(on.has(i))return;
+      if(!bg.path.length||bgAdj(bg.path[bg.path.length-1],i))bg.path.push(i);
+      submit();render()}});
+  $('path').textContent=bg.path.length?bg.path.map(i=>L[i]).join(''):'—';
+  const m=Math.floor(Math.max(0,bg.left)/60),s=Math.max(0,bg.left)%60;
+  $('clock').textContent=m+':'+(s<10?'0':'')+s;
+  $('found').textContent=bg.found.length+'/'+BG.TARGET;
+  $('avail').textContent=reachable()-bg.found.length;
+  $('log').innerHTML=bg.found.map(w=>'<span class="ws-chip">'+w+'</span>').join('');
+  $('status').textContent=bg.status==='won'?'CLEARED'
+    :(bg.status==='lost'?'TIME UP':(bg.status==='playing'?'Playing':'Ready'));
+  document.querySelectorAll('.bd').forEach(el=>{
+    el.className=(+el.dataset.i===bg.b?'ws-btn bd':'ws-btn-ghost bd')})}
+$('start').onclick=()=>bgStart();
+$('clear').onclick=()=>{bg.path=[];render()};
+document.querySelectorAll('.bd').forEach(el=>el.onclick=()=>{
+  bgStop();bg.b=+el.dataset.i;
+  bg={b:bg.b,found:[],status:'ready',left:BG.LIMIT,score:0,path:[],timer:null};render()});
+render();
+window.__boggle={BG,bg,get G(){return{b:bg.b,status:bg.status,left:bg.left,
+      score:bg.score,found:bg.found.slice(),target:BG.TARGET,
+      boards:BG.BOARDS.map(b=>b.join('')),reachable:reachable()}},
+  start:bgStart,submit,reachable,adj:bgAdj,legal:bgLegal,
+  path:(p)=>{bg.path=p.slice();return submit()}};</script>
+</body>
+</html>

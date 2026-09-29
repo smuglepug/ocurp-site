@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nonogram | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Nonogram</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">LOGIC</span></div>
+        </div>
+      
+<style>
+.nb{display:grid;grid-template-columns:auto repeat(10,30px);
+  grid-auto-rows:30px;gap:2px}
+.ncorner{grid-row:1}
+.ncol{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:1px;
+  padding-bottom:2px}
+.nrow{display:flex;flex-direction:row;align-items:center;justify-content:flex-end;gap:3px;
+  padding-right:3px}
+.clue{font-size:10px;font-weight:800;line-height:1.6;color:rgba(255,255,255,.55);
+  font-variant-numeric:tabular-nums}
+.ncell{border:1px solid #262626;background:#0e0e0e;border-radius:3px;font-size:11px;
+  line-height:1;color:#FF5F1F;transition:background .1s ease}
+.ncell:hover{background:#1c1c1c}
+.ncell.sel{outline:2px solid #FF5F1F;outline-offset:-2px}
+</style>
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button class="pz ws-btn" data-i="0">Ember</button>
+      <button class="pz ws-btn-ghost" data-i="1">Lantern</button>
+      <button class="pz ws-btn-ghost" data-i="2">Compass</button>
+      <button id="reset" class="ws-btn-ghost">Reset grid</button>
+      <button id="solve" class="ws-btn-ghost">Reveal picture</button>
+      <span class="ws-chip">5 WRONG CELLS AND THE GRID LOCKS</span>
+    </div>
+
+    <div class="mt-6 flex justify-center overflow-x-auto pb-2">
+      <div id="wrap" class="relative select-none"></div>
+    </div>
+
+    <p class="mt-3 text-[11px] text-white/40">Click a cell to cycle
+      <span class="text-accent">empty &rarr; filled &rarr; X</span>. Right-click steps
+      backwards. Arrow keys move, <span class="text-accent">F</span> fills,
+      <span class="text-accent">X</span> crosses, <span class="text-accent">Space</span> clears.</p>
+
+    <div class="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+        <div class="ws-label mb-1">Wrong cells</div>
+        <div class="font-display text-xl font-black text-accent" id="bad">0/5</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+        <div class="ws-label mb-1">Filled</div>
+        <div class="font-display text-xl font-black text-white" id="fill">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+        <div class="ws-label mb-1">Correct</div>
+        <div class="font-display text-xl font-black text-white" id="ok">0/100</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+        <div class="ws-label mb-1">Status</div>
+        <div class="font-display text-sm font-black text-white" id="status">Playing</div></div>
+    </div>
+  </section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const NG={N:10,LIMIT:5,
+  PICS:["0110000110111111111111111111110111111110001111110000011110000000110000000001100000000011000000000110","0000110000000111100000111111000111111110111111111101111111100011111100000111100000001100000000011000","0000110000000111100011111111110110110110000111100000011110000011111100011000011011000000110000110000"],NAMES:["Ember", "Lantern", "Compass"]};
+// Cell states: 0 empty, 1 filled, 2 crossed.
+// A mark is WRONG when it disagrees with the picture: filled over a 0, or an X
+// over a 1. The grid locks once LIMIT cells are wrong at the same moment.
+let ng={pic:0,cells:[],sel:-1,status:'playing'};
+const $=id=>document.getElementById(id);
+const sol=(r,c)=>NG.PICS[ng.pic][r][c]==='1';
+
+function ngReset(){
+  ng.cells=new Array(NG.N*NG.N).fill(0);
+  ng.sel=-1;ng.status='playing';
+  render()}
+function paint(r,c){
+  const k=r*NG.N+c,s=ng.cells[k];
+  return s===1?'background:#FF5F1F;border-color:#FF5F1F'
+    :(s===2?'background:#3a0d02;border-color:#7a3a1c;color:#FF9B6B'
+      :'background:#0e0e0e;border-color:#262626;color:transparent')}
+function renderClues(){
+  const rows=[],cols=[];
+  for(let r=0;r<NG.N;r++)rows.push(_clueHtml(NG.PICS[ng.pic][r]));
+  for(let c=0;c<NG.N;c++)cols.push(_clueHtml(NG.PICS[ng.pic].map(r=>r[c]).join('')));
+  return {rows:rows,cols:cols};
+}
+function _clueHtml(str){
+  const cl=_clues(str);
+  return cl.map(n=>'<div class="clue">'+(n===0?'0':n)+'</div>').join('');}
+function render(){
+  const rc=renderClues(),tall=Math.max.apply(null,rc.rows.map(r=>r.length));
+  let h='<div class="nb">';
+  h+='<div class="ncorner"></div>';
+  for(let c=0;c<NG.N;c++){
+    h+='<div class="ncol" style="height:'+(tall*18+8)+'px">'+rc.cols[c]+'</div>'}
+  for(let r=0;r<NG.N;r++){
+    h+='<div class="nrow" style="width:'+(tall*20+10)+'px">'+rc.rows[r]+'</div>';
+    for(let c=0;c<NG.N;c++){
+      const k=r*NG.N+c;
+      h+='<button class="ncell'+(k===ng.sel?' sel':'')+'" data-k="'+k+'" style="'+
+        paint(r,c)+'">'+((ng.cells[k]===2)?'&#10007;':'')+'</button>'}
+    h+='</div>'}
+  h+='</div>';
+  $('wrap').innerHTML=h;
+  $('wrap').querySelectorAll('.ncell').forEach(b=>{
+    const k=+b.dataset.k;
+    b.onmousedown=e=>{e.preventDefault();ng.sel=k;
+      if(e.button===2)ng.cells[k]=(ng.cells[k]+2)%3;else ng.cells[k]=(ng.cells[k]+1)%3;
+      render()}});
+  const bad=ng.cells.filter((s,k)=>ng.status==='playing'&&
+    (s===1)!==sol(Math.floor(k/NG.N),k%NG.N)).length;
+  const right=ng.cells.filter((s,k)=>s!==0&&((s===1)===sol(Math.floor(k/NG.N),k%NG.N))).length;
+  const filled=ng.cells.filter(s=>s===1).length;
+  if(ng.status==='playing'&&bad>=NG.LIMIT)ng.status='lost';
+  if(ng.status==='playing'&&ng.cells.every((s,k)=>s!==0&&((s===1)===sol(Math.floor(k/NG.N),k%NG.N))))
+    ng.status='won';
+  $('bad').textContent=bad+'/'+NG.LIMIT;
+  $('fill').textContent=filled;
+  $('ok').textContent=right+'/'+(NG.N*NG.N);
+  $('status').textContent=ng.status==='won'?'SOLVED':(ng.status==='lost'?'LOCKED OUT':'Playing');
+  document.querySelectorAll('.pz').forEach(el=>{
+    el.className=(+el.dataset.i===ng.pic?'ws-btn pz':'ws-btn-ghost pz')})}
+function _clues(s){const o=[];let r=0;
+  for(const ch of s){if(ch==='1')r++;else if(r){o.push(r);r=0}}
+  if(r)o.push(r);return o.length?o:[0]}
+document.querySelectorAll('.pz').forEach(el=>el.onclick=()=>{
+  ng.pic=+el.dataset.i;ngReset()});
+$('reset').onclick=()=>ngReset();
+$('solve').onclick=()=>{ng.cells=ng.cells.map((s,k)=>sol(Math.floor(k/NG.N),k%NG.N)?1:2);render()};
+addEventListener('keydown',e=>{
+  const d={ArrowLeft:-1,ArrowRight:1,ArrowUp:-NG.N,ArrowDown:NG.N};
+  if(e.key in d){if(ng.sel>=0)ng.sel=(ng.sel+d[e.key]+NG.N*NG.N)%(NG.N*NG.N);render();e.preventDefault();return}
+  if(ng.sel<0)return;
+  if(e.key==='f'||e.key==='F')ng.cells[ng.sel]=1;
+  else if(e.key==='x'||e.key==='X')ng.cells[ng.sel]=2;
+  else if(e.key===' '){ng.cells[ng.sel]=0}
+  else return;
+  render();e.preventDefault()});
+addEventListener('contextmenu',e=>{if(e.target.classList&&e.target.classList.contains('ncell'))e.preventDefault()});
+ngReset();
+window.__nonogram={NG,ng,get G(){return{pic:ng.pic,status:ng.status,cells:ng.cells.slice(),
+      bad:ng.cells.filter((s,k)=>(s===1)!==sol(Math.floor(k/NG.N),k%NG.N)).length,
+      wrong:(s,k)=>(s===1)!==sol(Math.floor(k/NG.N),k%NG.N),
+      sol:(r,c)=>sol(r,c)}},reset:ngReset,
+  click:(k)=>{ng.sel=k;ng.cells[k]=(ng.cells[k]+1)%3;render()},
+  set:(k,v)=>{ng.cells[k]=v;render()},clues:_clues};</script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Search | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Word Search</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">WORDS</span></div>
+        </div>
+      
+<style>
+.wsb{display:grid;grid-template-columns:repeat(10,34px);grid-auto-rows:34px;gap:3px}
+.wsc{border:1px solid #262626;background:#0e0e0e;border-radius:3px;font-size:13px;
+  font-weight:800;color:rgba(255,255,255,.78);transition:background .1s ease}
+.wsc:hover{background:#1c1c1c}
+.wsc.on{background:#FF5F1F;border-color:#FF5F1f;color:#050505}
+.wsc.hit{background:#2a0d02;border-color:#7a3a1c;color:#FF9B6B}
+.wl{display:flex;flex-wrap:wrap;gap:1.5rem}
+.wlc{font-size:.8rem;font-weight:800;letter-spacing:.16em;color:rgba(255,255,255,.55)}
+.wlc.found{color:#FF5F1F;text-decoration:line-through}
+</style>
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="start" class="ws-btn">Start 3:00 round</button>
+      <button id="pause" class="ws-btn-ghost">Pause</button>
+      <button id="new" class="ws-btn-ghost">New board</button>
+      <span class="ws-chip">FIND ALL 10 BEFORE THE CLOCK</span>
+    </div>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)]">
+      <div><div id="board" class="wsb"></div></div>
+      <div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Time</div>
+            <div class="font-display text-xl font-black text-accent" id="clock">3:00</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Found</div>
+            <div class="font-display text-xl font-black text-white" id="found">0/10</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Score</div>
+            <div class="font-display text-xl font-black text-white" id="score">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Status</div>
+            <div class="font-display text-sm font-black text-white" id="status">Ready</div></div>
+        </div>
+        <div id="list" class="wl mt-5"></div>
+        <p class="mt-4 text-[11px] text-white/40">Press a letter and drag in a straight
+          line &mdash; forwards or backwards, any of the eight directions.</p>
+      </div>
+    </div>
+  </section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const WS={W:10,H:10,LIMIT:180,WORDS:["LANTERN", "EMBER", "COMPASS", "RIVER", "STONE", "HARVEST", "DRIFT", "MEADOW", "SIGNAL", "COPPER"],
+  BOARD:["SITFIRDTTM","IJTPEUKSRX","GSPNDBESEU","NSSKRVYHVO","AAPWREFTII","LPOAFETRRP","TMHUYYBNIG","OOENOTSMAT","MCCOPPEREL","SQMEADOWFN"]};
+// WIN: every listed word is selected on the board.  FAIL: the 180s clock hits
+// 0 with words unfound. Each word scores 100 + 4 x (seconds left) and the
+// round is over the moment the last word lands.
+let ws={found:[],status:'ready',left:WS.LIMIT,score:0,anchor:-1,drag:-1,timer:null};
+const $=id=>document.getElementById(id);
+const cell=i=>({x:i%WS.W,y:Math.floor(i/WS.W)});
+
+function wsStop(){if(ws.timer){clearInterval(ws.timer);ws.timer=null}}
+function wsStart(){
+  wsStop();
+  ws={found:[],status:'playing',left:WS.LIMIT,score:0,anchor:-1,drag:-1,timer:null};
+  ws.timer=setInterval(()=>{ws.left--;
+    if(ws.left<=0){ws.left=0;ws.status='lost';wsStop()}
+    render()},1000);
+  render()}
+function select(a,b){
+  // A drag is only a word if it is a straight line in one of the 8 directions
+  // and every step is adjacent. Returns the letter string, or null.
+  if(a<0||b<0||a===b)return null;
+  const A=cell(a),B=cell(b);
+  const dx=Math.sign(B.x-A.x),dy=Math.sign(B.y-A.y);
+  if(dx===0&&dy===0)return null;
+  if(dx!==0&&dy!==0&&Math.abs(B.x-A.x)!==Math.abs(B.y-A.y))return null;
+  if(Math.abs(B.x-A.x)>=WS.W||Math.abs(B.y-A.y)>=WS.H)return null;
+  const n=Math.max(Math.abs(B.x-A.x),Math.abs(B.y-A.y))+1;
+  let s='';
+  for(let i=0;i<n;i++){
+    const x=A.x+dx*i,y=A.y+dy*i;
+    if(x<0||y<0||x>=WS.W||y>=WS.H)return null;
+    s+=WS.BOARD[y][x]}
+  return s}
+function trySelect(a,b){
+  const s=select(a,b);
+  if(!s)return null;
+  const w=s.length>=4?s:s.split('').reverse().join('');
+  if(w.length<4)return null;
+  const hit=WS.WORDS.find(x=>!ws.found.includes(x)&&
+    (x===s||x===w||x.split('').reverse().join('')===s));
+  if(!hit)return null;
+  ws.found.push(hit);
+  ws.score+=100+4*ws.left;
+  if(ws.found.length>=WS.WORDS.length){ws.status='won';wsStop()}
+  return hit}
+
+function render(){
+  let h='';
+  for(let i=0;i<WS.W*WS.H;i++)h+='<button class="wsc" data-i="'+i+'">'+
+    WS.BOARD[Math.floor(i/WS.W)][i%WS.W]+'</button>';
+  $('board').innerHTML=h;
+  const selSet=new Set();
+  if(ws.anchor>=0&&ws.drag>=0){
+    const s=select(ws.anchor,ws.drag);
+    if(s){const A=cell(ws.anchor),B=cell(ws.drag);
+      const dx=Math.sign(B.x-A.x),dy=Math.sign(B.y-A.y);
+      const n=Math.max(Math.abs(B.x-A.x),Math.abs(B.y-A.y))+1;
+      for(let i=0;i<n;i++)selSet.add((A.y+dy*i)*WS.W+(A.x+dx*i))}}
+  const foundCells=[];
+  for(const w of ws.found){
+    // mark the whole word on the grid by re-searching the shipped board
+    for(let i=0;i<WS.W*WS.H;i++){
+      if(!foundCells.includes(i)&&selectLineIs(w,i))foundCells.push(i)}}
+  const cells=$('board').querySelectorAll('.wsc');
+  for(const el of cells){
+    const i=+el.dataset.i;
+    el.className='wsc'+(selSet.has(i)?' on':'')+(foundCells.includes(i)?' hit':'');
+    el.onpointerdown=e=>{e.preventDefault();if(ws.status!=='playing')return;
+      ws.anchor=i;ws.drag=i;render()};
+    el.onpointerenter=()=>{if(ws.anchor<0||ws.status!=='playing')return;
+      ws.drag=i;trySelect(ws.anchor,ws.drag);render()};
+    el.onpointerup=()=>{if(ws.anchor<0)return;trySelect(ws.anchor,ws.drag);
+      ws.anchor=-1;ws.drag=-1;render()}}
+  $('list').innerHTML=WS.WORDS.map(w=>'<span class="wlc'+
+    (ws.found.includes(w)?' found':'')+'">'+w+'</span>').join('');
+  const m=Math.floor(Math.max(0,ws.left)/60),s=Math.max(0,ws.left)%60;
+  $('clock').textContent=m+':'+(s<10?'0':'')+s;
+  $('found').textContent=ws.found.length+'/'+WS.WORDS.length;
+  $('score').textContent=ws.score;
+  $('status').textContent=ws.status==='won'?'CLEARED'
+    :(ws.status==='lost'?'TIME UP':(ws.status==='playing'?'Playing':'Ready'))}
+function selectLineIs(word,from){
+  const dirs=[[1,0],[0,1],[1,1],[1,-1]];
+  const A=cell(from);
+  for(const [dx,dy] of dirs)
+    for(const rev of [false,true]){
+      const seq=rev?word.split('').reverse().join(''):word;
+      let ok=true;
+      for(let i=0;i<seq.length;i++){
+        const x=A.x+dx*i,y=A.y+dy*i;
+        if(x<0||y<0||x>=WS.W||y>=WS.H||WS.BOARD[y][x]!==seq[i]){ok=false;break}}
+      if(ok)return true}
+  return false}
+$('start').onclick=()=>wsStart();
+$('pause').onclick=()=>{if(ws.status==='playing'){ws.status='paused';wsStop();render()}};
+$('new').onclick=()=>{wsStop();ws={found:[],status:'ready',left:WS.LIMIT,score:0,
+  anchor:-1,drag:-1,timer:null};render()};
+window.__wordsearch={WS,ws,get G(){return{status:ws.status,left:ws.left,score:ws.score,
+      found:ws.found.slice(),words:WS.WORDS.slice(),board:WS.BOARD.slice()}},
+  start:wsStart,select,trySelect,render,newBoard:()=>{$('new').onclick()}};</script>
+</body>
+</html>

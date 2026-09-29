@@ -27,6 +27,15 @@ tailwind.config = { theme: { extend: {
   .ws-input[type=number]{min-width:6rem;text-align:right;font-variant-numeric:tabular-nums}
   .ws-input[type=number]::-webkit-outer-spin-button,.ws-input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 </style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
 <meta name="description" content="A JEPA learns to predict a ball&#x27;s next position from a latent representation of a frame - never from pixels. It trains in your browser. Runs entirely in...">
 <link rel="canonical" href="https://ocurp.space/workspace/games/jepa-lab/">
 <meta property="og:type" content="website">
@@ -543,6 +552,76 @@ tailwind.config = { theme: { extend: {
   $('state').textContent = 'press Train to learn the latent dynamics';
 })();
 </script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  /* Watch the usual output nodes; report a short, useful summary. */
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      /* A game node is a label like "Score 12" - read it out as it stands.
+         A tool node is raw output - a character count is the useful summary. */
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -610,10 +689,6 @@ tailwind.config = { theme: { extend: {
       <span class="ocurp-related-n">Aim Trainer</span>
       <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
     </a></li>
-    <li><a href="/workspace/games/aim-trainer/">
-      <span class="ocurp-related-n">Aim Trainer</span>
-      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
-    </a></li>
     <li><a href="/workspace/games/asteroids/">
       <span class="ocurp-related-n">Asteroids</span>
       <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
@@ -621,6 +696,10 @@ tailwind.config = { theme: { extend: {
     <li><a href="/workspace/games/breakout/">
       <span class="ocurp-related-n">Breakout</span>
       <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
+    </a></li>
+    <li><a href="/workspace/games/checkers/">
+      <span class="ocurp-related-n">Checkers</span>
+      <span class="ocurp-related-b">Draughts with forced captures, kings and a simple AI.</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/games/">See all games →</a>

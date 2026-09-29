@@ -51,23 +51,6 @@ tailwind.config = { theme: { extend: {
   .ws-table td { text-align:right; padding:.4rem .6rem; border-bottom:1px solid rgba(255,255,255,.05); font-variant-numeric:tabular-nums; color:rgba(255,255,255,.8) }
   .ws-scroll { max-height:22rem; overflow:auto; border:1px solid rgba(255,255,255,.08); border-radius:.75rem }
 </style>
-<meta name="description" content="Monthly payment plus a full amortisation table with principal, interest, extra payments and the running balance. Runs entirely in your browser.">
-<link rel="canonical" href="https://ocurp.space/workspace/tools/loan-amortization-schedule/">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Loan Amortization Schedule">
-<meta property="og:description" content="Monthly payment plus a full amortisation table with principal, interest, extra payments and the running balance. Runs entirely in your browser.">
-<meta property="og:url" content="https://ocurp.space/workspace/tools/loan-amortization-schedule/">
-<meta property="og:site_name" content="Ocurp">
-<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Loan Amortization Schedule on Ocurp - free, runs in your browser">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Loan Amortization Schedule">
-<meta name="twitter:description" content="Monthly payment plus a full amortisation table with principal, interest, extra payments and the running balance. Runs entirely in your browser.">
-<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
-<meta name="twitter:image:alt" content="Loan Amortization Schedule on Ocurp - free, runs in your browser">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Loan Amortization Schedule", "url": "https://ocurp.space/workspace/tools/loan-amortization-schedule/", "description": "Monthly payment plus a full amortisation table with principal, interest, extra payments and the running balance. Runs entirely in your browser.", "applicationCategory": "UtilitiesApplication", "operatingSystem": "Any", "browserRequirements": "Requires JavaScript", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}}</script>
 <style>
   .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
     overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -77,6 +60,23 @@ tailwind.config = { theme: { extend: {
       font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
   }
 </style>
+<meta name="description" content="Monthly payment plus a full amortisation table with principal, interest, extra payments and the running balance. Runs entirely in your browser - nothing...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/loan-amortization-schedule/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Loan Amortization Schedule">
+<meta property="og:description" content="Monthly payment plus a full amortisation table with principal, interest, extra payments and the running balance. Runs entirely in your browser - nothing...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/loan-amortization-schedule/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Loan Amortization Schedule on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Loan Amortization Schedule">
+<meta name="twitter:description" content="Monthly payment plus a full amortisation table with principal, interest, extra payments and the running balance. Runs entirely in your browser - nothing...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Loan Amortization Schedule on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loan Amortization Schedule","url":"https://ocurp.space/workspace/tools/loan-amortization-schedule/","description":"Monthly payment plus a full amortisation table with principal, interest, extra payments and the running balance. Runs entirely in your browser - nothing...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -131,7 +131,14 @@ function build(){
   const apr=(parseFloat($('rate').value)||0)/100;
   const years=parseFloat($('years').value)||0;
   const extra=parseFloat($('extra').value)||0;
-  if(P<=0||years<=0){ $('pmt').textContent='—'; $('rows').innerHTML=''; $('summary').textContent=''; schedule=[]; return; }
+  /* Blank EVERY output on invalid input. Clearing only the payment left the
+     last run's interest and month count on screen, which read as a live
+     result for a loan that no longer exists. */
+  function blank(){
+    ['pmt','interest','total','months'].forEach(k=>$(k).textContent='—');
+    $('rows').innerHTML=''; $('summary').textContent=''; schedule=[];
+  }
+  if(P<=0||years<=0||apr<0){ blank(); return; }
   const r=apr/12;
   const n=Math.max(1,Math.round(years*12));
   const pmt=r>0 ? P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1) : P/n;
@@ -225,29 +232,55 @@ build();</script>
   setInterval(scan,700);
 })();
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
   <ul class="ocurp-related-grid">
     <li><a href="/workspace/tools/loan-payment-calculator/">
       <span class="ocurp-related-n">Loan Payment Calculator</span>
-      <span class="ocurp-related-b">Monthly payment from principal, rate and term.</span>
+      <span class="ocurp-related-b">Monthly payment, total interest and full amortisation for any loan term and rate.</span>
     </a></li>
-    <li><a href="/workspace/tools/loan-calc/">
-      <span class="ocurp-related-n">Loan Calculator</span>
-      <span class="ocurp-related-b">Quick amortisation estimate with total cost of borrowing.</span>
-    </a></li>
-    <li><a href="/workspace/tools/compound-interest/">
-      <span class="ocurp-related-n">Compound Interest</span>
-      <span class="ocurp-related-b">The same monthly-rate maths, but growing a balance.</span>
-    </a></li>
-    <li><a href="/workspace/tools/statistics-calculator/">
-      <span class="ocurp-related-n">Statistics Calculator</span>
-      <span class="ocurp-related-b">Mean, median, spread and percentiles for a list.</span>
+    <li><a href="/workspace/tools/loan-emi/">
+      <span class="ocurp-related-n">Loan EMI Calculator</span>
+      <span class="ocurp-related-b">Monthly payment, total interest and payoff term for any amortising loan, from the reducing</span>
     </a></li>
     <li><a href="/workspace/tools/mortgage-calculator/">
       <span class="ocurp-related-n">Mortgage Calculator</span>
-      <span class="ocurp-related-b">Monthly cost including taxes and insurance.</span>
+      <span class="ocurp-related-b">Real amortisation maths: monthly payment, total interest, and what each payment is actuall</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/tools/">See all tools →</a>

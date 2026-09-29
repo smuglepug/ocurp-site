@@ -78,44 +78,180 @@ tailwind.config = { theme: { extend: {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Wordle</h1>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Word Guess</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">WORDS</span><span class="ws-chip">GUESS</span><span class="ws-chip">LOCAL</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">WORD</span><span class="ws-chip">PUZZLE</span></div>
         </div>
-      <section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_240px]"><div><div id="board" class="mx-auto grid max-w-[320px] gap-2"></div><div class="mt-4 flex justify-center gap-2"><input id="in" class="ws-input !w-40 text-center font-mono uppercase" maxlength="5" placeholder="GUESS"><button id="ok" class="ws-btn">Enter</button></div></div><div class="flex flex-col gap-4"><div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="ws-label mb-1">Guesses left</div><div class="font-display text-3xl font-black text-accent" id="left">6</div></div><div id="msg" class="text-center text-sm text-white/60">Guess the 5-letter word.</div><button id="new" class="ws-btn">New word</button><p class="text-[10px] text-white/30 leading-relaxed">Green = right spot, amber = wrong spot.</p></div></div></section>
+      
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="new" class="ws-btn">New word</button>
+      <button id="hard" class="ws-btn-ghost">Hard mode: off</button>
+      <span class="ws-chip" id="rowsleft">6 ROWS LEFT</span>
+    </div>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
+      <div id="board" class="grid gap-2"></div>
+      <div>
+        <label class="ws-label mb-2 block" for="in">Your guess</label>
+        <div class="flex gap-2">
+          <input id="in" maxlength="5" autocomplete="off" spellcheck="false"
+            class="ws-input flex-1 uppercase tracking-[0.3em]" placeholder="_ _ _ _ _">
+          <button id="go" class="ws-btn">Guess</button>
+        </div>
+        <div id="msg" class="mt-3 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Guess the 5-letter word.</div>
+        <div class="mt-4 grid grid-cols-3 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Guesses</div>
+            <div class="font-display text-xl font-black text-white" id="tries">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Status</div>
+            <div class="font-display text-sm font-black text-white" id="status">Playing</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Solved</div>
+            <div class="font-display text-xl font-black text-accent" id="solved">0</div></div>
+        </div>
+        <div id="rules" class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Hard mode is off.</div>
+      </div>
+    </div>
+  </section>
+  <p class="mx-auto mt-6 max-w-2xl text-[10px] leading-relaxed text-white/45"><span class="font-black tracking-[0.2em] text-white/60">THE EXACT RULES</span><br>
+    <span class="text-white/70">6 rows</span>. Type any 5-letter word from this page's own
+    list of <span class="text-white/70" id="wlcount">WORDS</span> five-letter words &mdash; anything
+    else is rejected and does not use a row. Feedback:
+    <span class="text-emerald-400">green</span> = right letter, right place;
+    <span class="text-amber-400">amber</span> = in the word, wrong place;
+    <span class="text-white/40">grey</span> = not in the word. A letter you guess twice is marked
+    amber at most as many times as it really occurs in the answer.
+    <span class="text-accent">HARD MODE</span>: a green letter must be reused in that exact square,
+    and a letter already marked amber may not be reused at all once the answer's copy of it has
+    been found. A guess breaking those rules is <span class="text-accent">rejected and costs no
+    row</span>. <span class="text-accent">WIN</span> = the answer inside 6 rows.
+    <span class="text-accent">FAIL</span> = 6 rows used, answer still unguessed. Hard mode cannot
+    lock you out: the answer word itself is always a legal guess, since it reuses every green in
+    place and never re-places a spent amber.</p>
+
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
   </div>
 </div>
 <script src="/workspace/related.js" defer></script>
-<script>const $=id=>document.getElementById(id);
-const WORDS=['PLANT','HOUSE','LIGHT','RIVER','MONEY','BRAVE','WORLD','CRANE','STONE','SMILE','GLOBE','TIGER','CLOUD','MUSIC','PAPER','GHOST','SHARP','TRAIN','BEACH','SOUND'];
-let word,rows,tries;
-function reset(){word=WORDS[Math.floor(Math.random()*WORDS.length)];rows=[];tries=0;
-  $('left').textContent='6';$('msg').textContent='Guess the 5-letter word.';$('in').value='';draw()}
-function draw(){
+<script>const WL_WORDS=['ABOUT','ABOVE','ACORN','ACTOR','AGENT','ALARM','ALIEN','ALIGN','ALLEY','ALLOW','ALONE','AMBER','AMONG','ANGEL','ANGER','ANGLE','APART','APPLE','APPLY','APRON','ARENA','ARGUE','ARISE','ARMOR','AROMA','ARRAY','ARROW','ASIDE','ASSET','ATLAS','AUDIO','AVOID','AWAKE','AWARD','AWARE','BACON','BADGE','BAKER','BASIL','BEACH','BEARD','BEAST','BEGAN','BEGIN','BENCH','BERRY','BIRTH','BLADE','BLAME','BLANK','BLAST','BLEND','BLESS','BLIND','BLOCK','BLOOM','BLUNT','BOARD','BOAST','BONUS','BOOST','BOOTH','BOUND','BRAIN','BRAKE','BRAND','BRASS','BRAVE','BREAD','BREAK','BREED','BRICK','BRIDE','BRING','BRINK','BRISK','BROAD','BROIL','BROKE','BROOK','BROOM','BROWN','BRUSH','BUILD','BUILT','BUNCH','BURST','CABLE','CANDY','CANOE','CARGO','CARRY','CARVE','CATCH','CAUSE','CEASE','CHAIN','CHAIR','CHALK','CHARM','CHART','CHASE','CHEAP','CHECK','CHEER','CHESS','CHEST','CHIEF','CHILD','CHILL','CHIME','CHOIR','CHORD','CHOSE','CHUNK','CIDER','CIVIC','CIVIL','CLAIM','CLAMP','CLASH','CLASP','CLASS','CLEAN','CLEAR','CLERK','CLICK','CLIFF','CLIMB','CLOCK','CLONE','CLOSE','CLOTH','CLOUD','CLOWN','COACH','COAST','COBRA','COLON','COLOR','COMET','COMIC','CORAL','COUNT','COURT','COVER','CRACK','CRAFT','CRANE','CRASH','CRATE','CRAWL','CRAZY','CREAM','CREEK','CREST','CRIME','CRISP','CROAK','CROWN','CRUDE','CRUEL','CRUMB','CRUSH','CURVE','CYCLE','DAILY','DAIRY','DANCE','DEBUT','DECAY','DELAY','DELTA','DENSE','DEPTH','DIARY','DIGIT','DIMLY','DITCH','DIVER','DOZEN','DRAFT','DRAIN','DRAMA','DRANK','DRAPE','DRAWL','DREAM','DRESS','DRIED','DRIFT','DRILL','DRINK','DRIVE','DROVE','DROWN','DUSTY','DWELL','EAGER','EAGLE','EARLY','EARTH','EIGHT','ELBOW','ELDER','ELECT','ELOPE','EMBER','EMPTY','ENEMY','ENJOY','ENTER','ENTRY','EQUAL','ERROR','ESSAY','EVENT','EXACT','EXALT','EXPEL','EXTRA','FABLE','FAINT','FAITH','FALSE','FANCY','FATAL','FAULT','FAVOR','FEAST','FENCE','FERRY','FEVER','FIBER','FIELD','FIFTH','FIFTY','FIGHT','FINAL','FINCH','FIRST','FISHY','FLAKE','FLAME','FLANK','FLASH','FLEET','FLESH','FLICK','FLING','FLINT','FLOAT','FLOCK','FLOOD','FLOOR','FLOUR','FLOWN','FLUID','FLUSH','FOAMY','FOCUS','FORCE','FORGE','FORTH','FORTY','FORUM','FOUND','FRAME','FRANK','FRAUD','FRESH','FRONT','FROST','FROWN','FRUIT','FUNNY','GAUGE','GHOST','GIANT','GLARE','GLASS','GLAZE','GLIDE','GLOBE','GLOOM','GLORY','GLOSS','GLOVE','GOING','GRACE','GRADE','GRAIN','GRAND','GRANT','GRAPE','GRAPH','GRASP','GRASS','GRAVE','GREAT','GREED','GREEN','GREET','GRIMY','GRIND','GROVE','GROWN','GRUFF','GUARD','GUEST','GUIDE','GUILD','GUILT','HABIT','HANDY','HAPPY','HARSH','HASTE','HATCH','HEART','HEAVY','HEDGE','HELLO','HOBBY','HOIST','HOLLY','HONEY','HONOR','HORSE','HOTEL','HOUSE','HUMAN','HUMID','HUMOR','HURRY','IDEAL','IMAGE','INDEX','INNER','INPUT','IRONY','ISSUE','IVORY','JEWEL','JOINT','JOLLY','JUDGE','JUICE','KNEEL','KNIFE','KNOCK','KNOWN','LABEL','LABOR','LARGE','LASER','LATER','LAUGH','LAYER','LEARN','LEASE','LEAST','LEAVE','LEGAL','LEMON','LEVEL','LIGHT','LILAC','LIMIT','LINEN','LIVER','LOCAL','LODGE','LOGIC','LOOSE','LOWER','LOYAL','LUCKY','LUNAR','LUNCH','LYRIC','MAGIC','MAJOR','MAKER','MANGO','MAPLE','MARCH','MARSH','MATCH','MAYBE','MAYOR','MEDAL','MEDIA','MELON','MERCY','MERGE','MERIT','MERRY','METAL','METER','MIGHT','MINER','MINOR','MINUS','MIXED','MODEL','MOIST','MONEY','MONTH','MORAL','MOTOR','MOUNT','MOUSE','MOUTH','MOVIE','MUSIC','NAKED','NASTY','NAVAL','NERVE','NEVER','NEWLY','NIGHT','NOBLE','NOISE','NORTH','NOTCH','NOVEL','NURSE','OCEAN','OFFER','OFTEN','OLIVE','ONION','ORBIT','ORDER','ORGAN','OTHER','OTTER','OUGHT','OUNCE','OUTER','OWNER','OZONE','PAINT','PANEL','PAPER','PARKA','PARTY','PASTA','PATCH','PAUSE','PEACE','PEACH','PEARL','PEDAL','PENNY','PERCH','PERIL','PHASE','PHONE','PHOTO','PIANO','PIECE','PILOT','PITCH','PIVOT','PIXEL','PLACE','PLAIN','PLANE','PLANK','PLANT','PLATE','PLAZA','POINT','POLAR','PORCH','POUCH','POUND','POWER','PRESS','PRICE','PRIDE','PRIME','PRINT','PRIOR','PRIZE','PROBE','PROOF','PROUD','PROVE','PULSE','PUNCH','PUPIL','PURGE','PURSE','QUEEN','QUERY','QUEST','QUEUE','QUICK','QUIET','QUILT','QUITE','QUOTA','QUOTE','RADAR','RADIO','RAISE','RALLY','RANCH','RANGE','RAPID','RATIO','REACH','REACT','READY','REALM','REBEL','REFER','REIGN','RELAX','RELAY','REMIX','RENEW','REPAY','REPLY','RESET','RESIN','RETRO','REUSE','RHYME','RIDER','RIDGE','RIFLE','RIGHT','RIGID','RINSE','RIPEN','RIVAL','RIVER','ROAST','ROBIN','ROBOT','ROCKY','ROGUE','ROMAN','ROUGH','ROUND','ROUTE','ROYAL','RURAL','SADLY','SAINT','SALAD','SALON','SANDY','SAUCE','SCALE','SCARF','SCENE','SCENT','SCOPE','SCORE','SCOUT','SCRAP','SENSE','SERVE','SEVEN','SHACK','SHADE','SHAFT','SHAKE','SHALE','SHALL','SHAME','SHAPE','SHARE','SHARK','SHARP','SHAVE','SHEEP','SHEER','SHEET','SHELF','SHELL','SHIFT','SHINE','SHIRT','SHOCK','SHOOT','SHORE','SHORT','SHOUT','SHRUB','SIEGE','SIGHT','SILLY','SINCE','SIXTH','SIXTY','SKATE','SKILL','SKIRT','SLATE','SLEEK','SLEEP','SLICE','SLIDE','SLOPE','SMALL','SMART','SMASH','SMELL','SMILE','SMIRK','SMOKE','SMOTE','SNACK','SNAIL','SNAKE','SNARE','SNEAK','SNOWY','SOLAR','SOLID','SOLVE','SORRY','SOUND','SOUTH','SPACE','SPARE','SPARK','SPEAK','SPEAR','SPEED','SPELL','SPEND','SPENT','SPICE','SPIKE','SPINE','SPLIT','SPOKE','SPOON','SPORT','SPRAY','SQUAD','STACK','STAFF','STAGE','STAIN','STAIR','STAKE','STALE','STALK','STALL','STAMP','STAND','STARE','START','STATE','STEAM','STEEL','STEEP','STEER','STERN','STICK','STIFF','STILL','STING','STOCK','STONE','STOOD','STOOL','STORE','STORM','STORY','STOUT','STOVE','STRAP','STRAW','STRAY','STRIP','STUDY','STUFF','STYLE','SUGAR','SUITE','SUPER','SURGE','SWAMP','SWEAR','SWEAT','SWEEP','SWEET','SWELL','SWIFT','SWING','SWORD','TABLE','TAKEN','TALON','TASTE','TEACH','TEETH','TEMPO','TENOR','TENSE','TENTH','THANK','THEFT','THEME','THERE','THESE','THICK','THIEF','THING','THINK','THIRD','THORN','THOSE','THREE','THREW','THROW','THUMB','TIGER','TIGHT','TILED','TIMER','TIRED','TITLE','TOAST','TODAY','TOKEN','TOOTH','TOPIC','TORCH','TOTAL','TOUCH','TOUGH','TOWER','TOXIC','TRACE','TRACK','TRADE','TRAIL','TRAIN','TRAIT','TRASH','TREAT','TREND','TRIAL','TRIBE','TRICK','TRIED','TROOP','TROVE','TRUCK','TRUNK','TRUTH','TULIP','TUNIC','TWICE','TWIST','ULCER','ULTRA','UNCLE','UNDER','UNION','UNITE','UNITY','UNTIL','UPPER','UPSET','URBAN','USAGE','USHER','USUAL','UTTER','VAGUE','VALID','VALOR','VALUE','VALVE','VAPOR','VAULT','VENOM','VENUE','VERGE','VERSE','VIDEO','VIGOR','VILLA','VINYL','VIRUS','VISIT','VITAL','VIVID','VOCAL','VOICE','VOTER','WAGON','WAIST','WALTZ','WASTE','WATCH','WATER','WEARY','WEAVE','WEDGE','WEIGH','WEIRD','WHALE','WHARF','WHEAT','WHEEL','WHERE','WHICH','WHILE','WHIRL','WHITE','WHOLE','WHOSE','WIDEN','WIDER','WIDOW','WIDTH','WIELD','WINCE','WINCH','WINDY','WIPER','WITCH','WOMAN','WORLD','WORRY','WORSE','WORST','WORTH','WOULD','WOUND','WOVEN','WRATH','WRECK','WRIST','WRITE','WRONG','WROTE','YACHT','YIELD','YOUNG','YOUTH','ZEBRA','ZESTY','ZONAL'];
+const WL={WORDS:WL_WORDS,ROWS:6};
+const $=id=>document.getElementById(id);
+let wl={word:'',rows:[],hard:false,status:'playing',solved:0};
+
+// --- feedback: two-pass, the standard right-to-left duplicate rule ------
+function score(guess,answer){
+  const res=['miss','miss','miss','miss','miss'];
+  const left=answer.split('');
+  for(let i=0;i<5;i++)if(guess[i]===left[i]){res[i]='hit';left[i]=null}
+  for(let i=0;i<5;i++){
+    if(res[i]==='hit')continue;
+    const k=left.indexOf(guess[i]);
+    if(k>=0){res[i]='near';left[k]=null}}
+  return res}
+// --- hard mode constraint, derived from the rows played so far ----------
+function hardBlocker(g){
+  const greens={},spent={};
+  for(const r of wl.rows){
+    for(let i=0;i<5;i++){
+      if(r.res[i]==='hit')greens[i]=r.word[i];
+      else if(r.res[i]==='near')spent[r.word[i]]=(spent[r.word[i]]||0)+1}}
+  for(let i=0;i<5;i++)if(greens[i]&&g[i]!==greens[i])
+    return 'hard mode: square '+(i+1)+' must stay '+greens[i].toUpperCase()+'.';
+  // Count how many copies of each letter the answer has, as far as the rows
+  // reveal it: greens pin one copy each, ambers consume one copy each.
+  const cap={};
+  for(const k in greens)cap[greens[k]]=(cap[greens[k]]||0)+1;
+  for(const r of wl.rows)for(let i=0;i<5;i++)if(r.res[i]==='near')
+    cap[r.word[i]]=(cap[r.word[i]]||0)+1;
+  for(const k in cap){
+    const n=g.split('').filter(c=>c===k).length;
+    if(n>cap[k])return 'hard mode: '+k.toUpperCase()+' appears '+cap[k]+' time'+
+      (cap[k]===1?'':'s')+' in the answer; you used it '+n+'.'}
+  for(const k in spent)if(spent[k]&&g.indexOf(k)>=0&&!cap[k])
+    return 'hard mode: '+k.toUpperCase()+' is already used up.';
+  return null}
+// --- the move rule ------------------------------------------------------
+// returns {ok:false,why} for a rejected guess (no row spent), {ok:true,...} otherwise
+function submit(raw){
+  if(wl.status!=='playing')return {ok:false,why:'game is over'};
+  const g=String(raw||'').toUpperCase().trim();
+  if(!/^[A-Z]{5}$/.test(g))return {ok:false,why:'Enter five letters.'};
+  if(WL.WORDS.indexOf(g)<0)return {ok:false,why:g+' is not in this page’s word list.'};
+  if(wl.hard){
+    const b=hardBlocker(g);
+    if(b)return {ok:false,why:b}}
+  const res=score(g,wl.word);
+  wl.rows.push({word:g,res:res});
+  if(g===wl.word){
+    wl.status='won';
+    $('msg').textContent='Solved in '+wl.rows.length+' row'+(wl.rows.length===1?'':'s')+'.'}
+  else if(wl.rows.length>=WL.ROWS){
+    wl.status='lost';
+    $('msg').textContent='Six rows gone. The word was '+wl.word+'.'}
+  else $('msg').textContent=wl.rows.length+' row'+(wl.rows.length===1?'':'s')+
+    ' used, '+(WL.ROWS-wl.rows.length)+' left.';
+  render();
+  return {ok:true,res:res,rows:wl.rows.length,status:wl.status}}
+function newGame(word){
+  wl.word=word||WL.WORDS[Math.floor(Math.random()*WL.WORDS.length)];
+  wl.rows=[];wl.status='playing';
+  $('in').value='';
+  $('msg').textContent='Guess the 5-letter word.';
+  render();
+  return wl.word}
+function setHard(on){wl.hard=!!on;render();return wl.hard}
+function render(){
   let html='';
-  for(let r=0;r<6;r++){html+='<div class="grid grid-cols-5 gap-2">';
-    for(let c=0;c<5;c++){const g=rows[r]&&rows[r].word[c];let cls='border-white/10 bg-white/[0.03] text-white';
-      if(g){const st=rows[r].res[c];
-        cls=st==='hit'?'border-green-500 bg-green-500/20 text-green-300':st==='near'?'border-amber-500 bg-amber-500/20 text-amber-300':'border-white/10 bg-white/[0.04] text-white/40'}
-      html+='<div class="flex aspect-square items-center justify-center rounded-lg border font-display text-xl font-black uppercase '+cls+'">'+(g||'')+'</div>'}
+  for(let r=0;r<WL.ROWS;r++){
+    html+='<div class="grid grid-cols-5 gap-2">';
+    for(let c=0;c<5;c++){
+      const g=wl.rows[r]&&wl.rows[r].word[c],st=wl.rows[r]&&wl.rows[r].res[c];
+      let cls='border-white/10 bg-white/[0.03] text-white';
+      if(g){
+        cls=st==='hit'?'border-emerald-500 bg-emerald-500/25 text-emerald-200'
+          :st==='near'?'border-amber-500 bg-amber-500/25 text-amber-200'
+          :'border-white/8 bg-white/[0.03] text-white/35'}
+      html+='<div class="flex aspect-square items-center justify-center rounded-lg border font-display text-xl font-black uppercase '+
+        cls+'">'+(g||'')+'</div>'}
     html+='</div>'}
-  $('board').innerHTML=html}
-function submit(){
-  const g=$('in').value.toUpperCase().trim();
-  if(g.length!==5||!/^[A-Z]{5}$/.test(g)){$('msg').textContent='Enter a 5-letter word.';return}
-  const res=[];const wl=word.split('');
-  for(let i=0;i<5;i++){if(g[i]===wl[i]){res.push('hit');wl[i]=null}
-    else if(wl.includes(g[i])){res.push('near');wl[wl.indexOf(g[i])]=null}else res.push('miss')}
-  rows.push({word:g,res});tries++;$('in').value='';$('left').textContent=6-tries;draw();
-  if(g===word){$('msg').textContent='🎉 Correct!';return}
-  if(tries>=6)$('msg').textContent='Out of tries — the word was '+word;}
-$('ok').onclick=submit;
-$('in').addEventListener('keydown',e=>{if(e.key==='Enter')submit()});
-$('new').onclick=reset;reset();</script>
+  $('board').innerHTML=html;
+  $('tries').textContent=wl.rows.length;
+  $('rowsleft').textContent=(WL.ROWS-wl.rows.length)+' ROWS LEFT';
+  $('status').textContent=wl.status==='won'?'Solved':(wl.status==='lost'?'Lost':'Playing');
+  $('solved').textContent=wl.solved;
+  $('hard').textContent='Hard mode: '+(wl.hard?'on':'off');
+  $('hard').className=wl.hard?'ws-btn':'ws-btn-ghost';
+  $('rules').innerHTML=wl.hard
+    ? 'Hard mode is <span class="text-accent">ON</span>. Greens must be reused in the same square; a letter whose copy is already found may not be used again. The answer word itself is always a legal guess, so this can never lock you out.'
+    : 'Hard mode is off. Turn it on and every green you earn must be reused in the same square.'}
+$('go').onclick=()=>submit($('in').value);
+$('in').addEventListener('keydown',e=>{if(e.key==='Enter')submit($('in').value)});
+$('new').onclick=()=>newGame();
+$('hard').onclick=()=>setHard(!wl.hard);
+document.getElementById('wlcount')&&(document.getElementById('wlcount').textContent=WL.WORDS.length);
+newGame();
+window.__wordle={WL,
+  get G(){return {word:wl.word,rows:wl.rows.map(r=>({word:r.word,res:r.res.slice()})),
+    hard:wl.hard,status:wl.status,tries:wl.rows.length,rowsLeft:WL.ROWS-wl.rows.length}},
+  submit,newGame,setHard,score,hardBlocker};
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -139,10 +275,6 @@ $('new').onclick=reset;reset();</script>
       <span class="ocurp-related-n">Aim Trainer</span>
       <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
     </a></li>
-    <li><a href="/workspace/games/aim-trainer/">
-      <span class="ocurp-related-n">Aim Trainer</span>
-      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
-    </a></li>
     <li><a href="/workspace/games/asteroids/">
       <span class="ocurp-related-n">Asteroids</span>
       <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
@@ -150,6 +282,10 @@ $('new').onclick=reset;reset();</script>
     <li><a href="/workspace/games/battleship/">
       <span class="ocurp-related-n">Battleship</span>
       <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+    </a></li>
+    <li><a href="/workspace/games/breakout/">
+      <span class="ocurp-related-n">Breakout</span>
+      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/games/">See all games →</a>

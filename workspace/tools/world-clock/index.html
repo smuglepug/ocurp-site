@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Clock — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Convert a UTC instant into the wall-clock time of any city, showing the offset and whether daylight saving is in force, and read the same conversion...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/world-clock/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="World Clock">
+<meta property="og:description" content="Convert a UTC instant into the wall-clock time of any city, showing the offset and whether daylight saving is in force, and read the same conversion...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/world-clock/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="World Clock on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="World Clock">
+<meta name="twitter:description" content="Convert a UTC instant into the wall-clock time of any city, showing the offset and whether daylight saving is in force, and read the same conversion...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="World Clock on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"World Clock","url":"https://ocurp.space/workspace/tools/world-clock/","description":"Convert a UTC instant into the wall-clock time of any city, showing the offset and whether daylight saving is in force, and read the same conversion...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">World Clock</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Study & Career — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">TIME</span><span class="ws-chip">ZONES</span><span class="ws-chip">CLOCK</span></div>
+        </div>
+      <style>.ws-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:.75rem;background:#FF5F1F;border:1px solid #FF5F1F;padding:.75rem 1.25rem;font-size:10px;font-weight:900;letter-spacing:.25em;text-transform:uppercase;color:#000;cursor:pointer}.ws-btn-primary:hover{opacity:.9}</style>
+  <section class="ws-panel p-6">
+    <div class="ws-label mb-4">Reference instant</div>
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div>
+        <label class="ws-label mb-2 block" for="date">Date (UTC)</label>
+        <input id="date" type="date" class="ws-input" value="2026-09-29">
+      </div>
+      <div>
+        <label class="ws-label mb-2 block" for="utc">Time (UTC, 24h)</label>
+        <input id="utc" type="time" class="ws-input" value="09:30">
+      </div>
+      <div>
+        <label class="ws-label mb-2 block" for="zone">City</label>
+        <select id="zone" class="ws-input"><option value="UTC">UTC</option><option value="Africa/Lagos">Lagos</option><option value="Europe/London">London</option><option value="Europe/Dublin">Dublin</option><option value="Europe/Berlin">Berlin</option><option value="Europe/Istanbul">Istanbul</option><option value="Europe/Moscow">Moscow</option><option value="Africa/Johannesburg">Johannesburg</option><option value="Asia/Dubai">Dubai</option><option value="Asia/Kolkata">Kolkata</option><option value="Asia/Bangkok">Bangkok</option><option value="Asia/Singapore">Singapore</option><option value="Asia/Tokyo">Tokyo</option><option value="Australia/Sydney">Sydney</option><option value="America/New_York" selected>New York</option><option value="America/Chicago">Chicago</option><option value="America/Denver">Denver</option><option value="America/Sao_Paulo">Sao Paulo</option></select>
+      </div>
+    </div>
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <button class="ws-btn-primary" onclick="convert()">Convert</button>
+      <button class="ws-btn-ghost" onclick="reverse()">Reverse direction</button>
+      <button class="ws-btn-ghost" onclick="now()">Use current time</button>
+    </div>
+    <div id="err" class="mt-3 font-mono text-[11px]" style="color:#FF5F1F"></div>
+  </section>
+
+  <section class="ws-panel mt-6 p-6">
+    <div class="ws-label mb-3">Local time in the chosen city</div>
+    <div class="flex flex-wrap items-end gap-x-6 gap-y-2">
+      <div>
+        <div id="cityname" class="ws-label">New York</div>
+        <div id="big" class="font-display text-6xl font-black text-accent tabular-nums">--:--</div>
+      </div>
+      <div class="pb-2">
+        <div id="offset" class="font-mono text-sm text-white/70">--</div>
+        <div id="abbrev" class="font-mono text-xs text-white/35">--</div>
+        <div id="daynote" class="font-mono text-xs text-white/35">--</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ws-panel mt-6 p-6">
+    <div class="ws-label mb-3">Both directions, checked</div>
+    <div id="fwd" class="ws-out">--</div>
+    <div id="rev" class="ws-out mt-3">--</div>
+  </section>
+
+  <section class="ws-panel ws-copy mt-6 p-4">
+    <div class="mb-2 flex items-center justify-between">
+      <span class="ws-label">Copy / download</span>
+      <span class="flex gap-2">
+        <button class="ws-btn-ghost !px-3 !py-1.5" onclick="copyOut(this)">Copy</button>
+        <button class="ws-btn-ghost !px-3 !py-1.5" onclick="saveFile('world-clock.txt', $('out').textContent)">Download</button>
+      </span>
+    </div>
+    <pre id="out" class="ws-out min-h-[80px]"></pre>
+  </section>
+
+  <section class="ws-panel mt-6 p-6">
+    <div class="ws-label mb-3">Every city, ticking now</div>
+    <table class="w-full text-left text-sm">
+      <thead>
+        <tr class="ws-label">
+          <th class="py-1.5 pr-4">City</th><th class="py-1.5 pr-4">Time</th>
+          <th class="py-1.5 pr-4">UTC offset</th><th class="py-1.5">Day</th>
+        </tr>
+      </thead>
+      <tbody><tr data-z="UTC"><td class="py-1.5 pr-4 text-white/70">UTC</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="Africa/Lagos"><td class="py-1.5 pr-4 text-white/70">Lagos</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="Europe/London"><td class="py-1.5 pr-4 text-white/70">London</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="Europe/Dublin"><td class="py-1.5 pr-4 text-white/70">Dublin</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="Europe/Berlin"><td class="py-1.5 pr-4 text-white/70">Berlin</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="Europe/Istanbul"><td class="py-1.5 pr-4 text-white/70">Istanbul</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="Europe/Moscow"><td class="py-1.5 pr-4 text-white/70">Moscow</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="Africa/Johannesburg"><td class="py-1.5 pr-4 text-white/70">Johannesburg</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="Asia/Dubai"><td class="py-1.5 pr-4 text-white/70">Dubai</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="Asia/Kolkata"><td class="py-1.5 pr-4 text-white/70">Kolkata</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="Asia/Bangkok"><td class="py-1.5 pr-4 text-white/70">Bangkok</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="Asia/Singapore"><td class="py-1.5 pr-4 text-white/70">Singapore</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="Asia/Tokyo"><td class="py-1.5 pr-4 text-white/70">Tokyo</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="Australia/Sydney"><td class="py-1.5 pr-4 text-white/70">Sydney</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="America/New_York"><td class="py-1.5 pr-4 text-white/70">New York</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="America/Chicago"><td class="py-1.5 pr-4 text-white/70">Chicago</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="America/Denver"><td class="py-1.5 pr-4 text-white/70">Denver</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr><tr data-z="America/Sao_Paulo"><td class="py-1.5 pr-4 text-white/70">Sao Paulo</td><td class="py-1.5 pr-4 font-mono" data-t=""></td><td class="py-1.5 pr-4 font-mono text-accent" data-o=""></td><td class="py-1.5 text-white/30 font-mono" data-d=""></td></tr></tbody>
+    </table>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+var $ = function(id){ return document.getElementById(id); };
+var NL = String.fromCharCode(10);
+function pad2(n){ n = Math.floor(Math.abs(n)); return (n < 10 ? '0' : '') + n; }
+function copyOut(btn){
+  var t = $('out') ? $('out').textContent : '';
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    try { navigator.clipboard.writeText(t); } catch(e){}
+  }
+  var host = btn.closest ? btn.closest('.ws-copy') : null;
+  if(host){
+    host.classList.add('ok');
+    setTimeout(function(){ host.classList.remove('ok'); }, 1200);
+  }
+}
+function saveFile(name, text){
+  var blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
+}
+
+var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+/* Read a zone's wall-clock parts for one instant by formatting it there and
+   treating the result as if it were UTC. Subtracting that fake-UTC stamp from
+   the real instant gives the zone's offset in minutes, DST included, because
+   Intl already applied the rule for that exact date. */
+function partsIn(instant, zone){
+  var dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone: zone, hour12: false,
+    year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', second:'2-digit'
+  });
+  var p = {};
+  dtf.formatToParts(instant).forEach(function(x){ p[x.type] = x.value; });
+  if(p.hour === '24') p.hour = '00';
+  return {y:+p.year, mo:+p.month, d:+p.day, h:+p.hour, mi:+p.minute, s:+p.second};
+}
+
+function offsetMin(zone, instant){
+  var p = partsIn(instant, zone);
+  var asUTC = Date.UTC(p.y, p.mo - 1, p.d, p.h, p.mi, p.s);
+  return Math.round((asUTC - instant.getTime()) / 60000);
+}
+
+/* The instant a city shows on its wall clock: the fake-UTC stamp minus the
+   zone offset. Two passes so a DST boundary inside the target hour settles. */
+function instantFromWall(zone, y, mo, d, h, mi){
+  var guess = Date.UTC(y, mo - 1, d, h, mi, 0);
+  var off = offsetMin(zone, new Date(guess));
+  var inst = guess - off * 60000;
+  var off2 = offsetMin(zone, new Date(inst));
+  if(off2 !== off) inst = guess - off2 * 60000;
+  return new Date(inst);
+}
+
+function label(zone, inst){
+  var off = offsetMin(zone, inst);
+  var sign = off < 0 ? '-' : '+';
+  var a = Math.abs(off);
+  var abbr = '';
+  try {
+    abbr = new Intl.DateTimeFormat('en-US', {timeZone: zone, timeZoneName:'short'})
+      .formatToParts(inst).filter(function(x){ return x.type === 'timeZoneName'; })[0].value;
+  } catch(e){ abbr = 'UTC' + sign + pad2(a / 60) + ':' + pad2(a % 60); }
+  return sign + pad2(Math.floor(a / 60)) + ':' + pad2(a % 60) + ' (' + abbr + ')';
+}
+
+function isDST(zone, inst){
+  var jan = new Date(Date.UTC(inst.getUTCFullYear(), 0, 15));
+  var jul = new Date(Date.UTC(inst.getUTCFullYear(), 6, 15));
+  var a = offsetMin(zone, jan), b = offsetMin(zone, jul);
+  var now = offsetMin(zone, inst);
+  return now > Math.min(a, b);
+}
+
+function dayName(zone, instant){
+  return DAYS[new Date(instant.getTime() + offsetMin(zone, instant) * 60000).getUTCDay()];
+}
+
+function readRef(){
+  var dv = $('date').value.split('-');
+  var tv = $('utc').value.split(':');
+  if(dv.length < 3 || tv.length < 2) return null;
+  return {y:+dv[0], mo:+dv[1], d:+dv[2], h:+tv[0], mi:+tv[1]};
+}
+
+function convert(){
+  var r = readRef();
+  if(!r){
+    $('err').textContent = 'enter a date and a time';
+    return null;
+  }
+  $('err').textContent = '';
+  var zone = $('zone').value;
+  var refInstant = new Date(Date.UTC(r.y, r.mo - 1, r.d, r.h, r.mi, 0));
+  var cityInstant = instantFromWall(zone, r.y, r.mo, r.d, r.h, r.mi);
+  var cp = partsIn(cityInstant, zone);
+  var dayShift = Math.round((Date.UTC(cp.y, cp.mo - 1, cp.d) - Date.UTC(r.y, r.mo - 1, r.d)) / 86400000);
+  var cityName = $('zone').selectedOptions[0].textContent;
+
+  $('cityname').textContent = cityName;
+  $('big').textContent = pad2(cp.h) + ':' + pad2(cp.mi);
+  $('offset').textContent = 'UTC ' + label(zone, cityInstant);
+  $('abbrev').textContent = isDST(zone, cityInstant) ? 'daylight saving in effect' : 'standard time';
+  $('daynote').textContent = dayShift === 0 ? 'same calendar day'
+    : (dayShift > 0 ? dayShift + ' day(s) later' : Math.abs(dayShift) + ' day(s) earlier');
+
+  $('fwd').textContent = 'Forward (UTC to city):  ' + pad2(r.h) + ':' + pad2(r.mi)
+    + ' UTC  ->  ' + pad2(cp.h) + ':' + pad2(cp.mi) + ' in ' + cityName
+    + '   [offset ' + label(zone, cityInstant) + ']';
+  $('rev').textContent = 'Reverse (city to UTC):  ' + pad2(cp.h) + ':' + pad2(cp.mi)
+    + ' in ' + cityName + '  ->  ' + refInstant.toISOString().slice(11, 16) + ' UTC'
+    + (dayShift === 0 ? '' : '  (day shift ' + (dayShift > 0 ? '+' : '') + dayShift + 'd)');
+
+  $('out').textContent = 'WORLD CLOCK' + NL
+    + 'Reference: ' + pad2(r.h) + ':' + pad2(r.mi) + ' UTC on ' + r.y + '-' + pad2(r.mo) + '-' + pad2(r.d) + NL
+    + 'City:      ' + cityName + ' (' + zone + ')' + NL
+    + 'Local:     ' + pad2(cp.h) + ':' + pad2(cp.mi) + '  UTC ' + label(zone, cityInstant) + NL
+    + 'Reverse:   ' + pad2(cp.h) + ':' + pad2(cp.mi) + ' ' + cityName + ' = '
+    + refInstant.toISOString().slice(11, 16) + ' UTC';
+
+  window.__world_clock_state = {
+    zone: zone, city: cityName, offset: offsetMin(zone, cityInstant),
+    cityHM: pad2(cp.h) + ':' + pad2(cp.mi), utcHM: pad2(r.h) + ':' + pad2(r.mi),
+    instant: cityInstant.toISOString()
+  };
+  return window.__world_clock_state;
+}
+
+/* Reverse: treat the city wall clock as the input and recover UTC. */
+function reverse(){
+  var r = readRef();
+  if(!r) return null;
+  $('err').textContent = '';
+  var zone = $('zone').value;
+  var inst = instantFromWall(zone, r.y, r.mo, r.d, r.h, r.mi);
+  var iso = inst.toISOString();
+  $('date').value = iso.slice(0, 10);
+  $('utc').value = iso.slice(11, 16);
+  return convert();
+}
+
+function now(){
+  var d = new Date();
+  $('date').value = d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate());
+  $('utc').value = pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes());
+  convert();
+  tickAll();
+}
+
+function tickAll(){
+  var now0 = Date.now();
+  var rows = document.querySelectorAll('#zoned tbody tr');
+  for(var i = 0; i < rows.length; i++){
+    var z = rows[i].getAttribute('data-z');
+    var p = partsIn(new Date(now0), z);
+    rows[i].querySelector('[data-t]').textContent = pad2(p.h) + ':' + pad2(p.mi);
+    rows[i].querySelector('[data-o]').textContent = 'UTC ' + label(z, new Date(now0));
+    rows[i].querySelector('[data-d]').textContent = dayName(z, new Date(now0));
+  }
+}
+
+['zone'].forEach(function(id){
+  $(id).addEventListener('change', function(){ convert(); });
+});
+$('date').addEventListener('change', convert);
+$('utc').addEventListener('change', convert);
+
+convert();
+tickAll();
+setInterval(tickAll, 1000);
+
+window.__world_clock = {
+  offsetMin: offsetMin,
+  partsIn: partsIn,
+  instantFromWall: instantFromWall,
+  label: label,
+  isDST: isDST,
+  convert: convert,
+  state: function(){ return window.__world_clock_state; }
+};
+</script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/timezone-converter/">
+      <span class="ocurp-related-n">Time Zone Converter</span>
+      <span class="ocurp-related-b">Convert a date and time between any two time zones, including daylight saving.</span>
+    </a></li>
+    <li><a href="/workspace/tools/alarm/">
+      <span class="ocurp-related-n">Alarm Clock</span>
+      <span class="ocurp-related-b">Set an alarm a number of seconds ahead or at a wall-clock time, watch it count down to zer</span>
+    </a></li>
+    <li><a href="/workspace/tools/timestamp/">
+      <span class="ocurp-related-n">Epoch Converter</span>
+      <span class="ocurp-related-b">Unix timestamps to dates and back, live in both directions.</span>
+    </a></li>
+    <li><a href="/workspace/tools/timestamp-diff/">
+      <span class="ocurp-related-n">Timestamp Difference</span>
+      <span class="ocurp-related-b">Difference between two Unix timestamps or dates, broken down into days, hours, weeks and y</span>
+    </a></li>
+    <li><a href="/workspace/tools/bingo-card-generator/">
+      <span class="ocurp-related-n">Bingo Card Generator</span>
+      <span class="ocurp-related-b">Printable 5x5 bingo cards with a proper B-I-N-G-O number range and a matching call sheet.</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi-calculator-bmr/">
+      <span class="ocurp-related-n">BMI + BMR Calculator</span>
+      <span class="ocurp-related-b">Body mass index plus basal metabolic rate, with the healthy weight range for your height.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

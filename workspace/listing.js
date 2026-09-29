@@ -146,8 +146,26 @@
     var status = e.ready
       ? ''
       : '<span class="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-white/35"><span class="h-1.5 w-1.5 rounded-full bg-white/30"></span>Building</span>';
+    /* A website card shows its real site: the og:image when the entry has one.
+       Previously every website rendered a 2-letter monogram, which is why the
+       section read as "half pictures" with no photography in it at all.
+
+       The image sits at z-0 and the scrim at z-10 on purpose. Without an explicit
+       stacking order the scrim painted over the photo: every image loaded
+       (naturalWidth > 0) and measured full width, yet the card rendered solid
+       black -- the exact symptom that sent me hunting for a network fault that
+       did not exist. */
     var logo = isWebsites
-      ? '<div class="flex h-full w-full items-center justify-center"><span class="font-display text-5xl font-black text-white/15">' + esc(e.name.slice(0, 2).toUpperCase()) + '</span></div>'
+      ? (e.cover
+          ? '<div class="absolute inset-0 z-0">'
+            + '<img src="' + esc(e.cover) + '" alt="' + esc(e.name) + '" loading="lazy" decoding="async"'
+            + ' class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"'
+            + ' onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+            + '<span class="hidden h-full w-full items-center justify-center bg-[#0a0a0a]">'
+            + '<span class="font-display text-4xl font-black text-white/15">' + esc(e.name.slice(0, 2).toUpperCase()) + '</span></span>'
+            + '</div>'
+          : '<div class="flex h-full w-full items-center justify-center bg-[#0a0a0a]">'
+            + '<span class="font-display text-4xl font-black text-white/15">' + esc(e.name.slice(0, 2).toUpperCase()) + '</span></div>')
       : '<img src="/workspace/logos/' + esc(e.slug) + '.png" alt="' + esc(e.name) + ' logo" class="h-24 w-24 rounded-2xl border border-white/10 object-cover transition-transform duration-500 group-hover:scale-[1.04]">';
     var isFav = !!(window.OcurpAuth && OcurpAuth.favourites && OcurpAuth.favourites.has(e.slug));
     var favBtn = '<button data-fav="' + esc(e.slug) + '" title="' + (isFav ? 'Remove from your profile' : 'Save to your profile') + '"'
@@ -155,10 +173,17 @@
       + ' class="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border bg-black/55 text-base leading-none backdrop-blur transition-all '
       + (isFav ? 'border-accent text-accent' : 'border-white/20 text-white/55 hover:border-accent hover:text-accent')
       + '">' + (isFav ? '\u2605' : '\u2606') + '</button>';
+    /* When the entry has a real cover image, the generated pattern must NOT sit
+       on top of it -- the earlier version layered the pattern over the photo,
+       which is why Rentify's real banner arrived tinted and the other cards
+       looked like abstract wallpaper. A real image gets the banner to itself;
+       the pattern is only for entries with no artwork. */
+    var banner = isWebsites && e.cover ? logo : (coverArt(e) + '<div class="relative">' + logo + '</div>');
     var art = '<div class="relative flex h-44 items-center justify-center overflow-hidden rounded-t-2xl bg-[#0a0a0a]">'
-      + coverArt(e)
-      + '<div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a]/75 via-transparent to-transparent"></div>'
-      + '<div class="relative">' + logo + '</div>'
+      + banner
+      + '<div class="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-[#0a0a0a]/'
+      + (isWebsites && e.cover ? '45' : '75')
+      + ' via-transparent to-transparent"></div>'
       + favBtn
       + '</div>';
     var tags = e.tags.filter(function (t) { return String(t).toUpperCase() !== 'CLIENT-SIDE'; }).slice(0, 3).map(function (t) {

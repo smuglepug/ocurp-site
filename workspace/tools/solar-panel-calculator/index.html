@@ -51,6 +51,15 @@ tailwind.config = { theme: { extend: {
   .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
   .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
 </style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
 <meta name="description" content="Solar output in kWh, payback period and offset for a given roof and tariff. Runs entirely in your browser - nothing is uploaded.">
 <link rel="canonical" href="https://ocurp.space/workspace/tools/solar-panel-calculator/">
 <meta property="og:type" content="website">
@@ -68,15 +77,6 @@ tailwind.config = { theme: { extend: {
 <meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
 <meta name="twitter:image:alt" content="Solar Panel Calculator on Ocurp - free, runs in your browser">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Solar Panel Calculator","url":"https://ocurp.space/workspace/tools/solar-panel-calculator/","description":"Solar output in kWh, payback period and offset for a given roof and tariff. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
-<style>
-  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
-    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-  @media (prefers-reduced-motion:no-preference){
-    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
-      clip:auto;white-space:normal;display:block;margin-top:.75rem;
-      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
-  }
-</style>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -138,7 +138,11 @@ function wire(fn){fn();}
 function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
   return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
 
-var SITES=[["manchester", "Manchester, UK", 0.75, "Northern England, cloudy"], ["london", "London, UK", 0.9, "South-east England"], ["bristol", "Bristol, UK", 0.95, "South-west England"], ["edinburgh", "Edinburgh, UK", 0.7, "Scotland"], ["lisbon", "Lisbon, Portugal", 4.6, "Iberian coast"], ["malaga", "Malaga, Spain", 5.2, "Andalusia, very sunny"], ["lagos", "Lagos, Nigeria", 4.2, "Guinea coast, high insolation"], ["cotonou", "Cotonou, Benin", 4.1, "Gulf of Guinea"], ["cairo", "Cairo, Egypt", 5.6, "Very high desert insolation"], ["sydney", "Sydney, Australia", 4.3, "Temperate coast"], ["denver", "Denver, USA", 4.6, "High-altitude, thin air"], ["reykjavik", "Reykjavik, Iceland", 0.65, "Sub-arctic"]];
+/* Daily peak-sun-hours, kWh of sunlight per m2 per day. These are the
+   long-run global-horizontal daily averages for each city, not "hours of
+   bright sun" - multiplying by 365 and the system efficiency has to land
+   inside the specific-yield range quoted in the note below. */
+var SITES=[["manchester", "Manchester, UK", 2.6, "Northern England, cloudy"], ["london", "London, UK", 2.7, "South-east England"], ["bristol", "Bristol, UK", 2.8, "South-west England"], ["edinburgh", "Edinburgh, UK", 2.5, "Scotland"], ["lisbon", "Lisbon, Portugal", 4.8, "Iberian coast"], ["malaga", "Malaga, Spain", 5.1, "Andalusia, very sunny"], ["lagos", "Lagos, Nigeria", 4.0, "Guinea coast, high insolation"], ["cotonou", "Cotonou, Benin", 3.9, "Gulf of Guinea"], ["cairo", "Cairo, Egypt", 5.5, "Very high desert insolation"], ["sydney", "Sydney, Australia", 4.0, "Temperate coast"], ["denver", "Denver, USA", 4.5, "High-altitude, thin air"], ["reykjavik", "Reykjavik, Iceland", 1.9, "Sub-arctic"]];
 var LOSS={monocrystalline:0.10, polycrystalline:0.14, thinfilm:0.22};
 var PSH=0.0076;   /* MWh per kW per peak-sun-hour-day, times 365 = 2.774 kWh/kW/h */
 var PSH_KWH=2.774;/* kWh per kW per peak sun hour per day, over 365 days */
@@ -152,6 +156,7 @@ function calc(o){
   var kw=o.panels*o.watt/1000;
   var eff=1-(o.loss/100)-LOSS[o.type];
   if(!(eff>0.05)) throw new Error('total losses are too high to model');
+  if(!(o.tariff>0)) throw new Error('enter an electricity price above zero to work out payback');
   var kwh=kw*o.psh*eff*365;
   var money=kwh*o.tariff;
   var capex=kw*o.cpw*1000;
@@ -172,7 +177,11 @@ function readInputs(){
 function run(){
   var o,res;
   try{ o=readInputs(); res=calc(o); }
-  catch(e){ seterr('err',e.message); return; }
+  /* Blank every output on failure. Returning early left the previous run's
+     generation, payback and table on screen under a new error, so the page
+     showed a live-looking answer for inputs it had just rejected. */
+  catch(e){ seterr('err',e.message); show([]);
+    $('line').textContent='-'; $('tbl').innerHTML=''; $('note').innerHTML=''; return; }
   seterr('err','');
   show([['Generation',grp(res.kwh,0)+' kWh/yr'],
         ['Saved', '£'+grp(res.money,0)],
@@ -265,13 +274,43 @@ run();
   setInterval(scan,700);
 })();
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
   <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/solar-panel-size-calculator/">
+      <span class="ocurp-related-n">Solar Panel Size Calculator</span>
+      <span class="ocurp-related-b">Turn system size, peak sun hours and installed cost into annual kWh and a lifetime saving </span>
+    </a></li>
     <li><a href="/workspace/tools/energy-converter/">
       <span class="ocurp-related-n">Energy &amp; Heat Converter</span>
       <span class="ocurp-related-b">Joules, calories, BTU, watt-hours and electron-volts converted exactly.</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
     </a></li>
     <li><a href="/workspace/tools/age-calculator/">
       <span class="ocurp-related-n">Age Calculator</span>
@@ -284,14 +323,6 @@ run();
     <li><a href="/workspace/tools/base-converter/">
       <span class="ocurp-related-n">Base Converter</span>
       <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
-    </a></li>
-    <li><a href="/workspace/tools/bmi/">
-      <span class="ocurp-related-n">BMI Calculator</span>
-      <span class="ocurp-related-b">Body mass index with healthy-range context.</span>
-    </a></li>
-    <li><a href="/workspace/tools/calculator/">
-      <span class="ocurp-related-n">Scientific Calculator</span>
-      <span class="ocurp-related-b">Full expression evaluation in the browser.</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/tools/">See all tools →</a>

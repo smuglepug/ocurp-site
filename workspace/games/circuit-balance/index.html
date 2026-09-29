@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circuit Balance — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Circuit Balance - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/circuit-balance/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Circuit Balance">
+<meta property="og:description" content="Circuit Balance - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/circuit-balance/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Circuit Balance on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Circuit Balance">
+<meta name="twitter:description" content="Circuit Balance - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Circuit Balance on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Circuit Balance","url":"https://ocurp.space/workspace/games/circuit-balance/","description":"Circuit Balance - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Circuit Balance</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">LOGIC</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button class="lv ws-btn" data-lv="easy">Easy</button>
+      <button class="lv ws-btn-ghost" data-lv="med">Medium</button>
+      <button class="lv ws-btn-ghost" data-lv="hard">Hard</button>
+      <button id="new" class="ws-btn-ghost">New network</button>
+      <span class="ws-chip" id="budget">BUDGET &mdash;</span>
+    </div>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_250px]">
+      <div>
+        <div class="ws-label mb-2">Branch resistors &mdash; click to select, or press 1&ndash;3</div>
+        <div id="vars" class="grid gap-2 sm:grid-cols-3"></div>
+        <div class="ws-label mb-2 mt-4">Node equations &mdash; all must read true</div>
+        <div id="eqs" class="grid gap-2"></div>
+      </div>
+      <div>
+        <div class="ws-label mb-2">Dial a value</div>
+        <div id="pad" class="grid grid-cols-3 gap-2"></div>
+        <div class="mt-4 grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Equations true</div>
+            <div class="font-display text-xl font-black text-white" id="tru">0/0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Moves left</div>
+            <div class="font-display text-xl font-black text-accent" id="left">&mdash;</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Adjustments</div>
+            <div class="font-display text-xl font-black text-white" id="moves">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Status</div>
+            <div class="font-display text-sm font-black text-white" id="status">Solving</div></div>
+        </div>
+        <div id="msg" class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Loading network&hellip;</div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="zero" class="ws-btn-ghost">Zero dials (free)</button>
+        </div>
+      </div>
+    </div>
+  </section>
+  <p class="mx-auto mt-6 max-w-2xl text-[10px] leading-relaxed text-white/45"><span class="font-black tracking-[0.2em] text-white/60">THE EXACT RULES</span><br>
+    Three branch resistors <span class="text-white/70">R1, R2, R3</span> each take an integer
+    <span class="text-white/70">1&ndash;6, and no two of them may read the same value</span>. Every displayed
+    Kirchhoff equation has to hold at the same time. Turning a dial to a different value costs one
+    adjustment, and the budget is <span class="text-white/70">8 / 7 / 6 adjustments</span> on easy, medium, hard &mdash;
+    a solved network needs exactly 3, so you get at least twice the necessary allowance.
+    <span class="text-accent">WIN</span> = all equations read true. <span class="text-accent">FAIL</span> = the budget is spent with
+    an equation still false. A value that repeats one you already used is <span class="text-accent">refused</span> and costs nothing.
+    Networks are built from a hidden working assignment and are re-rolled unless a brute-force search over
+    all 120 legal assignments finds <span class="text-white/70">exactly one</span> that satisfies every equation, so every
+    network you are shown has a single answer.</p>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const CB={VARS:3,LO:1,HI:6,BUDGET:{easy:8,med:7,hard:6}};
+
+let cb={level:'med',eqs:[],sol:null,vals:[-1,-1,-1],sel:0,moves:0,status:'playing'};
+const $=id=>document.getElementById(id);
+
+const LEAF=['R1','R2','R3'];
+// every legal assignment of 1..6 to three resistors: 6*5*4 = 120
+function allAssignments(){
+  const out=[];
+  for(let a=CB.LO;a<=CB.HI;a++)for(let b=CB.LO;b<=CB.HI;b++){if(b===a)continue;
+    for(let c=CB.LO;c<=CB.HI;c++){if(c===a||c===b)continue;out.push([a,b,c])}}
+  return out}
+const KINDS=[
+  {key:'sum', t:(k)=>LEAF[k[0]]+' + '+LEAF[k[1]]+' = ', f:(k,v)=>v[k[0]]+v[k[1]]},
+  {key:'diff',t:(k)=>LEAF[k[0]]+' \u2212 '+LEAF[k[1]]+' = ', f:(k,v)=>v[k[0]]-v[k[1]]},
+  {key:'sum3',t:()=>'R1 + R2 + R3 = ', f:(k,v)=>v[0]+v[1]+v[2]}
+];
+// the page evaluates equations with ONE evaluator, and the prover re-implements
+// that same evaluator. Keeping it a plain integer sum keeps the arithmetic
+// exactly checkable by hand.
+function evalEqs(eqs,vals){
+  const out=[];
+  for(const e of eqs){
+    let t=0;
+    for(const term of e.terms)t+=term.co*vals[term.var];
+    out.push(t===e.rhs)}
+  return out}
+
+function satisfied(eqs,vals){
+  if(vals.some(v=>v<CB.LO||v>CB.HI))return false;
+  const s=new Set(vals);
+  if(s.size!==CB.VARS)return false;
+  return evalEqs(eqs,vals).every(Boolean)}
+function solutions(eqs){return allAssignments().filter(v=>satisfied(eqs,v))}
+
+// --- generator ---------------------------------------------------------
+// A hidden assignment is drawn first, equations are printed from it, and the
+// puzzle is re-rolled unless exactly ONE legal assignment satisfies them all.
+function makeEqs(sol,count){
+  const eqs=[];
+  const kinds=KINDS.slice();
+  for(let i=kinds.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));
+    const t=kinds[i];kinds[i]=kinds[j];kinds[j]=t}
+  for(let n=0;n<count&&n<kinds.length;n++){
+    const kd=kinds[n];
+    let i=Math.floor(Math.random()*CB.VARS),j=Math.floor(Math.random()*CB.VARS);
+    if(i===j)j=(j+1)%CB.VARS;                 // sum3 ignores the pair anyway
+    const terms=kd.key==='sum3'?[{var:0,co:1},{var:1,co:1},{var:2,co:1}]
+      :(kd.key==='diff'?[{var:i,co:1},{var:j,co:-1}]:[{var:i,co:1},{var:j,co:1}]);
+    eqs.push({id:eqs.length,kind:kd.key,text:kd.t([i,j]),
+      rhs:terms.reduce((a,t)=>a+t.co*sol[t.var],0),terms:terms})}
+  return eqs}
+function buildNetwork(){
+  for(let attempt=0;attempt<800;attempt++){
+    const pool=Array.from({length:CB.HI-CB.LO+1},(_,i)=>CB.LO+i);
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));
+      const t=pool[i];pool[i]=pool[j];pool[j]=t}
+    const sol=pool.slice(0,CB.VARS);
+    const eqs=makeEqs(sol,3+Math.floor(Math.random()*2));
+    if(solutions(eqs).length===1)return {sol:sol,eqs:eqs,attempt:attempt+1}}
+  return {sol:[1,2,3],eqs:[{id:0,kind:'x',text:'R1 + R2 = ',rhs:3,
+    terms:[{var:0,co:1},{var:1,co:1}]}],attempt:-1}}
+
+function newNetwork(level){
+  const lv=(level||cb.level);
+  const built=buildNetwork();
+  cb={level:lv,eqs:built.eqs,sol:built.sol,vals:[-1,-1,-1],sel:0,moves:0,status:'playing'};
+  render();
+  return {eqs:built.eqs.map(e=>({text:e.text+' '+e.rhs})),answers:solutions(cb.eqs).length,
+          attempt:built.attempt}}
+function load(spec){
+  cb={level:'load',eqs:spec.eqs.map((e,i)=>({id:i,kind:e.kind||'x',text:e.text,rhs:e.rhs,
+      terms:e.terms})),sol:null,vals:spec.vals?spec.vals.slice():[-1,-1,-1],
+    sel:0,moves:0,status:'playing'};
+  render();
+  return {answers:solutions(cb.eqs).length,answersList:solutions(cb.eqs)}}
+
+// --- the move rule -----------------------------------------------------
+// returns 'not-playing' | 'duplicate' | 'won' | 'lost' | 'ok'
+function setVal(i,v){
+  if(cb.status!=='playing')return 'not-playing';
+  if(i<0||i>=CB.VARS)return 'oob';
+  if(v<CB.LO||v>CB.HI)return 'range';
+  if(cb.vals[i]===v)return 'same';
+  if(cb.vals.indexOf(v)>=0)return 'duplicate';
+  cb.vals[i]=v;cb.moves++;
+  if(satisfied(cb.eqs,cb.vals)){cb.status='won';
+    $('msg').textContent='Network balanced. R1='+cb.vals[0]+' R2='+cb.vals[1]+
+      ' R3='+cb.vals[2]+' satisfies all '+cb.eqs.length+' equations in '+cb.moves+
+      ' of '+CB.BUDGET[cb.level]+' adjustments.'}
+  else if(cb.moves>=CB.BUDGET[cb.level]){cb.status='lost';
+    const bad=evalEqs(cb.eqs,cb.vals).filter(t=>!t).length;
+    $('msg').textContent='Budget of '+CB.BUDGET[cb.level]+' adjustments spent with '+
+      bad+' equation'+(bad===1?'':'s')+' still false. New network to try again.'}
+  else $('msg').textContent=cb.vals.filter(v=>v>=0).length+' of 3 resistors set.';
+  render();
+  return cb.status==='won'?'won':(cb.status==='lost'?'lost':'ok')}
+function reset(){cb.vals=[-1,-1,-1];cb.moves=0;if(cb.status==='lost')cb.status='playing';
+  $('msg').textContent='Dials zeroed. Adjustments back to 0.';
+  render();return 0}
+
+function render(){
+  let vs='';
+  for(let i=0;i<CB.VARS;i++){
+    vs+='<button data-v="'+i+'" class="rounded-xl border p-3 text-left transition-colors '+
+      (i===cb.sel?'border-[#FF5F1F] bg-[#FF5F1F]/15':'border-white/10 bg-white/[0.03]')+
+      '"><div class="ws-label mb-1">'+LEAF[i]+'</div>'+
+      '<div class="font-display text-2xl font-black '+(cb.vals[i]<0?'text-white/25':'text-white')+'">'+
+      (cb.vals[i]<0?'--':cb.vals[i])+'</div>'+
+      '<div class="text-[10px] text-white/35">&omega;</div></button>'}
+  $('vars').innerHTML=vs;
+  $('vars').querySelectorAll('button').forEach(b=>b.onclick=()=>{cb.sel=parseInt(b.dataset.v,10);render()});
+  const res=cb.vals.every(v=>v>=0)?evalEqs(cb.eqs,cb.vals):cb.eqs.map(()=>false);
+  let es='';
+  for(let i=0;i<cb.eqs.length;i++){
+    const e=cb.eqs[i];
+    es+='<div class="flex items-center justify-between gap-3 rounded-xl border px-3 py-2 '+
+      (res[i]?'border-[#FF5F1F]/60 bg-[#FF5F1F]/12':'border-white/10 bg-white/[0.03]')+
+      '"><span class="font-mono text-sm text-white/80">'+e.text+
+      (cb.vals.every(v=>v>=0)?(' '+e.rhs):' ?')+'</span>'+
+      '<span class="text-[10px] font-black '+(res[i]?'text-[#FF5F1F]':'text-white/25')+'">'+
+      (res[i]?'TRUE':'FALSE')+'</span></div>'}
+  $('eqs').innerHTML=es;
+  $('pad').innerHTML=Array.from({length:CB.HI-CB.LO+1},(_,i)=>CB.LO+i)
+    .map(v=>'<button data-n="'+v+'" class="ws-btn-ghost !px-1 !py-2 text-xs">'+v+'</button>').join('');
+  $('pad').querySelectorAll('button').forEach(b=>b.onclick=()=>setVal(cb.sel,parseInt(b.dataset.n,10)));
+  $('tru').textContent=res.filter(Boolean).length+'/'+cb.eqs.length;
+  $('moves').textContent=cb.moves;
+  $('left').textContent=Math.max(0,CB.BUDGET[cb.level]-cb.moves);
+  $('budget').textContent='BUDGET '+CB.BUDGET[cb.level]+(cb.level==='load'?' (TEST)':'');
+  $('status').textContent=cb.status==='won'?'Balanced':(cb.status==='lost'?'Unbalanced':'Solving');
+  document.querySelectorAll('.lv').forEach(el=>{
+    el.className=(el.dataset.lv===cb.level?'ws-btn lv':'ws-btn-ghost lv')})}
+$('new').onclick=()=>newNetwork(cb.level);
+$('zero').onclick=()=>reset();
+addEventListener('keydown',e=>{
+  if(e.key>='1'&&e.key<='3'){cb.sel=parseInt(e.key,10)-1;render();e.preventDefault();return}
+  const n=parseInt(e.key,10);
+  if(!isNaN(n)){setVal(cb.sel,n);e.preventDefault()}});
+newNetwork('med');
+window.__circuit_balance={CB,
+  get G(){const res=cb.vals.every(v=>v>=0)?evalEqs(cb.eqs,cb.vals):cb.eqs.map(()=>false);
+    return {level:cb.level,eqs:cb.eqs.map(e=>({text:e.text,rhs:e.rhs,terms:e.terms})),
+      vals:cb.vals.slice(),sel:cb.sel,moves:cb.moves,budget:CB.BUDGET[cb.level],
+      status:cb.status,trueCount:res.filter(Boolean).length,
+      satisfied:satisfied(cb.eqs,cb.vals),answers:solutions(cb.eqs).length}},
+  newNetwork,setVal,reset,load,evalEqs,satisfied,solutions,allAssignments,
+  check:(v)=>({satisfied:satisfied(cb.eqs,v),answers:solutions(cb.eqs).length,
+    truth:evalEqs(cb.eqs,v)})};</script>
+
+
+
+
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+    </a></li>
+    <li><a href="/workspace/games/breakout/">
+      <span class="ocurp-related-n">Breakout</span>
+      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
+    </a></li>
+    <li><a href="/workspace/games/fitts-drill/">
+      <span class="ocurp-related-n">Fitts Drill</span>
+      <span class="ocurp-related-b">Fitts Drill - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/flappy-bird/">
+      <span class="ocurp-related-n">Flappy Bird</span>
+      <span class="ocurp-related-b">Thread the gaps. Your best score is saved on this device.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

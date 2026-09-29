@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unit Price Compare — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Sort products by what a single gram, millilitre or item actually costs, normalising g/kg, ml/l and oz/lb so 500 g and 1 kg compare correctly. Runs...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/unit-price-compare/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Unit Price Compare">
+<meta property="og:description" content="Sort products by what a single gram, millilitre or item actually costs, normalising g/kg, ml/l and oz/lb so 500 g and 1 kg compare correctly. Runs...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/unit-price-compare/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Unit Price Compare on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Unit Price Compare">
+<meta name="twitter:description" content="Sort products by what a single gram, millilitre or item actually costs, normalising g/kg, ml/l and oz/lb so 500 g and 1 kg compare correctly. Runs...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Unit Price Compare on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Unit Price Compare","url":"https://ocurp.space/workspace/tools/unit-price-compare/","description":"Sort products by what a single gram, millilitre or item actually costs, normalising g/kg, ml/l and oz/lb so 500 g and 1 kg compare correctly. Runs...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Unit Price Compare</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">SHOPPING</span><span class="ws-chip">UNITS</span><span class="ws-chip">COMPARE</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="grid gap-3 sm:grid-cols-[2fr_1fr_1fr_1fr_auto] sm:items-end">
+      <div><label class="ws-label mb-2 block" for="n0">Product</label>
+        <input id="n0" class="ws-input" style="text-align:left" value="Budget rice"></div>
+      <div><label class="ws-label mb-2 block" for="p0">Price</label>
+        <input id="p0" type="number" step="any" class="ws-input" value="3.00"></div>
+      <div><label class="ws-label mb-2 block" for="q0">Quantity</label>
+        <input id="q0" type="number" step="any" class="ws-input" value="500"></div>
+      <div><label class="ws-label mb-2 block" for="u0">Unit</label>
+        <select id="u0" class="ws-input">
+          <option value="g" selected>grams</option><option value="kg">kilograms</option>
+          <option value="ml">millilitres</option><option value="l">litres</option>
+          <option value="oz">ounces</option><option value="lb">pounds</option>
+          <option value="each">each / pack</option></select></div>
+      <button id="add" class="ws-btn" onclick="window.__unit_price_compare.addRow()">Add</button>
+    </div>
+    <div id="rows" class="mt-4"></div>
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <button id="sample" class="ws-btn-ghost" onclick="window.__unit_price_compare.sample()">Load sample</button>
+      <button id="clear" class="ws-btn-ghost" onclick="window.__unit_price_compare.clearRows()">Clear</button>
+    </div>
+    <div id="err" class="mt-3 font-mono text-[11px]" style="color:#FF5F1F"></div>
+  </section>
+
+  <section class="ws-panel mt-6 p-6">
+    <div class="mb-4 flex flex-wrap items-baseline justify-between gap-3">
+      <div class="ws-label">Cheapest per unit</div>
+      <span id="winner" class="font-display text-xl font-black text-accent">-</span>
+    </div>
+    <div id="table"></div>
+  </section>
+
+  <section class="ws-panel mt-6 p-6">
+    <div class="ws-label mb-3">Conversion factors used</div>
+    <div id="factors"></div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+var $ = function(id){ return document.getElementById(id); };
+
+/* Base units: mass -> grams, volume -> millilitres, count -> each.
+   1 lb = 453.59237 g exactly; 1 oz = lb / 16. */
+var UNITS = {
+  g:    {dim:'mass',   factor:1,            label:'g'},
+  kg:   {dim:'mass',   factor:1000,         label:'kg'},
+  ml:   {dim:'vol',    factor:1,            label:'ml'},
+  l:    {dim:'vol',    factor:1000,         label:'l'},
+  oz:   {dim:'mass',   factor:453.59237/16, label:'oz'},
+  lb:   {dim:'mass',   factor:453.59237,    label:'lb'},
+  each: {dim:'count',  factor:1,            label:'item'}
+};
+var DIM_LABEL = {mass:'g', vol:'ml', count:'item'};
+
+function baseAmount(qty, unit){
+  var u = UNITS[unit];
+  if(!u) return NaN;
+  return qty * u.factor;
+}
+
+/* Price of ONE base unit, e.g. per gram or per millilitre. This is the only
+   number that can be compared across products - a 500 g bag and a 1 kg bag
+   land on the same scale. */
+function perBase(price, qty, unit){
+  var b = baseAmount(qty, unit);
+  if(!isFinite(b) || b <= 0) return NaN;
+  return price / b;
+}
+
+var ITEMS = [];   // {name, price, qty, unit}
+
+function addItem(o){
+  ITEMS.push({name: o.name, price: o.price, qty: o.qty, unit: o.unit});
+  return ITEMS;
+}
+function clearItems(){ ITEMS = []; }
+function setItems(list){ ITEMS = list.map(function(x){
+  return {name:x.name, price:x.price, qty:x.qty, unit:x.unit}; }); }
+
+function drawRows(){
+  $('rows').innerHTML = ITEMS.map(function(it, i){
+    return '<div class="mb-3 grid gap-3 sm:grid-cols-[2fr_1fr_1fr_1fr_auto] sm:items-end">'
+      + '<div><label class="ws-label mb-2 block">Product '+(i+1)+'</label>'
+      + '<input class="ws-input" style="text-align:left" data-f="name" data-i="'+i+'" value="'
+        + String(it.name).replace(/"/g,'&quot;') + '"></div>'
+      + '<div><label class="ws-label mb-2 block">Price</label>'
+      + '<input type="number" step="any" class="ws-input" data-f="price" data-i="'+i+'" value="'
+        + it.price + '"></div>'
+      + '<div><label class="ws-label mb-2 block">Quantity</label>'
+      + '<input type="number" step="any" class="ws-input" data-f="qty" data-i="'+i+'" value="'
+        + it.qty + '"></div>'
+      + '<div><label class="ws-label mb-2 block">Unit</label>'
+      + '<select class="ws-input" data-f="unit" data-i="'+i+'">'
+      + Object.keys(UNITS).map(function(k){
+          return '<option value="'+k+'"'+(k === it.unit ? ' selected' : '')
+               + '>'+k+'</option>'; }).join('')
+      + '</select></div>'
+      + '<button class="ws-btn-ghost" onclick="window.__unit_price_compare.removeRow('+i+')">Remove</button>'
+      + '</div>';
+  }).join('') || '<div class="text-sm text-white/40">no products yet</div>';
+
+  $('rows').querySelectorAll('input,select').forEach(function(el){
+    el.addEventListener('input', sync);
+    el.addEventListener('change', sync);
+  });
+}
+
+function sync(){
+  var inputs = $('rows').querySelectorAll('[data-i]');
+  var byIndex = {};
+  inputs.forEach(function(el){
+    var i = parseInt(el.getAttribute('data-i'), 10), f = el.getAttribute('data-f');
+    byIndex[i] = byIndex[i] || {};
+    byIndex[i][f] = (f === 'name') ? el.value
+                   : (f === 'unit') ? el.value : parseFloat(el.value);
+  });
+  ITEMS = Object.keys(byIndex).sort(function(a,b){ return a - b; }).map(function(i){
+    var o = byIndex[i];
+    return {name:o.name, price:o.price, qty:o.qty, unit:o.unit};
+  });
+  render();
+}
+
+function analyse(items){
+  var rows = items.map(function(it, idx){
+    var u = UNITS[it.unit];
+    var base = baseAmount(it.qty, it.unit);
+    return {idx:idx, name:it.name, price:it.price, qty:it.qty, unit:it.unit,
+            dim:u ? u.dim : null, base:base, perBase:perBase(it.price, it.qty, it.unit),
+            valid: isFinite(perBase(it.price, it.qty, it.unit)) && perBase(it.price, it.qty, it.unit) > 0};
+  }).filter(function(r){ return r.valid; });
+
+  // Sorted ascending by unit price, original row index kept as a tie-break so
+  // two equal prices always come out in the order they were entered.
+  var sorted = rows.slice().sort(function(a, b){
+    if(a.perBase !== b.perBase) return a.perBase - b.perBase;
+    return a.idx - b.idx;
+  });
+
+  var groups = {};
+  rows.forEach(function(r){
+    if(!groups[r.dim]) groups[r.dim] = [];
+    groups[r.dim].push(r);
+  });
+
+  var best = null;
+  Object.keys(groups).forEach(function(d){
+    var g = groups[d].slice().sort(function(a,b){ return a.perBase - b.perBase; });
+    if(!best || g[0].perBase < best.perBase) best = g[0];
+  });
+
+  var savings = null;
+  if(sorted.length > 1){
+    var worst = sorted[sorted.length - 1];
+    savings = {name: worst.name, diff: worst.perBase - sorted[0].perBase,
+               ratio: worst.perBase / sorted[0].perBase};
+  }
+
+  return {sorted:sorted, best:best, savings:savings,
+          groups:Object.keys(groups), total:items.length};
+}
+
+function money(n){ return n.toFixed(6).replace(/0+$/,'').replace(/\.$/,''); }
+function per100(n){ return (n * 100).toFixed(4).replace(/0+$/,'').replace(/\.$/,''); }
+
+function render(){
+  var a = analyse(ITEMS);
+  if(!a.sorted.length){
+    $('winner').textContent = '-';
+    $('table').innerHTML = '<div class="text-sm text-white/40">enter a price and a quantity above zero to compare</div>';
+    $('err').textContent = ITEMS.length ? 'every product needs a price and a quantity above zero' : '';
+    window.__unit_price_compare_state = null;
+    return null;
+  }
+  $('err').textContent = '';
+
+  var best = a.best;
+  $('winner').textContent = best.name + ' at ' + money(best.perBase) + ' per ' + DIM_LABEL[best.dim];
+
+  var html = '<table class="w-full text-left">'
+    + '<thead class="ws-label"><tr>'
+    + '<th class="py-2 pr-6">#</th><th class="py-2 pr-6">Product</th>'
+    + '<th class="py-2 pr-6">Price</th><th class="py-2 pr-6">Quantity</th>'
+    + '<th class="py-2 pr-6">Base amount</th><th class="py-2 pr-6">Per base unit</th>'
+    + '<th class="py-2 pr-6">Per 100 base units</th></tr></thead><tbody>';
+  a.sorted.forEach(function(r, i){
+    var win = (i === 0);
+    var rowCls = win ? 'style="background:rgba(255,95,31,.10)"' : '';
+    var perLabel = DIM_LABEL[r.dim];
+    var money2 = win ? 'text-accent font-bold' : 'text-white/80';
+    html += '<tr class="border-t border-white/5" '+rowCls+'>'
+      + '<td class="py-2 pr-6 font-mono text-[11px] text-white/40">'+(i+1)+(win?' CHEAPEST':'')+'</td>'
+      + '<td class="py-2 pr-6 text-sm text-white">'+String(r.name).replace(/[<>&]/g,'')+'</td>'
+      + '<td class="py-2 pr-6 font-mono text-[11px] text-white/60">'+r.price.toFixed(2)+'</td>'
+      + '<td class="py-2 pr-6 font-mono text-[11px] text-white/60">'+r.qty+' '+r.unit+'</td>'
+      + '<td class="py-2 pr-6 font-mono text-[11px] text-white/60">'
+        + r.base.toFixed(2)+' '+perLabel+'</td>'
+      + '<td class="py-2 pr-6 font-mono text-[11px] '+money2+'">'+money(r.perBase)+'</td>'
+      + '<td class="py-2 pr-6 font-mono text-[11px] text-white/50">'+per100(r.perBase)+'</td></tr>';
+  });
+  html += '</tbody></table>';
+  if(a.savings){
+    html += '<div class="mt-4 text-sm text-white/60">Against the priciest entry ('
+      + a.savings.name.replace(/[<>&]/g,'') + '), the cheapest costs '
+      + '<span class="font-mono text-accent">'+money(a.savings.diff)+'</span> less per '
+      + DIM_LABEL[best.dim] + ' &mdash; that entry is '
+      + a.savings.ratio.toFixed(3) + '× as expensive per unit.</div>';
+  }
+  if(a.groups.length > 1){
+    html += '<div class="mt-2 text-[11px] text-white/35">Sorted across '
+      + a.groups.map(function(d){ return DIM_LABEL[d]; }).join(' and ')
+      + ' - different dimensions are shown together but each row is priced in its own base unit.</div>';
+  }
+  $('table').innerHTML = html;
+
+  var frows = Object.keys(UNITS).map(function(k){
+    var u = UNITS[k];
+    return [k + ' = ' + (u.factor === 1 ? '1' : String(u.factor).replace(/0+$/,'').replace(/\.$/,''))
+            + ' ' + u.label, DIM_LABEL[u.dim]];
+  });
+  $('factors').innerHTML = frows.map(function(p){
+    return '<div class="ws-kv"><span>'+p[0]+'</span><span>1 '+(p[1]==='item'?p[1]:p[1])+'</span></div>';
+  }).join('');
+
+  var out = {rows:a.sorted.map(function(r){
+              return {name:r.name, unit:r.unit, qty:r.qty, price:r.price,
+                      dim:r.dim, base:r.base, perBase:r.perBase}; }),
+            best:a.best ? {name:a.best.name, perBase:a.best.perBase, dim:a.best.dim} : null,
+            savings:a.savings};
+  window.__unit_price_compare_state = out;
+  return out;
+}
+
+function addRow(){
+  addItem({name:'New product', price:1, qty:1, unit:'each'});
+  drawRows(); render();
+}
+function removeRow(i){
+  ITEMS.splice(i, 1);
+  drawRows(); render();
+}
+function clearRows(){
+  ITEMS = [];
+  drawRows(); render();
+}
+
+var SAMPLE_UPC = [
+  {name:'Rice, small bag',   price:3.00, qty:500, unit:'g'},
+  {name:'Rice, large bag',   price:5.50, qty:1,   unit:'kg'},
+  {name:'Rice, loose per lb',price:4.20, qty:1,   unit:'lb'},
+  {name:'Rice, loose per oz',price:9.00, qty:12,  unit:'oz'}
+];
+
+function sample(){ setItems(SAMPLE_UPC); drawRows(); return render(); }
+
+addItem({name:$('n0').value || 'Budget rice', price:parseFloat($('p0').value) || 1,
+         qty:parseFloat($('q0').value) || 1, unit:$('u0').value});
+drawRows();
+render();
+
+window.__unit_price_compare = {
+  UNITS: UNITS,
+  baseAmount: baseAmount,
+  perBase: perBase,
+  analyse: analyse,
+  render: render,
+  addRow: addRow,
+  removeRow: removeRow,
+  clearRows: clearRows,
+  sample: sample,
+  set: function(list){
+    setItems(list);
+    drawRows();
+    return render();
+  },
+  get: function(){ return window.__unit_price_compare_state; }
+};
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/unit-conversion-matrix/">
+      <span class="ocurp-related-n">Unit Conversion Matrix</span>
+      <span class="ocurp-related-b">Exact conversion factors across length, mass, area, volume, speed, temperature and data, w</span>
+    </a></li>
+    <li><a href="/workspace/tools/unit-converter/">
+      <span class="ocurp-related-n">Unit Converter</span>
+      <span class="ocurp-related-b">Length, mass, temperature, data and more.</span>
+    </a></li>
+    <li><a href="/workspace/tools/unit-converter-categories/">
+      <span class="ocurp-related-n">Unit Converter</span>
+      <span class="ocurp-related-b">Every unit category in one place - length, mass, volume, temperature, data and more.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-diff/">
+      <span class="ocurp-related-n">JSON Diff</span>
+      <span class="ocurp-related-b">Compare two JSON documents key by key and see exactly what was added, removed or changed.</span>
+    </a></li>
+    <li><a href="/workspace/tools/text-diff/">
+      <span class="ocurp-related-n">Text Diff</span>
+      <span class="ocurp-related-b">Compare two blocks of text line by line with colour highlighting.</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

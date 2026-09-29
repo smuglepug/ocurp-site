@@ -42,6 +42,15 @@ tailwind.config = { theme: { extend: {
   .rl-trail { position:absolute; left:50%; top:50%; width:4px; height:4px; border-radius:50%;
     background:rgba(255,255,255,.55); transform:translate(-50%,-50%) }
 </style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
 <meta name="description" content="Ricochet Lines - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
 <link rel="canonical" href="https://ocurp.space/workspace/games/ricochet-lines/">
 <meta property="og:type" content="website">
@@ -135,7 +144,7 @@ function simulate(mirrors,lvl){
     const nr=r+DIRS[d][0], nc=c+DIRS[d][1];
     if(!inb(nr,nc))return {ok:false,why:'out',path,bounces,steps:path.length-1};
     if(nr===lvl.goal[0]&&nc===lvl.goal[1]){path.push(IX(nr,nc));return {ok:true,why:'goal',path,bounces,steps:path.length-1}}
-    if(lvl.wall.some(w=>w[0]===nr&&w[1]===nc)){path.push(IX(nr,nc));return {ok:false,why:'wall',path,bounces,steps:path.length-1}}
+    if(lvl.walls.some(w=>w[0]===nr&&w[1]===nc)){path.push(IX(nr,nc));return {ok:false,why:'wall',path,bounces,steps:path.length-1}}
     const t=mirrors[IX(nr,nc)]|0;
     if(t===1)d=SLASH[d];
     else if(t===2)d=BACK[d];
@@ -148,7 +157,7 @@ function simulate(mirrors,lvl){
 // the PREDECESSOR cell, and when the walk finally steps off the board we have
 // found the start cell and its heading. Every result is re-run through the
 // forward sim before it is accepted.
-function isWall(lvl,r,c){return lvl.wall.some(w=>w[0]===r&&w[1]===c)}
+function isWall(lvl,r,c){return lvl.walls.some(w=>w[0]===r&&w[1]===c)}
 function walk(r,c,d,lvl,rnd,seen,depth,cost,acc){
   if(depth>8||cost>BUDGET)return null;
   const order=[0,1,2];
@@ -177,7 +186,7 @@ function straightShot(lvl){
   for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
     for(let d=0;d<4;d++){
       if(isWall(lvl,r,c))continue;
-      const st={start:[r,c],dir:d,goal:lvl.goal,walls:lvl.wall};
+      const st={start:[r,c],dir:d,goal:lvl.goal,walls:lvl.walls};
       const s=simulate(new Array(COLS*ROWS).fill(0),st);
       if(s.ok)return {start:[r,c],dir:d,mirrors:{}}}} 
   return null}
@@ -190,11 +199,11 @@ function generate(lvl,seed){
       if(found){
         const mirrors=new Array(COLS*ROWS).fill(0);
         for(const k in found.mirrors)mirrors[k]=found.mirrors[k];
-        const st={start:found.start,dir:found.dir,goal:lvl.goal,walls:lvl.wall};
+        const st={start:found.start,dir:found.dir,goal:lvl.goal,walls:lvl.walls};
         const chk=simulate(mirrors,st);
         if(chk.ok)return {mirrors,start:st,path:chk.path,attempts:attempt+1}}}}
   const ss=straightShot(lvl);
-  if(ss){const st={start:ss.start,dir:ss.dir,goal:lvl.goal,walls:lvl.wall};
+  if(ss){const st={start:ss.start,dir:ss.dir,goal:lvl.goal,walls:lvl.walls};
     return {mirrors:new Array(COLS*ROWS).fill(0),start:st,path:simulate(new Array(COLS*ROWS).fill(0),st).path,attempts:-1}}
   return null}
 // ---- runtime ----
@@ -203,7 +212,9 @@ function build(i){
   lv=i;
   const L=LEVELS[i];
   solved=generate(L,L.seed);
-  board={start:solved.start,goal:L.goal,walls:L.wall};
+  // generate() returns {mirrors, start:{start:[r,c],dir,goal,walls}, ...},
+  // so the coordinates live one level deeper than `solved.start`.
+  board={start:solved.start.start,dir:solved.start.dir,goal:L.goal,walls:L.walls};
   mirrors=new Array(COLS*ROWS).fill(0);
   won=false;result=null;render()}
 const MIRROR_SVG=t=>t===1
@@ -268,11 +279,131 @@ window.__ricochet={get G(){return {lv,COLS,ROWS,MAXSTEP,BUDGET,won,
   simulate,generate,build,place,clearBoard,showSolution,render,
   LEVELS,DIRS,SLASH,BACK,IX};
 </script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  /* Watch the usual output nodes; report a short, useful summary. */
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      /* A game node is a label like "Score 12" - read it out as it stands.
+         A tool node is raw output - a character count is the useful summary. */
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
 <style>
   .rl-c{aspect-ratio:1/1}
   .rl-wall{cursor:default}
   .rl-start{background:rgba(255,255,255,.13)}
   .rl-goal{background:rgba(255,95,31,.09)}
+</style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+    </a></li>
+    <li><a href="/workspace/games/breakout/">
+      <span class="ocurp-related-n">Breakout</span>
+      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
+    </a></li>
+    <li><a href="/workspace/games/circuit-balance/">
+      <span class="ocurp-related-n">Circuit Balance</span>
+      <span class="ocurp-related-b">Circuit Balance - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/fitts-drill/">
+      <span class="ocurp-related-n">Fitts Drill</span>
+      <span class="ocurp-related-b">Fitts Drill - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
 </style>
 </body>
 </html>

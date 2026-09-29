@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orbit Fit — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Orbit Fit - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/orbit-fit/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Orbit Fit">
+<meta property="og:description" content="Orbit Fit - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/orbit-fit/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Orbit Fit on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Orbit Fit">
+<meta name="twitter:description" content="Orbit Fit - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Orbit Fit on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Orbit Fit","url":"https://ocurp.space/workspace/games/orbit-fit/","description":"Orbit Fit - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Orbit Fit</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">LOGIC</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button class="lv ws-btn" data-lv="easy">Easy</button>
+      <button class="lv ws-btn-ghost" data-lv="med">Medium</button>
+      <button class="lv ws-btn-ghost" data-lv="hard">Hard</button>
+      <button id="new" class="ws-btn-ghost">New manifest</button>
+      <span class="ws-chip" id="budget">MOVE BUDGET &mdash;</span>
+    </div>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto]">
+      <div>
+        <div class="ws-label mb-2">Orbit slots &mdash; click one to put the highlighted satellite there</div>
+        <div id="slots" class="grid gap-2"></div>
+        <div class="mt-4">
+          <div class="ws-label mb-2">Satellites &mdash; click to select, or press 1&ndash;3</div>
+          <div id="sats" class="grid gap-2 sm:grid-cols-3"></div>
+        </div>
+      </div>
+      <div class="lg:w-[250px]">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Placed</div>
+            <div class="font-display text-xl font-black text-white" id="placed">0/3</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Moves left</div>
+            <div class="font-display text-xl font-black text-accent" id="left">&mdash;</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Rules met</div>
+            <div class="font-display text-xl font-black text-white" id="met">&mdash;</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Status</div>
+            <div class="font-display text-sm font-black text-white" id="status">Fitting</div></div>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="undo" class="ws-btn-ghost">Pull last satellite (costs 1)</button>
+          <button id="clear" class="ws-btn-ghost">Unload all</button>
+        </div>
+        <div id="msg" class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Loading manifest&hellip;</div>
+      </div>
+    </div>
+  </section>
+  <p class="mx-auto mt-6 max-w-2xl text-[10px] leading-relaxed text-white/45"><span class="font-black tracking-[0.2em] text-white/60">THE EXACT RULES</span><br>
+    Four orbit slots exist, numbered 1&ndash;4. Slot <span class="text-white/70">j</span> sits at orbital period
+    <span class="text-white/70">90&times;j minutes</span> and launch azimuth <span class="text-white/70">30&times;(j&minus;1) degrees</span>.
+    Each satellite carries a required period and a required launch azimuth; a slot only accepts a satellite whose
+    requirements are within <span class="text-white/70">45 minutes</span> and <span class="text-white/70">40 degrees</span> of its own.
+    Placing costs one move; pulling a satellite back costs one move. You have
+    <span class="text-white/70">9 moves</span>, which is exactly the worst case: three wrong placements, three pulls, three
+    correct placements. Three further rules must all hold at the end:
+    <span class="text-white/70">no two satellites in adjacent slots</span> (a <span class="text-accent">debris corridor</span> runs
+    between neighbouring orbital shells) and
+    <span class="text-white/70">the satellite needing the highest azimuth must hold the highest-numbered slot</span>.
+    <span class="text-accent">WIN</span> = all three satellites legally placed and every rule holding.
+    <span class="text-accent">FAIL</span> = the move budget spent with a satellite still on the pad.
+    Manifests are built from a known-good assignment and re-rolled unless a brute-force search finds
+    <span class="text-white/70">exactly one</span> assignment satisfying all of the above, so every manifest has a single answer.</p>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const OF={SLOTS:4,SATS:3,
+  PERIOD0:90,AZ_STEP:30,          // slot j: period 90*j, azimuth 30*(j-1)
+  TOL_PERIOD:45,TOL_AZ:40,        // the two fit tolerances
+  AZ_JITTER:60,                   // generator offset range on both axes
+  BUDGET:9};
+
+let of={level:'med',sats:[],assign:[-1,-1,-1],sel:0,moves:0,status:'playing'};
+const $=id=>document.getElementById(id);
+
+function slotPeriod(j){return OF.PERIOD0*j}
+function slotAz(j){return OF.AZ_STEP*(j-1)}
+function clamp(v,lo,hi){return v<lo?lo:(v>hi?hi:v)}
+
+// A satellite fits slot j when both requirements are inside tolerance.
+function fits(sat,j){
+  return Math.abs(slotPeriod(j)-sat.need)<=OF.TOL_PERIOD &&
+         Math.abs(slotAz(j)-sat.az)<=OF.TOL_AZ}
+
+// the three structural rules, evaluated on a complete or partial assignment
+function rulesOf(asg){
+  const used=asg.map((j,i)=>j>=0?i:-1).filter(i=>i>=0);
+  const ok={};
+  ok.jammed=true;
+  for(let a=0;a<asg.length;a++)for(let b=a+1;b<asg.length;b++)
+    if(asg[a]>=0&&asg[b]>=0&&Math.abs(asg[a]-asg[b])<=1)ok.jammed=false;
+  ok.full=used.length===OF.SATS&&asg.every(j=>j>=0);
+  const usedAz=used.map(i=>of.sats[i].az);
+  const usedSlot=used.map(i=>asg[i]);
+  ok.azimuth=!ok.full||(usedSlot[usedAz.indexOf(Math.max(...usedAz))]===Math.max(...usedSlot));
+  return ok}
+function legal(asg){const r=rulesOf(asg);return r.full&&r.jammed&&r.azimuth}
+
+function solveAll(){
+  const out=[];
+  for(let a=0;a<OF.SLOTS;a++)for(let b=0;b<OF.SLOTS;b++)for(let c=0;c<OF.SLOTS;c++){
+    const asg=[a,b,c];
+    if(legal(asg)&&fits(of.sats[0],a)&&fits(of.sats[1],b)&&fits(of.sats[2],c))out.push(asg)}
+  return out}
+
+// --- generator ---------------------------------------------------------
+// Build a known-good manifest by assigning satellites to a set of pairwise
+// non-adjacent slots, then jitter each requirement by up to AZ_JITTER so the
+// fit test is a real test. Re-roll unless the brute force above finds exactly
+// one satisfying assignment. That guard is a hypothesis; the prover re-derives
+// the same count in Python.
+const SETS=[[1,3],[1,4],[2,4]];
+function build(){
+  for(let attempt=0;attempt<600;attempt++){
+    const set=SETS[Math.floor(Math.random()*SETS.length)];
+    const order=[0,1,2];
+    for(let i=2;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=order[i];order[i]=order[j];order[j]=t}
+    const sats=order.map((sat,k)=>{
+      const j=set[k];
+      const need=clamp(slotPeriod(j)+Math.round((Math.random()*2-1)*OF.AZ_JITTER),1,600);
+      const az=clamp(slotAz(j)+Math.round((Math.random()*2-1)*OF.AZ_JITTER),-90,180);
+      return {need:need,az:az}});
+    of.sats=sats;
+    const hits=solveAll();
+    if(hits.length===1){
+      const azs=sats.map(s=>s.az);
+      if(new Set(azs).size===OF.SATS)return {answer:hits[0],attempt:attempt+1}}}
+  of.sats=[{need:90,az:0},{need:270,az:60},{need:360,az:30}];
+  return {answer:solveAll()[0]||null,attempt:-1}}
+
+function newManifest(level){
+  const lv=(level||of.level);
+  const built=build();
+  of.level=lv;of.assign=[-1,-1,-1];of.sel=0;of.moves=0;of.status='playing';
+  render();
+  return {sats:of.sats.map(s=>({need:s.need,az:s.az})),answers:solveAll().length,
+          attempt:built.attempt}}
+
+// --- the move rule -----------------------------------------------------
+// returns 'not-playing' | 'oob' | 'same' | 'occupied' | 'won' | 'lost' | 'ok'
+function place(sat,slot){
+  if(of.status!=='playing')return 'not-playing';
+  if(sat<0||sat>=OF.SATS)return 'oob';
+  if(slot<1||slot>OF.SLOTS)return 'oob';
+  if(of.assign[sat]===slot)return 'same';
+  if(of.assign.indexOf(slot)>=0)return 'occupied';
+  const was=of.assign[sat];
+  of.assign[sat]=slot;of.moves++;
+  if(was<0&&!fits(of.sats[sat],slot)){of.assign[sat]=was;of.moves--;return 'no-fit'}
+  if(legal(of.assign)){
+    of.status='won';
+    $('msg').textContent='Manifest fits. All three satellites are placed and every rule holds, in '+
+      of.moves+' of '+OF.BUDGET+' moves.'}
+  else if(of.moves>=OF.BUDGET){of.status='lost';
+    $('msg').textContent='Move budget of '+OF.BUDGET+' spent with '+
+      of.assign.filter(j=>j<0).length+' satellite'+(of.assign.filter(j=>j<0).length===1?'':'s')+
+      ' still on the pad. New manifest to try again.'}
+  else $('msg').textContent=of.assign.filter(j=>j>=0).length+' of '+OF.SATS+
+      ' placed. Moves left: '+(OF.BUDGET-of.moves)+'.';
+  render();
+  return of.status==='won'?'won':(of.status==='lost'?'lost':'ok')}
+function pull(sat){
+  if(of.status!=='playing')return 'not-playing';
+  if(sat<0||sat>=OF.SATS)return 'oob';
+  if(of.assign[sat]<0)return 'empty';
+  of.assign[sat]=-1;of.moves++;
+  if(of.moves>=OF.BUDGET){of.status='lost';
+    $('msg').textContent='Move budget of '+OF.BUDGET+' spent. New manifest to try again.'}
+  else $('msg').textContent='Satellite pulled. Moves left: '+(OF.BUDGET-of.moves)+'.';
+  render();
+  return 'ok'}
+function unload(){let n=0;for(let i=0;i<OF.SATS;i++)if(of.assign[i]>=0){of.assign[i]=-1;of.moves++;n++}
+  if(of.moves>=OF.BUDGET)of.status='lost';
+  $('msg').textContent=n+' satellite'+(n===1?'':'s')+' unloaded.';
+  render();return n}
+function load(spec){
+  of.sats=spec.sats.map(s=>({need:s.need,az:s.az}));
+  of.assign=[-1,-1,-1];of.sel=0;of.moves=0;of.status='playing';
+  render();
+  return {sats:of.sats.map(s=>({need:s.need,az:s.az})),answers:solveAll().length,
+          answersList:solveAll()}}
+
+function render(){
+  let sh='';
+  for(let j=1;j<=OF.SLOTS;j++){
+    const sat=of.assign.indexOf(j);
+    const okHere=sat>=0&&fits(of.sats[sat],j);
+    sh+='<button data-slot="'+j+'" class="ofsl rounded-xl border p-3 text-left transition-colors '+
+      (okHere?'border-[#FF5F1F] bg-[#FF5F1F]/20':(sat>=0?'border-[#FF5F1F]/40 bg-white/[0.03]':'border-white/10 bg-white/[0.03]'))+
+      '"><div class="ws-label mb-1">Slot '+j+'</div>'+
+      '<div class="font-display text-sm font-black text-white">'+slotPeriod(j)+' min</div>'+
+      '<div class="text-[10px] text-white/45">az '+slotAz(j)+'&deg;</div>'+
+      '<div class="mt-1 text-[10px] font-black '+(okHere?'text-[#FF5F1F]':'text-white/35')+'">'+
+      (sat>=0?'SAT-'+(sat+1)+(okHere?' OK':' MISMATCH'):'empty')+'</div></button>'}
+  $('slots').innerHTML=sh;
+  $('slots').style.gridTemplateColumns='repeat(auto-fit,minmax(110px,1fr))';
+  $('slots').querySelectorAll('button').forEach(b=>b.onclick=()=>place(of.sel,parseInt(b.dataset.slot,10)));
+  let ss='';
+  for(let i=0;i<OF.SATS;i++){
+    const s=of.sats[i],j=of.assign[i];
+    ss+='<button data-sat="'+i+'" class="sat rounded-xl border p-3 text-left transition-colors '+
+      (i===of.sel?'border-[#FF5F1F] bg-[#FF5F1F]/15':'border-white/10 bg-white/[0.03]')+'">'+
+      '<div class="ws-label mb-1">SAT-'+(i+1)+'</div>'+
+      '<div class="text-[10px] text-white/55">need '+s.need+' min</div>'+
+      '<div class="text-[10px] text-white/55">az '+s.az+'&deg;</div>'+
+      '<div class="mt-1 text-[10px] font-black text-[#FF5F1F]">'+(j>=0?'slot '+j:'on the pad')+'</div></button>'}
+  $('sats').innerHTML=ss;
+  $('sats').querySelectorAll('button').forEach(b=>b.onclick=()=>{of.sel=parseInt(b.dataset.sat,10);render()});
+  const r=rulesOf(of.assign);
+  const n=of.assign.filter(x=>x>=0).length;
+  $('placed').textContent=n+'/'+OF.SATS;
+  $('left').textContent=Math.max(0,OF.BUDGET-of.moves);
+  $('budget').textContent='MOVE BUDGET '+OF.BUDGET;
+  $('met').textContent=(r.jammed?'jam ok':'jam NO')+' / '+(r.azimuth?'az ok':'az NO');
+  $('status').textContent=of.status==='won'?'Fitted':(of.status==='lost'?'Grounded':'Fitting');
+  document.querySelectorAll('.lv').forEach(el=>{
+    el.className=(el.dataset.lv===of.level?'ws-btn lv':'ws-btn-ghost lv')})}
+$('new').onclick=()=>newManifest(of.level);
+$('undo').onclick=()=>{for(let i=OF.SATS-1;i>=0;i--)if(of.assign[i]>=0){pull(i);return}};
+$('clear').onclick=()=>unload();
+document.querySelectorAll('.lv').forEach(el=>el.onclick=()=>newManifest(el.dataset.lv));
+addEventListener('keydown',e=>{
+  if(e.key>='1'&&e.key<='3'){of.sel=parseInt(e.key,10)-1;render();e.preventDefault();return}
+  const d={ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];
+  if(d){place(of.sel,clamp(of.assign[of.sel]>=0?of.assign[of.sel]+d[1]:(of.sel+1),1,OF.SLOTS));
+    e.preventDefault()}});
+newManifest('med');
+window.__orbit_fit={OF,
+  get G(){const r=rulesOf(of.assign);return {level:of.level,
+    sats:of.sats.map(s=>({need:s.need,az:s.az})),assign:of.assign.slice(),sel:of.sel,
+    moves:of.moves,budget:OF.BUDGET,status:of.status,placed:of.assign.filter(x=>x>=0).length,
+    jammed:r.jammed,azimuth:r.azimuth,answers:solveAll().length}},
+  newManifest,place,pull,unload,load,fits,solveAll,slotPeriod,slotAz,
+  check:(a)=>{const r=rulesOf(a);return {full:r.full,jammed:r.jammed,azimuth:r.azimuth,
+    legal:legal(a),fails:OF.SATS-1-r.jammed-r.azimuth-(r.full?0:1)}}};</script>
+
+
+
+
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+    </a></li>
+    <li><a href="/workspace/games/breakout/">
+      <span class="ocurp-related-n">Breakout</span>
+      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
+    </a></li>
+    <li><a href="/workspace/games/circuit-balance/">
+      <span class="ocurp-related-n">Circuit Balance</span>
+      <span class="ocurp-related-b">Circuit Balance - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/fitts-drill/">
+      <span class="ocurp-related-n">Fitts Drill</span>
+      <span class="ocurp-related-b">Fitts Drill - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
