@@ -45,13 +45,32 @@
     </div>
 
     <div class="ws-panel p-7" id="signedOut">
-      <button id="google" class="ws-btn">Continue with Google</button>
+      <form id="emailForm" novalidate>
+        <div class="mb-3">
+          <label class="ws-label mb-1.5 block" for="email">Email</label>
+          <input id="email" type="email" autocomplete="email" required
+                 class="ws-input" placeholder="you@example.com">
+        </div>
+        <div class="mb-4">
+          <label class="ws-label mb-1.5 block" for="password">Password</label>
+          <input id="password" type="password" autocomplete="current-password" required
+                 class="ws-input" placeholder="At least 6 characters" minlength="6">
+        </div>
+        <div class="mb-4 flex gap-3" id="modeRow">
+          <button type="button" id="modeSignIn" class="ws-btn flex-1">Sign in</button>
+          <button type="button" id="modeSignUp" class="ws-btn-ghost flex-1">Create account</button>
+        </div>
+        <p class="text-xs leading-relaxed" id="emailNote" style="color:rgba(255,255,255,.5)"></p>
+      </form>
+
       <div class="my-5 flex items-center gap-4">
         <span class="h-px flex-1 bg-white/10"></span>
         <span class="ws-label">or</span>
         <span class="h-px flex-1 bg-white/10"></span>
       </div>
-      <button id="local" class="ws-btn-ghost">Continue on this device</button>
+
+      <button id="google" class="ws-btn-ghost w-full">Continue with Google</button>
+      <button id="local" class="ws-btn-ghost mt-3 w-full">Continue on this device</button>
       <p class="mt-5 text-xs leading-relaxed text-white/35" id="note"></p>
     </div>
 
@@ -100,6 +119,66 @@
       g.style.cursor = 'not-allowed';
     }
   });
+
+  /* ---- email sign-in / sign-up -------------------------------------------
+     The Supabase project has email auth enabled and working, Google switched
+     off, so this is the primary path and Google is the secondary one. */
+  var mode = 'signin';
+
+  function emailMsg(text, ok) {
+    var n = $('emailNote');
+    if (!n) return;
+    n.textContent = text;
+    n.style.color = ok ? 'rgba(255,95,31,.95)' : 'rgba(255,255,255,.5)';
+  }
+
+  function setMode(m) {
+    mode = m;
+    $('modeSignIn').className = (m === 'signin' ? 'ws-btn flex-1' : 'ws-btn-ghost flex-1');
+    $('modeSignUp').className = (m === 'signup' ? 'ws-btn flex-1' : 'ws-btn-ghost flex-1');
+    $('email').setAttribute('autocomplete', m === 'signup' ? 'new-password' : 'current-password');
+    emailMsg(m === 'signup' ? 'Enter an email and a password of at least 6 characters.'
+                            : 'Enter the email and password for your account.', true);
+  }
+
+  function submitEmail() {
+    var em = ($('email').value || '').trim();
+    var pw = $('password').value || '';
+    if (!em || em.indexOf('@') === -1) { emailMsg('That does not look like an email address.'); return; }
+    if (pw.length < 6) { emailMsg('Passwords need at least 6 characters.'); return; }
+
+    var btn = mode === 'signup' ? $('modeSignUp') : $('modeSignIn');
+    var other = mode === 'signup' ? $('modeSignIn') : $('modeSignUp');
+    btn.disabled = true; other.disabled = true;
+    emailMsg(mode === 'signup' ? 'Creating your account...' : 'Signing in...', true);
+
+    var p = mode === 'signup' ? A.signUp(em, pw) : A.signInWithEmail(em, pw);
+    p.then(function (res) {
+      if (res && res.needsConfirm) {
+        emailMsg('Check your inbox - we sent a confirmation link. Confirm it, then sign in.', true);
+        btn.disabled = false; other.disabled = false;
+        return;
+      }
+      emailMsg('Signed in. Taking you to your profile...', true);
+      setTimeout(function () { location.href = '/ocurp/profile/'; }, 700);
+    }).catch(function (err) {
+      var msg = String((err && err.message) || 'That did not work.');
+      if (/Invalid login credentials/i.test(msg)) msg = 'That email and password do not match an account.';
+      if (/User already registered/i.test(msg)) msg = 'That email already has an account. Try signing in instead.';
+      if (/Password should be at least/i.test(msg)) msg = 'Passwords need at least 6 characters.';
+      if (/Email not confirmed/i.test(msg)) msg = 'Confirm your email from the link we sent you first.';
+      emailMsg(msg);
+      btn.disabled = false; other.disabled = false;
+    });
+  }
+
+  if ($('modeSignIn')) {
+    setMode('signin');
+    $('modeSignIn').addEventListener('click', function () { setMode('signin'); submitEmail(); });
+    $('modeSignUp').addEventListener('click', function () { setMode('signup'); submitEmail(); });
+    $('email').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); submitEmail(); } });
+    $('password').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); submitEmail(); } });
+  }
 
   $('google').addEventListener('click', function () {
     A.googleEnabled().then(function (on) {

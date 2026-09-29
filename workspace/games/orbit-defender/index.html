@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orbit Defender — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+</style>
+<meta name="description" content="Orbit Defender - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/orbit-defender/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Orbit Defender">
+<meta property="og:description" content="Orbit Defender - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/orbit-defender/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Orbit Defender on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Orbit Defender">
+<meta name="twitter:description" content="Orbit Defender - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Orbit Defender on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Orbit Defender","url":"https://ocurp.space/workspace/games/orbit-defender/","description":"Orbit Defender - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Orbit Defender</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game &mdash; Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">ARCADE</span><span class="ws-chip">DEFENCE</span></div>
+  </div>
+
+  <section class="ws-panel p-6">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <button id="go" class="ws-btn">Launch</button>
+      <button id="rs" class="ws-btn-ghost">Restart</button>
+      <span class="ws-chip" id="wave">WAVE 1/8</span>
+      <span class="ws-chip" id="score">0</span>
+      <span class="ws-chip" id="hp">CORE 100%</span>
+      <span class="ws-chip" id="stat">READY</span>
+    </div>
+    <canvas id="cv" class="mx-auto block w-full touch-none rounded-xl border border-white/15" style="aspect-ratio:1/1;max-width:520px"></canvas>
+    <p class="mt-3 text-center text-xs text-white/45">Move the pointer or hold <b>&larr;</b> <b>&rarr;</b> to aim. Hold <b>Space</b> or press-and-hold on the field to fire. Hold the line for <b>8 waves</b> to win.</p>
+    <p class="mt-5 text-[10px] leading-relaxed text-white/45"><span class="font-black tracking-[0.2em] text-white/60">THE EXACT RULES</span><br>
+      Your turret sits on the core and fires tracers. Every tracer is <span class="text-white/70">locked</span> to the
+      asteroid closest to your barrel and steers towards it, so you only have to point roughly at a threat &mdash;
+      not lead it. Waves spawn rocks faster and thicker as they climb; a wave is cleared when its last rock dies.
+      A rock that reaches the hull deals <span class="text-accent">10</span> damage and takes itself out.
+      <span class="text-accent">LOSE</span> = core health reaches 0. <span class="text-accent">WIN</span> = clear wave 8
+      alive. Clearing a wave welds <span class="text-white/70">8</span> points of hull back on, and the turret
+      out-ranges the spawn ring, so a competent gunner always reaches wave 8. Open the console and call
+      <b>runSelfTest()</b> to replay the fight with a deterministic autopilot and prove the win is reachable.</p>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+'use strict';
+// ---- tuning -------------------------------------------------------------
+// Everything that decides win/loss lives in OD. A change here changes the
+// proof: runSelfTest() replays the SAME step() the human plays, so a run of
+// it is the statement "these numbers are winnable, here, in code".
+const OD = {
+  W: 600, H: 600, CX: 300, CY: 300,
+  CORE_R: 34, MAX_HP: 100,
+  WIN_WAVE: 8,
+  SPAWN_R: 282,          // every rock is born outside the turret's reach
+  ROCK_R: 16,
+  FIRE_CD: 0.12,         // 8.3 tracers a second
+  BUL_SPD: 520,
+  BUL_R: 7,
+  TURN: 6.5,             // tracer turn rate, rad/s
+  TURRET_TURN: 9,        // barrel slew rate, rad/s
+  CONE: 0.44,            // rad - what counts as "pointed at it"
+  DMG: 10,
+  REPAIR: 8,             // hull welded on when a wave is cleared
+  BREAK: 1.15,           // seconds between waves
+  STEP: 1 / 60
+};
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+function angDiff(a, b) { let d = a - b; while (d > Math.PI) d -= 6.283185307; while (d < -Math.PI) d += 6.283185307; return d; }
+
+// ---- state --------------------------------------------------------------
+let G = null;
+let PAUSED = false;         // the self-test owns the clock while it simulates
+const view = { ang: -0.9, fire: false, keyLeft: false, keyRight: false };
+const shot = { x: 0, y: 0, px: 0, py: 0 };
+
+function newGame(seed) {
+  return {
+    seed: seed >>> 0,
+    rng: mulberry32(seed >>> 0),
+    state: 'idle',        // idle | play | over | won
+    t: 0,
+    hp: OD.MAX_HP, wave: 0, score: 0,
+    ang: -0.9, cd: 0,
+    rocks: [], bullets: [],
+    phase: 'idle',        // idle | wave | break
+    queue: 0, total: 0, spawnT: 0, breakT: 0,
+    kills: 0, leaks: 0, shots: 0, hits: 0,
+    shake: 0, flash: 0, msg: ''
+  };
+}
+
+function rockSpeed(w) { return 26 + 3 * w; }
+function rockHp(w) { return 1 + Math.floor((w - 1) / 4); }
+function waveCount(w) { return 3 + 2 * w; }
+function spawnGap(w) { return Math.max(0.30, 0.86 - 0.07 * w); }
+
+function startWave(g) {
+  g.wave++;
+  g.phase = 'wave';
+  g.total = waveCount(g.wave);
+  g.queue = g.total;
+  g.spawnT = 0.35;
+}
+
+function spawnRock(g) {
+  const a = g.rng() * 6.283185307;
+  const r = OD.SPAWN_R + g.rng() * 12;
+  g.rocks.push({
+    a: a, r: r, spd: rockSpeed(g.wave) * (0.9 + 0.2 * g.rng()),
+    hp: rockHp(g.wave), max: rockHp(g.wave),
+    rot: g.rng() * 6.28, spin: (g.rng() - 0.5) * 1.6,
+    n: 6 + Math.floor(g.rng() * 3), seed: g.rng()
+  });
+}
+
+function pickTarget(g) {
+  // Lock the rock nearest the core whose bearing is inside the aiming cone.
+  let best = null, bestScore = 1e9;
+  for (const k of g.rocks) {
+    const d = angDiff(k.a, g.ang);
+    if (Math.abs(d) > OD.CONE) continue;
+    // Prefer the most imminent threat; among equals, the best-aimed.
+    const sc = k.r + Math.abs(d) * 90;
+    if (sc < bestScore) { bestScore = sc; best = k; }
+  }
+  return best;
+}
+
+function fire(g) {
+  const tip = OD.CORE_R + 16;
+  const x = OD.CX + Math.cos(g.ang) * tip, y = OD.CY + Math.sin(g.ang) * tip;
+  const t = pickTarget(g);
+  g.bullets.push({ x: x, y: y, px: x, py: y, ang: g.ang, tgt: t, life: 2.2 });
+  g.cd = OD.FIRE_CD;
+  g.shots++;
+  g.flash = 0.06;
+}
+
+// ---- the one and only simulation step -----------------------------------
+// rAF and runSelfTest both call this. Nothing is duplicated.
+function step(dt) {
+  const g = G;
+  if (!g || g.state !== 'play') return;
+  g.t += dt;
+  g.cd -= dt;
+  g.shake = Math.max(0, g.shake - dt * 2.2);
+  g.flash = Math.max(0, g.flash - dt);
+
+  // barrel slew toward whatever the input layer is asking for
+  const want = g.input ? g.input.aim : g.ang;
+  const d = angDiff(want, g.ang);
+  const max = OD.TURRET_TURN * dt;
+  g.ang += clamp(d, -max, max);
+
+  if (g.input && g.input.fire && g.cd <= 0) fire(g);
+
+  // tracers
+  for (let i = g.bullets.length - 1; i >= 0; i--) {
+    const b = g.bullets[i];
+    b.life -= dt;
+    if (b.tgt && (b.tgt.dead || b.tgt.hp <= 0)) b.tgt = null;
+    if (b.tgt) {
+      const tx = OD.CX + Math.cos(b.tgt.a) * b.tgt.r, ty = OD.CY + Math.sin(b.tgt.a) * b.tgt.r;
+      const d2 = angDiff(Math.atan2(ty - b.y, tx - b.x), b.ang);
+      const mt = OD.TURN * dt;
+      b.ang += clamp(d2, -mt, mt);
+    }
+    b.px = b.x; b.py = b.y;
+    b.x += Math.cos(b.ang) * OD.BUL_SPD * dt;
+    b.y += Math.sin(b.ang) * OD.BUL_SPD * dt;
+    if (b.life <= 0 || b.x < -40 || b.x > OD.W + 40 || b.y < -40 || b.y > OD.H + 40) { g.bullets.splice(i, 1); continue; }
+    if (b.tgt) {
+      const tx = OD.CX + Math.cos(b.tgt.a) * b.tgt.r, ty = OD.CY + Math.sin(b.tgt.a) * b.tgt.r;
+      const rr = OD.ROCK_R + OD.BUL_R;
+      if ((b.x - tx) * (b.x - tx) + (b.y - ty) * (b.y - ty) <= rr * rr) {
+        b.tgt.hp--; g.hits++; g.score += 10;
+        g.bullets.splice(i, 1);
+        if (b.tgt.hp <= 0) killRock(g, b.tgt);
+        continue;
+      }
+    }
+  }
+
+  // rocks closing on the hull
+  for (let i = g.rocks.length - 1; i >= 0; i--) {
+    const k = g.rocks[i];
+    k.r -= k.spd * dt;
+    k.rot += k.spin * dt;
+    if (k.r <= OD.CORE_R + OD.ROCK_R * 0.85) {
+      g.rocks.splice(i, 1);
+      g.hp -= OD.DMG; g.leaks++; g.shake = 1; g.score = Math.max(0, g.score - 15);
+      if (g.hp <= 0) { g.hp = 0; g.state = 'over'; g.msg = 'Core breached on wave ' + g.wave + '.'; return; }
+    }
+  }
+
+  // wave pacing
+  if (g.phase === 'wave') {
+    g.spawnT -= dt;
+    if (g.queue > 0 && g.spawnT <= 0) { spawnRock(g); g.queue--; g.spawnT = spawnGap(g.wave); }
+    if (g.queue === 0 && g.rocks.length === 0) {
+      if (g.wave >= OD.WIN_WAVE) {
+        g.state = 'won'; g.score += 500;
+        g.msg = 'All eight waves held. The core is still standing.';
+        return;
+      }
+      g.hp = Math.min(OD.MAX_HP, g.hp + OD.REPAIR);
+      g.score += 100 * g.wave;
+      g.phase = 'break'; g.breakT = OD.BREAK;
+    }
+  } else if (g.phase === 'break') {
+    g.breakT -= dt;
+    if (g.breakT <= 0) startWave(g);
+  }
+}
+
+function killRock(g, k) {
+  k.dead = true;
+  const i = g.rocks.indexOf(k);
+  if (i >= 0) g.rocks.splice(i, 1);
+  g.kills++;
+  g.score += 40 + k.max * 10;
+  g.flash = 0.09;
+}
+
+// ---- input layer --------------------------------------------------------
+function aimAt(x, y) {
+  view.ang = Math.atan2(y - OD.CY, x - OD.CX);
+}
+function launch(seed) {
+  G = newGame(seed === undefined ? ((Math.random() * 0xffffffff) >>> 0) : seed);
+  G.input = { aim: view.ang, fire: view.fire };
+  G.state = 'play';
+  startWave(G);
+  render();
+}
+
+// ---- rendering ----------------------------------------------------------
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const DPR = Math.min(2, window.devicePixelRatio || 1);
+function fit() {
+  const r = cv.getBoundingClientRect();
+  const w = Math.max(240, Math.round(r.width || 520));
+  cv.width = Math.round(w * DPR); cv.height = Math.round(w * DPR);
+  ctx.setTransform(DPR * w / OD.W, 0, 0, DPR * w / OD.H, 0, 0);
+}
+addEventListener('resize', fit);
+
+function rockPath(c, k) {
+  const x = OD.CX + Math.cos(k.a) * k.r, y = OD.CY + Math.sin(k.a) * k.r;
+  c.save();
+  c.translate(x, y); c.rotate(k.rot);
+  c.beginPath();
+  for (let i = 0; i < k.n; i++) {
+    const t = (i / k.n) * 6.283185307;
+    const rr = OD.ROCK_R * (0.74 + 0.3 * ((Math.sin(t * 3.1 + k.seed * 19) + 1) / 2));
+    const px = Math.cos(t) * rr, py = Math.sin(t) * rr;
+    if (i === 0) c.moveTo(px, py); else c.lineTo(px, py);
+  }
+  c.closePath();
+  c.restore();
+}
+
+function render() {
+  const g = G, w = OD.W, h = OD.H;
+  ctx.clearRect(0, 0, w, h);
+  const bg = ctx.createRadialGradient(OD.CX, OD.CY, 20, OD.CX, OD.CY, w * 0.72);
+  bg.addColorStop(0, '#0d1015'); bg.addColorStop(1, '#050505');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+
+  const sh = g ? g.shake : 0;
+  if (sh > 0) {
+    ctx.save();
+    ctx.translate(Math.sin(g.t * 61) * 5 * sh, Math.cos(g.t * 47) * 5 * sh);
+  }
+
+  // rings
+  ctx.strokeStyle = 'rgba(224,242,254,0.07)'; ctx.lineWidth = 1;
+  for (let r = OD.CORE_R + 40; r <= OD.SPAWN_R + 30; r += 42) {
+    ctx.beginPath(); ctx.arc(OD.CX, OD.CY, r, 0, 6.283185307); ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(255,95,31,0.16)';
+  ctx.setLineDash([3, 9]);
+  ctx.beginPath(); ctx.arc(OD.CX, OD.CY, OD.SPAWN_R, 0, 6.283185307); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // rocks
+  if (g) for (const k of g.rocks) {
+    rockPath(ctx, k);
+    ctx.fillStyle = '#2a2f38'; ctx.fill();
+    ctx.strokeStyle = k.hp > 1 ? 'rgba(255,95,31,0.85)' : 'rgba(224,242,254,0.5)';
+    ctx.lineWidth = 1.6; ctx.stroke();
+  }
+
+  // tracers
+  if (g) for (const b of g.bullets) {
+    ctx.strokeStyle = 'rgba(255,95,31,0.95)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(b.px, b.py); ctx.lineTo(b.x, b.y); ctx.stroke();
+    ctx.fillStyle = '#ffd9c2'; ctx.beginPath(); ctx.arc(b.x, b.y, 2.2, 0, 6.28); ctx.fill();
+  }
+
+  // core
+  const hpF = g ? clamp(g.hp / OD.MAX_HP, 0, 1) : 1;
+  const glow = ctx.createRadialGradient(OD.CX, OD.CY, 4, OD.CX, OD.CY, OD.CORE_R + 16);
+  glow.addColorStop(0, 'rgba(255,95,31,' + (0.30 + 0.22 * hpF) + ')');
+  glow.addColorStop(1, 'rgba(255,95,31,0)');
+  ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(OD.CX, OD.CY, OD.CORE_R + 16, 0, 6.28); ctx.fill();
+  ctx.fillStyle = '#101418'; ctx.beginPath(); ctx.arc(OD.CX, OD.CY, OD.CORE_R, 0, 6.28); ctx.fill();
+  ctx.strokeStyle = hpF > 0.35 ? '#FF5F1F' : '#ff4d4d'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.arc(OD.CX, OD.CY, OD.CORE_R, -Math.PI / 2, -Math.PI / 2 + 6.283185307 * hpF); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(OD.CX, OD.CY, OD.CORE_R, 0, 6.283185307); ctx.stroke();
+
+  // barrel
+  const a = g ? g.ang : view.ang;
+  ctx.save();
+  ctx.translate(OD.CX, OD.CY); ctx.rotate(a);
+  ctx.fillStyle = '#e6ecf2';
+  ctx.fillRect(OD.CORE_R * 0.35, -4.5, OD.CORE_R + 20, 9);
+  ctx.fillStyle = '#FF5F1F';
+  ctx.fillRect(OD.CORE_R + 10, -6, 7, 12);
+  if (g && g.flash > 0) {
+    ctx.fillStyle = 'rgba(255,220,180,' + g.flash * 5 + ')';
+    ctx.beginPath(); ctx.arc(OD.CORE_R + 20, 0, 11, 0, 6.28); ctx.fill();
+  }
+  ctx.restore();
+
+  if (sh > 0) ctx.restore();
+
+  // wave banner
+  if (g && g.phase === 'break' && g.state === 'play') {
+    ctx.fillStyle = 'rgba(5,5,5,0.55)'; ctx.fillRect(0, h / 2 - 34, w, 68);
+    ctx.fillStyle = '#FF5F1F'; ctx.font = '700 20px Manrope, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('WAVE ' + (g.wave + 1) + ' INBOUND', w / 2, h / 2 + 7);
+  }
+  if (g && (g.state === 'over' || g.state === 'won')) {
+    ctx.fillStyle = 'rgba(5,5,5,0.72)'; ctx.fillRect(0, 0, w, h);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = g.state === 'won' ? '#FF5F1F' : '#ff6b6b';
+    ctx.font = '800 34px Manrope, sans-serif';
+    ctx.fillText(g.state === 'won' ? 'CORE HELD' : 'CORE LOST', w / 2, h / 2 - 12);
+    ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.font = '500 15px Inter, sans-serif';
+    ctx.fillText(g.msg, w / 2, h / 2 + 18);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '500 12px IBM Plex Sans, monospace';
+    ctx.fillText('wave ' + g.wave + ' / 8  -  ' + g.score + ' pts', w / 2, h / 2 + 44);
+  }
+  sync();
+}
+
+function sync() {
+  const g = G;
+  $('wave').textContent = 'WAVE ' + (g ? Math.max(1, g.wave) : 1) + '/8';
+  $('score').textContent = String(g ? g.score : 0);
+  $('hp').textContent = 'CORE ' + (g ? g.hp : OD.MAX_HP) + '%';
+  const st = $('stat');
+  st.textContent = g ? (g.state === 'idle' ? 'READY' : g.state === 'play' ? 'LIVE' : g.state === 'won' ? 'WON' : 'LOST') : 'READY';
+  st.style.color = g && g.state === 'won' ? '#FF5F1F' : g && g.state === 'over' ? '#ff6b6b' : '';
+}
+
+// ---- loop ---------------------------------------------------------------
+let acc = 0, last = 0;
+function frame(ts) {
+  if (!last) last = ts;
+  let dt = (ts - last) / 1000; last = ts;
+  if (dt > 0.25) dt = 0.25;
+  if (G && !PAUSED) {
+    // input layer feeds the same fields the autopilot writes
+    G.input = G.input || { aim: G.ang, fire: false };
+    G.input.aim = view.ang;
+    G.input.fire = view.fire || view.keyLeft || view.keyRight;
+    acc += dt;
+    let guard = 0;
+    while (acc >= OD.STEP && guard++ < 8) { step(OD.STEP); acc -= OD.STEP; }
+  }
+  render();
+  requestAnimationFrame(frame);
+}
+
+// ---- wiring -------------------------------------------------------------
+const $ = id => document.getElementById(id);
+function pos(e) {
+  const r = cv.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * (OD.W / r.width), y: (e.clientY - r.top) * (OD.H / r.height) };
+}
+cv.addEventListener('pointermove', e => { const p = pos(e); aimAt(p.x, p.y); });
+cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); const p = pos(e); aimAt(p.x, p.y); view.fire = true; e.preventDefault(); });
+addEventListener('pointerup', () => { view.fire = false; });
+cv.addEventListener('contextmenu', e => e.preventDefault());
+addEventListener('keydown', e => {
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') { view.keyLeft = true; e.preventDefault(); }
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') { view.keyRight = true; e.preventDefault(); }
+  if (e.code === 'Space') { view.fire = true; e.preventDefault(); }
+  if (e.code === 'Enter' && (!G || G.state !== 'play')) launch();
+});
+addEventListener('keyup', e => {
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') view.keyLeft = false;
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') view.keyRight = false;
+  if (e.code === 'Space') view.fire = false;
+});
+$('go').onclick = () => launch();
+$('rs').onclick = () => launch();
+
+// ---- proof: a deterministic autopilot plays the real step() ------------
+function autopilotAim(g) {
+  // Point at the most imminent rock, led by where it will be when the
+  // tracer arrives. `lead` = sloppy gunner: no lead at all.
+  let t = null;
+  for (const k of g.rocks) if (!t || k.r < t.r) t = k;
+  if (!t) return null;
+  if (autopilotAim.lead) return t.a;
+  const om = t.spd / Math.max(40, t.r);              // angular speed, rad/s
+  let a = t.a;
+  for (let i = 0; i < 3; i++) {
+    const flight = t.r / OD.BUL_SPD;
+    a = t.a + om * flight;
+  }
+  return a;
+}
+autopilotAim.lead = false;
+
+function runSelfTest(seed, opts) {
+  opts = opts || {};
+  const mode = opts.mode || 'lead';
+  const maxSteps = opts.steps || 60000;              // 1000 s of simulated flight
+  const saveG = G, savePause = PAUSED, saveSeed = autopilotAim.lead;
+  PAUSED = true;
+  G = newGame(seed === undefined ? 42 : seed);
+  G.input = { aim: G.ang, fire: false };
+  G.state = 'play';
+  autopilotAim.lead = (mode === 'sloppy');
+  startWave(G);
+  let n = 0;
+  for (; n < maxSteps && G.state === 'play'; n++) {
+    const a = autopilotAim(G);
+    G.input.aim = a === null ? G.ang : a;
+    G.input.fire = true;
+    step(OD.STEP);
+  }
+  const r = {
+    seed: seed === undefined ? 42 : seed, mode: mode, won: G.state === 'won',
+    waves: G.wave, score: G.score, hp: G.hp, kills: G.kills, leaks: G.leaks,
+    acc: G.shots ? G.hits / G.shots : 0, steps: n, seconds: n * OD.STEP
+  };
+  autopilotAim.lead = saveSeed;
+  G = saveG; PAUSED = savePause;
+  render();
+  const tag = r.won ? 'WON' : 'FAILED';
+  const line = 'SELFTEST orbit-defender: ' + tag + ' in ' + r.waves + ' waves, ' +
+    r.score + ' points, ' + r.hp + '% core, ' + r.leaks + ' leaks, acc ' +
+    (r.acc * 100).toFixed(0) + '%, seed ' + r.seed + ' (' + mode + ')';
+  r.line = line;
+  console.log(line);
+  return r;
+}
+window.runSelfTest = runSelfTest;
+window.__od = { OD, get G() { return G; }, launch, step, newGame, view };
+
+fit();
+launch();
+setTimeout(() => { try { runSelfTest(42); } catch (e) { console.log('SELFTEST orbit-defender: ERROR ' + e.message); } }, 60);
+requestAnimationFrame(frame);
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/tower-stack/">
+      <span class="ocurp-related-n">Tower Stack</span>
+      <span class="ocurp-related-b">Land every block on the one below. One bad cut ends it.</span>
+    </a></li>
+    <li><a href="/workspace/games/pong/">
+      <span class="ocurp-related-n">Pong</span>
+      <span class="ocurp-related-b">The original, with scoring that keeps the rallies honest.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games &rarr;</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

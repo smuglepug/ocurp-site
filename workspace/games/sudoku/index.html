@@ -156,22 +156,33 @@ function countSolutions(g,limit){
     for(let v=1;v<=9;v++){if(valid(g,i,v)){g[i]=v;rec(k+1);g[i]=0;if(found>=limit)return}}})(0);
   return found}
 function perm(a){a=a.slice();for(let i=a.length-1;i>0;i--){const k=Math.floor(Math.random()*(i+1));const t=a[i];a[i]=a[k];a[k]=t}return a}
+// Build a COMPLETE valid grid. The old box-by-box filler could leave cells at 0
+// (a later box conflicts with rows already filled) and still passed, because
+// solve() is happy with a partially filled grid. Those zeros then flowed into the
+// digit remap and into st.sol, so st.puzzle could never equal st.sol and the
+// "Solved in ..." win message could never fire. Randomized backtracking always
+// yields 81 digits, and we assert it.
 function full(){
-  for(let attempt=0;attempt<80;attempt++){
-    const g=blank();let ok=true;
-    for(let b=0;b<9&&ok;b++){
-      const br=Math.floor(b/3)*3,bc=(b%3)*3;
-      const cells=[];for(let y=0;y<3;y++)for(let x=0;x<3;x++)cells.push((br+y)*9+bc+x);
-      const order=perm([1,2,3,4,5,6,7,8,9]);
-      for(let t=0;t<9&&ok;t++){
-        let placed=false;
-        for(let q=0;q<9&&!placed;q++)if(valid(g,cells[t],order[(q+t)%9])){g[cells[t]]=order[(q+t)%9];placed=true}
-        if(!placed)ok=false}
-      if(!ok)break;
-      if(!solve(g.slice())){ok=false;break}}
-    if(!ok)continue;
-    const map=perm([0,1,2,3,4,5,6,7,8,9]);
-    for(let i=0;i<81;i++)g[i]=map[g[i]];
+  for(let attempt=0;attempt<200;attempt++){
+    const g=blank();
+    const idx=Array.from({length:81},(_,i)=>i);
+    for(let i=80;i>0;i--){const k=Math.floor(Math.random()*(i+1));const t=idx[i];idx[i]=idx[k];idx[k]=t}
+    let ok=true;
+    (function rec(k){
+      if(!ok||k===81)return;
+      const i=idx[k];
+      // cycle a per-cell random start so retries explore different orders
+      const off=Math.floor(Math.random()*9);
+      for(let t=0;t<9;t++){
+        const v=((off+t)%9)+1;
+        if(valid(g,i,v)){g[i]=v;rec(k+1);if(ok)g[i]=0;return}
+      }
+      ok=false})(0);
+    if(!ok||g.some(v=>!v))continue;
+    const map=perm([1,2,3,4,5,6,7,8,9]);
+    for(let i=0;i<81;i++)g[i]=map[g[i]-1];
+    if(g.some(v=>!v)||g.indexOf(0)>=0)continue;
+    if(!solve(g.slice()))continue;
     return g}
   return full();
 }
@@ -185,8 +196,12 @@ function make(level){
   let removed=0;
   for(const i of order){
     if(removed>=cfg.g)break;
-    const keep=g[i];g[i]=0;
-    if(countSolutions(g.slice(),2)===1)removed++;else g[i]=keep}
+    // Only empty cells count. A cell the full-grid builder left at 0 is not a
+    // clue we can carve; dropping it removed nothing and inflated the count.
+    if(g[i]){
+      const keep=g[i];g[i]=0;
+      if(countSolutions(g.slice(),2)===1)removed++;else g[i]=keep}
+    else i;continue}
   st.sol=sol;st.givens=g.slice();st.puzzle=g.slice();
   st.notes=Array.from({length:81},()=>new Set());
   st.sel=-1;st.mistakes=0;st.time=0;st.done=false;

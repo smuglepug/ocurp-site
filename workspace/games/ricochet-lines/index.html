@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ricochet Lines — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .rl-board { display:grid; gap:2px; }
+  .rl-c { position:relative; aspect-ratio:1/1; border:0; border-radius:4px; background:rgba(255,255,255,.05);
+    cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .12s }
+  .rl-c:hover { background:rgba(255,255,255,.12) }
+  .rl-c svg { display:block }
+  .rl-trail { position:absolute; left:50%; top:50%; width:4px; height:4px; border-radius:50%;
+    background:rgba(255,255,255,.55); transform:translate(-50%,-50%) }
+</style>
+<meta name="description" content="Ricochet Lines - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/ricochet-lines/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Ricochet Lines">
+<meta property="og:description" content="Ricochet Lines - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/ricochet-lines/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Ricochet Lines on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Ricochet Lines">
+<meta name="twitter:description" content="Ricochet Lines - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Ricochet Lines on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Ricochet Lines","url":"https://ocurp.space/workspace/games/ricochet-lines/","description":"Ricochet Lines - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Ricochet Lines</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">PUZZLE</span><span class="ws-chip">LOGIC</span></div>
+  </div>
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <span id="pips" class="mr-2 flex gap-1.5"></span>
+      <button data-lv="0" class="ws-btn-ghost lv">1</button>
+      <button data-lv="1" class="ws-btn-ghost lv">2</button>
+      <button data-lv="2" class="ws-btn-ghost lv">3</button>
+      <button data-lv="3" class="ws-btn-ghost lv">4</button>
+      <button data-lv="4" class="ws-btn-ghost lv">5</button>
+      <button data-lv="5" class="ws-btn-ghost lv">6</button>
+      <button id="clear" class="ws-btn-ghost">Clear</button>
+      <button id="solve" class="ws-btn-ghost">Show solution</button>
+    </div>
+    <div class="mt-6 flex justify-center"><div id="board" class="rl-board"></div></div>
+    <div class="mt-6 grid grid-cols-3 gap-3">
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Mirrors left</div><div class="font-display text-xl font-black text-accent" id="left">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Bounces</div><div class="font-display text-xl font-black text-white" id="bounces">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Steps</div><div class="font-display text-xl font-black text-white" id="steps">0</div></div>
+    </div>
+    <div id="msg" class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Click a cell to place a mirror, click again to flip it, a third time to take it away.</div>
+    <p class="mt-4 text-[10px] leading-relaxed text-white/45">The ball enters from the arrow and rolls in a straight line until something turns it.
+      <span class="text-white/70">/</span> turns it the other way, <span class="text-white/70">\</span> the other way again, and dark blocks stop it dead.
+      Steer it into the ring. Every board here is generated by running the simulation
+      <em>backwards from the goal</em>, so a solution always exists — the Show solution button plays it back.</p>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+// ---- exact sim constants (mirrored in tools/provers/ricochet-lines.py) ----
+const COLS=8, ROWS=8, MAXSTEP=120, BUDGET=3;
+// dir order: 0=E(+1 col) 1=S(+1 row) 2=W(-1 col) 3=N(-1 row)
+const DIRS=[[0,1],[1,0],[0,-1],[-1,0]];
+// mirror 1 = '/', mirror 2 = '\'. Both reflections are involutions.
+const SLASH=[3,2,1,0], BACK=[1,0,3,2];
+const NAME={0:'E',1:'S',2:'W',3:'N'};
+// mulberry32 - deterministic, so the prover can regenerate the exact same boards.
+function rng(seed){let a=seed>>>0;return function(){a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const LEVELS=[
+  {seed:11,start:[0,0],dir:0,goal:[4,4],walls:[[2,1],[2,2],[2,3],[5,5],[5,6]]},
+  {seed:29,start:[0,7],dir:1,goal:[6,1],walls:[[1,3],[1,4],[3,1],[3,2],[3,3],[5,5]]},
+  {seed:47,start:[7,0],dir:3,goal:[2,6],walls:[[1,2],[2,2],[4,5],[5,5],[6,4]]},
+  {seed:83,start:[0,3],dir:0,goal:[7,4],walls:[[3,1],[3,2],[3,3],[3,4],[3,5],[5,6]]},
+  {seed:101,start:[4,7],dir:2,goal:[0,0],walls:[[2,0],[2,1],[4,3],[4,4],[6,5],[6,6]]},
+  {seed:137,start:[7,7],dir:3,goal:[3,0],walls:[[1,1],[1,2],[1,3],[4,4],[4,5],[6,2]]}
+];
+const IX=(r,c)=>r*COLS+c;
+const inb=(r,c)=>r>=0&&r<ROWS&&c>=0&&c<COLS;
+// FORWARD sim. Returns {ok, why, path:[idx...], bounces, steps}.
+function simulate(mirrors,lvl){
+  let r=lvl.start[0],c=lvl.start[1],d=lvl.dir;
+  const path=[IX(r,c)],bounceAt=[];
+  let bounces=0;
+  for(let s=0;s<MAXSTEP;s++){
+    const nr=r+DIRS[d][0], nc=c+DIRS[d][1];
+    if(!inb(nr,nc))return {ok:false,why:'out',path,bounces,steps:path.length-1};
+    if(nr===lvl.goal[0]&&nc===lvl.goal[1]){path.push(IX(nr,nc));return {ok:true,why:'goal',path,bounces,steps:path.length-1}}
+    if(lvl.wall.some(w=>w[0]===nr&&w[1]===nc)){path.push(IX(nr,nc));return {ok:false,why:'wall',path,bounces,steps:path.length-1}}
+    const t=mirrors[IX(nr,nc)]|0;
+    if(t===1)d=SLASH[d];
+    else if(t===2)d=BACK[d];
+    if(t)bounces++;
+    r=nr;c=nc;path.push(IX(r,c))}
+  return {ok:false,why:'stuck',path,bounces,steps:path.length-1}}
+// BACKWARD generator. walk() is the exact inverse of one step of simulate():
+// given "the ball sits at (r,c) heading dir d", the predecessor is the cell
+// one step back along the direction that ARRIVES as d. So a mirror is chosen on
+// the PREDECESSOR cell, and when the walk finally steps off the board we have
+// found the start cell and its heading. Every result is re-run through the
+// forward sim before it is accepted.
+function isWall(lvl,r,c){return lvl.wall.some(w=>w[0]===r&&w[1]===c)}
+function walk(r,c,d,lvl,rnd,seen,depth,cost,acc){
+  if(depth>8||cost>BUDGET)return null;
+  const order=[0,1,2];
+  for(let i=2;i>0;i--){const j=Math.floor(rnd()*(i+1));const t=order[i];order[i]=order[j];order[j]=t}
+  for(const t of order){
+    const nc=cost+(t?1:0);
+    if(nc>BUDGET)continue;
+    const din=t===1?SLASH[d]:t===2?BACK[d]:d;
+    const pr=r-DIRS[din][0], pc=c-DIRS[din][1];
+    const key=IX(r,c)+':'+din;
+    if(seen.has(key))continue;
+    if(isWall(lvl,r,c))continue;
+    const nacc=acc?Object.assign({},acc):{};
+    if(t)nacc[IX(r,c)]=t;
+    if(!inb(pr,pc))return {start:[r,c],dir:d,mirrors:nacc};
+    if(isWall(lvl,pr,pc))continue;
+    if(pr===lvl.goal[0]&&pc===lvl.goal[1])continue;
+    seen.add(key);
+    const res=walk(pr,pc,din,lvl,rnd,seen,depth+1,nc,nacc);
+    if(res)return res;
+    seen.delete(key)}
+  return null}
+// Safety net: a straight shot with no mirrors at all. With these walls there is
+// always one, so generate() can never hand back null.
+function straightShot(lvl){
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    for(let d=0;d<4;d++){
+      if(isWall(lvl,r,c))continue;
+      const st={start:[r,c],dir:d,goal:lvl.goal,walls:lvl.wall};
+      const s=simulate(new Array(COLS*ROWS).fill(0),st);
+      if(s.ok)return {start:[r,c],dir:d,mirrors:{}}}} 
+  return null}
+function generate(lvl,seed){
+  const rnd=rng(seed);
+  for(let attempt=0;attempt<200;attempt++){
+    for(let gd=0;gd<4;gd++){
+      const seen=new Set([IX(lvl.goal[0],lvl.goal[1])+':'+gd]);
+      const found=walk(lvl.goal[0],lvl.goal[1],gd,lvl,rnd,seen,0,0,null);
+      if(found){
+        const mirrors=new Array(COLS*ROWS).fill(0);
+        for(const k in found.mirrors)mirrors[k]=found.mirrors[k];
+        const st={start:found.start,dir:found.dir,goal:lvl.goal,walls:lvl.wall};
+        const chk=simulate(mirrors,st);
+        if(chk.ok)return {mirrors,start:st,path:chk.path,attempts:attempt+1}}}}
+  const ss=straightShot(lvl);
+  if(ss){const st={start:ss.start,dir:ss.dir,goal:lvl.goal,walls:lvl.wall};
+    return {mirrors:new Array(COLS*ROWS).fill(0),start:st,path:simulate(new Array(COLS*ROWS).fill(0),st).path,attempts:-1}}
+  return null}
+// ---- runtime ----
+let lv=0,board=null,mirrors=null,solved=null,won=false,result=null;
+function build(i){
+  lv=i;
+  const L=LEVELS[i];
+  solved=generate(L,L.seed);
+  board={start:solved.start,goal:L.goal,walls:L.wall};
+  mirrors=new Array(COLS*ROWS).fill(0);
+  won=false;result=null;render()}
+const MIRROR_SVG=t=>t===1
+  ?'<svg width="72%" height="72%" viewBox="0 0 24 24"><line x1="3" y1="21" x2="21" y2="3" stroke="#FF5F1F" stroke-width="3.2" stroke-linecap="round"/></svg>'
+  :'<svg width="72%" height="72%" viewBox="0 0 24 24"><line x1="3" y1="3" x2="21" y2="21" stroke="#FF5F1F" stroke-width="3.2" stroke-linecap="round"/></svg>';
+function render(){
+  const b=$('board');
+  b.style.gridTemplateColumns='repeat('+COLS+',52px)';
+  let html='';
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    const i=IX(r,c);
+    const wall=board.walls.some(w=>w[0]===r&&w[1]===c);
+    const isStart=r===board.start[0]&&c===board.start[1];
+    const isGoal=r===board.goal[0]&&c===board.goal[1];
+    let cls='rl-c',inner='';
+    if(wall){cls+=' rl-wall';inner='<div style="width:100%;height:100%;background:rgba(255,255,255,.34);border-radius:2px"></div>'}
+    else if(isGoal){cls+=' rl-goal';inner='<svg width="66%" height="66%" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="none" stroke="#FF5F1F" stroke-width="2.6"/><circle cx="12" cy="12" r="2" fill="#FF5F1F"/></svg>'}
+    else if(isStart){
+      cls+=' rl-start';
+      const a={0:0,1:90,2:180,3:270}[board.start.dir];
+      inner='<svg width="60%" height="60%" viewBox="0 0 24 24" style="transform:rotate('+a+'deg)"><path d="M4 12h13M12 6l6 6-6 6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'}
+    else inner=MIRROR_SVG(mirrors[i]);
+    html+='<button data-i="'+i+'" class="'+cls+'">'+inner+'</button>'}
+  b.innerHTML=html;
+  b.querySelectorAll('button').forEach(el=>el.onclick=()=>{if(el.classList.contains('rl-wall')||won)return;place(+el.dataset.i)});
+  result=simulate(mirrors,board);
+  const used=mirrors.filter(m=>m).length;
+  $('left').textContent=BUDGET-used;
+  $('bounces').textContent=result.bounces;
+  $('steps').textContent=result.steps;
+  if(result.ok&&!won){won=true;
+    // mark the path taken
+    result.path.forEach(i=>{const el=b.querySelector('[data-i="'+i+'"]');if(el&&!el.querySelector('svg circle, .rl-trail')){const t=document.createElement('span');t.className='rl-trail';el.appendChild(t)}})}
+  $('msg').innerHTML=won
+    ? '<span class="text-accent">In.</span> The ball reached the ring in '+result.steps+' steps.'
+    : used===0 ? 'Place up to '+BUDGET+' mirrors to steer the ball into the ring.'
+    : result.why==='wall' ? 'The ball hit a block. '+used+' of '+BUDGET+' mirrors placed.'
+    : result.why==='out' ? 'The ball rolled off the board. '+used+' of '+BUDGET+' mirrors placed.'
+    : result.why==='stuck' ? 'The ball is circling with no way out. '+used+' of '+BUDGET+' mirrors placed.'
+    : 'Steer the ball into the ring. '+used+' of '+BUDGET+' mirrors placed.';
+  document.querySelectorAll('.lv').forEach(el=>{
+    const on=+el.dataset.lv===lv;
+    el.className=on?'ws-btn lv':'ws-btn-ghost lv'})}
+function place(i){
+  if(won)return;
+  const used=mirrors.filter(m=>m).length;
+  if(!mirrors[i]&&used>=BUDGET)return;
+  mirrors[i]=mirrors[i]===0?1:(mirrors[i]===1?2:0);
+  won=false;render()}
+function clearBoard(){mirrors=new Array(COLS*ROWS).fill(0);won=false;render()}
+function showSolution(){mirrors=solved.mirrors.slice();won=false;render()}
+document.querySelectorAll('.lv').forEach(el=>el.onclick=()=>build(+el.dataset.lv));
+$('clear').onclick=clearBoard;
+$('solve').onclick=showSolution;
+build(0);
+window.__ricochet={get G(){return {lv,COLS,ROWS,MAXSTEP,BUDGET,won,
+    start:board.start.slice(),goal:board.goal.slice(),
+    walls:board.walls.map(w=>w.slice()),
+    mirrors:mirrors.slice(),
+    solution:solved.mirrors.slice(),
+    result:{ok:result.ok,why:result.why,steps:result.steps,bounces:result.bounces,len:result.path.length}}},
+  simulate,generate,build,place,clearBoard,showSolution,render,
+  LEVELS,DIRS,SLASH,BACK,IX};
+</script>
+<style>
+  .rl-c{aspect-ratio:1/1}
+  .rl-wall{cursor:default}
+  .rl-start{background:rgba(255,255,255,.13)}
+  .rl-goal{background:rgba(255,95,31,.09)}
+</style>
+</body>
+</html>

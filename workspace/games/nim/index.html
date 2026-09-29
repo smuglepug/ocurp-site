@@ -138,6 +138,12 @@ function reset(mode,hard){
         :[3+Math.floor(Math.random()*6),4+Math.floor(Math.random()*5),5+Math.floor(Math.random()*5)];
   if(hard){S.piles=S.mode===1?[7]:S.mode===2?[7,5]:[3,4,5]}
   S.piles=S.piles.map(v=>Math.max(1,Math.min(MAXP,v)));
+  // Never hand the player a P-position. XOR 0 is losing for whoever is on
+  // move and the AI below answers every move optimally, so a zero-XOR start
+  // is a game already lost before the first stone is taken. Nudge the first
+  // pile by one until the position is N.
+  for(let guard=0;guard<MAXP&&xor(S.piles)===0;guard++)
+    S.piles[0]=Math.max(1,Math.min(MAXP,S.piles[0]+1));
   $('msg').textContent='Your move. Take at least one stone from one pile.';
   render();
 }

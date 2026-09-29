@@ -145,6 +145,15 @@ function placeBall(dir){
   const sp=3.4;
   st.vx=Math.cos(a)*sp*st.dir;st.vy=Math.sin(a)*sp*st.dir;
   st.bx=W/2;st.by=H/2}
+// Both paddles multiply |vx| by 1.04 and every wall bounce adds 0.6 to |vy|,
+// with no cap anywhere. A long rally compounds both until the ball moves
+// further in one frame than the paddle collision zones are wide: it then
+// skips straight over a paddle, lands outside the court, and the match never
+// ends - no point, no win, no loss. Cap the speed so a rally stays a rally.
+const MAX_VX=9, MAX_VY=7.5;
+function clampBall(){
+  if(st.vx>MAX_VX)st.vx=MAX_VX;else if(st.vx<-MAX_VX)st.vx=-MAX_VX;
+  if(st.vy>MAX_VY)st.vy=MAX_VY;else if(st.vy<-MAX_VY)st.vy=-MAX_VY}
 function cpuSpeed(){return DIFFS[st.level].speed*(1+Math.min(0.6,st.rally*0.012))}
 function cpuMove(){
   const d=DIFFS[st.level];
@@ -165,6 +174,7 @@ function step(){
   if(st.px<=PH/2+2||st.px>=H-PH/2-2)st.pdir*=-1;
   cpuMove();
   st.bx+=st.vx;st.by+=st.vy;
+  clampBall();
   if(st.by<=6||st.by>=H-6){st.by=st.by<=6?6:H-6;st.vy*=-1;st.vy+=st.vy>0?0.6:-0.6;st.speedUp=Math.min(1.6,st.speedUp+.05)}
   if(st.bx<=PW+8&&st.vx<0){
     if(Math.abs(st.by-st.px)<PH/2+8){

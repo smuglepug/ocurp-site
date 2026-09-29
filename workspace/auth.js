@@ -67,6 +67,70 @@
     return u;
   }
 
+
+  /* ---- email sign-in -----------------------------------------------------
+     Google is switched off on the Supabase project, so Google-only would leave
+     visitors with no way to make an account at all. Email/password is enabled
+     and works today, so it is offered first and Google appears only when the
+     project reports the provider as available. */
+
+  function emailReady() {
+    var c = cfg();
+    return !!(c.url && c.anonKey && global.supabase && global.supabase.createClient);
+  }
+
+  function ensureClient() {
+    if (!client && emailReady()) {
+      try { client = global.supabase.createClient(cfg().url, cfg().anonKey); } catch (e) { client = null; }
+    }
+    return client;
+  }
+
+  function userFromRow(u) {
+    if (!u) return null;
+    var m = u.user_metadata || {};
+    return {
+      id: u.id,
+      email: u.email || '',
+      name: m.full_name || m.name || (u.email || 'Member').split('@')[0],
+      avatar_url: m.avatar_url || m.picture || null,
+      since: (u.created_at || new Date().toISOString()).slice(0, 10),
+      provider: 'supabase'
+    };
+  }
+
+  function signUp(email, password) {
+    var c = ensureClient();
+    if (!c) return Promise.reject(new Error('Accounts are unavailable right now.'));
+    return c.auth.signUp({ email: email, password: password }).then(function (r) {
+      if (r && r.error) throw r.error;
+      // Supabase may return a user with no session when email confirmation is
+      // on. Do not pretend they are signed in until a session really exists.
+      if (r && r.data && r.data.session) {
+        session = r.data.session;
+        var u = userFromRow(r.data.user);
+        writeJSON(USER_KEY, u);
+        emit();
+        return { user: u, needsConfirm: false };
+      }
+      return { user: null, needsConfirm: true };
+    });
+  }
+
+  function signInWithEmail(email, password) {
+    var c = ensureClient();
+    if (!c) return Promise.reject(new Error('Accounts are unavailable right now.'));
+    return c.auth.signInWithPassword({ email: email, password: password }).then(function (r) {
+      if (r && r.error) throw r.error;
+      session = r.data.session;
+      var u = userFromRow(r.data.user);
+      writeJSON(USER_KEY, u);
+      emit();
+      pullFavourites();
+      return { user: u, needsConfirm: false };
+    });
+  }
+
   function signInWithGoogle() {
     if (!supabaseReady()) return false;
     var back = location.origin + location.pathname.replace(/[^/]*$/, '');
@@ -100,7 +164,7 @@
     if (i === -1) { l.push(slug); added = true; } else { l.splice(i, 1); added = false; }
     setLocalFavs(l);
     window.dispatchEvent(new CustomEvent('ocurp:favs'));
-    if (client && session && u.provider === 'google') {
+    if (client && session) {
       var uid = session.user.id;
       if (added) {
         client.from('favourites').insert({ user_id: uid, slug: slug })
@@ -113,14 +177,43 @@
     return added;
   }
 
+  /* The favourites table is not created on the Supabase project yet, so this
+     404s. Local favourites already work, so treat a missing table as "nothing
+     to pull" rather than an error - and remember that so we stop asking. */
+  var favTableMissing = false;
+
   function pullFavourites() {
-    if (!client || !session) return;
-    client.from('favourites').select('slug').then(function (r) {
-      if (r && r.data && !r.error) {
+    if (!client || !session || favTableMissing) return Promise.resolve([]);
+    return client.from('favourites').select('slug').then(function (r) {
+      if (r && r.error) {
+        var msg = String((r.error && r.error.message) || '');
+        if (/Could not find the table|schema cache|PGRST205/i.test(msg)) {
+          favTableMissing = true;
+          return [];
+        }
+        return [];
+      }
+      if (r && r.data) {
         setLocalFavs(r.data.map(function (row) { return row.slug; }));
         window.dispatchEvent(new CustomEvent('ocurp:favs'));
       }
-    });
+      return (r && r.data ? r.data : []).map(function (row) { return row.slug; });
+    }).catch(function () { return []; });
+  }
+
+  function pushFavourites() {
+    if (!client || !session || favTableMissing) return Promise.resolve(false);
+    var slugs = listFavs();
+    return client.from('favourites').upsert(
+      slugs.map(function (s) { return { slug: s }; }),
+      { onConflict: 'user_id,slug' }
+    ).then(function (r) {
+      if (r && r.error && /Could not find the table|schema cache|PGRST205/i.test(String(r.error.message))) {
+        favTableMissing = true;
+        return false;
+      }
+      return !(r && r.error);
+    }).catch(function () { return false; });
   }
 
   /* ---- sign-in prompt ---- */
@@ -230,13 +323,14 @@
   global.OcurpAuth = {
     user: current, isSignedIn: isSignedIn, signOut: signOut,
     signIn: signInLocal, signInWithGoogle: signInWithGoogle,
+    signUp: signUp, signInWithEmail: signInWithEmail, emailReady: emailReady,
     onChange: function (fn) { listeners.push(fn); },
     supabaseReady: supabaseReady,
     googleEnabled: checkGoogle,
     client: function () { return client; },
     session: function () { return session; },
     promptSignIn: promptSignIn, closePrompt: closePanel,
-    favourites: { list: listFavs, has: hasFav, toggle: toggleFav, refresh: pullFavourites },
+    favourites: { list: listFavs, has: hasFav, toggle: toggleFav, refresh: pullFavourites, push: pushFavourites },
     syncNav: syncNav
   };
 })(window);

@@ -160,7 +160,27 @@ function killRock(i){
   hud();
 }
 function newShip(){
-  S.ship={x:W/2,y:H/2,a:-Math.PI/2,vx:0,vy:0,dead:false};
+  // Spawn clear of the field, not on a fixed point. The respawn point used to
+  // be a hard W/2,H/2 while rocks drift anywhere, so a rock passing over the
+  // centre killed the ship on the very frame it materialised. The 2.2s shield
+  // below was cosmetic (the centre probe ignored it entirely) and the last life
+  // could be gone before the player saw a pixel of it. Try the centre first,
+  // then ring outwards, and take any square with real water around it.
+  let bx=W/2,by=H/2,found=false;
+  for(let ring=0;ring<=5&&!found;ring++){
+    const rad=ring*36;
+    for(let i=0;i<(ring?8:1);i++){
+      const t=(i/8)*6.283;
+      const x=(((W/2+Math.cos(t)*rad)%W)+W)%W,y=(((H/2+Math.sin(t)*rad)%H)+H)%H;
+      let clear=true;
+      for(const r of S.rocks){
+        const dx=x-r.x,dy=y-r.y,m=r.r+70;
+        if(dx*dx+dy*dy<m*m){clear=false;break}
+      }
+      if(clear){bx=x;by=y;found=true;break}
+    }
+  }
+  S.ship={x:bx,y:by,a:-Math.PI/2,vx:0,vy:0,dead:false};
   S.safe=2.2;S.bullets=[];
   S.spawnIn=1.4;
 }
@@ -205,6 +225,10 @@ function update(dt){
   }
   S.bullets=S.bullets.filter(b=>b.life>0);
   if(!sh.dead)for(const r of S.rocks){
+    // S.safe is a real spawn shield: it covers the centre probe too, not just
+    // the offset one. It used to guard only sh.x+6, so a rock sitting on the
+    // ship killed it instantly while the HUD claimed 2.2s of protection.
+    if(S.safe>0)break;
     if(inside(sh.x,sh.y,r)||(S.safe<=0&&inside(sh.x+6,sh.y,r))){die();break}
   }
   if(sh.dead&&S.lives>0&&!S.spawnAt)S.spawnAt=S.t+1.1;

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hexmines — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .hm-cell { position:relative; display:flex; align-items:center; justify-content:center;
+    clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+    border:0; background:rgba(255,255,255,.07); color:#fff; cursor:pointer;
+    font-family:'IBM Plex Sans',monospace; font-weight:700; line-height:1; padding:0; transition:background .12s }
+  .hm-cell:hover { background:rgba(255,255,255,.16) }
+  .hm-open { background:rgba(255,255,255,.02) }
+  .hm-open:hover { background:rgba(255,255,255,.02) }
+  .hm-flag { background:rgba(255,95,31,.22) }
+  .hm-mine { background:rgba(255,95,31,.9); color:#050505 }
+  .hm-n1 { color:#fff } .hm-n2 { color:rgba(255,255,255,.62) } .hm-n3 { color:rgba(255,95,31,.95) }
+  .hm-row { display:flex; align-items:center; gap:3px; justify-content:center }
+  .hm-hint { outline:2px solid #FF5F1F; outline-offset:1px }
+</style>
+<meta name="description" content="Hexmines - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/hexmines/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Hexmines">
+<meta property="og:description" content="Hexmines - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/hexmines/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Hexmines on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Hexmines">
+<meta name="twitter:description" content="Hexmines - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Hexmines on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Hexmines","url":"https://ocurp.space/workspace/games/hexmines/","description":"Hexmines - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Hexmines</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">PUZZLE</span><span class="ws-chip">LOGIC</span><span class="ws-chip">HEX</span></div>
+  </div>
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button data-preset="easy"   class="ws-btn-ghost preset">Scout</button>
+      <button data-preset="medium" class="ws-btn-ghost preset">Line</button>
+      <button data-preset="hard"   class="ws-btn-ghost preset">Deep</button>
+      <button id="new" class="ws-btn">New field</button>
+    </div>
+    <div class="mt-6 flex justify-center" id="field"></div>
+    <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Mines</div><div class="font-display text-xl font-black text-accent" id="mines">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Flags</div><div class="font-display text-xl font-black text-white" id="flags">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Cleared</div><div class="font-display text-xl font-black text-white" id="cleared">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Time</div><div class="font-display text-xl font-black text-white" id="time">0</div></div>
+    </div>
+    <div id="msg" class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Left-click reveals, right-click flags. The first click is always safe — the charges are laid after you click.</div>
+    <p class="mt-4 text-[10px] leading-relaxed text-white/45">A hex touches up to six neighbours, so a number can read 0 to 6. Every field is
+      generated lazily: the first click is cleared and its neighbours re-counted, so you can never open on a charge.
+      Clear all safe hexes to win; open a charge and the field is lost.</p>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+// PRESETS: the page's exact mine density. The prover reuses these numbers.
+const PRESETS={easy:{R:4,density:0.14},medium:{R:5,density:0.19},hard:{R:6,density:0.24}};
+// odd-r offset rows: every row is 2R-1 wide, odd rows are drawn half a cell left.
+const COLS=R=>2*R-1;
+const COLOF=(R,r)=>r%2?R-2:0;
+// Neighbour set for the odd-r offset hex. Mirrored verbatim in tools/provers/hexmines.py.
+function neighbours(r,c,R){
+  const odd=r&1,out=[],push=(rr,cc)=>{if(rr>=0&&rr<R&&cc>=0&&cc<COLS(R))out.push(rr*COLS(R)+cc)};
+  push(r-1,c); push(r+1,c);
+  push(r,c-1); push(r,c+1);
+  push(r-1,odd?c:c-1);
+  push(r+1,odd?c+1:c);
+  return out}
+const NCELL=R=>R*COLS(R);
+let R=4,preset='easy',mine=0,mines=[],open=[],flags=[],started=0,dead=false,won=false,cleared=0,t0=0,timer=0;
+const IX=(r,c)=>r*COLS(R)+c;
+// layMines places MINES charges avoiding cell `safe`. Safe-cell exclusion plus the
+// fresh zero-flood is what makes the first click provably survivable.
+function layMines(safe){
+  const total=NCELL(R);
+  const free=[];
+  for(let i=0;i<total;i++)if(i!==safe)free.push(i);
+  let k=MINES;
+  for(let i=free.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=free[i];free[i]=free[j];free[j]=t}
+  mines=new Array(total).fill(false);
+  for(let i=0;i<k;i++)mines[free[i]]=true;
+  return mines}
+let MINES=0;
+function countFor(Rr,presetKey){return Math.round(PRESETS[presetKey].density*NCELL(Rr))}
+function newField(p){
+  preset=p||preset;
+  R=PRESETS[preset].R;
+  MINES=countFor(R,preset);
+  mine=MINES;
+  const total=NCELL(R);
+  open=new Array(total).fill(false);
+  flags=new Array(total).fill(false);
+  // Pre-seed a mine-free first click: the board is laid at New-field time with a
+  // synthetic safe cell, then re-laid for real on the first actual reveal.
+  mine=MINES;mines=layMines(-1);
+  cleared=0;dead=false;won=false;started=0;deadline=0;
+  stopTimer();
+  render()}
+function neighboursOf(i){
+  const r=Math.floor(i/COLS(R)),c=i%COLS(R);
+  return neighbours(r,c,R).filter(j=>j!==i)}
+function adjCount(i){let n=0;for(const j of neighboursOf(i))if(mines[j])n++;return n}
+function flood(i,seen){
+  seen=seen||new Set();
+  const q=[i];seen.add(i);
+  while(q.length){
+    const x=q.shift();
+    if(mines[x])continue;
+    open[x]=true;cleared++;
+    if(adjCount(x)===0)for(const j of neighboursOf(x))if(!seen.has(j)&&!mines[j])q.push(j)}}
+function tick(){
+  if(dead||won||!started)return;
+  const el=Date.now()-t0;
+  if(el>=deadline){clearInterval(timer);timer=0}}
+function startTimer(){
+  t0=Date.now();started=1;clearInterval(timer);
+  timer=setInterval(tick,250)}
+function reveal(i){
+  if(dead||won||i<0||i>=NCELL(R))return 'noop';
+  if(flags[i])return 'flagged';
+  if(open[i])return 'already';
+  if(!started){
+    // First click: re-lay the field with THIS cell guaranteed safe, then flood.
+    layMines(i);
+    startTimer();
+    flood(i);
+    render();
+    if(!mines[i])return 'first';
+    return 'mine'}
+  if(mines[i]){dead=true;open[i]=true;stopTimer();render();return 'mine'}
+  flood(i);
+  checkWin();
+  render();
+  return 'open'}
+function stopTimer(){if(timer){clearInterval(timer);timer=0}}
+function checkWin(){
+  if(cleared>=NCELL(R)-MINES){won=true;stopTimer()}}
+function toggleFlag(i){
+  if(dead||won||open[i]||i<0||i>=NCELL(R))return 'noop';
+  flags[i]=!flags[i];
+  render();
+  return flags[i]?'set':'cleared'}
+function render(){
+  const f=$('field');f.innerHTML='';
+  const w=42,hh=40;
+  for(let r=0;r<R;r++){
+    const row=document.createElement('div');
+    row.className='hm-row';
+    row.style.marginLeft=(r%2? -w*0.25:0)+'px';
+    for(let c=0;c<COLS(R);c++){
+      const i=IX(r,c),b=document.createElement('button');
+      b.className='hm-cell';
+      b.style.width=w+'px';b.style.height=hh+'px';
+      b.style.fontSize='15px';
+      b.dataset.i=i;
+      if(dead&&mines[i]){b.classList.add('hm-mine');b.textContent='•'}
+      else if(flags[i]){b.classList.add('hm-flag');b.textContent='•'}
+      else if(open[i]){
+        b.classList.add('hm-open');
+        const n=adjCount(i);
+        if(n){b.textContent=n;b.classList.add('hm-n'+n)}
+        b.style.cursor='default';
+      }
+      b.onclick=()=>reveal(i);
+      b.oncontextmenu=e=>{e.preventDefault();toggleFlag(i)};
+      row.appendChild(b)}
+    f.appendChild(row)}
+  $('mines').textContent=mine;
+  $('flags').textContent=flags.filter(Boolean).length;
+  $('cleared').textContent=cleared+' / '+(NCELL(R)-MINES);
+  $('time').textContent=started?Math.min(60,Math.floor((Date.now()-t0)/1000)):'0';
+  $('msg').innerHTML=won
+    ? '<span class="text-accent">Field cleared.</span> Every safe hex is open.'
+    : dead
+      ? '<span class="text-accent">Charge.</span> The field is lost — hit New field.'
+      : NCELL(R)+' hexes, '+mine+' charges. Left-click reveals, right-click flags.';
+  document.querySelectorAll('.preset').forEach(el=>{
+    const on=el.dataset.preset===preset;
+    el.className=(on?'ws-btn preset':'ws-btn-ghost preset')})}
+document.querySelectorAll('.preset').forEach(el=>el.onclick=()=>newField(el.dataset.preset));
+$('new').onclick=()=>newField(preset);
+newField('easy');
+window.__hexmines={get G(){return {R,preset,MINES,mine,total:NCELL(R),cleared,dead,won,started,
+    mines:mines.slice(),open:open.slice(),flags:flags.slice(),
+    safeTotal:NCELL(R)-MINES}},
+  newField,reveal,toggleFlag,neighboursOf,adjCount,layMines,
+  get neighboursAt(){return (r,c)=>neighbours(r,c,R)},
+  COLS,NCELL,countFor,render};
+</script>
+</body>
+</html>

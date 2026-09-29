@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>River Crosser — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+</style>
+<meta name="description" content="River Crosser - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/games/river-crosser/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="River Crosser">
+<meta property="og:description" content="River Crosser - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/games/river-crosser/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="River Crosser on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="River Crosser">
+<meta name="twitter:description" content="River Crosser - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-games.png">
+<meta name="twitter:image:alt" content="River Crosser on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"River Crosser","url":"https://ocurp.space/workspace/games/river-crosser/","description":"River Crosser - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">River Crosser</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ONE BUTTON</span><span class="ws-chip">TIMING</span><span class="ws-chip">7 LANES</span></div>
+  </div>
+  <section class="ws-panel p-6">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <button id="go" class="ws-btn">Start</button>
+      <button id="rs" class="ws-btn-ghost">New river</button>
+      <button id="hint" class="ws-btn-ghost">Show route</button>
+      <span class="ws-chip" id="lanc">LANE 0 / 7</span>
+      <span class="ws-chip" id="tries">TRIES 0</span>
+      <span class="ws-chip" id="stat">READY</span>
+    </div>
+    <canvas id="cv" class="mx-auto block w-full touch-none rounded-xl border border-white/15" style="aspect-ratio:1/1;max-width:440px"></canvas>
+    <div class="mx-auto mt-4 flex max-w-[440px] justify-center gap-2 sm:hidden">
+      <button class="ws-btn !px-6 !py-3" data-act="hop">HOP</button>
+    </div>
+    <p class="mt-3 text-center text-xs text-white/45">One button: <b>space</b>, <b>&uarr;</b> or tap the river. Each press hops you one lane toward the nest. Land on a log or you go under.</p>
+    <pre id="trace" class="ws-out mx-auto mt-4 max-w-[440px] rounded-lg border border-white/10 bg-white/[0.03] p-3"></pre>
+  </section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+// ---------------------------------------------------------------------------
+// GRID. 9x9 cells of 44px. Row 0 is the nest bank, row 8 the launch bank,
+// rows 1..7 are water. The runner stands in ONE fixed column (AGENT_COL) and
+// only ever moves up the grid, so the whole game is a 1-D timing puzzle on
+// each lane. Fixed step, no frame-rate dependence at all.
+// ---------------------------------------------------------------------------
+const COLS=9, ROWS=9, CELL=44, W=COLS*CELL, H=ROWS*CELL;
+const TICK=0.02;            // one simulation step, seconds
+const PERIOD=12;            // the whole river repeats every 12 s
+const TICKS=Math.round(PERIOD/TICK);   // 600 steps per full period
+const HOP_TICKS=8;          // a hop takes 8 steps = 0.16 s
+const AGENT_COL=4, AGENT_W=22, AGENT_H=22;
+const AGENT_X=AGENT_COL*CELL+(CELL-AGENT_W)/2;   // 187
+const AGENT_DY=(CELL-AGENT_H)/2;                 // 11
+const START_ROW=8, HOME_ROW=0, WATER_ROWS=7;
+
+// Every lane's lattice pitch divides v*PERIOD exactly, so each lane's log
+// pattern is periodic with the SAME 12 s period. That is what lets the
+// planner below search residue space and be certain no route was missed.
+const LANE_SPEC=[
+  {row:1, v: 40, pitch:120, len: 76},
+  {row:2, v:-56, pitch:112, len: 70},
+  {row:3, v: 32, pitch: 96, len: 64},
+  {row:4, v:-72, pitch:108, len: 70},
+  {row:5, v: 48, pitch: 96, len: 60},
+  {row:6, v:-64, pitch: 96, len: 62},
+  {row:7, v: 56, pitch: 96, len: 64}
+];
+const mod=(a,b)=>((a%b)+b)%b;
+const secs=t=>t*TICK;
+
+let LANES=[];              // {row,v,pitch,len,phi}
+let row=START_ROW, tick=0, air=0, phase='ready', tries=0, wins=0;
+let plan=null, planAt=null, routeOn=false, logLines=[];
+
+// --- field geometry, the ONLY place positions are computed -----------------
+function basePhase(i,t){ const L=LANES[i]; return mod(L.phi+L.v*t, L.pitch); }
+function logX(i,t,k){ return basePhase(i,t)+k*LANES[i].pitch; }
+// k from -1..4 covers the 396px board for every pitch in LANE_SPEC
+function onLog(i,t){
+  const L=LANES[i], b=basePhase(i,t);
+  for(let k=-1;k<=4;k++){
+    const x=b+k*L.pitch;
+    if(x<AGENT_X+AGENT_W && x+L.len>AGENT_X) return true;
+  }
+  return false;
+}
+// Steps until the log carrying the runner reaches the end of its pass. This is
+// the real "you got swept away" limit; the planner is not allowed to ignore it.
+function coverEnd(i,t){
+  let e=t;
+  while(e-t<TICKS && onLog(i,secs(e))) e++;
+  return e;
+}
+// A landing spot must also survive MARGIN more steps than the hop itself, so
+// there is real reaction slack rather than a frame-exact thread to walk.
+const MARGIN=20;
+function canStand(i,t){ return onLog(i,secs(t)) && (coverEnd(i,t)-t)>=HOP_TICKS+MARGIN; }
+
+// --- generator -------------------------------------------------------------
+// Draws a random phase per lane, then refuses to ship a river the planner
+// cannot solve. The prover re-derives the same plan independently.
+function makeField(rng){
+  const f=()=>typeof rng==='function'?rng():Math.random();
+  for(let attempt=0;attempt<80;attempt++){
+    LANES=LANE_SPEC.map(s=>({row:s.row,v:s.v,pitch:s.pitch,len:s.len,phi:f()*s.pitch}));
+    if(solve()) return {ok:true,attempt:attempt+1};
+  }
+  return {ok:false,attempt:80};
+}
+
+// --- planner ---------------------------------------------------------------
+// Exact search over (lane, tick-residue). The river is PERIOD-periodic, so a
+// plan is a list of landing residues. Returns the landing tick of every hop,
+// or null. Lane 0 and lane 8 (the banks) are always safe, so the first hop
+// may be taken at any time and the last hop always succeeds.
+function solve(){
+  const ok=[];                              // per lane: Set of landable residues
+  const pre=[];
+  for(let i=0;i<WATER_ROWS;i++){
+    const s=new Set(), p=new Map();
+    for(let t=0;t<TICKS;t++) if(canStand(i,t)){ s.add(t); p.set(t,-1); }
+    ok.push(s); pre.push(p);
+  }
+  if(!ok[0].size) return null;
+  const prev=[new Set(ok[0])];
+  for(let i=1;i<WATER_ROWS;i++){
+    const cur=new Set(), from=new Map();
+    for(let t=0;t<TICKS;t++){
+      if(!ok[i].has(t)) continue;
+      for(const a of prev[i-1]){
+        const head=coverEnd(i-1,a);
+        if(t>=a+HOP_TICKS && t<=a+head){ cur.add(t); from.set(t,a); break; }
+      }
+    }
+    if(!cur.size) return null;
+    prev.push(cur); pre[i]=from;
+  }
+  let best=-1;
+  for(const t of prev[WATER_ROWS-1]) if(best<0||t<best) best=t;
+  if(best<0) return null;
+  const out=[];
+  let t=best;
+  for(let i=WATER_ROWS-1;i>=0;i--){ out[i]=t; t=pre[i].get(t); }
+  return out;
+}
+
+// --- simulation ------------------------------------------------------------
+function newRiver(){
+  tick=0; air=0; row=START_ROW; phase='play'; plan=null; planAt=null;
+  return true;
+}
+function start(){
+  makeField();
+  newRiver();
+  plan=solve();
+  $('go').style.display='none';
+  logLines=[];
+  upd();
+  last=0; acc0=0; requestAnimationFrame(frame);
+}
+function press(){
+  if(phase==='ready'){ start(); return; }
+  if(phase!=='play'||air>0) return;
+  if(row===HOME_ROW) return;
+  air=HOP_TICKS;
+  if(planAt) planAt=planAt.slice();
+}
+function land(){
+  row--;
+  tickNow();
+  if(row===HOME_ROW){ phase='won'; wins++; logLines.push('t='+tick+': reached the nest'); }
+  else{
+    const i=row-1;
+    if(!onLog(i,secs(tick))){ phase='lost'; logLines.push('t='+tick+': lane '+row+' was empty underfoot'); }
+    else if(planAt) planAt.shift();
+  }
+}
+function tickNow(){
+  if(air>0){ air--; if(air===0) land(); return; }
+  if(phase==='play'&&row>HOME_ROW&&row<START_ROW){
+    if(!onLog(row-1,secs(tick))){ phase='lost'; tries++; logLines.push('t='+tick+': swept off lane '+row); }
+  }
+}
+function step(){ tick++; tickNow(); }
+
+// Replay an arbitrary press schedule through the REAL geometry and report
+// what actually happens. This is what the browser check asserts on.
+function simulate(pressAt, maxTick){
+  let r=START_ROW, t=0, a=0, res={won:false,lost:false,reason:'',ticks:0};
+  const end=maxTick||(TICKS*3);
+  const P=pressAt.slice().sort((x,y)=>x-y);
+  let pi=0;
+  while(t<end){
+    t++;
+    if(pi<P.length&&P[pi]===t){ a=HOP_TICKS; pi++; }
+    if(a>0){ a--; if(a===0){
+      r--;
+      if(r===HOME_ROW){ res.won=true; res.reason='nest'; res.ticks=t; return res; }
+      if(!onLog(r-1,secs(t))){ res.lost=true; res.reason='empty'; res.ticks=t; return res; }
+    } continue; }
+    if(r>HOME_ROW&&r<START_ROW&&!onLog(r-1,secs(t))){ res.lost=true; res.reason='swept'; res.ticks=t; return res; }
+  }
+  res.ticks=t; res.reason='timeout'; return res;
+}
+
+// --- drawing ---------------------------------------------------------------
+const cv=$('cv'), cx=cv.getContext('2d');
+function sized(){
+  const r=cv.getBoundingClientRect(); const dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=Math.round(440*dpr); cv.height=Math.round(440*dpr);
+  cx.setTransform(dpr*(440/W),0,0,dpr*(440/W),0,0);
+}
+function rr(x,y,w,h,r){ cx.beginPath(); cx.moveTo(x+r,y); cx.arcTo(x+w,y,x+w,y+h,r); cx.arcTo(x+w,y+h,x,y+h,r); cx.arcTo(x,y+h,x,y,r); cx.arcTo(x,y,x+w,y,r); cx.closePath(); }
+function draw(){
+  cx.clearRect(0,0,W,H);
+  cx.fillStyle='#050505'; cx.fillRect(0,0,W,H);
+  for(let r=0;r<ROWS;r++){
+    const bank=(r===HOME_ROW||r===START_ROW);
+    cx.fillStyle=bank?'rgba(255,255,255,.045)':(r%2?'rgba(255,255,255,.02)':'rgba(255,255,255,.035)');
+    cx.fillRect(0,r*CELL,W,CELL);
+    if(bank){
+      cx.fillStyle='rgba(255,255,255,.14)';
+      cx.fillRect(0,r===HOME_ROW?0:START_ROW*CELL+0,W,1);
+    }
+  }
+  // survey line
+  cx.fillStyle='rgba(255,255,255,.07)';
+  cx.fillRect(AGENT_COL*CELL+AGENT_DY,0,AGENT_W,H);
+  // logs
+  for(let i=0;i<WATER_ROWS;i++){
+    const L=LANES[i], b=basePhase(i,secs(tick));
+    for(let k=-1;k<=4;k++){
+      const x=b+k*L.pitch;
+      if(x+L.len<0||x>W) continue;
+      rr(x,L.row*CELL+3,L.len,CELL-6,7);
+      cx.fillStyle='#161616'; cx.fill();
+      cx.strokeStyle='rgba(255,255,255,.13)'; cx.lineWidth=1; cx.stroke();
+      cx.fillStyle='rgba(255,255,255,.05)';
+      cx.fillRect(x+6,L.row*CELL+7,L.len-12,3);
+    }
+  }
+  // nest
+  const ny=HOME_ROW*CELL+AGENT_DY;
+  cx.beginPath(); cx.arc(AGENT_X+AGENT_W/2,ny+AGENT_H/2,AGENT_W/2-1,0,Math.PI*2);
+  cx.strokeStyle=phase==='won'?'#FF5F1F':'rgba(255,95,31,.5)'; cx.lineWidth=2; cx.stroke();
+  // route hint
+  if(routeOn&&plan){
+    for(let i=0;i<plan.length;i++){
+      const L=LANE[i], p=mod(plan[i],TICKS), x=AGENT_X;
+      if(onLog(i,secs(p))) continue;
+      cx.fillStyle='rgba(255,95,31,.75)';
+      cx.fillRect(x+2,L.row*CELL+8,AGENT_W-4,4);
+    }
+  }
+  // runner
+  if(phase!=='ready'&&!(phase==='lost'&&tick%20<8)){
+    const ry=row*CELL+AGENT_DY-(air>0?10:0);
+    rr(AGENT_X,ry,AGENT_W,AGENT_H,4);
+    cx.fillStyle=phase==='lost'?'#7a3a18':'#FF5F1F'; cx.fill();
+  }
+  cx.fillStyle='rgba(255,255,255,.22)'; cx.font='9px IBM Plex Sans, monospace';
+  for(let i=0;i<WATER_ROWS;i++) cx.fillText('L'+(i+1),6,LANES[i].row*CELL+15);
+}
+function upd(){
+  $('lanc').textContent='LANE '+row+' / 7';
+  $('tries').textContent='TRIES '+tries;
+  $('stat').textContent = phase.toUpperCase();
+  $('stat').style.color = phase==='won'?'#FF5F1F':(phase==='lost'?'#FF5F1F':'');
+  $('trace').textContent =
+    'row      '+row+'  ('+(row===HOME_ROW?'nest':row===START_ROW?'launch bank':'lane '+(row))+')\n'
+    +'step     '+tick+'  =  '+secs(tick).toFixed(2)+' s of '+PERIOD+' s period\n'
+    +'lattice  '+LANES.map((L,i)=>'L'+(i+1)+' '+L.len+'px/'+L.pitch+'px @'+L.v+'px/s').join('\n         ')
+    +'\nplan     '+(plan?plan.map((t,i)=>'L'+(i+1)+'@'+secs(t).toFixed(2)+'s').join('  '):'none');
+  S.state=phase;S.row=row;S.tick=tick;
+}
+let last=0;
+function frame(ts){
+  if(!last) last=ts;
+  let d=(ts-last)/1000; last=ts;
+  if(d>0.25) d=0.25;
+  let acc=acc0+d; if(d>0.25) acc=acc0+TICK;
+  let guard=0;
+  while(acc>=TICK && guard++<40){ step(); acc-=TICK; }
+  acc0=acc;
+  draw(); upd();
+  requestAnimationFrame(frame);
+}
+var acc0=0;
+addEventListener('resize',sized);
+addEventListener('keydown',e=>{ if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW'){ e.preventDefault(); press(); } });
+cv.addEventListener('pointerdown',e=>{e.preventDefault();press();});
+document.querySelectorAll('[data-act=hop]').forEach(b=>b.onclick=press);
+$('go').onclick=start;
+$('rs').onclick=start;
+$('hint').onclick=()=>{ routeOn=!routeOn; $('hint').textContent=routeOn?'Hide route':'Show route'; plan=solve(); upd(); };
+const S={state:'ready',row:START_ROW,tick:0,phase:'ready'};
+window.__river_crosser={
+  COLS:()=>COLS, ROWS:()=>ROWS, CELL:()=>CELL, TICK:()=>TICK, TICKS:()=>TICKS,
+  PERIOD:()=>PERIOD, HOP_TICKS:()=>HOP_TICKS, AGENT_COL:()=>AGENT_COL,
+  AGENT_X:()=>AGENT_X, AGENT_W:()=>AGENT_W, AGENT_H:()=>AGENT_H,
+  WATER_ROWS:()=>WATER_ROWS, START_ROW:()=>START_ROW, HOME_ROW:()=>HOME_ROW,
+  get state(){return S.state;}, get row(){return S.row;}, get tick(){return S.tick;},
+  lanes:()=>LANES.map(L=>({row:L.row,v:L.v,pitch:L.pitch,len:L.len,phi:L.phi})),
+  onLog:onLog, coverEnd:coverEnd, canStand:canStand, solve:solve,
+  simulate:simulate, press:press, start:start, reset:()=>{S.state='ready';phase='ready';}
+};
+LANES=LANE_SPEC.map(s=>({row:s.row,v:s.v,pitch:s.pitch,len:s.len,phi:s.pitch*0.25}));
+sized(); plan=solve(); draw(); upd(); S.state='ready';
+</script>
+</body>
+</html>

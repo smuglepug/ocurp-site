@@ -72,4 +72,12 @@ const RAW = [
   {slug:"reaction-time",name:"Reaction Time",cat:"game",blurb:"Reaction Time - playable in the browser.",tags:["GAMES"],ready:true},
   {slug:"tile-memory",name:"Tile Memory",cat:"game",blurb:"Tile Memory - playable in the browser.",tags:["GAMES"],ready:true},
   {slug:"tile-memory",name:"Tile Memory",cat:"game",blurb:"Tile Memory - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"orbit-defender",name:"Orbit Defender",cat:"game",blurb:"Orbit Defender - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"orbit-defender",name:"Orbit Defender",cat:"game",blurb:"Orbit Defender - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"river-crosser",name:"River Crosser",cat:"game",blurb:"River Crosser - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"river-crosser",name:"River Crosser",cat:"game",blurb:"River Crosser - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"hexmines",name:"Hexmines",cat:"game",blurb:"Hexmines - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"hexmines",name:"Hexmines",cat:"game",blurb:"Hexmines - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"ricochet-lines",name:"Ricochet Lines",cat:"game",blurb:"Ricochet Lines - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"ricochet-lines",name:"Ricochet Lines",cat:"game",blurb:"Ricochet Lines - playable in the browser.",tags:["GAMES"],ready:true},
 ];

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solar Panel Size Calculator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-table { width:100%; border-collapse:collapse; font-family:'IBM Plex Sans',monospace; font-size:12px }
+  .ws-table th { text-align:right; font-weight:900; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.35); padding:.5rem .6rem; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; background:#0b0b0b }
+  .ws-table th:first-child, .ws-table td:first-child { text-align:left }
+  .ws-table td { text-align:right; padding:.4rem .6rem; border-bottom:1px solid rgba(255,255,255,.05); font-variant-numeric:tabular-nums; color:rgba(255,255,255,.8) }
+  .ws-scroll { max-height:22rem; overflow:auto; border:1px solid rgba(255,255,255,.08); border-radius:.75rem }
+</style>
+<meta name="description" content="Turn system size, peak sun hours and installed cost into annual kWh and a lifetime saving against a rising grid price. Runs entirely in your browser.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/solar-panel-size-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Solar Panel Size Calculator">
+<meta property="og:description" content="Turn system size, peak sun hours and installed cost into annual kWh and a lifetime saving against a rising grid price. Runs entirely in your browser.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/solar-panel-size-calculator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Solar Panel Size Calculator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Solar Panel Size Calculator">
+<meta name="twitter:description" content="Turn system size, peak sun hours and installed cost into annual kWh and a lifetime saving against a rising grid price. Runs entirely in your browser.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Solar Panel Size Calculator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Solar Panel Size Calculator", "url": "https://ocurp.space/workspace/tools/solar-panel-size-calculator/", "description": "Turn system size, peak sun hours and installed cost into annual kWh and a lifetime saving against a rising grid price. Runs entirely in your browser.", "applicationCategory": "UtilitiesApplication", "operatingSystem": "Any", "browserRequirements": "Requires JavaScript", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Solar Panel Size Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Science & Engineering — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ENERGY</span><span class="ws-chip">SOLAR</span><span class="ws-chip">ROI</span></div>
+        </div>
+      <section class="ws-panel mt-4 p-5">
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div><label class="ws-label mb-2 block" for="kw">System size (kW peak)</label><input id="kw" type="number" class="ws-input" step="0.1" value="6"></div>
+          <div><label class="ws-label mb-2 block" for="sun">Peak sun hours per day</label><input id="sun" type="number" class="ws-input" step="0.1" value="5"></div>
+          <div><label class="ws-label mb-2 block" for="eff">System efficiency %</label><input id="eff" type="number" class="ws-input" step="0.5" value="80"></div>
+          <div><label class="ws-label mb-2 block" for="cost">Installed cost</label><input id="cost" type="number" class="ws-input" step="50" value="15000"></div>
+          <div><label class="ws-label mb-2 block" for="price">Grid price per kWh</label><input id="price" type="number" class="ws-input" step="0.01" value="0.15"></div>
+          <div><label class="ws-label mb-2 block" for="esc">Electricity price rise %/yr</label><input id="esc" type="number" class="ws-input" step="0.1" value="3"></div>
+          <div><label class="ws-label mb-2 block" for="deg">Panel degradation %/yr</label><input id="deg" type="number" class="ws-input" step="0.05" value="0.5"></div>
+          <div><label class="ws-label mb-2 block" for="use">Household use (kWh/yr)</label><input id="use" type="number" class="ws-input" step="100" value="12000"></div>
+          <div><label class="ws-label mb-2 block" for="life">Panel life (years)</label><input id="life" type="number" class="ws-input" step="1" value="25"></div>
+        </div>
+        <div class="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4"><div class="ws-label mb-1">Year-1 production</div><div id="annual" class="font-display text-2xl font-black" style="color:#FF5F1F">—</div><div class="text-[10px] text-white/35">kWh</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4"><div class="ws-label mb-1">Lifetime energy</div><div id="lifetime" class="font-display text-2xl font-black text-white">—</div><div class="text-[10px] text-white/35">kWh</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4"><div class="ws-label mb-1">Bill avoided</div><div id="saved" class="font-display text-2xl font-black text-white">—</div><div class="text-[10px] text-white/35">over the panel life</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-4"><div class="ws-label mb-1">Net position</div><div id="net" class="font-display text-2xl font-black text-white">—</div><div class="text-[10px] text-white/35">after the install cost</div></div>
+        </div>
+      </section>
+      <section class="mt-4 grid gap-4 lg:grid-cols-2">
+        <div class="ws-panel p-5">
+          <div class="ws-label mb-3">Year by year</div>
+          <div class="ws-scroll"><table class="ws-table"><thead><tr><th>Year</th><th>kWh</th><th>Price/kWh</th><th>Saved</th><th>Cumulative</th></tr></thead><tbody id="rows"></tbody></table></div>
+        </div>
+        <div class="ws-panel p-5">
+          <div class="ws-label mb-3">Numbers behind the headline</div>
+          <div id="summary" class="ws-out"></div>
+          <div id="verdict" class="mt-4 text-[11px] leading-relaxed text-white/45"></div>
+        </div>
+      </section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const $=id=>document.getElementById(id);
+const money=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const n0=v=>v.toLocaleString('en-US',{maximumFractionDigits:0});
+function run(){
+  const kw=parseFloat($('kw').value)||0;
+  const sun=parseFloat($('sun').value)||0;
+  const eff=(parseFloat($('eff').value)||0)/100;
+  const cost=parseFloat($('cost').value)||0;
+  const price=parseFloat($('price').value)||0;
+  const esc=(parseFloat($('esc').value)||0)/100;
+  const deg=(parseFloat($('deg').value)||0)/100;
+  const use=parseFloat($('use').value)||0;
+  const life=Math.max(1,Math.round(parseFloat($('life').value)||0));
+  if(kw<=0||sun<=0||eff<=0){ ['annual','lifetime','saved','net'].forEach(i=>$(i).textContent='—'); $('rows').innerHTML=''; $('summary').textContent=''; $('verdict').textContent=''; return; }
+  const year1=kw*sun*365*eff;
+  const rows=[]; let totalKwh=0, totalSaved=0, cum=-cost, payback=null;
+  for(let y=1;y<=life;y++){
+    const kwh=year1*Math.pow(1-deg,y-1);
+    const p=price*Math.pow(1+esc,y-1);
+    const saved=kwh*p;
+    totalKwh+=kwh; totalSaved+=saved; cum+=saved;
+    if(payback===null&&cum>=0) payback={year:y,portion:(saved-(cum-saved))/saved};
+    rows.push({y,kwh,p,saved,cum});
+  }
+  $('annual').textContent=n0(year1);
+  $('lifetime').textContent=n0(totalKwh);
+  $('saved').textContent=money(totalSaved);
+  $('net').textContent=money(totalSaved-cost);
+  $('net').style.color=(totalSaved-cost>=0?'#4ade80':'#f87171');
+  $('rows').innerHTML=rows.map(r=>'<tr><td>'+r.y+'</td><td>'+n0(r.kwh)+'</td><td>$'+r.p.toFixed(3)+'</td><td>'+money(r.saved)+'</td><td>'+money(r.cum)+'</td></tr>').join('');
+  const offset=use? Math.min(100,year1/use*100):0;
+  $('summary').textContent=[
+    'kW peak                '+kw.toFixed(2)+' kW',
+    'Peak sun hours         '+sun.toFixed(2)+' h/day',
+    'System efficiency      '+n0((parseFloat($('eff').value)||0))+'%',
+    'Year-1 production       '+n0(year1)+' kWh',
+    'Equivalent full-load   '+(year1/0.25).toFixed(0)+' h/yr at 250 W',
+    'Lifetime production    '+n0(totalKwh)+' kWh over '+life+' years',
+    'Levelised cost         '+(totalKwh? (cost/totalKwh).toFixed(4):'—')+' $/kWh',
+    'Year-1 bill offset     '+offset.toFixed(1)+'% of '+n0(use)+' kWh use',
+    'Month-1 saving         '+money(year1*price/12),
+    'Simple payback         '+(payback? payback.year+' yr '+Math.round(payback.portion*100)+'%':'never in '+life+' years')
+  ].join('\n');
+  const irrHit=cost>0&&totalSaved>0;
+  $('verdict').textContent=(irrHit
+    ? (totalSaved>=cost*2 ? 'The lifetime bill avoided is more than double the install cost, before any export tariff or incentives. ' : 'The lifetime bill avoided is less than double the install cost, so this only makes sense if it also displaces peak-rate export or avoids a roof replacement. ')
+    : 'Fill in a grid price to see a return. ')
+    + 'Degradation is applied to every year after the first, and the price rise compounds on the grid rate, so the two effects work against each other on purpose.';
+}
+document.querySelectorAll('input').forEach(i=>i.addEventListener('input',run));
+run();</script>
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/solar-panel-calculator/">
+      <span class="ocurp-related-n">Solar Panel Calculator</span>
+      <span class="ocurp-related-b">Panels, battery storage and grid-tied sizing.</span>
+    </a></li>
+    <li><a href="/workspace/tools/compound-interest/">
+      <span class="ocurp-related-n">Compound Interest</span>
+      <span class="ocurp-related-b">Model what the saved money does if you invest it.</span>
+    </a></li>
+    <li><a href="/workspace/tools/profit-margin-calculator/">
+      <span class="ocurp-related-n">Profit Margin Calculator</span>
+      <span class="ocurp-related-b">Margin, markup and the gap between the two.</span>
+    </a></li>
+    <li><a href="/workspace/tools/energy-converter/">
+      <span class="ocurp-related-n">Energy Converter</span>
+      <span class="ocurp-related-b">Joules, watt-hours, calories and BTUs.</span>
+    </a></li>
+    <li><a href="/workspace/tools/fuel-cost-calculator/">
+      <span class="ocurp-related-n">Fuel Cost Calculator</span>
+      <span class="ocurp-related-b">Cost per mile and per kilometre for any vehicle.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
