@@ -104,10 +104,22 @@ tailwind.config = { theme: { extend: {
 const $=id=>document.getElementById(id);
 const b64=s=>btoa(String.fromCharCode(...new TextEncoder().encode(s)));
 const unb64=s=>new TextDecoder().decode(Uint8Array.from(atob(s),c=>c.charCodeAt(0)));
-$('enc').onclick=()=>{try{$('out').textContent=b64($('src').value)}catch(e){$('out').textContent='✗ '+e.message}};
-$('dec').onclick=()=>{try{$('out').textContent=unb64($('src').value.trim())}catch(e){$('out').textContent='✗ not valid Base64'}};
+/* Live conversion. A human expects the output to follow the keystroke, the way
+   TinyWow and every other encoder does - making them press a button for each
+   edit is the thing that makes a tool feel broken. The buttons stay as
+   explicit direction toggles and drive the same function. */
+let dir='encode';
+function enc(){try{$('out').textContent=b64($('src').value)}
+  catch(e){$('out').textContent='✗ '+e.message}}
+function dec(){try{$('out').textContent=unb64($('src').value.trim())}
+  catch(e){$('out').textContent='✗ not valid Base64'}}
+function run(){ dir==='encode'?enc():dec(); }
+$('enc').onclick=()=>{dir='encode';$('enc').className='ws-btn';$('dec').className='ws-btn-ghost';run()};
+$('dec').onclick=()=>{dir='decode';$('dec').className='ws-btn';$('enc').className='ws-btn-ghost';run()};
+$('src').addEventListener('input',run);
+$('src').addEventListener('paste',run);
 $('src').value='Owen Osayi — THE FOUNDER';
-$('enc').click();
+run();
 </script>
 
 
