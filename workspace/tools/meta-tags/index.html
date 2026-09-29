@@ -68,6 +68,15 @@ tailwind.config = { theme: { extend: {
 <meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
 <meta name="twitter:image:alt" content="Meta Tag Generator on Ocurp - free, runs in your browser">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Meta Tag Generator","url":"https://ocurp.space/workspace/tools/meta-tags/","description":"Open Graph and Twitter card tags from a form. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -128,13 +137,46 @@ function run(){
 }
 ['t','d','u','i','tw','c'].forEach(id=>$(id).addEventListener('input',run));
 ['canon','og','tc'].forEach(id=>$(id).addEventListener('change',run));run();</script>
-
-
-
-
-
-
-
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  /* Watch the usual output nodes; report a short, useful summary. */
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!box.isConnected)near(el);   /* attach even before there is output */
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      window.ocurpSay('Result updated: '+n+' characters.'+(n>400?' Use the copy button to take the full result.':''));
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
