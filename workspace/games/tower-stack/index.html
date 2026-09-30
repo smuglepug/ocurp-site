@@ -116,6 +116,15 @@ const $=id=>document.getElementById(id);
 const cv=$('cv'), cx=cv.getContext('2d');
 let W=300,H=400;
 const BH=26, MAXW=0.62, TARGET=20;
+/* Speed is px PER SECOND and scales with the block's own width, so one floor
+   costs the player the same FRACTION of the block as every other floor. The
+   old fixed 3.4px-per-frame was an absolute cost: a 250ms reaction ate 51px off
+   a 248px block on floor 1 and off a 43px block on floor 4, so the tower
+   always collapsed around floor 5. Per-frame it was also 2.4x faster on a
+   144Hz screen than the 60Hz screen the numbers were tuned on. */
+const SWEEP=0.22, MAXDT=0.05;
+const PERFECT_PX=8, PERFECT_FRAC=0.10, GROW=2;
+const SHRINK_PX=2, SHRINK_FRAC=0.04, CRUMBLE_W=12;
 let plats=[], cur=null, score=0, best=0, over=false, won=false, dir=1, flash=0, msg='';
 function sized(){
   const r=cv.getBoundingClientRect(); const dpr=Math.min(2,window.devicePixelRatio||1);
@@ -141,13 +150,20 @@ function drop(){
   const p=plats[0];
   const ov=Math.min(cur.x+cur.w,p.x+p.w)-Math.max(cur.x,p.x);
   if(ov<=0){ over=true; msg='Whiffed.'; upd(); draw(); return; }
-  const perfect = Math.abs(ov-cur.w) < 0.75;
+  /* Perfect means "well centred", measured on a human scale: at least 8px or
+     10% of the block, whichever is larger. The old fixed 0.75px tolerance was
+     unreachable - the block only ever sits on a 3.4px lattice, so the best it
+     could do was land 1.2px off, and no floor could ever be a perfect cut. */
+  const tol=Math.max(PERFECT_PX, cur.w*PERFECT_FRAC);
+  const perfect = Math.abs((cur.x+cur.w/2)-(p.x+p.w/2)) < tol;
   score++;
   if(perfect){ score++; flash=1; }
   plats.unshift({x:Math.max(cur.x,p.x), w:ov, perf:perfect});
   if(plats.length>=TARGET){ won=true; score=Math.max(score,TARGET); if(score>best)best=score; upd(); draw(); return; }
-  let nw = perfect? ov : Math.max(9, ov-Math.min(3.5, ov*0.07));
-  if(ov<11){ nw=ov; over=true; msg='Crumbling.'; }
+  /* A perfect cut puts a little width back, so a near-miss run has a comeback
+     path instead of a guaranteed death spiral. */
+  let nw = perfect? Math.min(W*MAXW, ov+GROW) : Math.max(9, ov-Math.min(SHRINK_PX, ov*SHRINK_FRAC));
+  if(ov<CRUMBLE_W){ nw=ov; over=true; msg='Crumbling.'; }
   cur={x:0,w:nw,perf:false}; dir=1;
   if(score>best) best=score;
   upd(); draw();
@@ -181,9 +197,12 @@ function draw(){
     cx.textAlign='left';
   }
 }
-function tick(){
-  if(!over&&!won&&cur){
-    cur.x += dir*3.4;
+let last=0;
+function tick(t){
+  const dt = last? Math.min(MAXDT, (t-last)/1000) : 0;
+  last=t;
+  if(!over&&!won&&cur&&dt>0){
+    cur.x += dir*(SWEEP*cur.w)*dt;
     if(cur.x<=0){cur.x=0;dir=1}
     if(cur.x+cur.w>=W){cur.x=W-cur.w;dir=-1}
   }
@@ -199,7 +218,22 @@ window.addEventListener('keydown',e=>{
   if(e.key==='r'||e.key==='R') reset();
 });
 window.addEventListener('resize',sized);
-sized(); tick();
+sized(); requestAnimationFrame(tick);
+/* Test hook: lets a headless check drive the game deterministically and read
+   back the REAL constants, instead of trusting that the page says what we
+   think it says. step(dt) advances the sweep by a fixed dt in seconds. */
+window.__tower={get W(){return W}, get plats(){return plats}, get cur(){return cur},
+  get score(){return score}, get over(){return over}, get won(){return won},
+  get dir(){return dir}, reset, drop,
+  C:{BH,MAXW,TARGET,SWEEP,MAXDT,PERFECT_PX,PERFECT_FRAC,GROW,SHRINK_PX,SHRINK_FRAC,CRUMBLE_W},
+  /* align cur so a press right now would be a perfect cut */
+  lineUp(){const p=plats[0]; cur.x=p.x+(p.w-cur.w)/2; dir=1; return cur.x;},
+  /* advance the sweep by dt seconds (the real tick() body) */
+  step(dt){ if(!over&&!won&&cur){ cur.x+=dir*(SWEEP*cur.w)*dt;
+      if(cur.x<=0){cur.x=0;dir=1} if(cur.x+cur.w>=W){cur.x=W-cur.w;dir=-1} } return cur.x; },
+  /* how wide is the perfect window right now, in px? */
+  window_(){ return Math.max(PERFECT_PX, cur.w*PERFECT_FRAC); }
+};
 </script>
 <script>
 /* Announce the result of a tool. Screen readers get the output; sighted
@@ -249,6 +283,14 @@ sized(); tick();
   setInterval(scan,700);
 })();
 </script>
+
+
+
+
+
+
+
+
 
 
 

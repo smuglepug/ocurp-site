@@ -205,8 +205,16 @@ function resize(){
 }
 
 let A,B,img;
-const DU=1.0, DV=0.5, DT=1.0;
+/* Explicit Euler on the 5-point laplacian is stable only while Du*dt <= 1/4
+   (the von Neumann limit for the 2D stencil).  With Du=1.0 and dt=1.0 that
+   is violated by 4x, and the field overflows to NaN inside 50 iterations -
+   the canvas then paints a dead flat field while the FPS counter still reads
+   60.  dt is therefore DERIVED from the diffusion slider, never a free
+   constant:  DT = 0.2/max(Du,Dv)  keeps Du*dt at 0.2, comfortably inside the
+   limit for every value the slider can reach (0.3 .. 1.6). */
+const DV=0.5;
 let F=0.037, K=0.06, DUc=1.0, BR=9;
+let DT=0.2/Math.max(DUc,DV);
 let running=false, iter=0, itersPerFrame=1, fps=0, frames=0, fpsT=0;
 let vSum=0, vMax=0, uSum=0;
 
@@ -432,6 +440,14 @@ requestAnimationFrame(loop);
   setInterval(scan,700);
 })();
 </script>
+
+
+
+
+
+
+
+
 
 
 

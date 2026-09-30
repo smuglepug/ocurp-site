@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equation Plotter — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Type y = something and it is drawn on a gridded canvas, with a hand-written parser, domain sliders and sample curves to click. Runs entirely in your...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/equation-plotter/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Equation Plotter">
+<meta property="og:description" content="Type y = something and it is drawn on a gridded canvas, with a hand-written parser, domain sliders and sample curves to click. Runs entirely in your...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/equation-plotter/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Equation Plotter on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Equation Plotter">
+<meta name="twitter:description" content="Type y = something and it is drawn on a gridded canvas, with a hand-written parser, domain sliders and sample curves to click. Runs entirely in your...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Equation Plotter on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Equation Plotter","url":"https://ocurp.space/workspace/tools/equation-plotter/","description":"Type y = something and it is drawn on a gridded canvas, with a hand-written parser, domain sliders and sample curves to click. Runs entirely in your...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Equation Plotter</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GRAPH</span><span class="ws-chip">FUNCTION</span><span class="ws-chip">CANVAS</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-end gap-4">
+      <div class="min-w-[220px] flex-1">
+        <label class="ws-label mb-2 block" for="eq">y =</label>
+        <input id="eq" value="sin(x) * 3 + x/4" class="ws-input ws-mono">
+      </div>
+      <button id="epcopy" class="ws-btn-ghost">Copy expression</button>
+    </div>
+    <div class="mt-4 grid gap-4 sm:grid-cols-4">
+      <div>
+        <label class="ws-label mb-2 block" for="xmin">x min <span id="xminv" class="text-white/50"></span></label>
+        <input id="xmin" type="range" min="-50" max="0" step="1" value="-10" class="ws-input">
+      </div>
+      <div>
+        <label class="ws-label mb-2 block" for="xmax">x max <span id="xmaxv" class="text-white/50"></span></label>
+        <input id="xmax" type="range" min="1" max="50" step="1" value="10" class="ws-input">
+      </div>
+      <div>
+        <label class="ws-label mb-2 block" for="ymin">y min <span id="yminv" class="text-white/50"></span></label>
+        <input id="ymin" type="range" min="-50" max="0" step="1" value="-10" class="ws-input">
+      </div>
+      <div>
+        <label class="ws-label mb-2 block" for="ymax">y max <span id="ymaxv" class="text-white/50"></span></label>
+        <input id="ymax" type="range" min="1" max="50" step="1" value="10" class="ws-input">
+      </div>
+    </div>
+    <div class="mt-4 flex flex-wrap gap-2" id="epsamples"></div>
+    <div class="ws-panel mt-4 p-3">
+      <canvas id="epcv" width="920" height="460" class="w-full" style="height:340px"></canvas>
+    </div>
+    <div class="ws-panel ws-copy mt-4 p-4">
+      <div class="mb-2 flex items-center justify-between">
+        <span class="ws-label">Read-out</span>
+        <button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button>
+      </div>
+      <pre id="out" class="ws-out min-h-[60px]"></pre>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
+// A small recursive-descent parser for one real variable. It handles
+// + - * / % ^, parentheses, the constants pi and e, and the functions below.
+// There is no implicit multiplication: 2x is an error, 2*x is not.
+const FUNCS = {
+  sin: Math.sin, cos: Math.cos, tan: Math.tan,
+  asin: Math.asin, acos: Math.acos, atan: Math.atan,
+  sqrt: Math.sqrt, abs: Math.abs, exp: Math.exp,
+  ln: Math.log, log: Math.log10, log2: Math.log2,
+  floor: Math.floor, ceil: Math.ceil, round: Math.round, sign: Math.sign,
+  max: Math.max, min: Math.min
+};
+const CONSTS = { pi: Math.PI, e: Math.E, x: 0 };
+
+const SAMPLES = ['sin(x)', 'x^2 - 4', 'x^3/3 - x', 'cos(x)*x/2', 'abs(x)', 'sqrt(x+5)', '1/x', 'tan(x/2)'];
+
+function tokenize(src){
+  const s = String(src).toLowerCase().replace(/\s+/g, '');
+  const t = [];
+  let i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if ('+-*/^%(),'.indexOf(c) >= 0) { t.push({ t: 'op', v: c }); i++; continue; }
+    if (/[0-9.]/.test(c)) {
+      let j = i;
+      while (j < s.length && /[0-9.]/.test(s[j])) j++;
+      const num = parseFloat(s.slice(i, j));
+      if (isNaN(num)) throw new Error('Bad number at position ' + (i + 1));
+      if ((s.slice(i, j).match(/\./g) || []).length > 1) throw new Error('Malformed number near ' + s.slice(i, j));
+      t.push({ t: 'num', v: num }); i = j; continue;
+    }
+    if (/[a-z]/.test(c)) {
+      let j = i;
+      while (j < s.length && /[a-z]/.test(s[j])) j++;
+      const name = s.slice(i, j);
+      if (s[j] === '(') { t.push({ t: 'fn', v: name }); i = j; continue; }
+      if (Object.prototype.hasOwnProperty.call(FUNCS, name)) throw new Error(name + ' needs parentheses, e.g. ' + name + '(x)');
+      if (name !== 'x' && name !== 'pi' && name !== 'e') throw new Error('Unknown name "' + name + '"');
+      t.push({ t: 'name', v: name }); i = j; continue;
+    }
+    throw new Error('Unexpected character "' + c + '"');
+  }
+  return t;
+}
+
+function parse(src){
+  const t = tokenize(src);
+  let p = 0;
+  const peek = function(){ return t[p]; };
+  const eat = function(v){
+    if (!t[p] || t[p].v !== v) throw new Error('Expected "' + v + '"');
+    p++;
+  };
+
+  function expr(){
+    let left = term();
+    while (peek() && peek().t === 'op' && (peek().v === '+' || peek().v === '-')) {
+      const op = peek().v; p++;
+      const right = term();
+      // The previous value has to be captured in its own binding. Reusing
+      // `left` inside the closure that replaces it makes the function call
+      // itself forever.
+      const prev = left;
+      left = function(x){ return op === '+' ? prev(x) + right(x) : prev(x) - right(x); };
+    }
+    return left;
+  }
+  function term(){
+    let left = unary();
+    while (peek() && peek().t === 'op' && (peek().v === '*' || peek().v === '/' || peek().v === '%')) {
+      const op = peek().v; p++;
+      const right = unary();
+      const prev = left;
+      left = function(x){
+        const l = prev(x), r = right(x);
+        if ((op === '/' || op === '%') && r === 0) return NaN;
+        return op === '*' ? l * r : (op === '/' ? l / r : l % r);
+      };
+    }
+    return left;
+  }
+  function unary(){
+    if (peek() && peek().t === 'op' && (peek().v === '-' || peek().v === '+')) {
+      const sign = peek().v; p++;
+      const inner = unary();
+      return function(x){ return sign === '-' ? -inner(x) : inner(x); };
+    }
+    return power();
+  }
+  function power(){
+    const base = atom();
+    if (peek() && peek().t === 'op' && peek().v === '^') {
+      p++;
+      const ex = unary();          // right associative, and -2^2 = -(2^2)
+      return function(x){ return Math.pow(base(x), ex(x)); };
+    }
+    return base;
+  }
+  function atom(){
+    const tk = peek();
+    if (!tk) throw new Error('Expression ends early');
+    if (tk.t === 'num') { p++; const v = tk.v; return function(){ return v; }; }
+    if (tk.t === 'op' && tk.v === '(') {
+      p++;
+      const inner = expr();
+      eat(')');
+      return inner;
+    }
+    if (tk.t === 'fn') {
+      p++;
+      eat('(');
+      const a1 = expr();
+      if (peek() && peek().v === ',') {
+        p++;
+        const a2 = expr();
+        eat(')');
+        const f = FUNCS[tk.v];
+        if (!f) throw new Error('Unknown function "' + tk.v + '"');
+        return function(x){ return f(a1(x), a2(x)); };
+      }
+      eat(')');
+      const f = FUNCS[tk.v];
+      if (!f) throw new Error('Unknown function "' + tk.v + '"');
+      return function(x){ return f(a1(x)); };
+    }
+    if (tk.t === 'name') {
+      p++;
+      if (tk.v === 'x') return function(x){ return x; };
+      const v = CONSTS[tk.v];
+      return function(){ return v; };
+    }
+    throw new Error('Unexpected "' + tk.v + '"');
+  }
+
+  const fn = expr();
+  if (p !== t.length) throw new Error('Extra characters after the expression');
+  return function(x){
+    const v = fn(x);
+    return typeof v === 'number' && !isFinite(v) ? NaN : v;
+  };
+}
+
+function range(){
+  return {
+    xmin: +document.getElementById('xmin').value,
+    xmax: +document.getElementById('xmax').value,
+    ymin: +document.getElementById('ymin').value,
+    ymax: +document.getElementById('ymax').value
+  };
+}
+
+function draw(){
+  const cv = document.getElementById('epcv');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const r = range();
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, W, H);
+
+  const sx = function(x){ return (x - r.xmin) / (r.xmax - r.xmin) * W; };
+  const sy = function(y){ return H - (y - r.ymin) / (r.ymax - r.ymin) * H; };
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  for (let x = Math.ceil(r.xmin); x <= r.xmax; x++) {
+    ctx.beginPath(); ctx.moveTo(sx(x), 0); ctx.lineTo(sx(x), H); ctx.stroke();
+  }
+  for (let y = Math.ceil(r.ymin); y <= r.ymax; y++) {
+    ctx.beginPath(); ctx.moveTo(0, sy(y)); ctx.lineTo(W, sy(y)); ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+  ctx.beginPath(); ctx.moveTo(0, sy(0)); ctx.lineTo(W, sy(0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sx(0), 0); ctx.lineTo(sx(0), H); ctx.stroke();
+
+  let fn = null, err = '';
+  try { fn = parse(document.getElementById('eq').value); }
+  catch (e) { err = e.message; }
+
+  let plotted = 0;
+  if (fn) {
+    ctx.strokeStyle = '#FF5F1F';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    let pen = false;
+    for (let px = 0; px <= W; px++) {
+      const x = r.xmin + px / W * (r.xmax - r.xmin);
+      const y = fn(x);
+      if (typeof y !== 'number' || isNaN(y) || !isFinite(y) || y < r.ymin - 1e6 || y > r.ymax + 1e6) {
+        pen = false;
+        continue;
+      }
+      const py = sy(y);
+      if (py < -400 || py > H + 400) { pen = false; continue; }
+      if (!pen) { ctx.moveTo(sx(x), py); pen = true; } else ctx.lineTo(sx(x), py);
+      plotted++;
+    }
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.font = '12px monospace';
+  ctx.fillText(r.xmin + ' to ' + r.xmax, 10, 18);
+  const o = document.getElementById('out');
+  if (err) {
+    o.textContent = 'Could not read the expression:\n' + err;
+  } else {
+    const probes = [0, 1, 2, 3].map(function(x){ return 'f(' + x + ') = ' + short(fn(x)); });
+    o.textContent = [
+      'Expression   y = ' + document.getElementById('eq').value,
+      'Domain       x in [' + r.xmin + ', ' + r.xmax + ']   y in [' + r.ymin + ', ' + r.ymax + ']',
+      'Samples drawn ' + plotted,
+      'Functions    sin cos tan asin acos atan sqrt abs exp ln log log2 floor ceil round sign',
+    ].concat(probes).join('\n');
+  }
+  ['xmin','xmax','ymin','ymax'].forEach(function(id){
+    document.getElementById(id + 'v').textContent = document.getElementById(id).value;
+  });
+}
+
+function short(v){
+  if (typeof v !== 'number' || !isFinite(v)) return 'undefined';
+  return String(Math.round(v * 1000) / 1000);
+}
+
+function samples(){
+  const host = document.getElementById('epsamples');
+  host.textContent = '';
+  SAMPLES.forEach(function(s){
+    const b = document.createElement('button');
+    b.className = 'ws-btn-ghost';
+    b.textContent = s;
+    b.onclick = function(){ document.getElementById('eq').value = s; draw(); };
+    host.appendChild(b);
+  });
+}
+
+document.getElementById('epcopy').onclick = function(){
+  navigator.clipboard.writeText(document.getElementById('eq').value);
+  this.classList.add('ok');
+  const self = this;
+  setTimeout(function(){ self.classList.remove('ok'); }, 1200);
+};
+['eq','xmin','xmax','ymin','ymax'].forEach(function(id){
+  const el = document.getElementById(id);
+  el.addEventListener('input', draw);
+  el.addEventListener('change', draw);
+});
+samples();
+draw();
+window.__ep = { parse: parse, draw: draw };
+</script>
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/certificate-generator/">
+      <span class="ocurp-related-n">Certificate Generator</span>
+      <span class="ocurp-related-b">Design an award or achievement certificate and download it as a 1400x990 PNG.</span>
+    </a></li>
+    <li><a href="/workspace/tools/cubic-bezier/">
+      <span class="ocurp-related-n">Cubic Bezier Editor</span>
+      <span class="ocurp-related-b">Drag the two control points on a curve, watch the easing play and copy the cubic-bezier CS</span>
+    </a></li>
+    <li><a href="/workspace/tools/flow-field/">
+      <span class="ocurp-related-n">Flow Field</span>
+      <span class="ocurp-related-b">Generative particle flow fields that stream around the cursor like a living system.</span>
+    </a></li>
+    <li><a href="/workspace/tools/image-watermark/">
+      <span class="ocurp-related-n">Watermark Image</span>
+      <span class="ocurp-related-b">Add a text watermark with position, opacity, colour and rotation.</span>
+    </a></li>
+    <li><a href="/workspace/tools/signature-generator/">
+      <span class="ocurp-related-n">Signature Generator</span>
+      <span class="ocurp-related-b">Draw a signature with mouse, pen or finger and download it as a transparent PNG.</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -51,15 +51,6 @@ tailwind.config = { theme: { extend: {
   .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
   .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
 </style>
-<style>
-  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
-    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-  @media (prefers-reduced-motion:no-preference){
-    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
-      clip:auto;white-space:normal;display:block;margin-top:.75rem;
-      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
-  }
-</style>
 <meta name="description" content="Check any two colours against the WCAG contrast rules and see which levels pass. Runs entirely in your browser - nothing is uploaded.">
 <link rel="canonical" href="https://ocurp.space/workspace/tools/contrast-checker/">
 <meta property="og:type" content="website">
@@ -90,9 +81,64 @@ tailwind.config = { theme: { extend: {
       <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Contrast Checker</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
           </div>
-          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">WCAG</span><span class="ws-chip">ACCESSIBILITY</span><span class="ws-chip">COLOUR</span></div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">WCAG</span><span class="ws-chip">ACCESSIBILITY</span><span class="ws-chip">CONTRAST</span><span class="ws-chip">CLIENT-SIDE</span></div>
         </div>
-      <section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Colours</span></div><div class="grid gap-4 md:grid-cols-3"><div><label class="ws-label mb-2 block" for="fg">Foreground</label><input id="fg" type="text" class="ws-input" placeholder="#FF5F1F" value="#FF5F1F"></div><div><label class="ws-label mb-2 block" for="bg">Background</label><input id="bg" type="text" class="ws-input" placeholder="#050505" value="#050505"></div><div class="flex items-end gap-3"><button id="swap" class="ws-btn-ghost">Swap</button></div></div><div class="mt-5 rounded-xl border border-white/10 p-6" id="prev"><div class="font-display text-3xl font-black" id="prevBig">Large text 24px</div><div class="mt-2 text-sm" id="prevSmall">Normal body text at 16px — this is the size most readers actually get.</div></div><div class="mt-5"><div class="ws-label mb-2">WCAG contrast ratio</div><div id="out" class="ws-out"></div></div></section>
+      <style>.sw-row{display:flex;align-items:center;gap:.75rem;padding:.55rem .75rem;border-radius:.75rem;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}.sw-val{font-family:'IBM Plex Sans',monospace;font-size:12.5px;color:rgba(255,255,255,.85)}.sw-err{color:#f87171;font-size:12px;min-height:1rem}.sw-pass{color:#4ade80;font-weight:700}.sw-fail{color:#f87171;font-weight:700}.sw-err-box{border-color:rgba(248,113,113,.55)!important;background:rgba(248,113,113,.08)!important}</style>
+  <section class="ws-panel p-6">
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="ws-label mb-2 block">Text colour</label>
+        <div class="flex items-center gap-3">
+          <input id="fgPick" type="color" value="#ffffff" aria-label="Text colour"
+                 class="h-12 w-16 shrink-0 cursor-pointer rounded-lg border border-white/10 bg-transparent">
+          <input id="fgHex" class="ws-input" value="#ffffff" spellcheck="false" autocomplete="off" maxlength="9">
+        </div>
+        <p class="sw-err mt-2" id="ccErr1"></p>
+      </div>
+      <div>
+        <label class="ws-label mb-2 block">Background colour</label>
+        <div class="flex items-center gap-3">
+          <input id="bgPick" type="color" value="#050505" aria-label="Background colour"
+                 class="h-12 w-16 shrink-0 cursor-pointer rounded-lg border border-white/10 bg-transparent">
+          <input id="bgHex" class="ws-input" value="#050505" spellcheck="false" autocomplete="off" maxlength="9">
+        </div>
+        <p class="sw-err mt-2" id="ccErr2"></p>
+      </div>
+    </div>
+
+    <div class="mt-6 flex flex-wrap items-end gap-4">
+      <div>
+        <div class="ws-label mb-1">Contrast ratio</div>
+        <div class="font-display text-6xl font-black text-accent" id="ccRatio">21</div>
+        <div class="mt-1 text-[11px] text-white/40" id="ccVerdict">Meets every WCAG 2.1 level</div>
+      </div>
+      <div class="text-[12px] font-mono text-white/50" id="ccLums"></div>
+    </div>
+
+    <div class="mt-6 overflow-x-auto">
+      <table class="w-full min-w-[420px] text-left text-[13px]">
+        <thead>
+          <tr class="border-b border-white/10">
+            <th class="ws-label py-2 pr-3">Level</th>
+            <th class="ws-label py-2 pr-3">Needs</th>
+            <th class="ws-label py-2 pr-3">AA</th>
+            <th class="ws-label py-2">AAA</th>
+          </tr>
+        </thead>
+        <tbody id="ccTable" class="text-white/75"></tbody>
+      </table>
+    </div>
+
+    <div class="ws-label mb-3 mt-6">Live preview</div>
+    <div class="rounded-xl border border-white/10 p-6" id="ccPrev">
+      <p class="text-base" id="ccP1">Normal text at 16px — the size most body copy actually is.</p>
+      <p class="mt-2 text-sm text-white/50" id="ccP2">Small text at 14px, the kind used for captions and helper copy.</p>
+      <h3 class="mt-4 font-display text-3xl font-black" id="ccP3">Large text at 30px bold</h3>
+      <button type="button" class="mt-4 rounded-lg border px-4 py-2 text-sm font-bold" id="ccBtn">A UI component</button>
+    </div>
+    <p class="mt-3 text-[11px] text-white/35">Relative luminance uses the WCAG 2.1 formula: each channel is linearised, then weighted 0.2126 R + 0.7152 G + 0.0722 B. The ratio is (lighter + 0.05) / (darker + 0.05).</p>
+  </section>
+
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
@@ -100,111 +146,145 @@ tailwind.config = { theme: { extend: {
 </div>
 <script src="/workspace/related.js" defer></script>
 <script>
-const $=id=>document.getElementById(id);
-function norm(h){
-  h=(h||'').trim().replace(/^#/,'');
-  if(/^[0-9a-f]{3}$/i.test(h)) h=h.split('').map(c=>c+c).join('');
-  if(!/^[0-9a-f]{6}$/i.test(h)) return null;
-  return '#'+h.toLowerCase();
-}
-function lum(hex){
-  const n=parseInt(hex.slice(1),16);
-  const ch=[(n>>16)&255,(n>>8)&255,n&255].map(v=>{
-    v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4);
-  });
-  return 0.2126*ch[0]+0.7152*ch[1]+0.0722*ch[2];
-}
-function ratio(a,b){
-  const l1=lum(a), l2=lum(b), hi=Math.max(l1,l2), lo=Math.min(l1,l2);
-  return (hi+0.05)/(lo+0.05);
-}
-function badge(ok){ return ok
-  ? '<span style="color:#4ade80;font-weight:900">PASS</span>'
-  : '<span style="color:#f87171;font-weight:900">FAIL</span>'; }
-function run(){
-  const fg=norm($('fg').value), bg=norm($('bg').value);
-  if(!fg||!bg){ $('out').innerHTML='<span style="color:#f87171">Enter two hex colours, e.g. #FF5F1F</span>'; return; }
-  $('prev').style.background=bg;
-  $('prevBig').style.color=fg; $('prevSmall').style.color=fg;
-  const r=ratio(fg,bg);
-  const rows=[
-    ['Normal text (AA, 4.5:1)', r>=4.5],
-    ['Large text (AA, 3:1)', r>=3],
-    ['Normal text (AAA, 7:1)', r>=7],
-    ['Large text (AAA, 4.5:1)', r>=4.5],
-    ['UI components (3:1)', r>=3]
-  ];
-  $('out').innerHTML='<div class="font-display text-4xl font-black text-accent">'+r.toFixed(2)+':1</div>'
-    +'<div class="mt-1 text-xs text-white/50">'+fg+' on '+bg+'</div>'
-    +'<div class="mt-4 space-y-2">'+rows.map(([n,ok])=>
-      '<div class="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">'
-      +'<span class="text-xs text-white/70">'+n+'</span>'+badge(ok)+'</div>').join('')+'</div>';
-}
-$('swap').addEventListener('click',()=>{ const t=$('fg').value; $('fg').value=$('bg').value; $('bg').value=t; run(); });
-['fg','bg'].forEach(id=>$(id).addEventListener('input',run));
-run();
-</script>
-<script>
-/* Announce the result of a tool. Screen readers get the output; sighted
-   keyboard users get a quiet confirmation line. Set to '' to clear. */
-(function(){
-  if(window.__ocurpLive)return; window.__ocurpLive=1;
-  var box=document.createElement('p');
-  box.className='ocurp-status'; box.id='ocurp-live-status';
-  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
-  function near(el){
-    if(!el||!el.parentNode)return false;
-    var p=el.parentNode;
-    for(var i=0;i<4&&p;i++,p=p.parentNode){
-      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
-        p.appendChild(box);return true; } }
-    (el.parentNode||el).appendChild(box); return true;
+var $ = function(id){ return document.getElementById(id); };
+function copyText(btn, text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    try { navigator.clipboard.writeText(text); } catch(e){}
   }
-  window.ocurpSay=function(msg){
-    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
-      near(o); }
-    box.textContent=msg||'';
-  };
-  /* Watch the usual output nodes; report a short, useful summary. */
-  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut'];
-  var last={};
-  function scan(){
-    for(var i=0;i<targets.length;i++){
-      var el=document.getElementById(targets[i]);
-      if(!el)continue;
-      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
-      if(!box.isConnected)near(el);   /* attach even before there is output */
-      if(!v||v===last[targets[i]])continue;
-      last[targets[i]]=v;
-      var n=v.length;
-      window.ocurpSay('Result updated: '+n+' characters.'+(n>400?' Use the copy button to take the full result.':''));
-      el.setAttribute('aria-live','polite');
+  var host = btn.closest ? btn.closest('.ws-copy') : null;
+  if(host){
+    host.classList.add('ok');
+    setTimeout(function(){ host.classList.remove('ok'); }, 1200);
+  } else {
+    var old = btn.getAttribute('data-label');
+    btn.setAttribute('data-label', 'Copied');
+    setTimeout(function(){ btn.setAttribute('data-label', old || 'Copy'); }, 1200);
+  }
+}
+function copyBtn(targetId, label){
+  return '<button type="button" class="ws-btn-ghost !px-3 !py-1.5" data-copy="'+targetId+'">'
+    + (label || 'Copy') + '</button>';
+}
+document.addEventListener('click', function(e){
+  var b = e.target.closest ? e.target.closest('[data-copy]') : null;
+  if(!b) return;
+  var t = $(b.getAttribute('data-copy'));
+  if(t) copyText(b, t.textContent);
+});
+function h2d(n){ var s = Math.max(0, Math.min(255, Math.round(n))); var h = s.toString(16); return h.length < 2 ? '0' + h : h; }
+function parseHex(s){
+  if(typeof s !== 'string') return null;
+  var t = s.trim().replace(/^#/, '');
+  if(t.length === 3 || t.length === 4) t = t.split('').map(function(c){ return c + c; }).join('');
+  if(!/^[0-9a-fA-F]{6}$/.test(t) && !/^[0-9a-fA-F]{8}$/.test(t)) return null;
+  var r = parseInt(t.slice(0,2),16), g = parseInt(t.slice(2,4),16), b = parseInt(t.slice(4,6),16);
+  var a = t.length === 8 ? parseInt(t.slice(6,8),16) / 255 : 1;
+  return { r:r, g:g, b:b, a:a };
+}
+function rgbToHsl(r, g, b){
+  r/=255; g/=255; b/=255;
+  var mx = Math.max(r,g,b), mn = Math.min(r,g,b), d = mx - mn;
+  var h = 0, s = 0, l = (mx + mn) / 2;
+  if(d){
+    s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+    if(mx === r) h = ((g - b) / d + (g < b ? 6 : 0));
+    else if(mx === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  return { h:h, s:s*100, l:l*100 };
+}
+function rgbToHsv(r, g, b){
+  var mx = Math.max(r,g,b), mn = Math.min(r,g,b), d = mx - mn;
+  var h = 0;
+  if(d){
+    if(mx === r) h = ((g - b) / d + (g < b ? 6 : 0));
+    else if(mx === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  var s = mx === 0 ? 0 : d / mx;
+  return { h:h, s:s*100, v:mx/255*100 };
+}
+function rgbToCmyk(r, g, b){
+  var c = 1 - r/255, m = 1 - g/255, y = 1 - b/255, k = 1 - Math.max(r,g,b)/255;
+  if(k === 1) return { c:0, m:0, y:0, k:100 };
+  return { c:c/(1-k)*100, m:m/(1-k)*100, y:y/(1-k)*100, k:k*100 };
+}
+function mix(c1, c2, t){
+  return { r:c1.r + (c2.r - c1.r)*t, g:c1.g + (c2.g - c1.g)*t, b:c1.b + (c2.b - c1.b)*t };
+}
+function relLum(r, g, b){
+  function f(c){ c/=255; return c <= 0.03928 ? c/12.92 : Math.pow((c + 0.055)/1.055, 2.4); }
+  return 0.2126*f(r) + 0.7152*f(g) + 0.0722*f(b);
+}
+function contrastRatio(c1, c2){
+  var a = relLum(c1.r, c1.g, c1.b), b = relLum(c2.r, c2.g, c2.b);
+  var hi = Math.max(a,b), lo = Math.min(a,b);
+  return (hi + 0.05) / (lo + 0.05);
+}
+function rampOf(r, g, b){
+  var base = { r:r, g:g, b:b }, out = [];
+  var w = { r:255, g:255, b:255 }, k = { r:0, g:0, b:0 };
+  [0.9, 0.7, 0.5, 0.3, 0.1].forEach(function(t){ out.push(mix(base, w, t)); });
+  [0.1, 0.2, 0.3, 0.5, 0.7].forEach(function(t){ out.push(mix(base, k, t)); });
+  return out;
+}
+function swColor(c){ return '#' + h2d(c.r) + h2d(c.g) + h2d(c.b); }
+function n1(v){ return (Math.round(v*10)/10).toString().replace(/\.0$/, ''); }
+function n2(v){ return (Math.round(v*100)/100).toString(); }
+
+var fg = { r:255, g:255, b:255 };
+var bg = { r:5, g:5, b:5 };
+var LEVELS = [
+  ['Normal text', 4.5, 7, 'AA needs 4.5:1, AAA needs 7:1'],
+  ['Large text (>=24px, or 18.66px bold)', 3, 4.5, 'AA needs 3:1, AAA needs 4.5:1'],
+  ['UI components and graphics', 3, null, 'AA needs 3:1; AAA does not apply to non-text']
+];
+function setPair(which, v){
+  var p = parseHex(v);
+  var err = $('ccErr' + (which === 'fg' ? 1 : 2));
+  var box = $(which + 'Hex');
+  if(!p){ err.textContent = 'Not a hex colour — keeping the last valid one.'; box.classList.add('sw-err-box'); return; }
+  err.textContent = ''; box.classList.remove('sw-err-box');
+  if(which === 'fg') fg = { r:p.r, g:p.g, b:p.b }; else bg = { r:p.r, g:p.g, b:p.b };
+  $(which + 'Pick').value = swColor(which === 'fg' ? fg : bg);
+  $(which + 'Hex').value = swColor(which === 'fg' ? fg : bg);
+  render();
+}
+function render(){
+  var fgs = swColor(fg), bgs = swColor(bg);
+  var ratio = contrastRatio(fg, bg);
+  $('ccRatio').textContent = n2(ratio);
+  var verdict = 'Fails every WCAG 2.1 level';
+  if(ratio >= 7) verdict = 'Passes AAA for normal and large text, and AA for components';
+  else if(ratio >= 4.5) verdict = 'Passes AA for normal text, AAA for large text and components';
+  else if(ratio >= 3) verdict = 'Passes AA for large text and components only';
+  $('ccVerdict').textContent = verdict;
+  $('ccLums').innerHTML = 'L(fg) = ' + n2(relLum(fg.r, fg.g, fg.b)) + '<br>L(bg) = ' + n2(relLum(bg.r, bg.g, bg.b));
+  $('ccTable').innerHTML = LEVELS.map(function(L){
+    function cell(need){
+      if(need === null) return '<td class="py-2 text-white/30">n/a</td>';
+      var okv = ratio >= need;
+      return '<td class="py-2 ' + (okv ? 'sw-pass' : 'sw-fail') + '">' + (okv ? 'PASS' : 'FAIL') + '</td>';
     }
-  }
-  setInterval(scan,700);
-})();
+    return '<tr class="border-b border-white/5">'
+      + '<td class="py-2 pr-3">' + L[0] + '<div class="text-[10px] text-white/30">' + L[3] + '</div></td>'
+      + '<td class="py-2 pr-3 text-white/40">' + (L[2] === null || L[1] === L[2] ? String(L[1]) : L[1] + ' / ' + L[2]) + '</td>'
+      + cell(L[1]) + cell(L[2]) + '</tr>';
+  }).join('');
+  $('ccPrev').style.background = bgs;
+  $('ccPrev').style.color = fgs;
+  $('ccP2').style.color = fgs;
+  $('ccBtn').style.color = fgs;
+  $('ccBtn').style.borderColor = fgs;
+}
+$('fgPick').addEventListener('input', function(){ setPair('fg', $('fgPick').value); });
+$('bgPick').addEventListener('input', function(){ setPair('bg', $('bgPick').value); });
+$('fgHex').addEventListener('input', function(){ setPair('fg', $('fgHex').value); });
+$('bgHex').addEventListener('input', function(){ setPair('bg', $('bgHex').value); });
+render();
 </script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

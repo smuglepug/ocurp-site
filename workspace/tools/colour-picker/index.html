@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colour Picker — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Click any swatch to copy its hex, with tints mixed toward white and shades toward black in sRGB. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/colour-picker/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Colour Picker">
+<meta property="og:description" content="Click any swatch to copy its hex, with tints mixed toward white and shades toward black in sRGB. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/colour-picker/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Colour Picker on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Colour Picker">
+<meta name="twitter:description" content="Click any swatch to copy its hex, with tints mixed toward white and shades toward black in sRGB. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Colour Picker on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Colour Picker","url":"https://ocurp.space/workspace/tools/colour-picker/","description":"Click any swatch to copy its hex, with tints mixed toward white and shades toward black in sRGB. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Colour Picker</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">COLOUR</span><span class="ws-chip">HEX</span><span class="ws-chip">RGB</span><span class="ws-chip">HSL</span><span class="ws-chip">CMYK</span><span class="ws-chip">CLIENT-SIDE</span></div>
+        </div>
+      <style>.sw-row{display:flex;align-items:center;gap:.75rem;padding:.55rem .75rem;border-radius:.75rem;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}.sw-val{font-family:'IBM Plex Sans',monospace;font-size:12.5px;color:rgba(255,255,255,.85)}.sw-err{color:#f87171;font-size:12px;min-height:1rem}.sw-pass{color:#4ade80;font-weight:700}.sw-fail{color:#f87171;font-weight:700}.sw-err-box{border-color:rgba(248,113,113,.55)!important;background:rgba(248,113,113,.08)!important}</style>
+  <section class="ws-panel p-6">
+    <div class="grid gap-6 lg:grid-cols-[240px_1fr]">
+      <div>
+        <label class="ws-label mb-2 block" for="cp">Pick a colour</label>
+        <input id="cp" type="color" value="#ff5f1f" aria-label="Colour picker"
+               class="h-28 w-full cursor-pointer rounded-xl border border-white/10 bg-transparent">
+        <label class="ws-label mb-2 mt-4 block" for="hex">HEX value</label>
+        <input id="hex" class="ws-input" value="#FF5F1F" spellcheck="false" autocomplete="off" maxlength="9">
+        <p class="sw-err mt-2" id="cpErr"></p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button type="button" class="ws-chip" data-preset="#FF5F1F">accent</button>
+          <button type="button" class="ws-chip" data-preset="#ffffff">white</button>
+          <button type="button" class="ws-chip" data-preset="#050505">shell</button>
+          <button type="button" class="ws-chip" data-preset="#e0f2fe">secondary</button>
+        </div>
+      </div>
+      <div>
+        <div class="ws-label mb-3">Every notation, live</div>
+        <div id="cpRows" class="space-y-2"></div>
+      </div>
+    </div>
+    <div class="ws-label mb-3 mt-6">Ten-step tint and shade ramp</div>
+    <div id="cpRamp" class="flex flex-wrap gap-2"></div>
+    <p class="mt-3 text-[11px] text-white/35">Click any swatch to copy its hex. Tints mix toward white, shades mix toward black, both in sRGB.</p>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+var $ = function(id){ return document.getElementById(id); };
+function copyText(btn, text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    try { navigator.clipboard.writeText(text); } catch(e){}
+  }
+  var host = btn.closest ? btn.closest('.ws-copy') : null;
+  if(host){
+    host.classList.add('ok');
+    setTimeout(function(){ host.classList.remove('ok'); }, 1200);
+  } else {
+    var old = btn.getAttribute('data-label');
+    btn.setAttribute('data-label', 'Copied');
+    setTimeout(function(){ btn.setAttribute('data-label', old || 'Copy'); }, 1200);
+  }
+}
+function copyBtn(targetId, label){
+  return '<button type="button" class="ws-btn-ghost !px-3 !py-1.5" data-copy="'+targetId+'">'
+    + (label || 'Copy') + '</button>';
+}
+document.addEventListener('click', function(e){
+  var b = e.target.closest ? e.target.closest('[data-copy]') : null;
+  if(!b) return;
+  var t = $(b.getAttribute('data-copy'));
+  if(t) copyText(b, t.textContent);
+});
+function h2d(n){ var s = Math.max(0, Math.min(255, Math.round(n))); var h = s.toString(16); return h.length < 2 ? '0' + h : h; }
+function parseHex(s){
+  if(typeof s !== 'string') return null;
+  var t = s.trim().replace(/^#/, '');
+  if(t.length === 3 || t.length === 4) t = t.split('').map(function(c){ return c + c; }).join('');
+  if(!/^[0-9a-fA-F]{6}$/.test(t) && !/^[0-9a-fA-F]{8}$/.test(t)) return null;
+  var r = parseInt(t.slice(0,2),16), g = parseInt(t.slice(2,4),16), b = parseInt(t.slice(4,6),16);
+  var a = t.length === 8 ? parseInt(t.slice(6,8),16) / 255 : 1;
+  return { r:r, g:g, b:b, a:a };
+}
+function rgbToHsl(r, g, b){
+  r/=255; g/=255; b/=255;
+  var mx = Math.max(r,g,b), mn = Math.min(r,g,b), d = mx - mn;
+  var h = 0, s = 0, l = (mx + mn) / 2;
+  if(d){
+    s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+    if(mx === r) h = ((g - b) / d + (g < b ? 6 : 0));
+    else if(mx === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  return { h:h, s:s*100, l:l*100 };
+}
+function rgbToHsv(r, g, b){
+  var mx = Math.max(r,g,b), mn = Math.min(r,g,b), d = mx - mn;
+  var h = 0;
+  if(d){
+    if(mx === r) h = ((g - b) / d + (g < b ? 6 : 0));
+    else if(mx === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  var s = mx === 0 ? 0 : d / mx;
+  return { h:h, s:s*100, v:mx/255*100 };
+}
+function rgbToCmyk(r, g, b){
+  var c = 1 - r/255, m = 1 - g/255, y = 1 - b/255, k = 1 - Math.max(r,g,b)/255;
+  if(k === 1) return { c:0, m:0, y:0, k:100 };
+  return { c:c/(1-k)*100, m:m/(1-k)*100, y:y/(1-k)*100, k:k*100 };
+}
+function mix(c1, c2, t){
+  return { r:c1.r + (c2.r - c1.r)*t, g:c1.g + (c2.g - c1.g)*t, b:c1.b + (c2.b - c1.b)*t };
+}
+function relLum(r, g, b){
+  function f(c){ c/=255; return c <= 0.03928 ? c/12.92 : Math.pow((c + 0.055)/1.055, 2.4); }
+  return 0.2126*f(r) + 0.7152*f(g) + 0.0722*f(b);
+}
+function contrastRatio(c1, c2){
+  var a = relLum(c1.r, c1.g, c1.b), b = relLum(c2.r, c2.g, c2.b);
+  var hi = Math.max(a,b), lo = Math.min(a,b);
+  return (hi + 0.05) / (lo + 0.05);
+}
+function rampOf(r, g, b){
+  var base = { r:r, g:g, b:b }, out = [];
+  var w = { r:255, g:255, b:255 }, k = { r:0, g:0, b:0 };
+  [0.9, 0.7, 0.5, 0.3, 0.1].forEach(function(t){ out.push(mix(base, w, t)); });
+  [0.1, 0.2, 0.3, 0.5, 0.7].forEach(function(t){ out.push(mix(base, k, t)); });
+  return out;
+}
+function swColor(c){ return '#' + h2d(c.r) + h2d(c.g) + h2d(c.b); }
+function n1(v){ return (Math.round(v*10)/10).toString().replace(/\.0$/, ''); }
+function n2(v){ return (Math.round(v*100)/100).toString(); }
+
+var PRESETS = ['#FF5F1F', '#ffffff', '#050505', '#e0f2fe'];
+var state = { r:255, g:95, b:31 };
+function render(){
+  var c = state;
+  var hex = swColor(c);
+  var hsl = rgbToHsl(c.r, c.g, c.b);
+  var hsv = rgbToHsv(c.r, c.g, c.b);
+  var cmyk = rgbToCmyk(c.r, c.g, c.b);
+  var vals = [
+    ['HEX', hex, hex],
+    ['RGB', 'rgb(' + c.r + ', ' + c.g + ', ' + c.b + ')', 'rgb(' + c.r + ', ' + c.g + ', ' + c.b + ')'],
+    ['HSL', 'hsl(' + n1(hsl.h) + ', ' + n1(hsl.s) + '%, ' + n1(hsl.l) + '%)',
+            'hsl(' + n1(hsl.h) + ', ' + n1(hsl.s) + '%, ' + n1(hsl.l) + '%)'],
+    ['HSV', 'hsv(' + n1(hsv.h) + ', ' + n1(hsv.s) + '%, ' + n1(hsv.v) + '%)',
+            'hsv(' + n1(hsv.h) + ', ' + n1(hsv.s) + '%, ' + n1(hsv.v) + '%)'],
+    ['CMYK', 'cmyk(' + n1(cmyk.c) + '%, ' + n1(cmyk.m) + '%, ' + n1(cmyk.y) + '%, ' + n1(cmyk.k) + '%)',
+            'cmyk(' + n1(cmyk.c) + '%, ' + n1(cmyk.m) + '%, ' + n1(cmyk.y) + '%, ' + n1(cmyk.k) + '%)']
+  ];
+  $('cpRows').innerHTML = vals.map(function(v, i){
+    return '<div class="sw-row ws-copy"><span class="ws-label w-16 shrink-0">' + v[0] + '</span>'
+      + '<span class="sw-val grow" id="o' + i + '">' + v[2] + '</span>'
+      + '<span class="h-6 w-6 shrink-0 rounded-md border border-white/20" style="background:' + v[2] + '"></span>'
+      + copyBtn('o' + i) + '</div>';
+  }).join('');
+  $('cpRamp').innerHTML = rampOf(c.r, c.g, c.b).map(function(x){
+    var hx = swColor(x);
+    return '<button type="button" class="h-12 w-12 rounded-lg border border-white/15" title="' + hx + '"'
+      + ' data-ramp="' + hx + '" style="background:' + hx + '"></button>';
+  }).join('');
+}
+function setHex(v, fromColor){
+  var p = parseHex(v);
+  if(!p){ return false; }
+  state = { r:p.r, g:p.g, b:p.b };
+  if(!fromColor) $('cp').value = swColor(state);
+  $('hex').value = swColor(state);
+  $('cpErr').textContent = '';
+  $('hex').classList.remove('sw-err-box');
+  render();
+  return true;
+}
+$('cp').addEventListener('input', function(){ setHex($('cp').value, true); });
+$('hex').addEventListener('input', function(){
+  if(!setHex($('hex').value, false)){
+    $('cpErr').textContent = 'Not a hex colour: need #RGB, #RGBA, #RRGGBB or #RRGGBBAA.';
+    $('hex').classList.add('sw-err-box');
+  }
+});
+$('cp').addEventListener('click', function(e){
+  var b = e.target.closest ? e.target.closest('[data-preset]') : null;
+  if(b) setHex(b.getAttribute('data-preset'), false);
+});
+$('cpRamp').addEventListener('click', function(e){
+  var b = e.target.closest ? e.target.closest('[data-ramp]') : null;
+  if(b){
+    var hx = b.getAttribute('data-ramp');
+    setHex(hx, false);
+    copyText(b, hx);
+  }
+});
+setHex('#FF5F1F', false);
+</script>
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/color-picker/">
+      <span class="ocurp-related-n">Colour Picker</span>
+      <span class="ocurp-related-b">One colour in, every notation out - HEX, RGB, HSL and CMYK - with WCAG contrast ratios and</span>
+    </a></li>
+    <li><a href="/workspace/tools/color-scheme-generator/">
+      <span class="ocurp-related-n">Colour Scheme Generator</span>
+      <span class="ocurp-related-b">Generate a balanced five-colour palette and check the contrast of every pairing.</span>
+    </a></li>
+    <li><a href="/workspace/tools/hex-rgb/">
+      <span class="ocurp-related-n">HEX to RGB Converter</span>
+      <span class="ocurp-related-b">Type in either field and both update live, with a bad value reported instead of turning in</span>
+    </a></li>
+    <li><a href="/workspace/tools/hex-to-rgb/">
+      <span class="ocurp-related-n">HEX to RGB Converter</span>
+      <span class="ocurp-related-b">Convert HEX, RGB, HSL and HSV with WCAG contrast ratios and a full tint scale.</span>
+    </a></li>
+    <li><a href="/workspace/tools/image-color-picker/">
+      <span class="ocurp-related-n">Image Colour Picker</span>
+      <span class="ocurp-related-b">Click any pixel in an image to get its hex, RGB and HSL values, with a magnifier for preci</span>
+    </a></li>
+    <li><a href="/workspace/tools/color-blindness-simulator/">
+      <span class="ocurp-related-n">Colour Blindness Simulator</span>
+      <span class="ocurp-related-b">See any picture through protanopia, deuteranopia, tritanopia or total colour blindness.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

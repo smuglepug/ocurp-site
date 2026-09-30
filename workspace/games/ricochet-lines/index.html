@@ -180,16 +180,18 @@ function walk(r,c,d,lvl,rnd,seen,depth,cost,acc){
     if(res)return res;
     seen.delete(key)}
   return null}
-// Safety net: a straight shot with no mirrors at all. With these walls there is
-// always one, so generate() can never hand back null.
+// Safety net: a straight shot with no mirrors at all. Used only when the walk
+// cannot find a real puzzle, so it is reported as degenerate rather than
+// silently shipping a level that is won on the first frame.
 function straightShot(lvl){
   for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
     for(let d=0;d<4;d++){
       if(isWall(lvl,r,c))continue;
       const st={start:[r,c],dir:d,goal:lvl.goal,walls:lvl.walls};
       const s=simulate(new Array(COLS*ROWS).fill(0),st);
-      if(s.ok)return {start:[r,c],dir:d,mirrors:{}}}} 
-  return null}
+      if(s.ok)return {start:[r,c],dir:d,mirrors:{},degenerate:true}}
+  }
+return null}
 function generate(lvl,seed){
   const rnd=rng(seed);
   for(let attempt=0;attempt<200;attempt++){
@@ -200,13 +202,20 @@ function generate(lvl,seed){
         const mirrors=new Array(COLS*ROWS).fill(0);
         for(const k in found.mirrors)mirrors[k]=found.mirrors[k];
         const st={start:found.start,dir:found.dir,goal:lvl.goal,walls:lvl.walls};
+        /* A board the ball already reaches with NO mirrors is not a puzzle:
+           render() wins it on the first frame and the level is over before the
+           player touches anything. Reject it and keep walking. */
+        if(simulate(new Array(COLS*ROWS).fill(0),st).ok) continue;
+        const used=mirrors.filter(m=>m).length;
+        if(!used) continue;
         const chk=simulate(mirrors,st);
-        if(chk.ok)return {mirrors,start:st,path:chk.path,attempts:attempt+1}}}}
+        if(chk.ok)return {mirrors, start:st, path:chk.path, attempts:attempt+1}}}
   const ss=straightShot(lvl);
   if(ss){const st={start:ss.start,dir:ss.dir,goal:lvl.goal,walls:lvl.walls};
     return {mirrors:new Array(COLS*ROWS).fill(0),start:st,path:simulate(new Array(COLS*ROWS).fill(0),st).path,attempts:-1}}
   return null}
-// ---- runtime ----
+  }
+  // ---- runtime ----
 let lv=0,board=null,mirrors=null,solved=null,won=false,result=null;
 function build(i){
   lv=i;
@@ -333,6 +342,14 @@ window.__ricochet={get G(){return {lv,COLS,ROWS,MAXSTEP,BUDGET,won,
   .rl-start{background:rgba(255,255,255,.13)}
   .rl-goal{background:rgba(255,95,31,.09)}
 </style>
+
+
+
+
+
+
+
+
 
 
 

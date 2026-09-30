@@ -66,4 +66,8 @@ const RAW = [
   {slug:"nonogram",name:"Nonogram",cat:"game",blurb:"Nonogram - playable in the browser.",tags:["GAMES"],ready:true},
   {slug:"sokoban",name:"Sokoban",cat:"game",blurb:"Sokoban - playable in the browser.",tags:["GAMES"],ready:true},
   {slug:"word-search",name:"Word Search",cat:"game",blurb:"Word Search - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"dots-boxes",name:"Dots & Boxes",cat:"game",blurb:"Claim a line, close a box and keep the turn. Best of three rounds; score nothing in a round and you lose it on the spot.",tags:["GAMES","PUZZLE","STRATEGY"],ready:true},
+  {slug:"rock-paper-scissors",name:"Rock Paper Scissors",cat:"game",blurb:"The rival throws a fixed printed sequence, so read the next throw and answer it. Nothing here is luck - keys 1 / 2 / 3 also work.",tags:["GAMES","ARCADE","PUZZLE"],ready:true},
+  {slug:"sliding-puzzle",name:"Sliding Puzzle",cat:"game",blurb:"Literal boards with a stated move solution, so the level you read is the level you play. Solve inside the move budget or run out and lose.",tags:["GAMES","PUZZLE","LOGIC"],ready:true},
+  {slug:"snake-battle",name:"Snake Battle",cat:"game",blurb:"One duel point at a time: you move, then the rival answers. A greedy AI that shrinks the larger axis gap toward you, never into itself.",tags:["GAMES","ARCADE","AI"],ready:true},
 ];

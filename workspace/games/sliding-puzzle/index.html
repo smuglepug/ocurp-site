@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sliding Puzzle — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Literal boards with a stated move solution, so the level you read is the level you play. Solve inside the move budget or run out and lose. Runs entirely...">
+<link rel="canonical" href="https://ocurp.space/workspace/games/sliding-puzzle/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Sliding Puzzle">
+<meta property="og:description" content="Literal boards with a stated move solution, so the level you read is the level you play. Solve inside the move budget or run out and lose. Runs entirely...">
+<meta property="og:url" content="https://ocurp.space/workspace/games/sliding-puzzle/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Sliding Puzzle on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sliding Puzzle">
+<meta name="twitter:description" content="Literal boards with a stated move solution, so the level you read is the level you play. Solve inside the move budget or run out and lose. Runs entirely...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Sliding Puzzle on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Sliding Puzzle","url":"https://ocurp.space/workspace/games/sliding-puzzle/","description":"Literal boards with a stated move solution, so the level you read is the level you play. Solve inside the move budget or run out and lose. Runs entirely...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Sliding Puzzle</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">LOGIC</span></div>
+        </div>
+      <style>
+  .sp-grid{display:grid;gap:6px;width:max-content}
+  .sp-t{border-radius:.6rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+    display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Sans',monospace;
+    font-weight:700;color:rgba(255,255,255,.85);cursor:pointer;user-select:none}
+  .sp-t.near{border-color:rgba(255,95,31,.5);background:rgba(255,95,31,.1)}
+  .sp-t:hover{background:rgba(255,95,31,.2)}
+  .sp-t.blank{background:transparent;border-color:transparent;cursor:default}
+  .sp-t.blank:hover{background:transparent}
+</style>
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <select id="level" class="ws-input !w-auto !px-3 !py-2 text-sm"></select>
+      <button id="reset" class="ws-btn">Shuffle nothing</button>
+      <span class="ws-chip" id="budget">MOVES LEFT &mdash;</span>
+    </div>
+
+    <div class="mt-6 flex justify-center">
+      <div id="grid" class="sp-grid"></div>
+    </div>
+
+    <div class="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+        <div class="ws-label mb-1">Moves</div>
+        <div class="font-display text-xl font-black text-white" id="moves">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+        <div class="ws-label mb-1">Left</div>
+        <div class="font-display text-xl font-black text-accent" id="left">&mdash;</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+        <div class="ws-label mb-1">Correct slots</div>
+        <div class="font-display text-xl font-black text-white" id="placed">0/8</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+        <div class="ws-label mb-1">Status</div>
+        <div class="font-display text-sm font-black text-white" id="status">Playing</div></div>
+    </div>
+
+    <p class="mt-4 text-[11px] text-white/40">Click a tile next to the gap, or steer the gap
+      with the arrow keys. Each shift spends one move. Get every tile home inside the budget
+      and you win; spend the budget with a tile out of place and you lose.</p>
+  </section>
+  <section class="ws-panel mt-4 p-5">
+    <div class="ws-label mb-2">Shipped board strings</div>
+    <pre id="sp-data" class="ws-out"></pre>
+  </section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const SP={LEVELS:[{"n": 3, "board": "1,5,6,4,2,8,3,7,_", "budget": 40, "sol": 18}, {"n": 3, "board": "8,3,6,4,7,1,2,5,_", "budget": 40, "sol": 24}, {"n": 3, "board": "3,2,8,7,4,5,1,6,_", "budget": 40, "sol": 22}, {"n": 4, "board": "1,7,3,4,5,10,6,8,2,9,11,12,13,_,14,15", "budget": 120, "sol": 70}]};
+// Every board is a LITERAL string like "1,5,6,4,2,8,3,7,_" - '_' is the gap.
+// Nothing is shuffled at runtime, so the level you read is the level you play.
+const SPD=id=>document.getElementById(id);
+let sp={li:0,n:3,board:[],moves:0,budget:0,status:'playing'};
+
+const spNb=(i,n)=>{const r=Math.floor(i/n),c=i%n,o=[];
+  if(r>0)o.push(i-n); if(r<n-1)o.push(i+n);
+  if(c>0)o.push(i-1); if(c<n-1)o.push(i+1); return o};
+
+function spLoad(i){
+  const L=SP.LEVELS[i];
+  sp.li=i;sp.n=L.n;sp.budget=L.budget;
+  sp.board=L.board.split(',').map(t=>t==='_'?null:+t);
+  sp.moves=0;sp.status='playing';
+  SPD('level').querySelectorAll('option').forEach(o=>{o.selected=(+o.value===i)});
+  render()}
+
+function spSolved(){
+  return sp.board.every((v,i)=>v===(i===sp.board.length-1?null:i+1))}
+
+function spPlaced(){
+  let n=0;
+  sp.board.forEach((v,i)=>{if(i<sp.board.length-1&&v===i+1)n++});
+  return n}
+
+// Move the tile at `i` into the gap. Returns 'won'|'lost'|'moved'|'blocked'.
+function spSlide(i){
+  if(sp.status!=='playing')return null;
+  const b=sp.board.indexOf(null);
+  if(i===b||sp.board[i]===null)return 'blocked';
+  if(spNb(b,sp.n).indexOf(i)<0)return 'blocked';
+  sp.board[b]=sp.board[i];sp.board[i]=null;
+  sp.moves++;
+  if(spSolved()){sp.status='won';return 'won'}
+  if(sp.moves>=sp.budget){sp.status='lost';return 'lost'}
+  return 'moved'}
+
+// Steer the gap itself: the tile in the given direction slides into it.
+function spPush(dx,dy){
+  const b=sp.board.indexOf(null);
+  const r=Math.floor(b/sp.n)+dy, c=(b%sp.n)+dx;
+  if(r<0||c<0||r>=sp.n||c>=sp.n)return null;
+  return spSlide(r*sp.n+c)}
+
+function render(){
+  const n=sp.n, px=n<=3?64:52;
+  SPD('grid').style.gridTemplateColumns='repeat('+n+','+px+'px)';
+  const b=sp.board.indexOf(null);
+  let h='';
+  for(let i=0;i<sp.board.length;i++){
+    const v=sp.board[i];
+    if(v===null){h+='<div class="sp-t blank" style="height:'+px+'px"></div>';continue}
+    const ok=(i<sp.board.length-1&&v===i+1);
+    h+='<div class="sp-t'+(spNb(b,n).indexOf(i)>=0?' near':'')+'" data-i="'+i+'" style="height:'+
+      px+'px;font-size:'+(px/2.6).toFixed(0)+'px;color:'+(ok?'#FF5F1F':'rgba(255,255,255,.85)')+
+      '">'+v+'</div>'}
+  SPD('grid').innerHTML=h;
+  SPD('grid').querySelectorAll('.sp-t[data-i]').forEach(el=>el.onclick=()=>{
+    const r=spSlide(+el.dataset.i); if(r)render()});
+  const P=spPlaced();
+  SPD('moves').textContent=sp.moves;
+  SPD('left').textContent=Math.max(0,sp.budget-sp.moves);
+  SPD('placed').textContent=P+'/'+(sp.board.length-1);
+  SPD('budget').textContent='MOVES LEFT '+Math.max(0,sp.budget-sp.moves);
+  SPD('status').textContent=sp.status==='won'?'SOLVED':(sp.status==='lost'?'OUT OF MOVES':'Playing');
+  SPD('sp-data').textContent=JSON.stringify({
+    levels:SP.LEVELS.map((L,i)=>({index:i,n:L.n,board:L.board,budget:L.budget,
+      known_solution_moves:L.sol,solved:LP(L.n)})),
+    current:{n:sp.n,board:sp.board.map(v=>v===null?'_':v).join(','),
+      moves:sp.moves,budget:sp.budget,status:sp.status},
+    win:'every tile in order', fail:'move budget spent with tiles out of place'
+  },null,1)}
+
+function LP(n){
+  const a=[];for(let i=0;i<n*n-1;i++)a.push(i+1);a.push(null);return a.join(',')}
+
+SPD('level').innerHTML=SP.LEVELS.map((L,i)=>
+  '<option value="'+i+'">'+L.n+'×'+L.n+' — board '+(i+1)+' ('+L.sol+' move solution)</option>').join('');
+SPD('level').onchange=e=>spLoad(+e.target.value);
+SPD('reset').onclick=()=>spLoad(sp.li);
+const SPD4={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1],
+            a:[-1,0],d:[1,0],w:[0,-1],s:[0,1]};
+addEventListener('keydown',e=>{
+  const d=SPD4[e.key]||SPD4[(e.key||'').toLowerCase()];
+  if(!d)return;
+  const r=spPush(d[0],d[1]);
+  if(r)render();
+  if(e.key.indexOf('Arrow')===0)e.preventDefault()});
+spLoad(0);
+window.slidingPuzzleState=sp;
+window.slidingPuzzle={SP,load:spLoad,slide:spSlide,push:spPush,
+  nb:spNb,solved:spSolved,board:()=>sp.board.slice()};</script>
+
+
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/lights-out/">
+      <span class="ocurp-related-n">Lights Out</span>
+      <span class="ocurp-related-b">Classic 3x3, 4x4 or 5x5 Lights Out. Click a cell to toggle it and its neighbours, clear ev</span>
+    </a></li>
+    <li><a href="/workspace/games/sudoku/">
+      <span class="ocurp-related-n">Sudoku</span>
+      <span class="ocurp-related-b">Three difficulties, pencil notes, and a unique-solution generator.</span>
+    </a></li>
+    <li><a href="/workspace/games/dots-boxes/">
+      <span class="ocurp-related-n">Dots &amp; Boxes</span>
+      <span class="ocurp-related-b">Claim a line, close a box and keep the turn. Best of three rounds; score nothing in a roun</span>
+    </a></li>
+    <li><a href="/workspace/games/mastermind/">
+      <span class="ocurp-related-n">Mastermind</span>
+      <span class="ocurp-related-b">Crack the four-colour code with exact/partial feedback.</span>
+    </a></li>
+    <li><a href="/workspace/games/rock-paper-scissors/">
+      <span class="ocurp-related-n">Rock Paper Scissors</span>
+      <span class="ocurp-related-b">The rival throws a fixed printed sequence, so read the next throw and answer it. Nothing h</span>
+    </a></li>
+    <li><a href="/workspace/games/tetris/">
+      <span class="ocurp-related-n">Tetris</span>
+      <span class="ocurp-related-b">Seven-bag randomiser, hold piece, next queue and rising speed.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

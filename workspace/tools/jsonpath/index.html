@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSONPath Tester — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Run a JSONPath expression over a document and see every match with the path it was found at, supporting wildcards, indexes, slices and recursive descent....">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/jsonpath/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JSONPath Tester">
+<meta property="og:description" content="Run a JSONPath expression over a document and see every match with the path it was found at, supporting wildcards, indexes, slices and recursive descent....">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/jsonpath/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="JSONPath Tester on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JSONPath Tester">
+<meta name="twitter:description" content="Run a JSONPath expression over a document and see every match with the path it was found at, supporting wildcards, indexes, slices and recursive descent....">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="JSONPath Tester on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSONPath Tester","url":"https://ocurp.space/workspace/tools/jsonpath/","description":"Run a JSONPath expression over a document and see every match with the path it was found at, supporting wildcards, indexes, slices and recursive descent....","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">JSONPath Tester</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">JSON</span><span class="ws-chip">JSONPATH</span><span class="ws-chip">DEV</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="grid gap-4 lg:grid-cols-2">
+      <div>
+        <label class="ws-label mb-2 block" for="jdoc">JSON document</label>
+        <textarea id="jdoc" rows="12" class="ws-input ws-mono !text-[13px] leading-relaxed">{
+  "store": {
+    "book": [
+      { "title": "Dune", "price": 9.99, "tag": "sf" },
+      { "title": "Emma", "price": 12.50, "tag": "classics" }
+    ],
+    "bike": { "price": 199.0, "tag": "gear" }
+  }
+}</textarea>
+      </div>
+      <div>
+        <label class="ws-label mb-2 block" for="jpath">Path — $, .key, [n], [*], ..key</label>
+        <input id="jpath" value="$.store.book[*].price" class="ws-input ws-mono">
+        <div class="mt-3 flex flex-wrap gap-2" id="jpsamples"></div>
+      </div>
+    </div>
+    <div class="ws-panel mt-4 p-4">
+      <div class="mb-2 flex items-center justify-between">
+        <span class="ws-label">Matches <span id="jpcount"></span></span>
+        <button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button>
+      </div>
+      <pre id="out" class="ws-out min-h-[100px]"></pre>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
+// A JSONPath subset: $ .key ['key'] [n] [start:end] [*] ..key, chained
+// together. Every match keeps the path it was found at.
+const SAMPLES = ['$.store.book[*].price', '$.store..price', '$.store.book[0].title', '$..tag', '$.store.book[-1:]'];
+
+function isKey(s){
+  return /^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(s);
+}
+
+function steps(path){
+  const p = String(path || '').trim();
+  if (!p) throw new Error('Enter a path, e.g. $.store.book[*].price');
+  if (p[0] !== '$') throw new Error('A path has to start with $');
+  const out = [];
+  let i = 1;
+  while (i < p.length) {
+    const c = p[i];
+    if (c === '.') {
+      if (p[i + 1] === '.') {          // recursive descent
+        i += 2;
+        let j = i;
+        if (p[i] === '[') { j = i; }  // ..[...] is not supported, read a name
+        else { while (j < p.length && isKey(p[j])) j++; }
+        const name = p.slice(i, j);
+        if (!name) throw new Error('.. needs a field name after it');
+        out.push({ op: 'descend', name: name });
+        i = j;
+        continue;
+      }
+      i++;
+      let j = i;
+      while (j < p.length && isKey(p[j])) j++;
+      const name = p.slice(i, j);
+      if (!name) throw new Error('Expected a field name after "."');
+      out.push({ op: 'child', name: name });
+      i = j;
+      continue;
+    }
+    if (c === '[') {
+      const close = p.indexOf(']', i);
+      if (close < 0) throw new Error('Unclosed "["');
+      let body = p.slice(i + 1, close).trim();
+      i = close + 1;
+      if (body[0] === "'" || body[0] === '"') {
+        const q = body[0];
+        body = body.slice(1, -1);
+        if (body[body.length - 1] !== q) throw new Error('Unbalanced quotes in the path');
+        out.push({ op: 'child', name: body });
+      } else if (body === '*') {
+        out.push({ op: 'any' });
+      } else if (body.indexOf(':') >= 0) {
+        const bits = body.split(':');
+        const a = bits[0] === '' ? null : parseInt(bits[0], 10);
+        const b = bits[1] === '' || bits[1] === undefined ? null : parseInt(bits[1], 10);
+        if ((a !== null && isNaN(a)) || (b !== null && isNaN(b))) throw new Error('Slice bounds must be numbers');
+        out.push({ op: 'slice', a: a, b: b });
+      } else {
+        const n = parseInt(body, 10);
+        if (isNaN(n)) throw new Error('Unknown bracket expression "[' + body + ']"');
+        out.push({ op: 'index', n: n });
+      }
+      continue;
+    }
+    throw new Error('Unexpected "' + c + '" in the path');
+  }
+  return out;
+}
+
+function run(list, st, path, hits){
+  if (!st.length) { hits.push({ path: path, value: list }); return; }
+  const s = st[0], rest = st.slice(1);
+  if (s.op === 'child') {
+    if (list && typeof list === 'object' && !Array.isArray(list) &&
+        Object.prototype.hasOwnProperty.call(list, s.name)) {
+      run(list[s.name], rest, path + '.' + s.name, hits);
+    }
+    return;
+  }
+  if (s.op === 'index') {
+    if (Array.isArray(list)) {
+      const n = s.n < 0 ? list.length + s.n : s.n;
+      if (n >= 0 && n < list.length) run(list[n], rest, path + '[' + n + ']', hits);
+    }
+    return;
+  }
+  if (s.op === 'any') {
+    if (Array.isArray(list)) {
+      list.forEach(function(v, i){ run(v, rest, path + '[' + i + ']', hits); });
+    } else if (list && typeof list === 'object') {
+      Object.keys(list).forEach(function(k){ run(list[k], rest, path + '[' + k + ']', hits); });
+    }
+    return;
+  }
+  if (s.op === 'slice') {
+    if (!Array.isArray(list)) return;
+    const n = list.length;
+    let a = s.a === null ? 0 : (s.a < 0 ? n + s.a : s.a);
+    let b = s.b === null ? n - 1 : (s.b < 0 ? n + s.b : s.b);
+    if (a < 0) a = 0;
+    if (b > n - 1) b = n - 1;
+    for (let i = a; i <= b; i++) run(list[i], rest, path + '[' + i + ']', hits);
+    return;
+  }
+  // Recursive descent: every node at or below here, in document order.
+  const walk = function(node, here){
+    if (node && typeof node === 'object' && !Array.isArray(node) &&
+        Object.prototype.hasOwnProperty.call(node, s.name)) {
+      run(node[s.name], rest, here + '.' + s.name, hits);
+    }
+    if (Array.isArray(node)) {
+      node.forEach(function(v, i){ walk(v, here + '[' + i + ']'); });
+    } else if (node && typeof node === 'object') {
+      Object.keys(node).forEach(function(k){ walk(node[k], here + '.' + k); });
+    }
+  };
+  walk(list, path);
+}
+
+function query(doc, path){
+  let st;
+  try { st = steps(path); } catch (e) { return { error: e.message }; }
+  const hits = [];
+  try { run(doc, st, '$', hits); }
+  catch (e) { return { error: e.message }; }
+  return { hits: hits, count: hits.length, steps: st };
+}
+
+function short(v){
+  const s = typeof v === 'string' ? JSON.stringify(v) : JSON.stringify(v);
+  return s === undefined ? 'undefined' : s;
+}
+
+function paint(){
+  let doc;
+  try { doc = JSON.parse(document.getElementById('jdoc').value); }
+  catch (e) {
+    document.getElementById('out').textContent = 'The document is not valid JSON: ' + e.message;
+    document.getElementById('jpcount').textContent = '';
+    return;
+  }
+  const p = document.getElementById('jpath').value;
+  const r = query(doc, p);
+  const cnt = document.getElementById('jpcount');
+  if (r.error) {
+    cnt.textContent = '';
+    document.getElementById('out').textContent = 'Path error: ' + r.error;
+    return;
+  }
+  cnt.textContent = r.count === 1 ? ' (1)' : ' (' + r.count + ')';
+  document.getElementById('out').textContent = r.count
+    ? r.hits.map(function(h, i){
+        return (i + 1) + '. ' + h.path + '\n   ' + short(h.value);
+      }).join('\n')
+    : 'No matches. Check the field name and whether that branch is an array or an object.';
+}
+
+function samples(){
+  const host = document.getElementById('jpsamples');
+  host.textContent = '';
+  SAMPLES.forEach(function(s){
+    const b = document.createElement('button');
+    b.className = 'ws-btn-ghost';
+    b.textContent = s;
+    b.onclick = function(){ document.getElementById('jpath').value = s; paint(); };
+    host.appendChild(b);
+  });
+}
+
+['jdoc','jpath'].forEach(function(id){
+  const el = document.getElementById(id);
+  el.addEventListener('input', paint);
+  el.addEventListener('change', paint);
+});
+samples();
+paint();
+window.__jp = { query: query, steps: steps };
+</script>
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/json-schema/">
+      <span class="ocurp-related-n">JSON Schema Generator</span>
+      <span class="ocurp-related-b">Paste a sample document and get a draft-07 JSON Schema inferred from it, with required lis</span>
+    </a></li>
+    <li><a href="/workspace/tools/csv-json/">
+      <span class="ocurp-related-n">CSV to JSON</span>
+      <span class="ocurp-related-b">Convert delimited text and JSON both ways.</span>
+    </a></li>
+    <li><a href="/workspace/tools/csv-to-json/">
+      <span class="ocurp-related-n">CSV to JSON Pro</span>
+      <span class="ocurp-related-b">Quoted fields, escaped newlines and delimiter sniffing handled correctly.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-diff/">
+      <span class="ocurp-related-n">JSON Diff</span>
+      <span class="ocurp-related-b">Compare two JSON documents key by key and see exactly what was added, removed or changed.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-formatter/">
+      <span class="ocurp-related-n">JSON Prettifier</span>
+      <span class="ocurp-related-b">Format, minify and validate JSON with a live error pointer.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-minifier/">
+      <span class="ocurp-related-n">JSON Minifier &amp; Formatter</span>
+      <span class="ocurp-related-b">Strip JSON whitespace or pretty-print it, with key sort and duplicate detection.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morse Code — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Translate text to Morse and back, then play the symbols as real tones through Web Audio. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/morse-code-check/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Morse Code">
+<meta property="og:description" content="Translate text to Morse and back, then play the symbols as real tones through Web Audio. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/morse-code-check/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Morse Code on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Morse Code">
+<meta name="twitter:description" content="Translate text to Morse and back, then play the symbols as real tones through Web Audio. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Morse Code on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Morse Code","url":"https://ocurp.space/workspace/tools/morse-code-check/","description":"Translate text to Morse and back, then play the symbols as real tones through Web Audio. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Morse Code</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Audio & Speech — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">MORSE</span><span class="ws-chip">AUDIO</span><span class="ws-chip">TEXT</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="grid gap-4 lg:grid-cols-2">
+      <div>
+        <label class="ws-label mb-2 block" for="mtext">Text</label>
+        <input id="mtext" value="SOS" class="ws-input ws-mono">
+        <div class="mt-3">
+          <label class="ws-label mb-2 block">Morse</label>
+          <textarea id="mmorse" rows="4" class="ws-input ws-mono !text-[14px] tracking-widest"></textarea>
+        </div>
+      </div>
+      <div>
+        <label class="ws-label mb-2 block">Play it</label>
+        <div class="flex flex-wrap gap-2">
+          <button id="mcplay" class="ws-btn">Play symbols</button>
+          <button id="mcstop" class="ws-btn-ghost">Stop</button>
+          <button id="mcswap" class="ws-btn-ghost">Swap fields</button>
+        </div>
+        <p id="mcstat" class="mt-3 text-[11px] text-white/50"></p>
+        <div class="mt-4">
+          <span class="ws-label">Reference</span>
+          <pre id="mcref" class="ws-out mt-2 max-h-[220px] overflow-auto"></pre>
+        </div>
+      </div>
+    </div>
+    <div class="ws-panel ws-copy mt-4 p-4">
+      <div class="mb-2 flex items-center justify-between">
+        <span class="ws-label">Round trip</span>
+        <button class="ws-btn-ghost !px-3 !py-1.5" onclick="cp(this)">Copy</button>
+      </div>
+      <pre id="out" class="ws-out min-h-[60px]"></pre>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>function cp(b){const t=document.getElementById('out').textContent;navigator.clipboard.writeText(t);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)}
+const T2M = {
+  A: '.-', B: '-...', C: '-.-.', D: '-..', E: '.', F: '..-.', G: '--.', H: '....',
+  I: '..', J: '.---', K: '-.-', L: '.-..', M: '--', N: '-.', O: '---', P: '.--.',
+  Q: '--.-', R: '.-.', S: '...', T: '-', U: '..-', V: '...-', W: '.--', X: '-..-',
+  Y: '-.--', Z: '--..',
+  0: '-----', 1: '.----', 2: '..---', 3: '...--', 4: '....-', 5: '.....',
+  6: '-....', 7: '--...', 8: '---..', 9: '----.'
+};
+const M2T = {};
+Object.keys(T2M).forEach(function(k){ M2T[T2M[k]] = k; });
+
+const DOT = 0.08, DASH = 0.24, GAP = 0.08, LETTER_GAP = 0.24, WORD_GAP = 0.56;
+let ctx = null, playing = false, timers = [];
+
+function audio(){
+  if (!ctx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    ctx = new AC();
+  }
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+
+function toMorse(text){
+  const out = [];
+  const unknown = [];
+  String(text || '').toUpperCase().split('').forEach(function(c){
+    if (c === ' ') { out.push('/'); return; }
+    if (T2M[c]) { out.push(T2M[c]); return; }
+    unknown.push(c);
+    out.push('?');
+  });
+  return { morse: out.join(' '), unknown: unknown };
+}
+
+function fromMorse(text){
+  const parts = String(text || '').trim().split(/\s+/);
+  const letters = [];
+  const bad = [];
+  parts.forEach(function(p){
+    if (p === '/') { letters.push(' '); return; }
+    if (M2T[p]) { letters.push(M2T[p]); return; }
+    bad.push(p);
+  });
+  return { text: letters.join('').replace(/\s+/g, ' ').trim(), bad: bad };
+}
+
+function stop(){
+  playing = false;
+  timers.forEach(function(t){ clearTimeout(t); });
+  timers = [];
+  document.getElementById('mcstat').textContent = 'Stopped.';
+}
+
+function beep(at, dur, freq){
+  const a = audio();
+  if (!a) return;
+  const osc = a.createOscillator();
+  const gain = a.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = freq || 640;
+  gain.gain.setValueAtTime(0.0001, a.currentTime + at);
+  gain.gain.exponentialRampToValueAtTime(0.22, a.currentTime + at + 0.01);
+  gain.gain.setValueAtTime(0.22, a.currentTime + at + dur - 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + at + dur);
+  osc.connect(gain);
+  gain.connect(a.destination);
+  osc.start(a.currentTime + at);
+  osc.stop(a.currentTime + dur + 0.02);
+}
+
+function play(morse, freq){
+  const a = audio();
+  if (!a) {
+    document.getElementById('mcstat').textContent = 'This browser has no Web Audio, so it cannot beep.';
+    return 0;
+  }
+  stop();
+  playing = true;
+  let at = 0, count = 0;
+  String(morse || '').split(' ').forEach(function(sym){
+    if (sym === '') return;
+    if (sym === '/') { at += WORD_GAP - LETTER_GAP; return; }
+    if (!/^[.-]+$/.test(sym)) { at += LETTER_GAP; return; }
+    sym.split('').forEach(function(ch, i){
+      const dur = ch === '.' ? DOT : DASH;
+      beep(at, dur, freq);
+      count++;
+      at += dur + (i === sym.length - 1 ? 0 : GAP);
+    });
+    at += LETTER_GAP;
+  });
+  timers.push(setTimeout(function(){
+    playing = false;
+    document.getElementById('mcstat').textContent =
+      'Played ' + count + ' symbol' + (count === 1 ? '' : 's') + ' over ' + at.toFixed(2) + 's at ' + freq + ' Hz.';
+  }, at * 1000 + 120));
+  document.getElementById('mcstat').textContent = 'Playing ' + count + ' symbols…';
+  return count;
+}
+
+function run(){
+  const t = document.getElementById('mtext').value;
+  const f = toMorse(t);
+  const back = fromMorse(f.morse);
+  document.getElementById('out').textContent = [
+    'Text    ' + (t || '(empty)'),
+    'Morse   ' + (f.morse || '(empty)'),
+    'Back    ' + (back.text || '(empty)'),
+    f.unknown.length ? 'No code for: ' + f.unknown.join(' ') : 'All characters have a code.'
+  ].join('\n');
+  return f.morse;
+}
+
+function loadMorseIntoText(){
+  const r = fromMorse(document.getElementById('mmorse').value);
+  document.getElementById('mtext').value = r.text;
+  run();
+  document.getElementById('mcstat').textContent = r.bad.length
+    ? 'Decoded, but these chunks are not real symbols: ' + r.bad.join(' ')
+    : 'Decoded from morse.';
+}
+
+const edt = document.getElementById('mtext');
+edt.addEventListener('input', function(){
+  document.getElementById('mmorse').value = toMorse(edt.value).morse;
+  run();
+});
+edt.addEventListener('change', function(){
+  document.getElementById('mmorse').value = toMorse(edt.value).morse;
+  run();
+});
+document.getElementById('mmorse').addEventListener('input', loadMorseIntoText);
+document.getElementById('mmorse').addEventListener('change', loadMorseIntoText);
+document.getElementById('mcplay').onclick = function(){
+  play(document.getElementById('mmorse').value, 640);
+};
+document.getElementById('mcstop').onclick = stop;
+document.getElementById('mcswap').onclick = function(){
+  const m = document.getElementById('mmorse');
+  m.value = toMorse(m.value).morse;
+  loadMorseIntoText();
+};
+
+(function ref(){
+  const keys = Object.keys(T2M);
+  const lines = [];
+  for (let i = 0; i < keys.length; i += 6) {
+    lines.push(keys.slice(i, i + 6).map(function(k){
+      return k + ' ' + T2M[k];
+    }).join('   '));
+  }
+  document.getElementById('mcref').textContent = lines.join('\n');
+})();
+
+document.getElementById('mmorse').value = toMorse(edt.value).morse;
+run();
+window.__mc = { toMorse: toMorse, fromMorse: fromMorse, play: play, T2M: T2M };
+</script>
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/morse-code/">
+      <span class="ocurp-related-n">Morse Code</span>
+      <span class="ocurp-related-b">Translate text to Morse and back with audio playback.</span>
+    </a></li>
+    <li><a href="/workspace/tools/audio-bitrate-calculator/">
+      <span class="ocurp-related-n">Audio Bitrate Calculator</span>
+      <span class="ocurp-related-b">Work out the real file size of an audio file at any bitrate, sample rate or channel count.</span>
+    </a></li>
+    <li><a href="/workspace/tools/audio-spectrum-analyzer/">
+      <span class="ocurp-related-n">Audio Spectrum Analyzer</span>
+      <span class="ocurp-related-b">Radix-2 FFT of any audio file with band energies, spectral centroid and a peak-hold readou</span>
+    </a></li>
+    <li><a href="/workspace/tools/audio-trim-cut/">
+      <span class="ocurp-related-n">Audio Trim &amp; Cut</span>
+      <span class="ocurp-related-b">Trim to exact times with fades, resample, fold to mono or stereo, and export a real WAV fi</span>
+    </a></li>
+    <li><a href="/workspace/tools/frequency-generator/">
+      <span class="ocurp-related-n">Frequency Generator</span>
+      <span class="ocurp-related-b">Play any frequency from 1 Hz to 22 kHz, pick a waveform, run a sweep and see the wave live</span>
+    </a></li>
+    <li><a href="/workspace/tools/pitch-speed/">
+      <span class="ocurp-related-n">Pitch &amp; Speed Changer</span>
+      <span class="ocurp-related-b">Shift pitch and playback rate of any audio file.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

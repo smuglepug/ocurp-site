@@ -103,21 +103,29 @@ tailwind.config = { theme: { extend: {
 const TEXT='Rentify helps people across Benin City find venues for weddings, birthdays and every celebration in between.';
 let running=false,t0,timer,dur=15,done=0;
 $('best').textContent=localStorage.getItem('ws-typ')||'0';
+function correctCount(v){let n=0;const k=Math.min(v.length,TEXT.length);
+  for(let i=0;i<k;i++)if(v[i]===TEXT[i])n++;return n}
 function load(){$('text').innerHTML=TEXT.split('').map(c=>'<span class="text-white/40">'+c+'</span>').join('');
-  $('src').value='';running=false;done=0;$('wpm').textContent='0';$('tm').textContent=($('d').value)+'s'}
+  $('src').value='';$('src').disabled=true;running=false;done=0;
+  $('wpm').textContent='0';$('tm').textContent=($('d').value)+'s'}
+function finish(sec){running=false;clearInterval(timer);
+  const wpm=Math.round((done/5)/(Math.max(.5,sec)/60));
+  $('wpm').textContent=wpm;$('src').disabled=true;
+  if(wpm>+(localStorage.getItem('ws-typ')||0)){localStorage.setItem('ws-typ',wpm);$('best').textContent=wpm}}
 function start(){load();running=true;done=0;t0=Date.now();dur=+$('d').value;
   $('src').disabled=false;$('src').focus();
   timer=setInterval(()=>{const left=Math.max(0,dur-(Date.now()-t0)/1000);
     $('tm').textContent=left.toFixed(1)+'s';
-    if(left<=0)stop()},100)}
-function stop(){clearInterval(timer);running=false;
-  const sec=(Date.now()-t0)/1000,wpm=Math.round((done/5)/(sec/60));
-  $('wpm').textContent=wpm;
-  if(wpm>+(localStorage.getItem('ws-typ')||0)){localStorage.setItem('ws-typ',wpm);$('best').textContent=wpm}}
+    if(left<=0){$('tm').textContent='DONE';finish(dur)}},100)}
 $('src').addEventListener('input',()=>{if(!running)return;
-  const v=$('src').value;done=v.length;
+  const v=$('src').value;
+  /* Score ONLY correctly-typed characters, and never past the end of the
+     drawn track: counting raw length let a player type the whole sentence
+     wrong and still post a high WPM, so the best score was a lie. */
+  done=correctCount(v);
   $('text').querySelectorAll('span').forEach((s,i)=>{const c=TEXT[i];
     if(i<v.length)s.className=v[i]===c?'text-green-400':'text-red-400 bg-red-500/20';else s.className='text-white/40'});
+  if(done===TEXT.length){$('tm').textContent='DONE';finish((Date.now()-t0)/1000);return}
   const sec=Math.max(.5,(Date.now()-t0)/1000);$('wpm').textContent=Math.round((done/5)/(sec/60))});
 $('start').onclick=start;$('d').onchange=load;load();</script>
 <script>
@@ -168,6 +176,14 @@ $('start').onclick=start;$('d').onchange=load;load();</script>
   setInterval(scan,700);
 })();
 </script>
+
+
+
+
+
+
+
+
 
 
 

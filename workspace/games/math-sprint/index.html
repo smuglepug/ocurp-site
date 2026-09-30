@@ -157,20 +157,34 @@ function pick(){
   const val=op==='+'?a+b:op==='-'?a-b:op==='*'?a*b:Math.round(a/b);
   return {a,b,op,val,text:a+' '+op+' '+b+' ='}}
 function next(){
+  // Difficulty ramps on volume answered, not on the clock, so a fast player levels.
+  // This MUST happen BEFORE pick(): the old order computed the level after the
+  // question was drawn, so the level badge and the difficulty caption always
+  // described the PREVIOUS question - level 2 announced "+ and - up to 20"
+  // while the player was staring at "19 * 4".
+  level=1+Math.floor((ok+bad)/8);
+  if(level>8)level=8;
   q=pick();
   $('q').textContent=q.text;
   $('ans').value='';
   $('fb').textContent='';
   $('fb').className='mt-3 h-6 text-sm font-bold';
-  // Difficulty ramps on volume answered, not on the clock, so a fast player levels.
-  level=1+Math.floor((ok+bad)/8);
-  if(level>8)level=8;
   $('diff').textContent='level '+level;
-  $('dnote').textContent=['+ and - up to 20','+ and - up to 20','bigger sums and differences','multiplication','multiplication','division and multiplication','mixed, up to 200','mixed, up to 400'][level-1]}
+  // Captions describe the operations AND the operand bound this level actually
+  // generates. Verified by exhaustive enumeration of each level's operand
+  // lattice: level 2 is 100% multiplication up to 31, 4 and 5 are half times /
+  // half divide, and 6 is mixed + - * with NO division at all (division lives
+  // at 4 and 5). Bounds are the true maxima, not round numbers, so the badge
+  // never promises a number the generator does not honour.
+  $('dnote').textContent=['+ and - within 20','multiplication within 32','multiplication within 42','times and divide within 185','times and divide within 245','mixed, up to 180','mixed, up to 205','mixed, up to 210'][level-1]}
 function submit(){
   if(!running||over||!q)return 'not-running';
   const raw=$('ans').value.trim();
   if(raw==='')return 'empty';
+  // parseInt('7.5')===7 and parseInt('7abc')===7, so a sloppy or half-typed
+  // answer used to score as correct. Every question here has an integer
+  // answer, so accept only an optional sign plus digits and nothing else.
+  if(!/^[+-]?\d+$/.test(raw))return 'wrong';
   const v=parseInt(raw,10);
   if(v===q.val){
     ok++;streak++;
@@ -206,7 +220,7 @@ function end(){
     (ok+bad?Math.round(100*ok/(ok+bad))+'% accuracy':'no answers')+'. Score '+score+'.';
   render()}
 $('go').onclick=submit;
-$('skip').onclick=()=>{if(running&&!over){bad++;next();render()}};
+$('skip').onclick=()=>{if(running&&!over){bad++;streak=0;next();render()}};
 $('start').onclick=start;
 $('restart').onclick=start;
 $('ans').addEventListener('keydown',e=>{if(e.key==='Enter')submit()});
@@ -263,6 +277,14 @@ window.__math={get G(){return {q,ok,bad,score,left,level,running,over,streak}},
   setInterval(scan,700);
 })();
 </script>
+
+
+
+
+
+
+
+
 
 
 

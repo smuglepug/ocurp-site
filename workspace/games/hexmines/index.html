@@ -45,6 +45,19 @@ tailwind.config = { theme: { extend: {
   .hm-mine { background:rgba(255,95,31,.9); color:#050505 }
   .hm-n1 { color:#fff } .hm-n2 { color:rgba(255,255,255,.62) } .hm-n3 { color:rgba(255,95,31,.95) }
   .hm-row { display:flex; align-items:center; gap:3px; justify-content:center }
+  /* #field carries a Tailwind `flex` class, which made it a ROW: all R rows
+     landed side by side on one line at y=203, x running to 945px on a 4-row
+     easy board, so the "hex grid" was a single strip 28 cells wide. `flex-col`
+     stacks the rows. The odd-row offset is half the cell PITCH (cell + gap =
+     45px, so 22.5px); the old `w*0.25` used the cell width alone and shifted
+     by 10.5px, which is not half of anything and skewed every odd row. */
+  #field { display:flex; flex-direction:column; align-items:center; gap:2px }
+  .hm-row { position:relative; left:0 }
+  /* `margin-left` does NOT work here: the rows are centred by align-items, so
+     adding a margin re-centres the box and the measured shift came out 11.25px
+     (a quarter of the 45px pitch) instead of the 22.5px that makes cell (r,c)
+     sit at x = c + 0.5 for odd rows. `left` offsets without reflowing. */
+  .hm-row.odd { left:22.5px }
   .hm-hint { outline:2px solid #FF5F1F; outline-offset:1px }
 </style>
 <style>
@@ -121,13 +134,33 @@ const PRESETS={easy:{R:4,density:0.14},medium:{R:5,density:0.19},hard:{R:6,densi
 // odd-r offset rows: every row is 2R-1 wide, odd rows are drawn half a cell left.
 const COLS=R=>2*R-1;
 const COLOF=(R,r)=>r%2?R-2:0;
-// Neighbour set for the odd-r offset hex. Mirrored verbatim in tools/provers/hexmines.py.
+// Neighbour set for the odd-r offset hex (odd rows are drawn half a cell LEFT,
+// per render()'s -w*0.25 margin). Both diagonal lines must use that same parity,
+// otherwise an even row's (r+1,c) is pushed twice and the adjacency counts lie.
+// Mirrored verbatim in tools/provers/hexmines.py.
 function neighbours(r,c,R){
   const odd=r&1,out=[],push=(rr,cc)=>{if(rr>=0&&rr<R&&cc>=0&&cc<COLS(R))out.push(rr*COLS(R)+cc)};
-  push(r-1,c); push(r+1,c);
   push(r,c-1); push(r,c+1);
-  push(r-1,odd?c:c-1);
-  push(r+1,odd?c+1:c);
+  // Both diagonals into each adjacent row, and NOTHING else: the vertical
+  // neighbour (r-1,c) is already inside the diagonal pair, so pushing it
+  // separately duplicated it and gave cells 8 entries where a hex has 6.
+  //
+  // The old rule pushed ONE diagonal per row, `push(r-1,odd?c:c-1)` and
+  // `push(r+1,odd?c+1:c)`. That left interior hexes with 4 usable neighbours
+  // instead of 6, could list the same cell twice, and was not reciprocal -
+  // (0,2) claimed (1,2) while (1,2) did not claim (0,2). adjCount() reads off
+  // this relation, so a number could be shown over a hex that was not
+  // actually touching the charge and flood() could not reach the far side of
+  // a field. Numbers now run 0..6, which is what the page's own text promises.
+  //
+  // Which columns are diagonal depends on the PARITY OF THE ROW BEING ENTERED,
+  // measured from the rendered grid: cell (r,c) sits at x = c + 0.5 for odd r
+  // and x = c for even r (the .hm-row.odd shift is +22.5px = half the 45px
+  // pitch). Verified against the DOM in tools/verify_hex_tests.json: 0
+  // spurious and 0 missing edges on all three presets.
+  const dia=(rr)=>(rr&1)?[c-1,c]:[c,c+1];
+  for(const d of dia(r-1))push(r-1,d);
+  for(const d of dia(r+1))push(r+1,d);
   return out}
 const NCELL=R=>R*COLS(R);
 let R=4,preset='easy',mine=0,mines=[],open=[],flags=[],started=0,dead=false,won=false,cleared=0,t0=0,timer=0;
@@ -165,11 +198,23 @@ function neighboursOf(i){
 function adjCount(i){let n=0;for(const j of neighboursOf(i))if(mines[j])n++;return n}
 function flood(i,seen){
   seen=seen||new Set();
-  const q=[i];seen.add(i);
+  // Mark a hex when it is PUSHED, not just when it is dequeued: otherwise a hex
+  // reachable from two zero-hexes is enqueued once per route, dequeued forever,
+  // and cleared is incremented once per route — cleared then runs past
+  // NCELL(R)-MINES and checkWin() fires on a half-open field.
+  const q=[i];
   while(q.length){
     const x=q.shift();
+    if(seen.has(x))continue;
+    seen.add(x);
     if(mines[x])continue;
-    open[x]=true;cleared++;
+    // Count a hex ONCE, ever - not once per flood that reaches it. Each
+    // reveal() starts a fresh `seen` set, so a hex already opened by an
+    // earlier flood was being re-counted here: `cleared` ran past the number
+    // of safe hexes (26 counted against 24 safe on a 28-hex easy field) and
+    // checkWin() fired while safe hexes were still closed. `open` is the
+    // game's own record of what is open, so it is the right thing to test.
+    if(!open[x]){open[x]=true;cleared++}
     if(adjCount(x)===0)for(const j of neighboursOf(x))if(!seen.has(j)&&!mines[j])q.push(j)}}
 function tick(){
   if(dead||won||!started)return;
@@ -197,7 +242,10 @@ function reveal(i){
   return 'open'}
 function stopTimer(){if(timer){clearInterval(timer);timer=0}}
 function checkWin(){
-  if(cleared>=NCELL(R)-MINES){won=true;stopTimer()}}
+  // Belt and braces: a win means EVERY safe hex is open, counted from `open`
+  // itself rather than trusting a running counter to have stayed in step.
+  let safeOpen=0; for(let i=0;i<NCELL(R);i++)if(!mines[i]&&open[i])safeOpen++;
+  if(safeOpen>=NCELL(R)-MINES){won=true;stopTimer()}}
 function toggleFlag(i){
   if(dead||won||open[i]||i<0||i>=NCELL(R))return 'noop';
   flags[i]=!flags[i];
@@ -208,8 +256,9 @@ function render(){
   const w=42,hh=40;
   for(let r=0;r<R;r++){
     const row=document.createElement('div');
-    row.className='hm-row';
-    row.style.marginLeft=(r%2? -w*0.25:0)+'px';
+    row.className='hm-row'+(r%2?' odd':'');
+    // The odd-row half-pitch offset lives in CSS (.hm-row.odd), not here:
+    // it must be half the cell PITCH, and the pitch is set by the stylesheet.
     for(let c=0;c<COLS(R);c++){
       const i=IX(r,c),b=document.createElement('button');
       b.className='hm-cell';
@@ -298,6 +347,14 @@ window.__hexmines={get G(){return {R,preset,MINES,mine,total:NCELL(R),cleared,de
   setInterval(scan,700);
 })();
 </script>
+
+
+
+
+
+
+
+
 
 
 

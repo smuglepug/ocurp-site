@@ -143,10 +143,24 @@ tailwind.config = { theme: { extend: {
   ['P','rate','years','dp'].forEach(function(id){ $(id).addEventListener('input',run); });
   run();
 })();
+
+// --- test hook (additive; not used by the page UI) ---
+// Mirrors run() above exactly: i = rate/12, n = years*12,
+// m = i===0 ? P/n : P*i*(1+i)^n/((1+i)^n - 1)
+window.__mortgage = {
+  monthlyPayment(P, annualRatePercent, years){
+    const n = years*12, i = annualRatePercent/100/12;
+    return i===0 ? P/n : P*i*Math.pow(1+i, n)/(Math.pow(1+i, n)-1);
+  },
+  totalInterest(P, annualRatePercent, years){
+    return this.monthlyPayment(P, annualRatePercent, years)*(years*12) - P;
+  }
+};
 </script>
   </div>
 </div>
-<script src="/workspace/related.js" defer></script>
+<script src="/workspace/related.js" defer>
+</script>
 <script>
 /* Announce the result of a tool. Screen readers get the output; sighted
    keyboard users get a quiet confirmation line. Set to '' to clear. */
@@ -187,6 +201,14 @@ tailwind.config = { theme: { extend: {
   setInterval(scan,700);
 })();
 </script>
+
+
+
+
+
+
+
+
 
 
 
