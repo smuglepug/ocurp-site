@@ -152,7 +152,10 @@ tailwind.config = { theme: { extend: {
     if(!obj || typeof obj !== 'object' || Array.isArray(obj)) return { ok:false, error:'root must be a JSON object' };
     var ctx = { types:{}, used:{}, done:[], hints:{} };
     var root = register(obj, '', ctx, !!allowNull);
-    var lines = ['export type ' + root + ' = ' + root + ';', ''];
+    // 'export type Root = Root;' is a circular type alias and TypeScript
+    // rejects it (TS2456). The interface below already carries the shape, so
+    // the alias is dropped entirely.
+    var lines = [];
     var fieldCount = 0;
     Object.keys(ctx.types).forEach(function(name){
       lines.push('export interface ' + name + ' {');
