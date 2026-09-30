@@ -200,7 +200,7 @@
       + '<div class="flex flex-1 flex-col p-4 md:p-6">'
       + '<div class="flex items-center justify-between gap-3"><span class="font-mono text-[9px] font-black uppercase tracking-[0.24em] text-white/55">' + esc(cat) + '</span>' + status + '</div>'
       + '<h3 class="mt-3 font-display text-2xl font-black leading-tight tracking-tight text-white transition-colors duration-300 group-hover:text-accent">' + esc(e.name) + '</h3>'
-      + '<p class="mt-3 line-clamp-2 text-sm leading-relaxed text-white/60">' + esc(e.blurb) + '</p>'
+      + '<p class="mt-3 line-clamp-2 text-sm leading-relaxed text-white/60">' + esc(e.blurb || e.desc || '') + '</p>'
       + '<div class="mt-4 flex flex-wrap gap-1.5">' + tags + '</div>'
       + '<div class="mt-6 flex-1"></div>'
       + action
@@ -221,7 +221,7 @@
     var q = (search.value || '').trim().toLowerCase();
     var items = RAW.filter(function (e) {
       var inCat = active === 'all' || e.cat === active;
-      var hay = (e.name + ' ' + e.blurb + ' ' + e.tags.join(' ')).toLowerCase();
+      var hay = (e.name + ' ' + (e.blurb || e.desc || '') + ' ' + e.tags.join(' ')).toLowerCase();
       return inCat && (!q || hay.indexOf(q) !== -1);
     });
     if (grid.__chunkTimer) { clearTimeout(grid.__chunkTimer); grid.__chunkTimer = 0; }

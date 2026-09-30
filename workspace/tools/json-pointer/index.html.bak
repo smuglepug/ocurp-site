@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Pointer Resolver | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">JSON Pointer Resolver</h1>
+      <p class="mt-1 text-xs text-white/40">data &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Resolve an RFC 6901 pointer against a JSON document, with correct ~1/~0 unescaping and readable errors for bad indices and missing keys. <span class="ws-chip">RFC 6901</span><span class="ws-chip">~0 / ~1 ESCAPING</span><span class="ws-chip">CLIENT-SIDE</span></p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-4 lg:grid-cols-2">
+    <div>
+      <label class="ws-label mb-2 block" for="jp-doc">JSON document</label>
+      <textarea id="jp-doc" class="ws-input font-mono" rows="8" spellcheck="false">{"store":{"books":[{"title":"Dune","price":9.99},{"title":"Solaris","price":7.5}],"open":true},"a/b":1,"m~n":2}</textarea>
+      <label class="ws-label mb-2 mt-4 block" for="jp-ptr">JSON Pointer (RFC 6901)</label>
+      <input id="jp-ptr" class="ws-input font-mono" value="/store/books/1/title">
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button id="jp-go" class="ws-btn">Resolve</button>
+        <button id="jp-esc" class="ws-btn-ghost">Encode tokens</button>
+        <button id="jp-qp" class="ws-btn-ghost">Encode as URI fragment</button>
+      </div>
+      <p class="mt-4 text-[11px] leading-relaxed text-white/35">
+        How it works: the pointer is split on <b>/</b>, unescaped with <b>~1 &rarr; /</b>
+        and <b>~0 &rarr; ~</b> &mdash; in that order, since the other way round corrupts the
+        key <code>a~1b</code>. Each token is then used as an object key or an array index.
+        An empty pointer returns the whole document.
+      </p>
+    </div>
+    <div>
+      <div id="jp-tokens" class="mb-3"></div>
+      <div class="ws-out" id="jp-out">&mdash;</div>
+      <div id="jp-meta" class="mt-3"></div>
+    </div>
+  </div>
+</div>
+
+  </div>
+  <div class="mt-8">
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function unescapeTok(t){
+    return String(t).replace(/~1/g, '/').replace(/~0/g, '~');
+  }
+  function escapeTok(t){
+    return String(t).replace(/~/g, '~0').replace(/\//g, '~1');
+  }
+  function parsePointer(p){
+    if (p === '' || p === undefined || p === null) return [];
+    var s = String(p);
+    if (s.charAt(0) !== '/') throw new Error('a JSON pointer must be empty or start with "/"');
+    return s.split('/').slice(1).map(unescapeTok);
+  }
+  function encodePointer(tokens){
+    return String(tokens).split('/').map(escapeTok).join('/');
+  }
+  function toFragment(tokens){
+    return '#' + String(tokens).split('/').map(function(t){
+      return encodeURIComponent(escapeTok(t));
+    }).join('/');
+  }
+  function resolve(doc, pointer){
+    var tokens = parsePointer(pointer);
+    var cur = doc, path = [], err = null, i;
+    for (i=0;i<tokens.length;i++){
+      var t = tokens[i];
+      if (cur === null || cur === undefined){
+        err = 'stopped at "' + path.join('/') + '" - the value there is ' + (cur === null ? 'null' : 'undefined');
+        break;
+      }
+      if (Array.isArray(cur)){
+        if (t === '-'){ err = '"-" is the past-the-end token and cannot be read'; break; }
+        if (!/^(0|[1-9][0-9]*)$/.test(t)){ err = 'array index must be a non-negative integer, got "' + t + '"'; break; }
+        if (Number(t) >= cur.length){ err = 'index ' + t + ' is out of range (length ' + cur.length + ')'; break; }
+        cur = cur[Number(t)];
+      } else if (typeof cur === 'object'){
+        if (!Object.prototype.hasOwnProperty.call(cur, t)){ err = 'no key "' + t + '" at "' + path.join('/') + '"'; break; }
+        cur = cur[t];
+      } else {
+        err = 'cannot descend into a ' + (typeof cur) + ' with token "' + t + '"'; break;
+      }
+      path.push(t);
+    }
+    return { ok: !err, value: err ? undefined : cur, error: err, tokens: tokens,
+             resolved: path.join('/'),
+             type: err ? 'error' : (cur === null ? 'null' : Array.isArray(cur) ? 'array' : typeof cur) };
+  }
+  function render(){
+    var doc;
+    try { doc = JSON.parse($('jp-doc').value); }
+    catch (e){
+      $('jp-out').textContent = 'Invalid JSON: ' + e.message;
+      $('jp-meta').innerHTML = ''; $('jp-tokens').innerHTML = '';
+      return;
+    }
+    var r;
+    try { r = resolve(doc, $('jp-ptr').value); }
+    catch (e){ $('jp-out').textContent = e.message; return; }
+    $('jp-out').textContent = r.ok ? JSON.stringify(r.value, null, 2) : 'Error: ' + r.error;
+    $('jp-tokens').innerHTML = r.tokens.length
+      ? r.tokens.map(function(t, k){
+          return '<div class="ws-kv"><span>token ' + k + '</span><span>' +
+            t.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</span></div>';
+        }).join('')
+      : '<div class="ws-kv"><span>tokens</span><span>0 (whole document)</span></div>';
+    $('jp-meta').innerHTML =
+      '<div class="ws-kv"><span>Depth</span><span>' + r.tokens.length + '</span></div>' +
+      '<div class="ws-kv"><span>Resolved</span><span>' + (r.resolved ? '/' + r.resolved : '(root)') + '</span></div>' +
+      '<div class="ws-kv"><span>Value type</span><span>' + r.type + '</span></div>';
+  }
+  ['jp-doc','jp-ptr'].forEach(function(id){ $(id).addEventListener('input', render); });
+  $('jp-go').addEventListener('click', render);
+  $('jp-esc').addEventListener('click', function(){ $('jp-ptr').value = encodePointer($('jp-ptr').value); render(); });
+  $('jp-qp').addEventListener('click', function(){
+    $('jp-ptr').value = toFragment($('jp-ptr').value).replace(/^#/, ''); render();
+  });
+  render();
+  window.__T = window.__T || {};
+  window.__T['json-pointer'] = {
+    slug: 'json-pointer',
+    run: function(input){
+      var doc;
+      try { doc = JSON.parse(input); } catch (e){ return { parseError: e.message }; }
+      function s(r){ return { ok: r.ok, value: r.value, error: r.error, tokens: r.tokens, type: r.type }; }
+      return {
+        book1: s(resolve(doc, '/store/books/1/title')),
+        escapedSlash: s(resolve(doc, '/a~1b')),
+        escapedTilde: s(resolve(doc, '/m~0n')),
+        root: s(resolve(doc, '')),
+        badIndex: s(resolve(doc, '/store/books/9')),
+        nonNumericIndex: s(resolve(doc, '/store/books/abc'))
+      };
+    }
+  };
+})();
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>
