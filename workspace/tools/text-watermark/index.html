@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Watermark | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Text Watermark</h1>
+      <p class="mt-1 text-xs text-white/40">IMAGES &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Tiles rotated text across an image or a blank canvas, computes the stamp grid, and exports a PNG without the file leaving the tab.</p>
+  <div class="ws-grid2">
+
+<style>#wm-img{display:block;max-width:100%;border-radius:.75rem;border:1px solid rgba(255,255,255,.12);background:#0b0b0b}</style>
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <label class="ws-label mb-2 block" for="wm-text">Watermark text</label>
+  <input id="wm-text" class="ws-input" value="DRAFT">
+  <div class="mt-3 grid gap-3 sm:grid-cols-3">
+    <div><label class="ws-label mb-2 block" for="wm-size">Font size px</label>
+      <input id="wm-size" type="number" class="ws-input" min="6" max="200" value="48"></div>
+    <div><label class="ws-label mb-2 block" for="wm-ang">Angle deg</label>
+      <input id="wm-ang" type="number" class="ws-input" min="-90" max="90" value="0"></div>
+    <div><label class="ws-label mb-2 block" for="wm-gap">Gap px</label>
+      <input id="wm-gap" type="number" class="ws-input" min="0" max="200" value="24"></div>
+  </div>
+  <div class="mt-3 grid gap-3 sm:grid-cols-3">
+    <div><label class="ws-label mb-2 block" for="wm-w">Canvas w</label>
+      <input id="wm-w" type="number" class="ws-input" min="80" max="2000" value="640"></div>
+    <div><label class="ws-label mb-2 block" for="wm-h">Canvas h</label>
+      <input id="wm-h" type="number" class="ws-input" min="80" max="2000" value="480"></div>
+    <div><label class="ws-label mb-2 block" for="wm-al">Alpha 0-1</label>
+      <input id="wm-al" type="number" class="ws-input" min="0.02" max="1" step="0.02" value="0.35"></div>
+  </div>
+  <div class="mt-3 flex flex-wrap gap-2">
+    <label class="ws-btn-ghost !w-auto !px-4 !py-2 cursor-pointer">Load image<input id="wm-file" type="file" accept="image/*" class="hidden"></label>
+    <button id="wm-clear" class="ws-btn-ghost !w-auto !px-4 !py-2">No image</button>
+    <button id="wm-go" class="ws-btn !w-auto">Apply</button>
+    <button id="wm-dl" class="ws-btn-ghost !w-auto !px-4 !py-2">Download PNG</button>
+  </div>
+  <p class="mt-2 text-[11px] text-white/30">The file is read with FileReader into a canvas in this tab. Nothing is uploaded.</p>
+</section>
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <div class="ws-label mb-3">Preview</div>
+  <img id="wm-img" alt="watermarked preview">
+  <div id="wm-stats" class="mt-4"></div>
+</section>
+<p class="mt-3 text-[11px] leading-relaxed text-white/35">How it works: the stamp footprint is <code>size x 0.6 per character</code> wide by <code>size x 1.2</code> tall, rotated for its bounding box, then the canvas is filled with as many whole stamps as fit; the image, if any, is drawn underneath.</p>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var bgImage=null, bgName='none';
+  // The option keys are short (size, ang) but the DOM ids are prefixed, so map
+  // explicitly - reading $(o[key]) by concatenation silently ignores every
+  // value a caller passes in.
+  var FIELDS=[['text','wm-text',null],['size','wm-size',[6,200]],
+              ['ang','wm-ang',[-90,90]],['gap','wm-gap',[0,200]],
+              ['w','wm-w',[80,2000]],['h','wm-h',[80,2000]],
+              ['al','wm-al',[0.02,1]]];
+  function opts(o){
+    o=o||{};
+    var out={};
+    FIELDS.forEach(function(f){
+      var key=f[0], id=f[1], range=f[2], fallback=null;
+      var raw=(o[key]!==undefined)?o[key]:$(id).value;
+      if(key==='text'){ out.text=String(raw||'').trim()||'DRAFT'; return; }
+      var v=Number(raw);
+      if(!isFinite(v)) v=(key==='al')?0.35:48;
+      if(range) v=Math.max(range[0],Math.min(range[1],v));
+      if(key==='w'||key==='h') v=Math.round(v);
+      out[key]=v;
+    });
+    return out;
+  }
+  // Footprint after rotation: the axis-aligned box of a w x h rectangle.
+  function layout(o){
+    var ch=o.text.length;
+    var sw=o.size*0.6*ch, sh=o.size*1.2;
+    var rad=o.ang*Math.PI/180, c=Math.abs(Math.cos(rad)), s=Math.abs(Math.sin(rad));
+    var rw=sw*c+sh*s, rh=sw*s+sh*c;
+    var pitchX=rw+o.gap;
+    // The two gaps are independent: widening the gap must reduce stamps in BOTH
+    // axes. Reusing pitchX for the vertical pitch let a tall canvas keep the
+    // old row count, so DRAFT at 45 degrees came out with 6 rows instead of 3.
+    var pitchY=rh+o.gap;
+    var cols=Math.max(1,Math.floor((o.w+o.gap)/pitchX));
+    var rows=Math.max(1,Math.floor((o.h+o.gap)/pitchY));
+    var pts=[], rad2=o.ang*Math.PI/180;
+    var startX=(o.w-(cols-1)*pitchX)/2, startY=(o.h-(rows-1)*pitchY)/2;
+    for(var r=0;r<rows;r++) for(var k=0;k<cols;k++)
+      pts.push({x:+(startX+k*pitchX).toFixed(2), y:+(startY+r*pitchY).toFixed(2), row:r, col:k});
+    return {chars:ch, stampW:+sw.toFixed(2), stampH:+sh.toFixed(2),
+            rotatedW:+rw.toFixed(2), rotatedH:+rh.toFixed(2), pitchX:+pitchX.toFixed(2), pitchY:+pitchY.toFixed(2),
+            cols:cols, rows:rows, stamps:pts.length, points:pts, radians:+rad2.toFixed(6)};
+  }
+  function paint(canvas,o){
+    var g=canvas.getContext('2d');
+    canvas.width=o.w; canvas.height=o.h;
+    g.clearRect(0,0,o.w,o.h);
+    if(bgImage){ try{ g.drawImage(bgImage,0,0,o.w,o.h); }catch(e){} }
+    else { g.fillStyle='#0b0b0b'; g.fillRect(0,0,o.w,o.h); }
+    var L=layout(o);
+    g.save();
+    g.globalAlpha=o.al;
+    g.fillStyle='#FF5F1F';
+    g.textAlign='center'; g.textBaseline='middle';
+    g.font='700 '+o.size+'px monospace';
+    for(var i=0;i<L.points.length;i++){
+      g.save();
+      g.translate(L.points[i].x,L.points[i].y);
+      g.rotate(o.ang*Math.PI/180);
+      g.fillText(o.text,0,0);
+      g.restore();
+    }
+    g.restore();
+    return L;
+  }
+  function run(o){
+    var cfg=opts(o);
+    var canvas=document.createElement('canvas');
+    var L=paint(canvas,cfg);
+    var url=canvas.toDataURL('image/png');
+    return {text:cfg.text, size:cfg.size, angle:cfg.ang, gap:cfg.gap, width:cfg.w, height:cfg.h,
+            alpha:cfg.al, background:bgName, layout:{
+              chars:L.chars, stampW:L.stampW, stampH:L.stampH, rotatedW:L.rotatedW, rotatedH:L.rotatedH,
+              pitchX:L.pitchX, pitchY:L.pitchY, cols:L.cols, rows:L.rows, stamps:L.stamps,
+              firstPoint:L.points[0], lastPoint:L.points[L.points.length-1]},
+            dataUrlPrefix:url.slice(0,22), dataUrlLength:url.length};
+  }
+  function render(){
+    var cfg=opts();
+    var cv=$('wm-img');
+    var tmp=document.createElement('canvas');
+    var L=paint(tmp,cfg);
+    cv.src=tmp.toDataURL('image/png');
+    $('wm-stats').innerHTML=
+      kv('Canvas', cfg.w+' x '+cfg.h) +
+      kv('Stamp box', L.stampW+' x '+L.stampH+' (rotated '+L.rotatedW+' x '+L.rotatedH+')') +
+      kv('Pitch', L.pitchX+' x '+L.pitchY) +
+      kv('Grid', L.cols+' cols x '+L.rows+' rows') +
+      kv('Stamps drawn', L.stamps) +
+      kv('Coverage', (100*L.stamps*L.stampW*L.stampH/(cfg.w*cfg.h)).toFixed(1)+'% of the canvas') +
+      kv('Background', bgName);
+  }
+  function kv(k,v){return '<div class="ws-kv"><span>'+k+'</span><span>'+v+'</span></div>';}
+  $('wm-go').addEventListener('click',render);
+  ['wm-text','wm-size','wm-ang','wm-gap','wm-w','wm-h','wm-al'].forEach(function(i){$(i).addEventListener('input',render)});
+  $('wm-clear').addEventListener('click',function(){
+    bgImage=null; bgName='none'; $('wm-file').value=''; render();
+  });
+  $('wm-file').addEventListener('change',function(e){
+    var f=e.target.files && e.target.files[0];
+    if(!f) return;
+    var fr=new FileReader();
+    fr.onload=function(){
+      var img=new Image();
+      img.onload=function(){ bgImage=img; bgName=f.name+' ('+img.naturalWidth+'x'+img.naturalHeight+')'; render(); };
+      img.onerror=function(){ bgName='unreadable image'; render(); };
+      img.src=fr.result;
+    };
+    fr.onerror=function(){ bgName='unreadable file'; render(); };
+    fr.readAsDataURL(f);
+  });
+  $('wm-dl').addEventListener('click',function(){
+    var a=document.createElement('a');
+    a.download='watermarked.png'; a.href=$('wm-img').src; a.click();
+  });
+  render();
+  window.__T={slug:'text-watermark',run:run};
+})();
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

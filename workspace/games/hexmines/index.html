@@ -232,6 +232,16 @@ function reveal(i){
     layMines(i);
     startTimer();
     flood(i);
+    // checkWin() here too, not only on the normal path. The first click can
+    // clear the WHOLE field on a small preset (4 charges on 28 hexes leaves
+    // 24 safe, and a lucky zero-flood opens all 24 in one go). Without this
+    // the win was unreachable on exactly those fields: checkWin() was only
+    // called further down, so the game sat there with every safe hex open,
+    // cleared == safeTotal, and won still false until the player clicked a
+    // cell that was already open - which returns early and never checks
+    // either. Measured 7 fields in 300 on easy, 0 on medium/hard, matching
+    // their clear-the-board-on-one-click probability.
+    checkWin();
     render();
     if(!mines[i])return 'first';
     return 'mine'}
@@ -386,6 +396,8 @@ window.__hexmines={get G(){return {R,preset,MINES,mine,total:NCELL(R),cleared,de
 
 
 
+
+
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
@@ -437,5 +449,7 @@ window.__hexmines={get G(){return {R,preset,MINES,mine,total:NCELL(R),cleared,de
   letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
 .ocurp-related-all:hover{text-decoration:underline}
 </style>
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,199 @@
+/* Styles for play.js -- the mobile play shell.
+
+   This file was previously wrapped in a JS IIFE, which is valid JavaScript and
+   INVALID CSS: linked via <link rel=stylesheet> it parsed to zero rules, so the
+   canvas kept touch-action:auto, the swipe kept scrolling the page, and play
+   mode never became position:fixed. Keep this a plain stylesheet.
+
+   Two jobs:
+     1. stop the swipe from scrolling the page while playing (the actual bug)
+     2. make play mode look like a normal mobile game: no nav, no page chrome,
+        a persistent top-left Exit, and a canvas that fills the screen */
+
+/* ---- the fix: gestures inside the game never reach the scroller ---- */
+.ocurp-surface,
+.ocurp-canvas,
+.ocurp-surface-inner {
+  touch-action: none;
+}
+/* contain the scroll chain so an overscrolling swipe does not pull the
+   whole document (this is what made "the whole screen moves up") */
+html.ocurp-touch,
+html.ocurp-touch body {
+  overscroll-behavior: none;
+}
+html.ocurp-touch .ocurp-surface {
+  overscroll-behavior: contain;
+}
+
+/* ---- play mode: hide page chrome, give the canvas the whole screen ---- */
+html.ocurp-playing,
+html.ocurp-playing body {
+  overflow: hidden;
+  height: 100%;
+}
+html.ocurp-playing body > *:not(.ocurp-playbar) {
+  display: none !important;
+}
+html.ocurp-playing .ocurp-surface {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dark, #050505);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+html.ocurp-playing .ocurp-surface .ws-panel {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  max-width: none !important;
+}
+html.ocurp-playing .ocurp-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: contain;
+  border: 0 !important;
+  border-radius: 0 !important;
+  touch-action: none;
+}
+/* the side panel (start/reset/score) has no room on a phone in play mode */
+html.ocurp-playing .ocurp-side {
+  display: none !important;
+}
+/* the canvas wrapper must not keep its width cap in play mode */
+html.ocurp-playing .ocurp-canvas-wrap {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- the bar: top-left Exit, exactly where a normal game puts it ---- */
+.ocurp-playbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9500;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: calc(10px + env(safe-area-inset-top)) 12px 10px 12px;
+  pointer-events: none;
+}
+.ocurp-playbar button {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  font-family: "IBM Plex Sans", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+/* Exit: top-left, hidden until play mode so it never floats over the page */
+.ocurp-exit {
+  position: absolute;
+  top: calc(10px + env(safe-area-inset-top));
+  left: 12px;
+  background: rgba(10, 10, 10, 0.72);
+  color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+}
+html.ocurp-playing .ocurp-exit {
+  opacity: 1;
+  pointer-events: auto;
+}
+.ocurp-exit:active {
+  transform: scale(0.96);
+}
+.ocurp-exit__x {
+  width: 11px;
+  height: 11px;
+  position: relative;
+  flex: 0 0 auto;
+}
+.ocurp-exit__x::before,
+.ocurp-exit__x::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 5px;
+  width: 11px;
+  height: 1.5px;
+  background: currentColor;
+  border-radius: 2px;
+}
+.ocurp-exit__x::before {
+  transform: rotate(45deg);
+}
+.ocurp-exit__x::after {
+  transform: rotate(-45deg);
+}
+
+/* Fullscreen button: the affordance that gets you there in the first place */
+.ocurp-enter {
+  margin-left: auto;
+  background: rgba(255, 95, 31, 0.14);
+  color: #ff5f1f;
+  border: 1px solid rgba(255, 95, 31, 0.4);
+}
+.ocurp-enter:active {
+  transform: scale(0.96);
+}
+html.ocurp-playing .ocurp-enter {
+  opacity: 0;
+  pointer-events: none;
+}
+.ocurp-enter__ico {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  position: relative;
+}
+.ocurp-enter__ico::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px -1.5px auto -1.5px;
+  height: 6px;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 0, 100% 55%, 0 55%);
+}
+
+/* landscape phones: the bar hugs the notch correctly */
+@media (orientation: landscape) and (pointer: coarse) {
+  .ocurp-playbar {
+    padding-top: calc(6px + env(safe-area-inset-top));
+  }
+  .ocurp-exit,
+  .ocurp-enter {
+    min-height: 36px;
+    padding: 0 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ocurp-playbar button {
+    transition: none;
+  }
+}

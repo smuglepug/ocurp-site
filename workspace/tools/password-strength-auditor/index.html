@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Password Strength Auditor | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Password Strength Auditor</h1>
+      <p class="mt-1 text-xs text-white/40">VALIDATION &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Estimates entropy from the character classes a password actually uses, then subtracts penalties for repeats, runs and known words.</p>
+  <div class="ws-grid2">
+
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <label class="ws-label mb-2 block" for="pw-in">Password to audit</label>
+  <input id="pw-in" class="ws-input !text-lg" type="password" value="" placeholder="type or paste &mdash; never sent anywhere" autocomplete="off">
+  <div class="mt-3 flex flex-wrap gap-2">
+    <button id="pw-show" class="ws-btn-ghost !w-auto !px-4 !py-2">Reveal</button>
+    <button id="pw-synth" class="ws-btn-ghost !w-auto !px-4 !py-2">Test sample</button>
+  </div>
+  <div id="pw-meter" class="mt-4"></div>
+</section>
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <div class="ws-label mb-3">Breakdown</div>
+  <div id="pw-rows"></div>
+  <div id="pw-flags" class="mt-3 flex flex-wrap gap-2"></div>
+  <div class="mt-3"><span class="ws-label">Character classes found</span>
+    <div id="pw-classes" class="mt-2 flex flex-wrap gap-2"></div></div>
+</section>
+<p class="mt-3 text-[11px] leading-relaxed text-white/35">How it works: the pool is the sum of the character classes actually present, so raw entropy is <code>length x log2(pool)</code>; repeats and ascending or descending runs subtract a fixed penalty, and a hit on the embedded common-password list caps the result.</p>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var COMMON=['password','123456','12345678','qwerty','abc123','letmein','monkey','dragon',
+    'iloveyou','admin','welcome','login','master','hello','freedom','whatever','trustno1',
+    'sunshine','princess','football','baseball','shadow','superman','qwertyuiop','passw0rd',
+    'zaq12wsx','changeme','secret','starwars','ashley','michael','jennifer','jordan'];
+  var SIZES={lower:26,upper:26,digit:10,symbol:33};
+  function classesOf(s){
+    return {lower:/[a-z]/.test(s), upper:/[A-Z]/.test(s), digit:/[0-9]/.test(s),
+            symbol:/[^A-Za-z0-9]/.test(s)};
+  }
+  function repeatPenalty(s){
+    var pen=0, run=1;
+    for(var i=1;i<=s.length;i++){
+      if(i<s.length && s.charAt(i)===s.charAt(i-1)) run++;
+      else { if(run>=3) pen+=(run-2)*5; run=1; }
+    }
+    return pen;
+  }
+  // Any run of three or more consecutive characters that steps by +1 or -1
+  // (abc, cba, 123, 987) is a flat 4 bits plus 1 per character past three.
+  // Charging per extra character made a single 8-letter run cost 36 bits,
+  // which is a bigger penalty than the whole password is worth.
+  function seqPenalty(s){
+    var pen=0, run=1, dir=0, i;
+    function close(dir,run){ return run>=3 ? 4+(run-3) : 0; }
+    for(i=1;i<=s.length;i++){
+      var d = i<s.length ? s.charCodeAt(i)-s.charCodeAt(i-1) : null;
+      if(d!==null && (d===1||d===-1)){
+        if(dir===0){ dir=d; run=1; }
+        if(d===dir) run++;
+        else { pen+=close(dir,run); dir=d; run=2; }
+      }else{
+        pen+=close(dir,run);
+        dir=0; run=1;
+      }
+    }
+    return pen;
+  }
+  function run(o){
+    o=o||{};
+    var s=String(o.password!==undefined?o.password:$('pw-in').value);
+    if(!s.length) return {error:'type or paste a password to audit it', length:0};
+    var c=classesOf(s);
+    var pool=(c.lower?SIZES.lower:0)+(c.upper?SIZES.upper:0)+(c.digit?SIZES.digit:0)+(c.symbol?SIZES.symbol:0);
+    var raw=+((s.length*(pool?Math.log2(pool):0))).toFixed(2);
+    var rp=repeatPenalty(s), sp=seqPenalty(s);
+    var common=false;
+    for(var i=0;i<COMMON.length;i++){
+      if(s.toLowerCase()===COMMON[i] || s.toLowerCase().indexOf(COMMON[i])>=0){common=true;break;}
+    }
+    var bits=Math.max(0,raw-rp-sp);
+    if(common) bits=Math.min(bits,10);
+    bits=+bits.toFixed(2);
+    var perSec=Math.pow(2,bits)/1e10; // 1e10 guesses/second, a decent GPU rig
+    var score = bits<28?0 : bits<40?1 : bits<60?2 : bits<90?3 : 4;
+    var words=['very weak','weak','fair','strong','very strong'];
+    var flags=[];
+    if(!c.lower) flags.push('no lowercase');
+    if(!c.upper) flags.push('no uppercase');
+    if(!c.digit) flags.push('no digit');
+    if(!c.symbol) flags.push('no symbol');
+    if(s.length<12) flags.push('under 12 characters');
+    if(rp) flags.push('repeated character run (-'+rp+' bits)');
+    if(sp) flags.push('keyboard/counting run (-'+sp+' bits)');
+    if(common) flags.push('contains a well-known password');
+    if(/^\d+$/.test(s)) flags.push('digits only');
+    return {length:s.length, pool:pool, classesUsed:(c.lower?1:0)+(c.upper?1:0)+(c.digit?1:0)+(c.symbol?1:0),
+            classes:c, rawBits:raw, repeatPenalty:rp, sequencePenalty:sp, common:common,
+            bits:bits, score:score, verdict:words[score], flags:flags,
+            guessesPerSecond:perSec, halfLifeSeconds:perSec?+(Math.pow(2,bits)/2/perSec).toFixed(1):0};
+  }
+  function kv(k,v){return '<div class="ws-kv"><span>'+k+'</span><span>'+v+'</span></div>';}
+  function render(){
+    var r=run(), m=$('pw-meter'), rows=$('pw-rows');
+    if(r.error){ m.innerHTML=''; rows.innerHTML='<p class="text-sm text-white/40">'+r.error+'</p>'; $('pw-flags').innerHTML=''; $('pw-classes').innerHTML=''; return; }
+    var pct=Math.min(100,Math.round(100*r.bits/100));
+    m.innerHTML='<div class="h-2 w-full overflow-hidden rounded-full" style="background:rgba(255,255,255,.08)">'
+      +'<div style="width:'+pct+'%;height:100%;background:#FF5F1F"></div></div>'
+      +'<div class="mt-2 flex items-center justify-between text-xs"><span class="text-white/40">'+r.bits+' effective bits</span>'
+      +'<span style="color:#FF5F1F;font-weight:700">'+r.verdict.toUpperCase()+'</span></div>';
+    rows.innerHTML=kv('Length',r.length)+kv('Character pool',r.pool+' (log2 = '+(r.pool?Math.log2(r.pool).toFixed(4):'0')+')')
+      +kv('Raw entropy',r.rawBits+' bits = length '+r.length+' x log2('+r.pool+')')
+      +kv('Repeat penalty','-'+r.repeatPenalty+' bits')
+      +kv('Sequence penalty','-'+r.sequencePenalty+' bits')
+      +kv('Effective bits',r.bits)
+      +kv('Guesses at 1e10/s',r.guessesPerSecond.toPrecision(3))
+      +kv('Time to half-exhaust',r.halfLifeSeconds.toPrecision(3)+' s');
+    $('pw-flags').innerHTML = r.flags.length
+      ? r.flags.map(function(f){return '<span class="ws-chip" style="border-color:rgba(255,95,31,.45);color:#FF5F1F">'+f+'</span>'}).join('')
+      : '<span class="ws-chip" style="border-color:rgba(255,95,31,.45);color:#FF5F1F">no issues flagged</span>';
+    $('pw-classes').innerHTML = [['lower',SIZES.lower],['upper',SIZES.upper],['digit',SIZES.digit],['symbol',SIZES.symbol]]
+      .map(function(p){
+        return '<span class="ws-chip" style="'+(r.classes[p[0]]?'':'opacity:.35')+'">'+p[0]+' &times;'+p[1]+'</span>';
+      }).join('');
+  }
+  $('pw-in').addEventListener('input',render);
+  $('pw-show').addEventListener('click',function(){
+    $('pw-in').type = $('pw-in').type==='password'?'text':'password';
+    this.textContent = $('pw-in').type==='password'?'Reveal':'Hide';
+  });
+  $('pw-synth').addEventListener('click',function(){
+    $('pw-in').value='Tr0ub4dor&3xyz!'; render();
+  });
+  render();
+  window.__T={slug:'password-strength-auditor',run:run};
+})();
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

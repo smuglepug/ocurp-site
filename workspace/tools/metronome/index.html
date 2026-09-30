@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metronome | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Metronome</h1>
+      <p class="mt-1 text-xs text-white/40">Music &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">A click that keeps time: BPM, bar length and subdivision from eighth notes to sixteenths, with a lookahead scheduler so the tempo never drifts with the frame rate. 120 BPM is a beat every 500 ms exactly, and each eighth is 250 ms.</p>
+  <div class="ws-grid2">
+<span class="ws-chip">LOOKAHEAD SCHEDULER</span><span class="ws-chip">SUBDIVISION</span><span class="ws-chip">TEMPO CLAMP</span><span class="ws-chip">WEB AUDIO</span>
+<style>
+  #met-beat{width:64px;height:64px;border-radius:999px;border:1px solid rgba(255,255,255,.15);
+    background:rgba(255,255,255,.05);transition:none}
+  #met-beat.on{background:#FF5F1F}
+  #met-pend{transform-origin:50% 0%;width:2px;height:88px;background:rgba(255,255,255,.35);position:relative;left:50%;margin-left:-1px}
+  #met-pend i{position:absolute;left:-9px;top:-7px;width:20px;height:20px;border-radius:999px;background:#FF5F1F}
+</style>
+<section class="ws-panel p-6">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div><label class="ws-label mb-2 block" for="met-bpm">Tempo (BPM)</label>
+      <input id="met-bpm" type="number" class="ws-input" step="1" value="120"></div>
+    <div><label class="ws-label mb-2 block" for="met-beats">Beats per bar</label>
+      <input id="met-beats" type="number" class="ws-input" step="1" value="4"></div>
+    <div><label class="ws-label mb-2 block" for="met-sub">Subdivision</label>
+      <select id="met-sub" class="ws-input">
+        <option value="1">Quarter (1)</option>
+        <option value="2" selected>Eighth (2)</option>
+        <option value="3">Triplet (3)</option>
+        <option value="4">Sixteenth (4)</option>
+      </select></div>
+    <div><label class="ws-label mb-2 block" for="met-vol">Click volume</label>
+      <input id="met-vol" type="number" class="ws-input" step="0.01" value="0.5"></div>
+  </div>
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <button id="met-go" class="ws-btn !w-auto">Start</button>
+    <button id="met-stop" class="ws-btn-ghost !w-auto">Stop</button>
+    <div id="met-beat"></div>
+    <span class="ws-chip" id="met-count">BAR 1</span>
+    <span class="ws-chip" id="met-state">STOPPED</span>
+  </div>
+  <p class="mt-4 text-[11px] text-white/35">Clicks are scheduled ahead of time against the AudioContext clock, so the tempo does not drift with the frame rate. The downbeat is a higher, louder tick than the rest.</p>
+</section>
+<section class="ws-panel p-6">
+  <div class="flex justify-center"><div id="met-pend"><i></i></div></div>
+  <div id="met-out" class="ws-out mt-4">--</div>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+function clamp(v,lo,hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function num(v,dflt){ var n = parseFloat(v); return isFinite(n) ? n : dflt; }
+// The character classes keep "</" out of this source: the page builder
+// escapes that sequence so it cannot terminate the surrounding <script>.
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/[<]/g,'&lt;').replace(/>/g,'&gt;'); }
+
+var AC = window.AudioContext || window.webkitAudioContext;
+var _ac = null, _acErr = null;
+function ctx(){
+  if(!AC){ _acErr = 'no AudioContext constructor'; return null; }
+  if(!_ac){ try { _ac = new AC(); } catch(e){ _acErr = String(e); return null; } }
+  if(_ac.state === 'suspended'){ var p = _ac.resume(); if(p && p.catch) p.catch(function(){}); }
+  return _ac;
+}
+function acState(){ return _ac ? _ac.state : 'none'; }
+function fmt(v,d){ d = d==null ? 2 : d;
+  if(typeof v !== 'number' || !isFinite(v)) return '--';
+  return v.toFixed(d).replace(/\.?0+$/, function(m){ return m.indexOf('.')===0 ? '' : m; }); }
+
+var scheduler = null, nextTime = 0, step = 0, tickCount = 0, audio = null, running = false;
+// Lookahead scheduling: a 25 ms timer queues clicks 120 ms into the future so
+// setTimeout jitter never reaches the click itself.
+var LOOKAHEAD = 0.12, TICK_MS = 25;
+function settings(){
+  var bpm = num(document.getElementById('met-bpm').value, 120);
+  var bpmClamped = false;
+  if(!(bpm > 0)){ bpm = 120; bpmClamped = true; }
+  if(bpm < 20 || bpm > 400){ bpm = clamp(bpm, 20, 400); bpmClamped = true; }
+  var beats = Math.round(num(document.getElementById('met-beats').value, 4));
+  if(beats < 1 || beats > 12){ beats = clamp(beats, 1, 12); }
+  var sub = parseInt(document.getElementById('met-sub').value, 10) || 2;
+  if(sub < 1 || sub > 8) sub = 2;
+  var vol = clamp(num(document.getElementById('met-vol').value, 0.5), 0, 1);
+  return { bpm: bpm, beats: beats, sub: sub, vol: vol, clamped: bpmClamped,
+           clickMs: 60000 / bpm, tickMs: 60000 / (bpm * sub) };
+}
+function show(s){
+  var out = document.getElementById('met-out');
+  out.innerHTML =
+    '<div class="ws-kv"><span>Tempo</span><span>' + s.bpm + ' BPM</span></div>' +
+    '<div class="ws-kv"><span>One beat</span><span>' + s.clickMs.toFixed(3) + ' ms</span></div>' +
+    '<div class="ws-kv"><span>One ' + (s.sub === 2 ? 'eighth' : s.sub === 3 ? 'triplet' : s.sub === 4 ? 'sixteenth' : 'beat') + ' note</span><span>' + s.tickMs.toFixed(3) + ' ms</span></div>' +
+    '<div class="ws-kv"><span>Bar length (' + s.beats + ' beats)</span><span>' + (s.clickMs * s.beats).toFixed(3) + ' ms</span></div>' +
+    '<div class="ws-kv"><span>Clicks per bar</span><span>' + (s.beats * s.sub) + '</span></div>' +
+    (s.clamped ? '<div class="mt-2 text-[11px] text-accent">Tempo clamped to the 20-400 BPM range.</div>' : '');
+}
+function click(time, accent, s){
+  var c = audio; if(!c) return false;
+  var o = c.createOscillator(), g = c.createGain();
+  o.type = 'square';
+  o.frequency.setValueAtTime(accent ? 1568 : 1046, time);
+  g.gain.setValueAtTime(0, time);
+  g.gain.linearRampToValueAtTime(accent ? s.vol : s.vol * 0.45, time + 0.002);
+  g.gain.exponentialRampToValueAtTime(0.0001, time + 0.05);
+  o.connect(g); g.connect(c.destination);
+  o.start(time); o.stop(time + 0.06);
+  return true;
+}
+function pump(){
+  var s = settings();
+  while(nextTime < audio.currentTime + LOOKAHEAD){
+    var accent = (step % (s.beats * s.sub)) === 0;
+    click(nextTime, accent, s);
+    nextTime += s.tickMs / 1000;
+    step++; tickCount++;
+  }
+  var beatPos = step % (s.beats * s.sub);
+  document.getElementById('met-count').textContent = 'BAR ' + (Math.floor(step / (s.beats * s.sub)) + 1) + ' / ' + (beatPos + 1);
+  document.getElementById('met-pend').style.transform = 'rotate(' + (Math.sin(nextTime / (s.tickMs / 1000)) * 22) + 'deg)';
+}
+function start(){
+  audio = ctx(); if(!audio) return false;
+  running = true; step = 0; tickCount = 0; nextTime = audio.currentTime + 0.08;
+  document.getElementById('met-state').textContent = 'RUNNING';
+  document.getElementById('met-go').textContent = 'Restart';
+  scheduler = setInterval(pump, TICK_MS);
+  pump();
+  return true;
+}
+function stop(){
+  running = false;
+  if(scheduler) clearInterval(scheduler);
+  scheduler = null;
+  document.getElementById('met-state').textContent = 'STOPPED';
+  document.getElementById('met-go').textContent = 'Start';
+}
+document.getElementById('met-go').addEventListener('click', function(){
+  if(running) stop();
+  start(); show(settings());
+});
+document.getElementById('met-stop').addEventListener('click', stop);
+['met-bpm','met-beats','met-sub','met-vol'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', function(){
+    show(settings());
+    if(running) step = 0;
+  });
+});
+show(settings());
+window.__T = { slug: 'metronome', run: function(opts){
+  opts = opts || {};
+  if(opts.bpm !== undefined) document.getElementById('met-bpm').value = opts.bpm;
+  if(opts.beats !== undefined) document.getElementById('met-beats').value = opts.beats;
+  if(opts.sub !== undefined) document.getElementById('met-sub').value = opts.sub;
+  var s = settings();
+  show(s);
+  var res = { bpm: s.bpm, beats: s.beats, subdivision: s.sub,
+    clickMs: +s.clickMs.toFixed(4), tickMs: +s.tickMs.toFixed(4),
+    barMs: +(s.clickMs * s.beats).toFixed(4), clicksPerBar: s.beats * s.sub,
+    clamped: s.clamped, contextCreated: !!_ac, oscStarted: false, clicksQueued: 0 };
+  if(opts.start !== false){
+    stop();
+    var ok = start();
+    res.contextCreated = !!_ac;
+    res.contextState = acState();
+    res.oscStarted = ok && tickCount > 0;
+    res.clicksQueued = tickCount;
+    if(opts.keepRunning !== true) stop();
+  }
+  return res;
+} };
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

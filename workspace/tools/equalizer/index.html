@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Five-Band Equalizer | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Five-Band Equalizer</h1>
+      <p class="mt-1 text-xs text-white/40">Audio &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Five chained BiquadFilterNodes, two shelves and three peaking bands, driven by sliders in decibels. Each dB value is converted with 10^(dB/20) and the resulting response curve is drawn from the filter equations, not from a picture of one.</p>
+  <div class="ws-grid2">
+<span class="ws-chip">BIQUAD FILTERS</span><span class="ws-chip">dB TO LINEAR</span><span class="ws-chip">RESPONSE CURVE</span><span class="ws-chip">TEST TONE</span>
+<style>
+  #eq-canvas{display:block;width:100%;height:220px;border-radius:.75rem;background:#050505;
+    border:1px solid rgba(255,255,255,.12)}
+  .eq-row{display:grid;grid-template-columns:5.5rem 1fr 4rem;gap:.8rem;align-items:center;margin-top:.7rem}
+  .eq-row input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
+    background:rgba(255,255,255,.14);outline:none}
+  .eq-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;
+    border-radius:999px;background:#FF5F1F;cursor:pointer}
+  .eq-row input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:999px;background:#FF5F1F}
+</style>
+<section class="ws-panel p-6">
+  <div id="eq-bands"></div>
+  <div class="eq-row mt-5" style="grid-template-columns:5.5rem 1fr 4rem">
+    <span class="ws-label">Master</span>
+    <input id="eq-master" type="range" min="-24" max="24" step="0.5" value="0">
+    <span id="eq-master-v" class="text-right font-mono text-sm">0.0 dB</span>
+  </div>
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <button id="eq-play" class="ws-btn !w-auto">Play test tone</button>
+    <button id="eq-stop" class="ws-btn-ghost !w-auto">Stop</button>
+    <button id="eq-flat" class="ws-btn-ghost !w-auto">Flat</button>
+    <span class="ws-chip" id="eq-state">IDLE</span>
+  </div>
+</section>
+<section class="ws-panel p-6">
+  <canvas id="eq-canvas" width="900" height="220"></canvas>
+  <div id="eq-out" class="ws-out mt-4">--</div>
+  <p class="mt-3 text-[11px] text-white/35">Each band is a BiquadFilterNode chained in series: two shelving filters at the ends and peaking filters in the middle. dB is converted to a linear gain with 10^(dB/20), which is the amplitude form of the decibel.</p>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+function clamp(v,lo,hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function num(v,dflt){ var n = parseFloat(v); return isFinite(n) ? n : dflt; }
+// The character classes keep "</" out of this source: the page builder
+// escapes that sequence so it cannot terminate the surrounding <script>.
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/[<]/g,'&lt;').replace(/>/g,'&gt;'); }
+
+var AC = window.AudioContext || window.webkitAudioContext;
+var _ac = null, _acErr = null;
+function ctx(){
+  if(!AC){ _acErr = 'no AudioContext constructor'; return null; }
+  if(!_ac){ try { _ac = new AC(); } catch(e){ _acErr = String(e); return null; } }
+  if(_ac.state === 'suspended'){ var p = _ac.resume(); if(p && p.catch) p.catch(function(){}); }
+  return _ac;
+}
+function acState(){ return _ac ? _ac.state : 'none'; }
+function fmt(v,d){ d = d==null ? 2 : d;
+  if(typeof v !== 'number' || !isFinite(v)) return '--';
+  return v.toFixed(d).replace(/\.?0+$/, function(m){ return m.indexOf('.')===0 ? '' : m; }); }
+
+var BANDS = [
+  { label: 'Low shelf', type: 'lowshelf', hz: 120, q: 0.7 },
+  { label: 'Mid low', type: 'peaking', hz: 500, q: 1.1 },
+  { label: 'Mid high', type: 'peaking', hz: 2400, q: 1.1 },
+  { label: 'Presence', type: 'peaking', hz: 6000, q: 1.4 },
+  { label: 'Air', type: 'highshelf', hz: 12000, q: 0.7 }
+];
+var DB_MIN = -24, DB_MAX = 24;
+function dbToGain(db){ return Math.pow(10, db / 20); }
+function readGains(){
+  var g = BANDS.map(function(b, i){
+    return clamp(num(document.getElementById('eq-b' + i).value, 0), DB_MIN, DB_MAX);
+  });
+  return g;
+}
+function readMaster(){ return clamp(num(document.getElementById('eq-master').value, 0), -24, 12); }
+function buildGraph(gains, master, toneHz){
+  var c = ctx(); if(!c) return null;
+  var input = c.createOscillator(); input.type = 'sine'; input.frequency.value = toneHz;
+  var nodes = [], prev = input;
+  for(var i = 0; i < BANDS.length; i++){
+    var f = c.createBiquadFilter();
+    f.type = BANDS[i].type; f.frequency.value = BANDS[i].hz; f.Q.value = BANDS[i].q;
+    f.gain.value = dbToGain(gains[i]);
+    prev.connect(f); prev = f; nodes.push(f);
+  }
+  var mg = c.createGain(); mg.gain.value = dbToGain(master);
+  prev.connect(mg); mg.connect(c.destination);
+  var t = c.currentTime + 0.02;
+  input.start(t); input.stop(t + 0.5);
+  return { context: c, input: input, filters: nodes, master: mg };
+}
+// Analytic magnitude of a biquad at a frequency, used to draw and to check
+// the curve without needing an analyser node.
+function bandMagnitudeDb(band, db, freq){
+  var A = Math.pow(10, db / 40);
+  var w = 2 * Math.PI * freq / 48000, w0 = 2 * Math.PI * band.hz / 48000;
+  var alpha = Math.sin(w0) / (2 * band.q);
+  // magnitude of the normalised biquad at omega
+  var c0 = 1 + alpha * A, c1 = -2 * Math.cos(w0), c2 = 1 - alpha * A;
+  var b0, b1, b2;
+  if(band.type === 'peaking'){
+    b0 = 1 + alpha * A; b1 = -2 * Math.cos(w0); b2 = 1 - alpha * A;
+  } else if(band.type === 'lowshelf'){
+    b0 = A * ((A + 1) - (A - 1) * Math.cos(w0) + 2 * Math.sqrt(A) * alpha);
+    b1 = 2 * A * ((A - 1) - (A + 1) * Math.cos(w0));
+    b2 = A * ((A + 1) - (A - 1) * Math.cos(w0) - 2 * Math.sqrt(A) * alpha);
+  } else { // highshelf
+    b0 = A * ((A + 1) + (A - 1) * Math.cos(w0) + 2 * Math.sqrt(A) * alpha);
+    b1 = -2 * A * ((A - 1) + (A + 1) * Math.cos(w0));
+    b2 = A * ((A + 1) + (A - 1) * Math.cos(w0) - 2 * Math.sqrt(A) * alpha);
+  }
+  var nRe = b0 + b1 * Math.cos(w) + b2 * Math.cos(2 * w);
+  var nIm = -(b1 * Math.sin(w) + b2 * Math.sin(2 * w));
+  var dRe = c0 + c1 * Math.cos(w) + c2 * Math.cos(2 * w);
+  var dIm = -(c1 * Math.sin(w) + c2 * Math.sin(2 * w));
+  var num = Math.sqrt(nRe * nRe + nIm * nIm), den = Math.sqrt(dRe * dRe + dIm * dIm);
+  return 20 * Math.log10((num + 1e-12) / (den + 1e-12));
+}
+function draw(gains, master){
+  var cv = document.getElementById('eq-canvas'), g = cv.getContext('2d');
+  g.clearRect(0, 0, cv.width, cv.height);
+  g.strokeStyle = 'rgba(255,255,255,.08)';
+  for(var d = -24; d <= 24; d += 6){
+    var y = cv.height / 2 - (d / 24) * (cv.height / 2 - 10);
+    g.beginPath(); g.moveTo(0, y); g.lineTo(cv.width, y); g.stroke();
+  }
+  g.strokeStyle = 'rgba(255,95,31,.28)'; g.beginPath(); g.moveTo(0, cv.height / 2); g.lineTo(cv.width, cv.height / 2); g.stroke();
+  var freqs = [], f = 20;
+  while(f < 20000){ freqs.push(f); f *= 1.06; }
+  g.strokeStyle = '#FF5F1F'; g.lineWidth = 2; g.beginPath();
+  for(var i = 0; i < freqs.length; i++){
+    var total = master;
+    for(var b = 0; b < BANDS.length; b++) total += bandMagnitudeDb(BANDS[b], gains[b], freqs[i]);
+    var x = Math.log(freqs[i] / 20) / Math.log(1000) * cv.width;
+    var y = cv.height / 2 - clamp(total, -30, 30) / 30 * (cv.height / 2 - 10);
+    if(i === 0) g.moveTo(x, y); else g.lineTo(x, y);
+  }
+  g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.4)'; g.font = '600 10px monospace';
+  [20,100,1000,10000].forEach(function(ff, k){
+    var x = Math.log(ff / 20) / Math.log(1000) * cv.width;
+    g.fillText(ff + ' Hz', x + 3, cv.height - 6);
+  });
+}
+function render(){
+  var gains = readGains(), master = readMaster();
+  draw(gains, master);
+  var rows = '';
+  for(var i = 0; i < BANDS.length; i++){
+    var linear = dbToGain(gains[i]);
+    rows += '<div class="ws-kv"><span>' + BANDS[i].label + ' &middot; ' + BANDS[i].hz + ' Hz</span><span>' +
+      gains[i].toFixed(1) + ' dB &rarr; x' + linear.toFixed(4) + '</span></div>';
+  }
+  var out = document.getElementById('eq-out');
+  out.innerHTML = rows +
+    '<div class="ws-kv"><span>Master</span><span>' + master.toFixed(1) + ' dB &rarr; x' +
+      dbToGain(master).toFixed(4) + '</span></div>' +
+    '<div class="ws-kv"><span>Band at 1 kHz (mid low)</span><span>' +
+      (gains[1] + bandMagnitudeDb(BANDS[1], gains[1], 1000)).toFixed(3) + ' dB</span></div>' +
+    '<div class="ws-kv"><span>Band at 1 kHz (mid high)</span><span>' +
+      (gains[2] + bandMagnitudeDb(BANDS[2], gains[2], 1000)).toFixed(3) + ' dB</span></div>';
+  return { gains: gains, master: master };
+}
+var tone = null;
+document.getElementById('eq-play').addEventListener('click', function(){
+  var st = render();
+  var gr = buildGraph(st.gains, st.master, 220);
+  if(!gr) return;
+  document.getElementById('eq-state').textContent = 'TONE 220 Hz';
+  tone = gr;
+});
+document.getElementById('eq-stop').addEventListener('click', function(){
+  document.getElementById('eq-state').textContent = 'IDLE';
+});
+document.getElementById('eq-flat').addEventListener('click', function(){
+  for(var i = 0; i < BANDS.length; i++) document.getElementById('eq-b' + i).value = 0;
+  document.getElementById('eq-master').value = 0;
+  document.getElementById('eq-master-v').textContent = '0.0 dB';
+  render();
+});
+function mount(){
+  var box = document.getElementById('eq-bands');
+  box.innerHTML = '<div class="ws-label mb-2">Five bands, -24 dB to +24 dB</div>' +
+    BANDS.map(function(b, i){
+      return '<div class="eq-row"><span class="ws-label">' + b.label + ' ' + b.hz + '</span>' +
+        '<input id="eq-b' + i + '" type="range" min="-24" max="24" step="0.5" value="0">' +
+        '<span id="eq-bv' + i + '" class="text-right font-mono text-sm">0.0 dB</span></div>';
+    }).join('');
+  BANDS.forEach(function(b, i){
+    var s = document.getElementById('eq-b' + i);
+    s.addEventListener('input', function(){
+      document.getElementById('eq-bv' + i).textContent = num(s.value, 0).toFixed(1) + ' dB';
+      render();
+    });
+  });
+  document.getElementById('eq-master').addEventListener('input', function(){
+    document.getElementById('eq-master-v').textContent = num(this.value, 0).toFixed(1) + ' dB';
+    render();
+  });
+  render();
+}
+mount();
+window.__T = { slug: 'equalizer', run: function(opts){
+  opts = opts || {};
+  if(opts.gains){
+    for(var i = 0; i < opts.gains.length && i < BANDS.length; i++){
+      document.getElementById('eq-b' + i).value = opts.gains[i];
+      document.getElementById('eq-bv' + i).textContent = num(opts.gains[i], 0).toFixed(1) + ' dB';
+    }
+  }
+  if(opts.master !== undefined){
+    document.getElementById('eq-master').value = opts.master;
+    document.getElementById('eq-master-v').textContent = num(opts.master, 0).toFixed(1) + ' dB';
+  }
+  var st = render();
+  var res = { gainsDb: st.gains, gainsLinear: st.gains.map(dbToGain),
+    masterDb: st.master, masterLinear: +dbToGain(st.master).toFixed(6),
+    at20Hz: +st.gains.reduce(function(a, d, i){ return a + bandMagnitudeDb(BANDS[i], d, 20); }, st.master).toFixed(3),
+    at1kHz: +(st.master + bandMagnitudeDb(BANDS[1], st.gains[1], 1000) + bandMagnitudeDb(BANDS[2], st.gains[2], 1000)).toFixed(3),
+    at1kHzFlatBand: +bandMagnitudeDb(BANDS[1], 0, 1000).toFixed(6) };
+  if(opts.play !== false){
+    var gr = buildGraph(st.gains, st.master, opts.tone || 440);
+    res.contextCreated = !!_ac;
+    res.contextState = acState();
+    res.filterCount = gr ? gr.filters.length : 0;
+    res.filterTypes = gr ? gr.filters.map(function(f){ return f.type; }) : [];
+    res.filterHz = gr ? gr.filters.map(function(f){ return f.frequency.value; }) : [];
+    res.nodeGains = gr ? gr.filters.map(function(f){ return +f.gain.value.toFixed(6); }) : [];
+    res.oscStarted = !!gr && !!_ac;
+  }
+  return res;
+} };
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

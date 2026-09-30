@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentence Case | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Sentence Case</h1>
+      <p class="mt-1 text-xs text-white/40">Text &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Rewrites shouty text as a proper sentence, capitalising after every full stop, question mark and exclamation mark while leaving NASA, iPhone, eBay, 3.14 and A1 alone. The difficulty is knowing which words not to touch.</p>
+  <div class="ws-grid2">
+<span class="ws-chip">NAME PROTECTION</span><span class="ws-chip">AP TITLE CASE</span><span class="ws-chip">TOKEN AWARE</span><span class="ws-chip">LINE DIFF</span>
+<section class="ws-panel p-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <span class="ws-label">Input text</span>
+    <div class="flex flex-wrap gap-2">
+      <button id="sc-sample" class="ws-btn-ghost !px-3 !py-1.5">Sample</button>
+      <button id="sc-clear" class="ws-btn-ghost !px-3 !py-1.5">Clear</button>
+    </div>
+  </div>
+  <textarea id="sc-in" class="ws-input mt-3 h-36" spellcheck="false"></textarea>
+  <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div><label class="ws-label mb-2 block" for="sc-style">Style</label>
+      <select id="sc-style" class="ws-input">
+        <option value="sentence" selected>Sentence case</option>
+        <option value="lower">all lower case</option>
+        <option value="title">Title Case (headline)</option>
+        <option value="titleLower">Title Case (AP, short words stay small)</option>
+      </select></div>
+    <div><label class="ws-label mb-2 block" for="sc-acro">Keep acronyms</label>
+      <select id="sc-acro" class="ws-input">
+        <option value="1" selected>Yes (NASA, iPhone, eBay)</option>
+        <option value="0">No</option>
+      </select></div>
+    <div><label class="ws-label mb-2 block" for="sc-num">Protect numbers</label>
+      <select id="sc-num" class="ws-input">
+        <option value="1" selected>Yes (3.14, v2, A1)</option>
+        <option value="0">No</option>
+      </select></div>
+    <div class="flex items-end"><button id="sc-go" class="ws-btn">Apply</button></div>
+  </div>
+  <div class="mt-3 flex flex-wrap gap-2">
+    <button id="sc-copy" class="ws-btn-ghost !w-auto !px-3 !py-1.5">Copy result</button>
+    <button id="sc-delta" class="ws-btn-ghost !w-auto !px-3 !py-1.5">Show change count</button>
+  </div>
+</section>
+<section class="ws-panel p-6">
+  <div id="sc-out" class="ws-out whitespace-pre-wrap">--</div>
+  <div id="sc-stats" class="mt-4"></div>
+  <p class="mt-3 text-[11px] text-white/35">The hard part is not capitalising the first letter, it is knowing which words to leave alone. Tokens holding an interior capital, a digit or a period, and all-caps runs of two or more letters, are treated as proper nouns or codes and copied through untouched.</p>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var SMALL = { a: 1, an: 1, and: 1, as: 1, at: 1, but: 1, by: 1, en: 1, for: 1, if: 1, in: 1,
+  nor: 1, of: 1, on: 1, or: 1, per: 1, the: 1, to: 1, v: 1, vs: 1, via: 1, from: 1, with: 1, into: 1 };
+// A token is "protected" when it looks like a name, a code or a number rather
+// than an ordinary word that merely happens to start a sentence.
+function isProtected(tok, keepAcro, keepNum){
+  if(tok === '') return false;
+  var body = tok.replace(/^[^\w&']+|[^\w&']+$/g, '');
+  if(body === '') return false;
+  if(keepNum && /[0-9]/.test(body)) return true;
+  if(keepAcro && /[a-z][A-Z]/.test(body)) return true;                 // iPhone, eBay
+  if(keepAcro && /^[A-Z]{2,}$/.test(body) && body.length <= 6) return true; // NASA, HTTP
+  if(/^[A-Z]\d/.test(body)) return true;                                // A1
+  if(/[a-zA-Z]\.[a-zA-Z]/.test(body)) return true;                     // e.g. U.S.A.
+  return false;
+}
+function cap(w){
+  // w is a raw word; capitalise its first alphabetic character only
+  return w.replace(/[A-Za-z]/, function(c){ return c.toUpperCase(); });
+}
+function sentenceCase(text, keepAcro, keepNum){
+  var out = '', atStart = true, changed = 0, i = 0;
+  var lowerAll = function(s){ return s.replace(/[A-Z]/g, function(c){ changed++; return c.toLowerCase(); }); };
+  while(i < text.length){
+    var ch = text[i];
+    if(ch === '\n' || ch === '.'){ atStart = true; out += ch; i++; continue; }
+    if(/[!?;]/.test(ch)){ atStart = true; out += ch; i++; continue; }
+    if(/\s/.test(ch)){ out += ch; i++; continue; }
+    // grab the whole word plus any trailing punctuation
+    var j = i;
+    while(j < text.length && !/[\s]/.test(text[j])) j++;
+    var tok = text.slice(i, j);
+    if(isProtected(tok, keepAcro, keepNum)){
+      out += tok;
+    } else {
+      var lowered = lowerAll(tok);
+      var firstAlpha = lowered.search(/[a-z]/i);
+      if(atStart && firstAlpha >= 0){
+        var head = lowered.slice(0, firstAlpha), ch2 = lowered[firstAlpha];
+        out += head + ch2.toUpperCase() + lowered.slice(firstAlpha + 1);
+      } else {
+        out += lowered;
+      }
+    }
+    atStart = false;
+    i = j;
+  }
+  return { text: out, changed: changed };
+}
+function titleCase(text, keepSmall, keepAcro, keepNum){
+  return text.split(/([\s]+)/).map(function(seg, idx){
+    if(seg === '' || /^\s+$/.test(seg)) return seg;
+    if(isProtected(seg, keepAcro, keepNum)) return seg;
+    var bare = seg.replace(/^[^\w]+/, '');
+    var lead = seg.slice(0, seg.length - bare.length);
+    var trail = '';
+    var m = bare.match(/[^\w]+$/);
+    if(m){ trail = m[0]; bare = bare.slice(0, bare.length - trail.length); }
+    var low = bare.toLowerCase();
+    if(keepSmall && SMALL[low] && idx > 0) return lead + low + trail;
+    return lead + cap(low) + trail;
+  }).join('');
+}
+function lowerCase(text){
+  var n = 0;
+  return { text: text.replace(/[A-Z]/g, function(c){ n++; return c.toLowerCase(); }), changed: n };
+}
+function readOpts(){
+  return { style: document.getElementById('sc-style').value,
+    keepAcro: document.getElementById('sc-acro').value === '1',
+    keepNum: document.getElementById('sc-num').value === '1' };
+}
+function apply(){
+  var src = document.getElementById('sc-in').value;
+  var o = readOpts(), res, sents;
+  if(src === ''){
+    document.getElementById('sc-out').textContent = 'type something to transform';
+    document.getElementById('sc-stats').innerHTML = '';
+    return { text: '', words: 0, sentences: 0, changed: 0, style: o.style };
+  }
+  if(o.style === 'lower'){
+    var l = lowerCase(src);
+    res = l.text; sents = (src.match(/[.!?]+/g) || []).length;
+  } else if(o.style === 'title'){
+    res = titleCase(src, false, o.keepAcro, o.keepNum);
+    sents = (src.match(/[.!?]+/g) || []).length;
+  } else if(o.style === 'titleLower'){
+    res = titleCase(src, true, o.keepAcro, o.keepNum);
+    sents = (src.match(/[.!?]+/g) || []).length;
+  } else {
+    var s = sentenceCase(src, o.keepAcro, o.keepNum);
+    res = s.text; sents = (src.match(/[.!?]+/g) || []).length;
+  }
+  var words = (res.match(/[^\s]+/g) || []).length;
+  var chars = res.length;
+  document.getElementById('sc-out').textContent = res;
+  document.getElementById('sc-stats').innerHTML =
+    '<div class="ws-out">' +
+    '<div class="ws-kv"><span>Style</span><span>' + o.style + '</span></div>' +
+    '<div class="ws-kv"><span>Input characters</span><span>' + src.length + '</span></div>' +
+    '<div class="ws-kv"><span>Output characters</span><span>' + chars + '</span></div>' +
+    '<div class="ws-kv"><span>Words</span><span>' + words + '</span></div>' +
+    '<div class="ws-kv"><span>Sentences detected</span><span>' + sents + '</span></div>' +
+    '<div class="ws-kv"><span>Uppercase letters lowered</span><span>' +
+      (res.match(/[A-Z]/g) || []).length + '</span></div>' +
+    '<div class="ws-kv"><span>Character delta</span><span>' + (chars - src.length) + '</span></div>' +
+    '</div>';
+  return { text: res, words: words, sentences: sents, chars: chars, style: o.style,
+    changed: chars !== src.length ? 1 : 0 };
+}
+['sc-style','sc-acro','sc-num'].forEach(function(id){ document.getElementById(id).addEventListener('change', apply); });
+document.getElementById('sc-in').addEventListener('input', apply);
+document.getElementById('sc-go').addEventListener('click', apply);
+document.getElementById('sc-sample').addEventListener('click', function(){
+  document.getElementById('sc-in').value =
+    'the NASA and ESA teams met in the USA. iPhone sales rose 12% to 3.14 million units, and eBay kept its name. ' +
+    'a report from the u.n. said: WE MUST ACT NOW.';
+  apply();
+});
+document.getElementById('sc-clear').addEventListener('click', function(){
+  document.getElementById('sc-in').value = ''; apply();
+});
+document.getElementById('sc-copy').addEventListener('click', function(){
+  var t = document.getElementById('sc-out').textContent;
+  if(navigator.clipboard) navigator.clipboard.writeText(t);
+  this.textContent = 'Copied';
+  var self = this; setTimeout(function(){ self.textContent = 'Copy result'; }, 1200);
+});
+document.getElementById('sc-delta').addEventListener('click', function(){
+  var b = document.getElementById('sc-in').value, a = document.getElementById('sc-out').textContent;
+  var bl = b.split('\n'), al = a.split('\n');
+  var diffs = [];
+  for(var i = 0; i < Math.max(bl.length, al.length); i++){
+    if(bl[i] !== al[i]) diffs.push({ line: i + 1, from: bl[i], to: al[i] });
+  }
+  document.getElementById('sc-stats').insertAdjacentHTML('afterbegin',
+    '<div class="ws-out mb-3"><div class="ws-label mb-2">Changed lines: ' + diffs.length + '</div>' +
+    diffs.slice(0, 20).map(function(d){
+      return '<div class="ws-kv"><span>L' + d.line + '</span><span>' + d.from + ' &rarr; ' + d.to + '</span></div>';
+    }).join('') + '</div>');
+});
+document.getElementById('sc-in').value =
+  'the quick brown fox JUMPED over the lazy dog. AND THEN IT SENT A LETTER to everyone in the room!';
+apply();
+window.__T = { slug: 'sentence-case', run: function(opts){
+  opts = opts || {};
+  if(opts.text !== undefined) document.getElementById('sc-in').value = opts.text;
+  if(opts.style !== undefined) document.getElementById('sc-style').value = opts.style;
+  if(opts.keepAcro !== undefined) document.getElementById('sc-acro').value = opts.keepAcro ? '1' : '0';
+  if(opts.keepNum !== undefined) document.getElementById('sc-num').value = opts.keepNum ? '1' : '0';
+  var r = apply();
+  return { text: r.text, words: r.words, sentences: r.sentences, chars: r.chars, style: r.style };
+} };
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

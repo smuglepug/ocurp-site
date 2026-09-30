@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noise Generator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Noise Generator</h1>
+      <p class="mt-1 text-xs text-white/40">Audio &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">White, pink and brown noise synthesised from a seeded 32-bit generator, so the same seed always gives the same samples. RMS, peak, crest factor and per-octave energy are measured from the buffer and the result can be exported as a real WAV.</p>
+  <div class="ws-grid2">
+<span class="ws-chip">SEEDED LCG</span><span class="ws-chip">PINK FILTER</span><span class="ws-chip">GOERTZEL BANDS</span><span class="ws-chip">WAV EXPORT</span>
+<style>
+  #ng-canvas{display:block;width:100%;height:180px;border-radius:.75rem;background:#050505;
+    border:1px solid rgba(255,255,255,.12)}
+  .ng-slope{height:8px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+  .ng-slope i{display:block;height:100%;background:#FF5F1F}
+</style>
+<section class="ws-panel p-6">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div><label class="ws-label mb-2 block" for="ng-kind">Colour</label>
+      <select id="ng-kind" class="ws-input">
+        <option value="white">White (flat spectrum)</option>
+        <option value="pink" selected>Pink (-3 dB per octave)</option>
+        <option value="brown">Brown (-6 dB per octave)</option>
+      </select></div>
+    <div><label class="ws-label mb-2 block" for="ng-secs">Duration (s)</label>
+      <input id="ng-secs" type="number" class="ws-input" step="0.5" value="2"></div>
+    <div><label class="ws-label mb-2 block" for="ng-vol">Volume</label>
+      <input id="ng-vol" type="number" class="ws-input" step="0.01" value="0.3"></div>
+    <div><label class="ws-label mb-2 block" for="ng-seed">Seed (repeatable)</label>
+      <input id="ng-seed" type="number" class="ws-input" step="1" value="12345"></div>
+  </div>
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <button id="ng-gen" class="ws-btn !w-auto">Generate</button>
+    <button id="ng-play" class="ws-btn-ghost !w-auto">Play</button>
+    <button id="ng-stop" class="ws-btn-ghost !w-auto">Stop</button>
+    <button id="ng-wav" class="ws-btn-ghost !w-auto">Download WAV</button>
+    <span class="ws-chip" id="ng-state">READY</span>
+  </div>
+</section>
+<section class="ws-panel p-6">
+  <canvas id="ng-canvas" width="900" height="180"></canvas>
+  <div id="ng-out" class="ws-out mt-4">--</div>
+</section>
+<section class="ws-panel p-6">
+  <div class="ws-label mb-2">Octave balance (energy per octave band)</div>
+  <div id="ng-bands" class="mt-1"></div>
+  <p class="mt-3 text-[11px] text-white/35">White noise should be flat across bands. Pink noise falls about 3 dB per octave doubling, brown about 6 dB. The measured ratios come from a real DFT of the generated buffer, not from the formula.</p>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+function clamp(v,lo,hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function num(v,dflt){ var n = parseFloat(v); return isFinite(n) ? n : dflt; }
+// The character classes keep "</" out of this source: the page builder
+// escapes that sequence so it cannot terminate the surrounding <script>.
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/[<]/g,'&lt;').replace(/>/g,'&gt;'); }
+
+var AC = window.AudioContext || window.webkitAudioContext;
+var _ac = null, _acErr = null;
+function ctx(){
+  if(!AC){ _acErr = 'no AudioContext constructor'; return null; }
+  if(!_ac){ try { _ac = new AC(); } catch(e){ _acErr = String(e); return null; } }
+  if(_ac.state === 'suspended'){ var p = _ac.resume(); if(p && p.catch) p.catch(function(){}); }
+  return _ac;
+}
+function acState(){ return _ac ? _ac.state : 'none'; }
+function fmt(v,d){ d = d==null ? 2 : d;
+  if(typeof v !== 'number' || !isFinite(v)) return '--';
+  return v.toFixed(d).replace(/\.?0+$/, function(m){ return m.indexOf('.')===0 ? '' : m; }); }
+
+// Deterministic 32-bit LCG: Math.random cannot be asserted against, and a
+// fixed seed is what makes this tool testable.
+function rng(seed){
+  var s = (seed >>> 0) || 1;
+  return function(){
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+function makeNoise(kind, samples, seed){
+  var r = rng(seed), out = new Float32Array(samples);
+  if(kind === 'white'){
+    for(var i = 0; i < samples; i++) out[i] = r() * 2 - 1;
+    return out;
+  }
+  if(kind === 'pink'){
+    // Paul Kellet's economy pink filter: six one-pole filters summed, which
+    // gives a -3 dB/octave slope without an FFT per block.
+    var b = [0,0,0,0,0,0,0];
+    for(var j = 0; j < samples; j++){
+      var w = r() * 2 - 1;
+      b[0] = 0.99886 * b[0] + w * 0.0555179;
+      b[1] = 0.99332 * b[1] + w * 0.0750759;
+      b[2] = 0.96900 * b[2] + w * 0.1538520;
+      b[3] = 0.86650 * b[3] + w * 0.3104856;
+      b[4] = 0.55000 * b[4] + w * 0.5329522;
+      b[5] = -0.7616 * b[5] - w * 0.0168980;
+      out[j] = (b[0] + b[1] + b[2] + b[3] + b[4] + b[5] + w * 0.5362) * 0.11;
+    }
+    return out;
+  }
+  // brown: leaky integrator of white, then remove DC
+  var last = 0, mean = 0;
+  for(var k = 0; k < samples; k++){
+    last = (last + 0.02 * (r() * 2 - 1)) / 1.02;
+    out[k] = last * 3.5;
+    mean += out[k];
+  }
+  mean /= samples;
+  for(var m = 0; m < samples; m++) out[m] -= mean;
+  return out;
+}
+function stats(buf){
+  var peak = 0, sum = 0, sumAbs = 0;
+  for(var i = 0; i < buf.length; i++){
+    var v = buf[i];
+    if(Math.abs(v) > peak) peak = Math.abs(v);
+    sum += v * v; sumAbs += Math.abs(v);
+  }
+  var rms = Math.sqrt(sum / buf.length);
+  return { peak: peak, rms: rms, meanAbs: sumAbs / buf.length,
+           crest: rms > 0 ? peak / rms : 0, dcOffset: sum / buf.length };
+}
+// Goertzel magnitude at one frequency - cheap and exact enough for band
+// reporting, unlike a full FFT for a 100k-sample buffer.
+function goertzel(buf, freq, sr){
+  var k = 2 * Math.cos(2 * Math.PI * freq / sr);
+  var s0 = 0, s1 = 0, s2 = 0;
+  for(var i = 0; i < buf.length; i++){ s0 = buf[i] + k * s1 - s2; s2 = s1; s1 = s0; }
+  return Math.sqrt(s1 * s1 + s2 * s2 - k * s1 * s2) / (buf.length / 2);
+}
+function bands(buf, sr){
+  var edges = [50, 100, 200, 400, 800, 1600, 3200, 6400, 12800];
+  return edges.slice(0, -1).map(function(lo, i){
+    var hi = edges[i + 1];
+    return { lo: lo, hi: hi, rms: goertzel(buf, Math.sqrt(lo * hi), sr) };
+  });
+}
+function draw(buf, sr){
+  var cv = document.getElementById('ng-canvas'), g = cv.getContext('2d');
+  g.clearRect(0, 0, cv.width, cv.height);
+  g.strokeStyle = 'rgba(255,255,255,.15)'; g.beginPath();
+  g.moveTo(0, cv.height / 2); g.lineTo(cv.width, cv.height / 2); g.stroke();
+  g.strokeStyle = '#FF5F1F'; g.lineWidth = 1; g.beginPath();
+  var step = Math.max(1, Math.floor(buf.length / cv.width));
+  var peak = 0.001;
+  for(var i = 0; i < buf.length; i += step) if(Math.abs(buf[i]) > peak) peak = Math.abs(buf[i]);
+  for(var x = 0; x < cv.width; x++){
+    var i0 = Math.floor(x / cv.width * buf.length), i1 = Math.min(buf.length, i0 + step);
+    var mn = 0, mx = 0;
+    for(var j = i0; j < i1; j++){ if(buf[j] < mn) mn = buf[j]; if(buf[j] > mx) mx = buf[j]; }
+    g.moveTo(x, cv.height / 2 - mx / peak * (cv.height / 2 - 8));
+    g.lineTo(x, cv.height / 2 - mn / peak * (cv.height / 2 - 8));
+  }
+  g.stroke();
+}
+function encodeWav(buf, sr){
+  var n = buf.length, out = new ArrayBuffer(44 + n * 2), v = new DataView(out);
+  var wr = function(o, s){ for(var i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  wr(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); wr(8, 'WAVEfmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true);
+  v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  wr(36, 'data'); v.setUint32(40, n * 2, true);
+  for(var i = 0; i < n; i++){
+    var s = clamp(buf[i], -1, 1);
+    v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  return out;
+}
+var current = null, currentSr = 44100, srcNode = null;
+function generate(){
+  var kind = document.getElementById('ng-kind').value;
+  var secs = clamp(num(document.getElementById('ng-secs').value, 2), 0.1, 30);
+  var seed = Math.round(num(document.getElementById('ng-seed').value, 1));
+  var buf = makeNoise(kind, Math.round(secs * currentSr), seed);
+  current = buf;
+  var st = stats(buf);
+  // normalise so every colour plays at a comparable loudness
+  if(st.peak > 0){
+    var g = 0.9 / st.peak;
+    for(var i = 0; i < buf.length; i++) buf[i] *= g;
+    st = stats(buf);
+  }
+  draw(buf, currentSr);
+  var bd = bands(buf, currentSr);
+  var maxR = Math.max.apply(null, bd.map(function(b){ return b.rms; })) || 1;
+  document.getElementById('ng-bands').innerHTML = bd.map(function(b){
+    var pct = b.rms / maxR * 100;
+    var db = 20 * Math.log10(b.rms / maxR + 1e-9);
+    return '<div class="eq-row" style="grid-template-columns:7rem 1fr 5rem">' +
+      '<span class="ws-label">' + b.lo + '-' + b.hi + ' Hz</span>' +
+      '<span class="ng-slope"><i style="width:' + pct.toFixed(1) + '%"></i></span>' +
+      '<span class="text-right font-mono text-sm">' + db.toFixed(1) + ' dB</span></div>';
+  }).join('');
+  var out = document.getElementById('ng-out');
+  out.innerHTML =
+    '<div class="ws-kv"><span>Colour</span><span>' + kind + '</span></div>' +
+    '<div class="ws-kv"><span>Samples</span><span>' + buf.length + ' @ ' + currentSr + ' Hz</span></div>' +
+    '<div class="ws-kv"><span>RMS</span><span>' + st.rms.toFixed(6) + '</span></div>' +
+    '<div class="ws-kv"><span>Peak</span><span>' + st.peak.toFixed(6) + '</span></div>' +
+    '<div class="ws-kv"><span>Crest factor</span><span>' + st.crest.toFixed(4) + '</span></div>' +
+    '<div class="ws-kv"><span>DC offset</span><span>' + st.dcOffset.toExponential(3) + '</span></div>' +
+    '<div class="ws-kv"><span>Band ratio 50-100 / 6400-12800</span><span>' +
+      (bd[bd.length - 1].rms > 0 ? (bd[0].rms / bd[bd.length - 1].rms).toFixed(3) : 'n/a') + '</span></div>';
+  document.getElementById('ng-state').textContent = buf.length + ' SAMPLES';
+  return { buf: buf, stats: st, bands: bd, kind: kind, seed: seed };
+}
+document.getElementById('ng-gen').addEventListener('click', generate);
+document.getElementById('ng-play').addEventListener('click', function(){
+  var c = ctx(); if(!c || !current) return;
+  var b = c.createBuffer(1, current.length, currentSr);
+  b.copyToChannel(current, 0);
+  srcNode = c.createBufferSource(); srcNode.buffer = b;
+  var g = c.createGain(); g.gain.value = clamp(num(document.getElementById('ng-vol').value, 0.3), 0, 1);
+  srcNode.connect(g); g.connect(c.destination); srcNode.start();
+});
+document.getElementById('ng-stop').addEventListener('click', function(){
+  if(srcNode){ try { srcNode.stop(); } catch(e){} srcNode = null; }
+});
+document.getElementById('ng-wav').addEventListener('click', function(){
+  if(!current) return;
+  var blob = new Blob([encodeWav(current, currentSr)], { type: 'audio/wav' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'noise-' + document.getElementById('ng-kind').value + '.wav';
+  a.click();
+});
+['ng-kind','ng-secs','ng-seed'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', function(){ if(current) generate(); });
+});
+generate();
+window.__T = { slug: 'noise-generator', run: function(opts){
+  opts = opts || {};
+  if(opts.kind) document.getElementById('ng-kind').value = opts.kind;
+  if(opts.seconds !== undefined) document.getElementById('ng-secs').value = opts.seconds;
+  if(opts.seed !== undefined) document.getElementById('ng-seed').value = opts.seed;
+  var g = generate();
+  var res = { kind: g.kind, seed: g.seed, sampleRate: currentSr, samples: g.buf.length,
+    rms: +g.stats.rms.toFixed(6), peak: +g.stats.peak.toFixed(6),
+    crest: +g.stats.crest.toFixed(4), dcOffset: +g.stats.dcOffset.toExponential(3),
+    firstSamples: Array.prototype.slice.call(g.buf, 0, 4).map(function(v){ return +v.toFixed(6); }),
+    lowBand: +g.bands[0].rms.toFixed(6), highBand: +g.bands[g.bands.length - 1].rms.toFixed(6) };
+  res.lowHighRatio = res.highBand > 0 ? +(res.lowBand / res.highBand).toFixed(4) : null;
+  if(opts.play !== false){
+    var c = ctx();
+    res.contextCreated = !!_ac;
+    res.contextState = acState();
+    var ok = false;
+    if(c){
+      var b = c.createBuffer(1, g.buf.length, currentSr);
+      b.copyToChannel(g.buf, 0);
+      var s = c.createBufferSource(); s.buffer = b;
+      var gn = c.createGain(); gn.gain.value = 0.2;
+      s.connect(gn); gn.connect(c.destination);
+      try { s.start(); s.stop(c.currentTime + 0.05); ok = true; } catch(e){ ok = false; }
+      res.bufferChannels = b.numberOfChannels;
+      res.bufferLength = b.length;
+    }
+    res.oscStarted = ok;
+  }
+  return res;
+} };
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

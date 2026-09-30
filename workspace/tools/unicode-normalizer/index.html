@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unicode Normalizer | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Unicode Normalizer</h1>
+      <p class="mt-1 text-xs text-white/40">TEXT &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Applies NFC, NFD, NFKC or NFKD, and audits the text's code points: combining marks, format characters, fullwidth forms and RTL script.</p>
+  <div class="ws-grid2">
+
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <label class="ws-label mb-2 block" for="un-in">Text to inspect</label>
+  <textarea id="un-in" class="ws-input font-mono" rows="5" spellcheck="false">Cafe&#769; &mdash; fullwidth ＡＢ and a zero&#8203;width space</textarea>
+  <div class="mt-3 grid gap-3 sm:grid-cols-2">
+    <div><label class="ws-label mb-2 block" for="un-form">Output form</label>
+      <select id="un-form" class="ws-input"><option value="NFC">NFC (compose)</option>
+        <option value="NFD">NFD (decompose)</option><option value="NFKC">NFKC (compat)</option>
+        <option value="NFKD">NFKD (compat + decompose)</option></select></div>
+    <div class="flex items-end gap-2">
+      <button id="un-strip" class="ws-btn !w-auto !px-4 !py-2">Strip invisibles</button>
+      <button id="un-go" class="ws-btn !w-auto !px-4 !py-2">Normalise</button>
+    </div>
+  </div>
+  <div class="mt-4"><span class="ws-label">Result</span>
+    <div id="un-out" class="ws-out mt-2 break-words"></div></div>
+</section>
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <div class="ws-label mb-3">Code point audit</div>
+  <div id="un-rows"></div>
+  <div class="mt-4"><span class="ws-label">Non-ASCII code points</span>
+    <div id="un-table" class="mt-2 overflow-x-auto"></div></div>
+</section>
+<p class="mt-3 text-[11px] leading-relaxed text-white/35">How it works: the four normalisation forms come from the browser's own Unicode database; the audit counts code points, not UTF-16 units, so an astral character counts once and each combining mark is listed separately.</p>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  function cps(s){ return Array.from(String(s)).map(function(c){return c.codePointAt(0)}); }
+  function hex(c){ return 'U+'+c.toString(16).toUpperCase().padStart(4,'0'); }
+  var NAMED={
+    0x200B:'ZERO WIDTH SPACE',0x200C:'ZWNJ',0x200D:'ZWJ',0x200E:'LRM',0x200F:'RLM',
+    0x00A0:'NO-BREAK SPACE',0x2028:'LINE SEPARATOR',0x2029:'PARAGRAPH SEPARATOR',
+    0xFEFF:'BOM / ZWNBSP',0x00AD:'SOFT HYPHEN',0x2060:'WORD JOINER',0x180E:'MONGOLIAN VOWEL SEPARATOR',
+    0xFF21:'FULLWIDTH LATIN CAPITAL LETTER A',0xFF22:'FULLWIDTH LATIN CAPITAL LETTER B',
+    0x2018:'LEFT SINGLE QUOTATION MARK',0x2019:'RIGHT SINGLE QUOTATION MARK',
+    0x201C:'LEFT DOUBLE QUOTATION MARK',0x201D:'RIGHT DOUBLE QUOTATION MARK'
+  };
+  function nameOf(c){
+    if(NAMED[c]) return NAMED[c];
+    return 'category '+(function(ch){
+      if(/[\p{L}]/u.test(ch)) return 'letter';
+      if(/[\p{N}]/u.test(ch)) return 'number';
+      if(/[\p{M}]/u.test(ch)) return 'mark';
+      if(/[\p{P}]/u.test(ch)) return 'punctuation';
+      if(/[\p{S}]/u.test(ch)) return 'symbol';
+      if(/[\p{Z}]/u.test(ch)) return 'separator';
+      if(/[\p{C}]/u.test(ch)) return 'control/format';
+      return 'other';
+    })(String.fromCodePoint(c));
+  }
+  function analyse(s){
+    var list=cps(s);
+    var counts={ascii:0,nonAscii:0,control:0,format:0,space:0,marks:0,astral:0,rtl:0};
+    var cat={};
+    list.forEach(function(c){
+      if(c<0x80) counts.ascii++; else counts.nonAscii++;
+      if(c>0xFFFF) counts.astral++;
+      if((c>=0x0590&&c<=0x05FF)||(c>=0x0600&&c<=0x06FF)||(c>=0x0750&&c<=0x077F)||
+         (c>=0xFB1D&&c<=0xFDFF)||(c>=0xFE70&&c<=0xFEFF)) counts.rtl++;
+      var ch=String.fromCodePoint(c);
+      if(/\p{Cc}/u.test(ch)) counts.control++;
+      if(/\p{Cf}/u.test(ch)) counts.format++;
+      if(/\p{Z}/u.test(ch)) counts.space++;
+      if(/\p{M}/u.test(ch)) counts.marks++;
+      var k=/\p{L}/u.test(ch)?'letter':/\p{N}/u.test(ch)?'number':/\p{M}/u.test(ch)?'mark':
+             /\p{P}/u.test(ch)?'punct':/\p{S}/u.test(ch)?'symbol':/\p{Z}/u.test(ch)?'space':
+             /\p{C}/u.test(ch)?'control':'other';
+      cat[k]=(cat[k]||0)+1;
+    });
+    return {counts:counts, categories:cat, list:list};
+  }
+  function run(o){
+    o=o||{};
+    var s=String(o.text!==undefined?o.text:$('un-in').value);
+    var form=o.form||$('un-form').value;
+    if(['NFC','NFD','NFKC','NFKD'].indexOf(form)<0) return {error:'unknown normalisation form '+form};
+    var out;
+    try{ out=s.normalize(form); }
+    catch(e){ return {error:'this browser cannot apply '+form}; }
+    var a=analyse(s), b=analyse(out);
+    var nonAscii=[];
+    a.list.forEach(function(c,i){ if(c>0x7F) nonAscii.push({index:i,code:hex(c),char:String.fromCodePoint(c),name:nameOf(c)}); });
+    return {form:form, inputLength:a.list.length, outputLength:b.list.length,
+            changed:s!==out, sameAfterRejoin:out.normalize('NFC')===s.normalize('NFC'),
+            stripped:o.strip?out.replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu,''):null,
+            counts:a.counts, outputCounts:b.counts, categories:a.categories,
+            nonAscii:nonAscii, nonAsciiCount:nonAscii.length,
+            combiningMarks:a.counts.marks, outputMarks:b.counts.marks, isRtl:a.counts.rtl>0,
+            nfcLength:s.normalize('NFC').length, nfdLength:s.normalize('NFD').length,
+            nfkcLength:s.normalize('NFKC').length, nfkdLength:s.normalize('NFKD').length,
+            cellCount:a.list.length};
+  }
+  function kv(k,v){return '<div class="ws-kv"><span>'+k+'</span><span>'+v+'</span></div>';}
+  function render(strip){
+    var r=run(), rows=$('un-rows');
+    if(r.error){ rows.innerHTML='<p class="text-sm text-white/40">'+r.error+'</p>'; return; }
+    $('un-out').textContent = strip ? (r.stripped===null?'':r.stripped) : (function(){
+      var f=$('un-in').value.normalize(r.form);
+      return f.length?f:'(nothing to show)';
+    })();
+    rows.innerHTML=kv('Code points in',r.inputLength)+kv('Code points out ('+r.form+')',r.outputLength)
+      +kv('Changed by normalisation',r.changed?'yes':'no')
+      +kv('NFC / NFD length',r.nfcLength+' / '+r.nfdLength)
+      +kv('NFKC / NFKD length',r.nfkcLength+' / '+r.nfkdLength)
+      +kv('ASCII / non-ASCII',r.counts.ascii+' / '+r.counts.nonAscii)
+      +kv('Combining marks',r.combiningMarks)
+      +kv('Control / format',r.counts.control+' / '+r.counts.format)
+      +kv('Spaces & separators',r.counts.space)
+      +kv('Astral (> U+FFFF)',r.counts.astral)
+      +kv('Right-to-left script',r.isRtl?'present':'none')
+      +kv('Category counts',Object.keys(r.categories).map(function(k){return k+':'+r.categories[k]}).join(', ')||'none');
+    $('un-table').innerHTML = r.nonAscii.length
+      ? '<table class="w-full text-left text-xs"><thead class="ws-label"><tr><th>#</th><th>Code point</th><th>Char</th><th>What</th></tr></thead><tbody>'
+        + r.nonAscii.map(function(p){return '<tr class="border-t border-white/5"><td class="font-mono text-white/40">'+p.index
+            +'</td><td class="font-mono">'+p.code+'</td><td class="font-mono text-white/80">'+p.char
+            +'</td><td class="text-white/50">'+p.name+'</td></tr>';}).join('')
+        + '</tbody></table>'
+      : '<p class="text-xs text-white/35">pure ASCII</p>';
+  }
+  $('un-go').addEventListener('click',function(){render(false)});
+  $('un-strip').addEventListener('click',function(){render(true)});
+  ['un-in','un-form'].forEach(function(i){$(i).addEventListener('input',function(){render(false)})});
+  render(false);
+  window.__T={slug:'unicode-normalizer',run:run};
+})();
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

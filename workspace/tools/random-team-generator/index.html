@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Random Team Generator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Random Team Generator</h1>
+      <p class="mt-1 text-xs text-white/40">UTILITY &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Splits a pasted list into balanced teams, either a deterministic snake deal or a seeded shuffle you can reproduce exactly.</p>
+  <div class="ws-grid2">
+
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <label class="ws-label mb-2 block" for="tg-names">Names &mdash; one per line, or comma separated</label>
+  <textarea id="tg-names" class="ws-input" rows="7" spellcheck="false">Ana
+Ben
+Cy
+Dee
+Eli
+Fay
+Gus
+Hal</textarea>
+  <div class="mt-3 grid gap-3 sm:grid-cols-3">
+    <div><label class="ws-label mb-2 block" for="tg-count">Teams</label>
+      <input id="tg-count" type="number" class="ws-input" min="2" max="16" value="2"></div>
+    <div><label class="ws-label mb-2 block" for="tg-seed">Seed</label>
+      <input id="tg-seed" type="number" class="ws-input" value="1"></div>
+    <div><label class="ws-label mb-2 block" for="tg-mode">Method</label>
+      <select id="tg-mode" class="ws-input"><option value="snake">Snake (balanced)</option>
+        <option value="shuffle">Shuffle (seeded)</option></select></div>
+  </div>
+  <div class="mt-3 flex flex-wrap gap-2">
+    <button id="tg-go" class="ws-btn !w-auto">Split</button>
+    <button id="tg-best" class="ws-btn-ghost !w-auto !px-4 !py-2">Best of many</button>
+  </div>
+</section>
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <div class="ws-label mb-3">Teams</div>
+  <div id="tg-out" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"></div>
+  <div id="tg-stats" class="mt-4"></div>
+</section>
+<p class="mt-3 text-[11px] leading-relaxed text-white/35">How it works: snake mode deals the alphabetised list in alternating directions, so two teams from eight people differ by at most one member; shuffle mode uses a seeded mulberry32 so the same seed always gives the same split.</p>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  function mulberry32(a){
+    a=a>>>0;
+    return function(){
+      a=(a+0x6D2B79F5)>>>0;
+      var t=a;
+      t=Math.imul(t^(t>>>15),t|1);
+      t^=t+Math.imul(t^(t>>>7),t|61);
+      return ((t^(t>>>14))>>>0)/4294967296;
+    };
+  }
+  function parseNames(s){
+    return String(s).split(/[\n,;\t]+/).map(function(x){return x.trim()})
+      .filter(function(x){return x.length>0;});
+  }
+  function shuffle(arr,rnd){
+    var a=arr.slice();
+    for(var i=a.length-1;i>0;i--){
+      var j=Math.floor(rnd()*(i+1));
+      var t=a[i]; a[i]=a[j]; a[j]=t;
+    }
+    return a;
+  }
+  function run(o){
+    o=o||{};
+    var names=o.names!==undefined?parseNames(o.names):parseNames($('tg-names').value);
+    var count=o.count!==undefined?Math.floor(Number(o.count)):Math.floor(Number($('tg-count').value));
+    var mode=o.mode||$('tg-mode').value;
+    var seed=o.seed!==undefined?(Number(o.seed)>>>0):(Number($('tg-seed').value)>>>0);
+    if(!names.length) return {error:'no names found', teams:[]};
+    count=Math.max(2,Math.min(16,isFinite(count)?count:2));
+    var order;
+    if(mode==='snake'){
+      order=names.slice().sort(function(a,b){return a<b?-1:(a>b?1:0)});
+    }else{
+      order=shuffle(names,mulberry32(seed));
+    }
+    var teams=[];
+    for(var i=0;i<count;i++) teams.push([]);
+    if(mode==='snake'){
+      // Deal the alphabetised list one full pass per round, reversing the
+      // direction every pass. Reversing the per-element index instead of the
+      // pass index is what makes a two-team snake run off the end of the array.
+      for(var k=0;k<order.length;k++){
+        var pass=Math.floor(k/count), slot=k%count;
+        var idx=(pass%2===0)?slot:(count-1-slot);
+        teams[idx].push(order[k]);
+      }
+    }else{
+      for(var m=0;m<order.length;m++) teams[m%count].push(order[m]);
+    }
+    var sizes=teams.map(function(t){return t.length});
+    var total=0; for(var q=0;q<sizes.length;q++) total+=sizes[q]*sizes[q];
+    return {
+      mode:mode, seed:mode==='shuffle'?seed:null, count:count, people:order.length,
+      teams:teams, sizes:sizes, min:Math.min.apply(null,sizes), max:Math.max.apply(null,sizes),
+      spread:Math.max.apply(null,sizes)-Math.min.apply(null,sizes),
+      balance:+(total/order.length).toFixed(3), order:order,
+      everyNameUsed: order.length===order.join('\u0000').split('\u0000').length &&
+        (function(){var s={};for(var i=0;i<teams.length;i++)for(var j=0;j<teams[i].length;j++){var n=teams[i][j];if(s[n])return false;s[n]=1}return true;})()
+    };
+  }
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function render(){
+    var r=run(), out=$('tg-out'), st=$('tg-stats');
+    if(r.error){ out.innerHTML='<p class="text-sm text-white/45">'+r.error+'</p>'; st.innerHTML=''; return; }
+    out.innerHTML=r.teams.map(function(t,i){
+      return '<div class="rounded-xl border border-white/10 bg-white/[0.02] p-4">'
+        +'<div class="mb-2 flex items-center justify-between"><span class="ws-label">Team '+(i+1)+'</span>'
+        +'<span class="ws-chip">'+t.length+'</span></div>'
+        +'<ul class="space-y-1 text-sm text-white/75">'
+        +t.map(function(n){return '<li>'+esc(n)+'</li>'}).join('')
+        +(t.length?'':'<li class="text-white/30">empty</li>')+'</ul></div>';
+    }).join('');
+    st.innerHTML = '<div class="ws-out">teams: '+r.count+' &nbsp;|&nbsp; people: '+r.people
+      +' &nbsp;|&nbsp; size range: '+r.min+'&ndash;'+r.max+' &nbsp;|&nbsp; spread: '+r.spread
+      +' &nbsp;|&nbsp; sum of squares / n: '+r.balance
+      +' &nbsp;|&nbsp; '+(r.mode==='shuffle'?'seed '+r.seed:'snake deal')+'</div>';
+  }
+  $('tg-go').addEventListener('click',render);
+  ['tg-names','tg-count','tg-seed','tg-mode'].forEach(function(id){ $(id).addEventListener('input',render); });
+  $('tg-best').addEventListener('click',function(){
+    var best=null;
+    for(var i=0;i<400;i++){ var r=run({seed:i+1,mode:'shuffle'}); if(!best||r.spread<best.spread) best=r; }
+    run({seed:(Number($('tg-seed').value)||1)});
+    $('tg-out').innerHTML=renderTeams(best);
+    $('tg-stats').innerHTML='<div class="ws-out">best of 400 seeded shuffles: spread '+best.spread
+      +' at seed '+best.seed+' &nbsp;|&nbsp; sizes '+best.sizes.join('/')+'</div>';
+  });
+  function renderTeams(r){
+    return r.teams.map(function(t,i){
+      return '<div class="rounded-xl border border-white/10 bg-white/[0.02] p-4">'
+        +'<div class="mb-2 flex items-center justify-between"><span class="ws-label">Team '+(i+1)+'</span>'
+        +'<span class="ws-chip">'+t.length+'</span></div>'
+        +'<ul class="space-y-1 text-sm text-white/75">'+t.map(function(n){return '<li>'+esc(n)+'</li>'}).join('')+'</ul></div>';
+    }).join('');
+  }
+  render();
+  window.__T={slug:'random-team-generator',run:run};
+})();
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

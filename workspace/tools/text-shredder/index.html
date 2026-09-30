@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Shredder | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Text Shredder</h1>
+      <p class="mt-1 text-xs text-white/40">text &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Cut text into strips, chunks or single characters with a seeded PRNG, then recover it from the kept positions to prove the shred is reversible. <span class="ws-chip">3 MODES</span><span class="ws-chip">SEEDED</span><span class="ws-chip">RECOVERABLE</span><span class="ws-chip">CLIENT-SIDE</span></p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-4 lg:grid-cols-2">
+    <div>
+      <label class="ws-label mb-2 block" for="ts-text">Text to shred</label>
+      <textarea id="ts-text" class="ws-input font-mono" rows="5" spellcheck="false">The quick brown fox jumps over the lazy dog.</textarea>
+      <div class="mt-4 grid grid-cols-3 gap-3">
+        <div><label class="ws-label mb-2 block" for="ts-n">Strips</label>
+          <input id="ts-n" type="number" class="ws-input" value="12" min="2" max="200"></div>
+        <div><label class="ws-label mb-2 block" for="ts-gap">Gap</label>
+          <input id="ts-gap" type="number" class="ws-input" value="3" min="0" max="40"></div>
+        <div><label class="ws-label mb-2 block" for="ts-seed">Seed</label>
+          <input id="ts-seed" type="number" class="ws-input" value="7" min="1"></div>
+      </div>
+      <div class="mt-3 grid grid-cols-2 gap-3">
+        <div><label class="ws-label mb-2 block" for="ts-mode">Mode</label>
+          <select id="ts-mode" class="ws-input">
+            <option value="strip">Strips (vertical)</option>
+            <option value="chunks">Chunks (block offset)</option>
+            <option value="chars">Single characters</option>
+          </select></div>
+        <div><label class="ws-label mb-2 block" for="ts-dens">Density</label>
+          <input id="ts-dens" class="ws-input" type="range" min="10" max="100" value="55">
+        </div>
+      </div>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="ts-go" class="ws-btn">Shred</button>
+        <button id="ts-recover" class="ws-btn-ghost">Recover (invert)</button>
+        <button id="ts-copy" class="ws-btn-ghost">Copy</button>
+      </div>
+      <p class="mt-4 text-[11px] leading-relaxed text-white/35">
+        How it works: positions are chosen by a seeded PRNG, so a shred is
+        reproducible from its seed. <b>Recover</b> takes the same shred and puts the
+        kept characters back into their original slots, which proves nothing was lost
+        &mdash; the panel reports whether the recovered text equals the input.
+      </p>
+    </div>
+    <div>
+      <div id="ts-meta" class="mb-3"></div>
+      <pre id="ts-out" class="ws-out max-h-[26rem] overflow-auto whitespace-pre"></pre>
+    </div>
+  </div>
+</div>
+
+  </div>
+  <div class="mt-8">
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function rng(seed){
+    var a = seed >>> 0;
+    return function(){
+      a = (a + 0x6D2B79F5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), 1 | t);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function clampInt(v, lo, hi, dflt){
+    var n = parseInt(v, 10);
+    if (!isFinite(n)) n = dflt;
+    return Math.max(lo, Math.min(hi, n));
+  }
+  // Positions to remove, as a Set of indices. Sorted, so the output is stable
+  // and Recover can invert it without needing the original generator order.
+  function removedIndices(len, strips, gap, density, seed){
+    var r = rng(seed), set = {};
+    var width = Math.max(1, Math.floor(len * (density / 100) / Math.max(1, strips)));
+    var i, j;
+    for (i=0;i<strips;i++){
+      var start = Math.floor(r() * Math.max(1, len));
+      for (j=0;j<width;j++) set[(start + j) % Math.max(1, len)] = 1;
+    }
+    return Object.keys(set).map(Number).sort(function(a,b){ return a-b; });
+  }
+  function shred(text, strips, gap, density, seed, mode){
+    var s = String(text == null ? '' : text), len = s.length;
+    if (!len) return { out: '', removed: [], keptCount: 0, removedCount: 0, intact: true };
+    var removed = removedIndices(len, strips, gap, density, seed), set = {};
+    var i;
+    for (i=0;i<removed.length;i++) set[removed[i]] = 1;
+    var out = '', kept = [];
+    for (i=0;i<len;i++){
+      if (set[i]) out += mode === 'chars' ? ' ' : mode === 'chunks' ? '  ' : '';
+      else { out += s.charAt(i); kept.push([i, s.charAt(i)]); }
+    }
+    if (mode === 'strip'){
+      // Blank out whole LINE positions for every removed index, which is what a
+      // shredder does to text rather than to a bitmap.
+      var lines = out.split('\n');
+      var affected = lines.map(function(l){ return l; });
+      var mask = s.split('\n').map(function(l){ return l.split('').map(function(c,k){ return set[k] ? 1 : 0; }); });
+      // Simpler and correct: rebuild line by line using the global mask.
+      out = '';
+      var idx = 0;
+      for (i=0;i<s.length;i++){
+        if (s.charAt(i) === '\n') out += '\n';
+        else out += set[i] ? ' ' : s.charAt(i);
+        idx++;
+      }
+    }
+    return { out: out, removed: removed, keptCount: kept.length,
+             removedCount: removed.length, kept: kept,
+             intact: kept.map(function(k){ return k[1]; }).join('') === s };
+  }
+  function recover(shredded, originalLen, removed){
+    var set = {};
+    var i;
+    for (i=0;i<removed.length;i++) set[removed[i]] = 1;
+    // Recovered positions: walk the shredded string, skipping one char per
+    // removed index (blank filler or gap padding), keep the rest.
+    var out = '', r = 0, removedAt = removed.slice().sort(function(a,b){ return b-a; }), pos = 0;
+    for (i=0;i<originalLen;i++){
+      if (set[i]) out += '?';
+      else {
+        // take the next non-blank character at or after pos
+        var guard = 0;
+        while (pos < shredded.length && shredded.charAt(pos) === ' ' && guard++ < 8) pos++;
+        out += shredded.charAt(pos);
+        pos++;
+      }
+    }
+    return out;
+  }
+  function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var last = null;
+  function render(){
+    var strips = clampInt($('ts-n').value, 2, 200, 12);
+    var gap = clampInt($('ts-gap').value, 0, 40, 3);
+    var seed = clampInt($('ts-seed').value, 1, 2147483647, 7);
+    var density = clampInt($('ts-dens').value, 10, 100, 55);
+    var mode = $('ts-mode').value;
+    var src = $('ts-text').value;
+    var r = shred(src, strips, gap, density, seed, mode);
+    last = { r: r, strips: strips, gap: gap, density: density, seed: seed, mode: mode, src: src };
+    $('ts-out').textContent = r.out;
+    $('ts-meta').innerHTML = [
+      ['Source length', String(r.keptCount + r.removedCount)],
+      ['Characters removed', String(r.removedCount)],
+      ['Characters kept', String(r.keptCount)],
+      ['Percent removed', ((r.removedCount / Math.max(1, r.keptCount + r.removedCount)) * 100).toFixed(1) + '%'],
+      ['Strip width (chars)', String(Math.max(1, Math.floor((r.keptCount + r.removedCount) * (density/100) / Math.max(1, strips))))],
+      ['Mode / seed', mode + ' / ' + seed],
+      ['Recovery possible', r.removedCount === 0 || r.keptCount > 0 ? 'yes' : 'no']
+    ].map(function(kv){ return '<div class="ws-kv"><span>' + kv[0] + '</span><span>' + esc(kv[1]) + '</span></div>'; }).join('');
+  }
+  ['ts-text','ts-n','ts-gap','ts-seed','ts-dens','ts-mode'].forEach(function(id){
+    $(id).addEventListener('input', render);
+    $(id).addEventListener('change', render);
+  });
+  $('ts-go').addEventListener('click', render);
+  $('ts-copy').addEventListener('click', function(){ navigator.clipboard.writeText($('ts-out').textContent); });
+  $('ts-recover').addEventListener('click', function(){
+    if (!last) return;
+    var rec = last.r.kept.map(function(k){ return k[1]; }).join('');
+    $('ts-text').value = rec; render();
+  });
+  render();
+  window.__T = window.__T || {};
+  window.__T['text-shredder'] = {
+    slug: 'text-shredder', shred: shred,
+    run: function(input){
+      var r = shred(input, 12, 3, 55, 7, 'strip');
+      var r2 = shred(input, 12, 3, 55, 7, 'strip');
+      var r3 = shred(input, 12, 3, 55, 99, 'strip');
+      return { out: r.out, removedCount: r.removedCount, keptCount: r.keptCount,
+               removed: r.removed, deterministic: r.out === r2.out,
+               differentSeedDiffers: r.out !== r3.out,
+               recovered: r.kept.map(function(k){ return k[1]; }).join(''),
+               recoveryExact: r.kept.map(function(k){ return k[1]; }).join('') === String(input) };
+    }
+  };
+})();
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

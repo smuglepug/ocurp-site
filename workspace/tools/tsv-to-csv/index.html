@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSV to CSV | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">TSV to CSV</h1>
+      <p class="mt-1 text-xs text-white/40">Data &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Converts tab-separated text to any delimiter, parsing it with a state machine so quoted cells keep their tabs and embedded newlines survive intact. Ragged rows are padded to a rectangle and counted, not silently cut.</p>
+  <div class="ws-grid2">
+<span class="ws-chip">STATE MACHINE PARSER</span><span class="ws-chip">RFC 4180</span><span class="ws-chip">QUOTE ESCAPING</span><span class="ws-chip">BOM SAFE</span>
+<section class="ws-panel p-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <span class="ws-label">Tab-separated input</span>
+    <div class="flex flex-wrap gap-2">
+      <button id="tsv-sample" class="ws-btn-ghost !px-3 !py-1.5">Sample</button>
+      <button id="tsv-clear" class="ws-btn-ghost !px-3 !py-1.5">Clear</button>
+    </div>
+  </div>
+  <textarea id="tsv-in" class="ws-input mt-3 h-48 font-mono" spellcheck="false" placeholder="name&#9;age&#9;city"></textarea>
+  <div class="mt-4 grid gap-4 sm:grid-cols-3">
+    <div><label class="ws-label mb-2 block" for="tsv-delim">Output delimiter</label>
+      <select id="tsv-delim" class="ws-input">
+        <option value=",">Comma ,</option><option value=";">Semicolon ;</option>
+        <option value="|">Pipe |</option><option value="&#9;">Tab (identity)</option>
+      </select></div>
+    <div><label class="ws-label mb-2 block" for="tsv-quote">Quote character</label>
+      <select id="tsv-quote" class="ws-input">
+        <option value="&quot;">Double quote "</option><option value="'">Apostrophe '</option>
+      </select></div>
+    <div class="flex items-end"><button id="tsv-go" class="ws-btn">Convert</button></div>
+  </div>
+  <div class="mt-3 flex flex-wrap items-center gap-2">
+    <button id="tsv-csv" class="ws-btn-ghost !w-auto !px-3 !py-1.5">Also show RFC 4180 CSV</button>
+    <button id="tsv-copy" class="ws-btn-ghost !w-auto !px-3 !py-1.5">Copy result</button>
+  </div>
+</section>
+<section class="ws-panel p-6">
+  <div id="tsv-out" class="ws-out max-h-80 overflow-auto whitespace-pre">--</div>
+  <div id="tsv-stats" class="mt-4"></div>
+  <p class="mt-3 text-[11px] text-white/35">Parsed with a state machine, not a split: quoted fields keep their delimiters, doubled quotes unescape to one, and blank lines and a UTF-8 BOM are dropped. Ragged rows are padded and counted rather than silently truncated.</p>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+function stripBom(s){ return s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s; }
+// RFC 4180 style scanner. Returns {rows, errors}. Errors record the 1-based
+// line of a quote that appeared in the middle of a field.
+function parseDelimited(text, delim){
+  var rows = [], row = [], field = '', inQuotes = false, i = 0, errors = [], line = 1, fieldWasQuoted = false;
+  text = stripBom(text);
+  while(i < text.length){
+    var ch = text[i];
+    if(inQuotes){
+      if(ch === '"'){
+        if(text[i + 1] === '"'){ field += '"'; i += 2; continue; }
+        inQuotes = false; i++; continue;
+      }
+      if(ch === '\n') line++;
+      field += ch; i++; continue;
+    }
+    if(ch === '"'){
+      if(field.length > 0) errors.push({ line: line, reason: 'quote opened mid-field' });
+      inQuotes = true; fieldWasQuoted = true; i++; continue;
+    }
+    if(ch === delim){ row.push(field); field = ''; fieldWasQuoted = false; i++; continue; }
+    if(ch === '\r'){ i++; continue; }
+    if(ch === '\n'){ row.push(field); rows.push({ cells: row, quoted: fieldWasQuoted }); row = []; field = ''; fieldWasQuoted = false; line++; i++; continue; }
+    field += ch; i++;
+  }
+  if(inQuotes) errors.push({ line: line, reason: 'unterminated quoted field' });
+  if(field.length > 0 || row.length > 0){ row.push(field); rows.push({ cells: row, quoted: fieldWasQuoted }); }
+  // drop fully blank rows
+  rows = rows.filter(function(r){ return r.cells.some(function(c){ return c.trim() !== ''; }); });
+  return { rows: rows, errors: errors };
+}
+function quoteField(v, q, delim){
+  v = String(v);
+  var needs = v.indexOf(q) >= 0 || v.indexOf(delim) >= 0 || /[\r\n]/.test(v) || /^\s|\s$/.test(v);
+  if(!needs) return v;
+  return q + v.split(q).join(q + q) + q;
+}
+function toCSV(rows, delim, q){
+  return rows.map(function(r){ return r.cells.map(function(c){ return quoteField(c, q, delim); }).join(delim); }).join('\n');
+}
+function readI(){
+  var d = document.getElementById('tsv-delim').value;
+  var qd = document.getElementById('tsv-quote').value;
+  return { delim: d === '\t' ? '\t' : d, quote: qd === "'" ? "'" : '"' };
+}
+function convert(){
+  var raw = document.getElementById('tsv-in').value;
+  var io = readI();
+  var parsed = parseDelimited(raw, '\t');
+  var rows = parsed.rows;
+  var width = rows.reduce(function(a, r){ return Math.max(a, r.cells.length); }, 0);
+  var padded = 0;
+  rows.forEach(function(r){ while(r.cells.length < width){ r.cells.push(''); padded++; } });
+  var converted = toCSV(rows, io.delim, io.quote);
+  var rfc = toCSV(rows, ',', '"');
+  var cells = rows.reduce(function(a, r){ return a + r.cells.length; }, 0);
+  var quoted = rows.reduce(function(a, r){
+    return a + r.cells.filter(function(c){ return quoteField(c, io.quote, io.delim) !== c; }).length; }, 0);
+  var out = document.getElementById('tsv-out');
+  out.textContent = raw.trim() === '' ? 'nothing to convert' : converted;
+  document.getElementById('tsv-stats').innerHTML =
+    '<div class="ws-out"><div class="ws-kv"><span>Rows</span><span>' + rows.length + '</span></div>' +
+    '<div class="ws-kv"><span>Columns</span><span>' + width + '</span></div>' +
+    '<div class="ws-kv"><span>Cells</span><span>' + cells + '</span></div>' +
+    '<div class="ws-kv"><span>Cells that needed quoting</span><span>' + quoted + '</span></div>' +
+    '<div class="ws-kv"><span>Empty cells padded to a rectangle</span><span>' + padded + '</span></div>' +
+    '<div class="ws-kv"><span>Input bytes</span><span>' + raw.length + '</span></div>' +
+    '<div class="ws-kv"><span>Output bytes</span><span>' + converted.length + '</span></div>' +
+    (parsed.errors.length ? '<div class="ws-kv"><span>Parse warnings</span><span>' +
+      parsed.errors.length + ' (' + parsed.errors[0].reason + ' at line ' + parsed.errors[0].line + ')</span></div>' : '') +
+    '</div>' +
+    '<div class="mt-4 ws-label">RFC 4180 CSV (comma, always double quotes)</div>' +
+    '<div class="ws-out mt-2 max-h-40 overflow-auto whitespace-pre">' + (rfc || '--') + '</div>';
+  return { rows: rows, width: width, converted: converted, rfc: rfc, padded: padded,
+           errors: parsed.errors, cells: cells, quoted: quoted };
+}
+document.getElementById('tsv-go').addEventListener('click', convert);
+['tsv-delim','tsv-quote'].forEach(function(id){ document.getElementById(id).addEventListener('change', convert); });
+document.getElementById('tsv-in').addEventListener('input', convert);
+document.getElementById('tsv-sample').addEventListener('click', function(){
+  document.getElementById('tsv-in').value =
+    'name\tage\tcity\tscore\nAda\t36\tLagos\t91.5\n"Grace, A."\t45\tPorto\t98\nAlan\t41\tLagos\t77\nBo';
+  convert();
+});
+document.getElementById('tsv-clear').addEventListener('click', function(){
+  document.getElementById('tsv-in').value = ''; convert();
+});
+document.getElementById('tsv-copy').addEventListener('click', function(){
+  var t = document.getElementById('tsv-out').textContent;
+  if(navigator.clipboard) navigator.clipboard.writeText(t);
+  this.textContent = 'Copied';
+  var self = this; setTimeout(function(){ self.textContent = 'Copy result'; }, 1200);
+});
+document.getElementById('tsv-in').value = 'name\tage\tcity\nAda\t36\tLagos\n"Grace, A."\t45\tPorto';
+convert();
+window.__T = { slug: 'tsv-to-csv', run: function(opts){
+  opts = opts || {};
+  if(opts.text !== undefined) document.getElementById('tsv-in').value = opts.text;
+  if(opts.delim !== undefined) document.getElementById('tsv-delim').value = opts.delim;
+  if(opts.quote !== undefined) document.getElementById('tsv-quote').value = opts.quote;
+  var r = convert();
+  return { rows: r.rows.length, cols: r.width, cells: r.cells, quotedCells: r.quoted,
+    paddedCells: r.padded, csv: r.converted, rfc: r.rfc, errors: r.errors.length,
+    firstRow: r.rows.length ? r.rows[0].cells : [] };
+} };
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

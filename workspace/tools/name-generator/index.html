@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Name Generator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Name Generator</h1>
+      <p class="mt-1 text-xs text-white/40">GENERATORS &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Assembles given and family names, syllable names or monikers from fixed tables, with a seed that reproduces the same list every time.</p>
+  <div class="ws-grid2">
+
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <div class="ws-label mb-3">Mode</div>
+  <div class="flex flex-wrap gap-2" id="nm-modes">
+    <button class="ws-btn !w-auto !px-4 !py-2" data-m="pool">Given + family</button>
+    <button class="ws-btn-ghost !w-auto !px-4 !py-2" data-m="syllable">Syllables</button>
+    <button class="ws-btn-ghost !w-auto !px-4 !py-2" data-m="moniker">Moniker</button>
+  </div>
+  <div class="mt-3 grid gap-3 sm:grid-cols-4">
+    <div><label class="ws-label mb-2 block" for="nm-count">How many</label>
+      <input id="nm-count" type="number" class="ws-input" min="1" max="50" value="8"></div>
+    <div><label class="ws-label mb-2 block" for="nm-seed">Seed</label>
+      <input id="nm-seed" type="number" class="ws-input" value="1"></div>
+    <div class="sm:col-span-2"><label class="ws-label mb-2 block" for="nm-style">Style</label>
+      <select id="nm-style" class="ws-input">
+        <option value="plain">Plain</option><option value="lower">lower case</option>
+        <option value="initial">Initial + family</option><option value="dashed">dashed handle</option>
+      </select></div>
+  </div>
+  <div class="mt-3 flex flex-wrap gap-2">
+    <button id="nm-go" class="ws-btn !w-auto">Generate</button>
+    <button id="nm-copy" class="ws-btn-ghost !w-auto !px-4 !py-2">Copy</button>
+  </div>
+</section>
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <div class="ws-label mb-3">Names</div>
+  <div id="nm-out" class="ws-out"></div>
+  <div id="nm-stats" class="mt-3"></div>
+</section>
+<p class="mt-3 text-[11px] leading-relaxed text-white/35">How it works: every name is assembled from a fixed pool of given names and family names, or from consonant/vowel syllable tables; a seed picks the indices, so one seed always reproduces the same list.</p>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var FIRST=["Ada", "Bruno", "Cleo", "Dara", "Elio", "Faye", "Gus", "Hana", "Ivo", "Juno", "Kai", "Lena", "Milo", "Nadia", "Otto", "Pia", "Quill", "Rosa", "Sami", "Tove", "Ulla", "Vero", "Wren", "Xime", "Yuri", "Zola", "Amara", "Bo", "Cato", "Devi", "Emeka", "Fen", "Gita", "Hollis", "Imani", "Jonas", "Kaya", "Lior", "Mira", "Noor"], LAST=["Abara", "Beck", "Calder", "Dahl", "Ekstrom", "Falk", "Gruber", "Haldane", "Iversen", "Jarrow", "Kestrel", "Lindqvist", "Marchetti", "Novak", "Oduya", "Pike", "Quill", "Rask", "Solberg", "Tremaine", "Ullmann", "Varga", "Wexler", "Xiong", "Yusuf", "Zarek", "Ambrose", "Blythe", "Corrin", "Delacroix", "Erhardt", "Fennimore", "Galois", "Huxley", "Ionescu", "Jelinek", "Kowalczyk", "Lorenz", "Moreau", "Nyberg"], CONS=["b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "r", "s", "t", "v", "w", "z", "br", "kr", "st", "tr", "sk", "fl", "gr"], VOWS=["a", "e", "i", "o", "u", "ai", "ea", "ee", "ia", "ou", "au", "io"];
+  function mulberry32(a){a=a>>>0;return function(){a=(a+0x6D2B79F5)>>>0;var t=a;
+    t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);
+    return ((t^(t>>>14))>>>0)/4294967296;};}
+  function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+  function syllable(ci,vi){return CONS[ci%CONS.length]+VOWS[vi%VOWS.length];}
+  function run(o){
+    o=o||{};
+    var mode=o.mode||current, count=Math.max(1,Math.min(50,Math.floor(Number(o.count!==undefined?o.count:$('nm-count').value)||1)));
+    var style=o.style||$('nm-style').value;
+    var seed=Number(o.seed!==undefined?o.seed:$('nm-seed').value)>>>0;
+    var rnd=mulberry32(seed||1);
+    var names=[], firstIdx=[], lastIdx=[];
+    // Pinned indices are for one name at a time; letting them apply to every
+    // one of N names prints "Ada Falk" N times, which is not a generator.
+    var pins=(o.firstIndex!==undefined||o.lastIndex!==undefined)?1:count;
+    for(var i=0;i<count;i++){
+      if(mode==='syllable'){
+        var n=2+Math.floor(rnd()*2), s='';
+        for(var k=0;k<n;k++) s+=syllable(Math.floor(rnd()*CONS.length),Math.floor(rnd()*VOWS.length));
+        names.push(cap(s));
+      }else if(mode==='moniker'){
+        var a=syllable(Math.floor(rnd()*CONS.length),Math.floor(rnd()*VOWS.length));
+        var b=syllable(Math.floor(rnd()*CONS.length),Math.floor(rnd()*VOWS.length));
+        names.push(cap(a)+cap(b));
+      }else{
+        var pin=(i<pins);
+        var fi=(pin&&o.firstIndex!==undefined)?o.firstIndex:Math.floor(rnd()*FIRST.length);
+        var li=(pin&&o.lastIndex!==undefined)?o.lastIndex:Math.floor(rnd()*LAST.length);
+        firstIdx.push(fi); lastIdx.push(li);
+        names.push(FIRST[fi%FIRST.length]+' '+LAST[li%LAST.length]);
+      }
+    }
+    var out=names.map(function(n){
+      if(style==='lower') return n.toLowerCase();
+      if(style==='dashed') return n.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+      if(style==='initial'){var p=n.split(' ');return p.length>1?p[0].charAt(0)+'. '+p.slice(1).join(' '):n;}
+      return n;
+    });
+    return {mode:mode,style:style,seed:seed,count:count,names:out,unique:uniq(out).length,
+            poolSize:FIRST.length*LAST.length, firstIndices:firstIdx, lastIndices:lastIdx};
+  }
+  function uniq(a){var s={},n=0;for(var i=0;i<a.length;i++)if(!s[a[i]]){s[a[i]]=1;n++}return n;}
+  function render(){
+    var r=run();
+    $('nm-out').innerHTML = r.names.map(function(n){return esc(n)}).join('<br>');
+    $('nm-stats').innerHTML='<div class="ws-kv"><span>'+r.count+' requested, '+r.unique+' distinct</span><span>seed '+r.seed+'</span></div>'
+      +'<div class="ws-kv"><span>pool</span><span>'+r.poolSize+' given+family combinations</span></div>';
+  }
+  function esc(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+  $('nm-modes').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-m]'); if(!b) return;
+    current=b.getAttribute('data-m');
+    [].forEach.call(this.querySelectorAll('button'),function(x){
+      x.className = x===b ? 'ws-btn !w-auto !px-4 !py-2' : 'ws-btn-ghost !w-auto !px-4 !py-2';
+    });
+    render();
+  });
+  $('nm-go').addEventListener('click',render);
+  ['nm-count','nm-seed','nm-style'].forEach(function(i){$(i).addEventListener('input',render)});
+  $('nm-copy').addEventListener('click',function(){
+    var t=run().names.join('\n');
+    if(navigator.clipboard) navigator.clipboard.writeText(t);
+    $('nm-stats').insertAdjacentHTML('afterbegin','<div class="ws-kv"><span>copied</span><span>'+t.split('\n').length+' lines</span></div>');
+  });
+  var current='pool';
+  render();
+  window.__T={slug:'name-generator',run:function(o){return run(o);}};
+})();
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

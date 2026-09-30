@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Dominant Colors | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Image Dominant Colors</h1>
+      <p class="mt-1 text-xs text-white/40">IMAGES &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Clusters an image's pixels with k-means in RGB space and ranks the colours by population, with the share of the frame each one covers.</p>
+  <div class="ws-grid2">
+
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <label class="ws-label mb-2 block">Pick an image (stays in this tab)</label>
+  <input id="dc-file" type="file" accept="image/*" class="ws-input !p-2">
+  <div class="mt-3 grid gap-3 sm:grid-cols-3">
+    <div><label class="ws-label mb-2 block" for="dc-k">Colours</label>
+      <input id="dc-k" type="number" class="ws-input" min="2" max="12" value="5"></div>
+    <div><label class="ws-label mb-2 block" for="dc-step">Sample step</label>
+      <input id="dc-step" type="number" class="ws-input" min="1" max="16" value="2"></div>
+    <div class="flex items-end"><button id="dc-go" class="ws-btn !w-auto !px-4 !py-2 w-full">Re-cluster</button></div>
+  </div>
+  <p class="mt-2 text-[11px] text-white/30">FileReader + createImageBitmap feed a canvas; pixels are clustered with k-means in RGB space. No upload.</p>
+  <div class="mt-3 flex flex-wrap gap-2">
+    <button id="dc-demo" class="ws-btn-ghost !w-auto !px-4 !py-2">Use a synthetic test image</button>
+  </div>
+</section>
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <div class="ws-label mb-3">Dominant colours</div>
+  <div id="dc-out" class="grid grid-cols-2 gap-2 sm:grid-cols-4"></div>
+  <div id="dc-stats" class="mt-4"></div>
+</section>
+<p class="mt-3 text-[11px] leading-relaxed text-white/35">How it works: k-means on the RGB histogram, seeded with the <code>k</code> brightest-to-darkest spread of distinct colours and refined for twelve passes; clusters that lose all their pixels are dropped and the rest are ranked by population.</p>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var bitmap=null, name='no image (synthetic)';
+  function kmeans(samples,k,passes){
+    // samples: [{r,g,b,w}]
+    var distinct={}, keys=[];
+    for(var i=0;i<samples.length;i++){
+      var key=(samples[i].r<<16)|(samples[i].g<<8)|samples[i].b;
+      if(!distinct[key]){distinct[key]={r:samples[i].r,g:samples[i].g,b:samples[i].b,w:0};keys.push(key);}
+      distinct[key].w+=samples[i].w||1;
+    }
+    if(!keys.length) return {clusters:[], sampled:0, distinct:0, passes:passes};
+    keys.sort(function(a,b){
+      var la=(distinct[a].r*.2126+distinct[a].g*.7152+distinct[a].b*.0722);
+      var lb=(distinct[b].r*.2126+distinct[b].g*.7152+distinct[b].b*.0722);
+      return lb-la; // darkest first
+    });
+    k=Math.max(1,Math.min(k,keys.length));
+    var cents=[];
+    for(var c=0;c<k;c++) cents.push({r:distinct[keys[c]].r,g:distinct[keys[c]].g,b:distinct[keys[c]].b,w:0});
+    var assign=new Array(keys.length).fill(0);
+    for(var p=0;p<passes;p++){
+      var sums=[], counts=[];
+      for(var s=0;s<cents.length;s++) sums.push({r:0,g:0,b:0}), counts.push(0);
+      for(var t=0;t<keys.length;t++){
+        var pt=distinct[keys[t]], best=0, bd=Infinity;
+        for(var m=0;m<cents.length;m++){
+          var dr=pt.r-cents[m].r, dg=pt.g-cents[m].g, db=pt.b-cents[m].b;
+          var d=dr*dr+dg*dg+db*db;
+          if(d<bd){bd=d;best=m;}
+        }
+        assign[t]=best;
+        sums[best].r+=pt.r*pt.w; sums[best].g+=pt.g*pt.w; sums[best].b+=pt.b*pt.w; counts[best]+=pt.w;
+      }
+      var moved=0;
+      for(var n=0;n<cents.length;n++){
+        if(!counts[n]) continue;
+        var nr=sums[n].r/counts[n], ng=sums[n].g/counts[n], nb=sums[n].b/counts[n];
+        if(Math.abs(nr-cents[n].r)+Math.abs(ng-cents[n].g)+Math.abs(nb-cents[n].b)>0.5) moved++;
+        cents[n]={r:nr,g:ng,b:nb,w:counts[n]};
+      }
+      if(!moved) break;
+    }
+    var out=[];
+    for(var v=0;v<cents.length;v++){
+      if(!cents[v].w) continue;
+      out.push({r:Math.round(cents[v].r),g:Math.round(cents[v].g),b:Math.round(cents[v].b),n:cents[v].w});
+    }
+    out.sort(function(x,y){return y.n-x.n || ((x.r<<16|x.g<<8|x.b)-(y.r<<16|y.g<<8|y.b));});
+    // merge clusters that rounded to the same colour
+    var merged=[];
+    out.forEach(function(cl){
+      var last=merged[merged.length-1];
+      if(last && last.r===cl.r && last.g===cl.g && last.b===cl.b) last.n+=cl.n;
+      else merged.push(cl);
+    });
+    return {clusters:merged, sampled:samples.length, distinct:keys.length, passes:passes};
+  }
+  function hex(c){var f=function(n){n=Math.max(0,Math.min(255,Math.round(n)));return (n<16?'0':'')+n.toString(16)};
+    return '#'+f(c.r)+f(c.g)+f(c.b);}
+  function samplesFromImageData(d,step){
+    var s=[], w=d.width, h=d.height, st=Math.max(1,step|0);
+    for(var y=0;y<h;y+=st) for(var x=0;x<w;x+=st){
+      var i=(y*w+x)*4;
+      s.push({r:d.data[i],g:d.data[i+1],b:d.data[i+2]});
+    }
+    return s;
+  }
+  // Deterministic stand-in so the page proves its maths with no file: a
+  // vertical stack of equal horizontal bands, one per requested colour.
+  function synthetic(patches,side){
+    side=side||16;
+    var cv=document.createElement('canvas'); cv.width=side; cv.height=side;
+    var g=cv.getContext('2d');
+    var band=side/patches.length;
+    patches.forEach(function(h,i){
+      g.fillStyle=h;
+      // floor the top edge so the bands tile exactly with no 1px overlap seam
+      g.fillRect(0,Math.floor(i*band),side,Math.floor((i+1)*band)-Math.floor(i*band));
+    });
+    return g.getImageData(0,0,side,side);
+  }
+  function run(o){
+    o=o||{};
+    var k=Math.max(2,Math.min(12,parseInt(o.k!==undefined?o.k:$('dc-k').value,10)||5));
+    var step=Math.max(1,Math.min(16,parseInt(o.step!==undefined?o.step:$('dc-step').value,10)||2));
+    var d, px=0;
+    if(o.patches){
+      d=synthetic(o.patches,o.side||16); px=d.width*d.height; name='synthetic '+o.patches.join(' + ');
+    }else if(bitmap){
+      var w=Math.min(bitmap.width,600), h=Math.round(bitmap.height*w/bitmap.width);
+      var cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      var g=cv.getContext('2d'); g.drawImage(bitmap,0,0,w,h);
+      d=g.getImageData(0,0,w,h); px=w*h;
+    }else{
+      d=synthetic(['#FF5F1F','#1a1a1a']); px=d.width*d.height;
+    }
+    var samples=samplesFromImageData(d,step);
+    var r=kmeans(samples,k,12);
+    var total=r.clusters.reduce(function(a,c){return a+c.n},0)||1;
+    r.clusters=r.clusters.map(function(c){
+      return {hex:hex(c), r:c.r, g:c.g, b:c.b, n:c.n, pct:+(100*c.n/total).toFixed(2)};
+    });
+    // pct is already a percentage, so sum it directly - multiplying the
+    // sum by 100 again reports 10000% coverage.
+    return {source:name, pixels:px, sampled:r.sampled, distinctColours:r.distinct,
+            k:k, step:step, clusters:r.clusters, top:r.clusters[0]||null,
+            covered:+r.clusters.reduce(function(a,c){return a+c.pct},0).toFixed(2)};
+  }
+  function render(){
+    var r=run(), out=$('dc-out');
+    if(!r.clusters.length){ out.innerHTML='<p class="text-sm text-white/45">no pixels</p>'; return; }
+    out.innerHTML=r.clusters.map(function(c){
+      return '<div class="rounded-lg border border-white/10 overflow-hidden">'
+        +'<div style="height:56px;background:'+c.hex+'"></div>'
+        +'<div class="px-2 py-1 text-center text-[10px] font-mono text-white/60">'+c.hex.toUpperCase()
+        +'<br>'+c.pct+'% ('+c.n+' px)</div></div>';
+    }).join('');
+    $('dc-stats').innerHTML =
+      kv('Source', r.source) + kv('Pixels', r.pixels) +
+      kv('Sampled', r.sampled+' (step '+r.step+')') +
+      kv('Distinct colours before clustering', r.distinctColours) +
+      kv('Clusters', r.clusters.length+' of k='+r.k) +
+      kv('Coverage', r.covered+'%');
+  }
+  function kv(k,v){return '<div class="ws-kv"><span>'+k+'</span><span>'+v+'</span></div>';}
+  $('dc-go').addEventListener('click',render);
+  $('dc-k').addEventListener('input',render);
+  $('dc-step').addEventListener('input',render);
+  $('dc-file').addEventListener('change',function(e){
+    var f=e.target.files&&e.target.files[0];
+    if(!f) return;
+    var fr=new FileReader();
+    fr.onload=function(){
+      if(self.createImageBitmap){
+        createImageBitmap(fr.result instanceof Blob?fr.result:new Blob([fr.result]))
+          .then(function(b){ bitmap=b; name=f.name+' ('+b.width+'x'+b.height+')'; render(); })
+          .catch(function(){ bitmap=null; name='unreadable: '+f.name; render(); });
+      }else{
+        var img=new Image();
+        img.onload=function(){ bitmap=img; name=f.name+' ('+img.naturalWidth+'x'+img.naturalHeight+')'; render(); };
+        img.onerror=function(){ name='unreadable: '+f.name; render(); };
+        img.src=fr.result;
+      }
+    };
+    fr.onerror=function(){ name='unreadable file'; render(); };
+    fr.readAsDataURL(f);
+  });
+  $('dc-demo').addEventListener('click',function(){
+    bitmap=null; name='synthetic #FF5F1F + #1a1a1a'; $('dc-file').value=''; render();
+  });
+  render();
+  window.__T={slug:'image-dominant-colors',run:run};
+})();
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

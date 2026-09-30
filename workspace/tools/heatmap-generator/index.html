@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heatmap Generator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Heatmap Generator</h1>
+      <p class="mt-1 text-xs text-white/40">CREATIVE &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Turns a grid of numbers into a colour-mapped canvas and reports the min, max, mean, standard deviation and hottest cell of the matrix.</p>
+  <div class="ws-grid2">
+
+<style>#hm-canvas{display:block;width:100%;max-width:460px;height:auto;border-radius:.75rem;
+  border:1px solid rgba(255,255,255,.12);image-rendering:pixelated}</style>
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <label class="ws-label mb-2 block" for="hm-in">Values &mdash; rows separated by <code>;</code>, cells by <code>,</code></label>
+  <textarea id="hm-in" class="ws-input font-mono" rows="6" spellcheck="false">12,48,31,7
+95,62,18,4
+22,73,55,41</textarea>
+  <div class="mt-3 grid gap-3 sm:grid-cols-3">
+    <div><label class="ws-label mb-2 block" for="hm-pal">Colour ramp</label>
+      <select id="hm-pal" class="ws-input"><option value="ember">Ember</option>
+        <option value="ice">Ice</option><option value="mono">Mono</option></select></div>
+    <div><label class="ws-label mb-2 block" for="hm-scale">Scale</label>
+      <select id="hm-scale" class="ws-input"><option value="linear">Linear</option>
+        <option value="log">Log</option></select></div>
+    <div class="flex items-end"><button id="hm-go" class="ws-btn">Render</button></div>
+  </div>
+  <p class="mt-2 text-[11px] text-white/30">Rows of unequal length are padded with 0 so the matrix stays rectangular.</p>
+</section>
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <div class="ws-label mb-3">Heatmap</div>
+  <canvas id="hm-canvas" width="400" height="300"></canvas>
+  <div id="hm-stats" class="mt-4"></div>
+</section>
+<p class="mt-3 text-[11px] leading-relaxed text-white/35">How it works: each cell is normalised against the matrix minimum and maximum, then mapped through a three-stop ramp into an RGB fill; the statistics below come from the same parse the canvas was drawn from.</p>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var RAMPS={
+    ember:[[10,10,10],[128,58,24],[255,95,31]],
+    ice:[[5,12,20],[40,110,150],[214,242,254]],
+    mono:[[8,8,8],[90,90,90],[240,240,240]]
+  };
+  function parse(text){
+    var rows=String(text).split(/[;\n]+/).map(function(r){return r.trim()}).filter(function(r){return r.length});
+    if(!rows.length) return {error:'no values entered'};
+    var grid=rows.map(function(r){
+      return r.split(/[, \t]+/).filter(function(c){return c.length})
+        .map(function(c){ var n=Number(c); return isFinite(n)?n:NaN; });
+    });
+    for(var i=0;i<grid.length;i++){
+      for(var j=0;j<grid[i].length;j++) if(!isFinite(grid[i][j]))
+        return {error:'row '+(i+1)+' column '+(j+1)+' is not a number', row:i+1, col:j+1};
+    }
+    var w=0; for(var k=0;k<grid.length;k++) w=Math.max(w,grid[k].length);
+    if(w===0) return {error:'no cells found'};
+    for(var m=0;m<grid.length;m++) while(grid[m].length<w) grid[m].push(0);
+    return {grid:grid, rows:grid.length, cols:w};
+  }
+  function ramp(t,name){
+    var stops=RAMPS[name]||RAMPS.ember;
+    t=Math.max(0,Math.min(1,t));
+    var seg=t<0.5?0:1, f=t<0.5?t*2:(t-0.5)*2;
+    var a=stops[seg], b=stops[seg+1];
+    return [Math.round(a[0]+(b[0]-a[0])*f),Math.round(a[1]+(b[1]-a[1])*f),Math.round(a[2]+(b[2]-a[2])*f)];
+  }
+  function run(o){
+    o=o||{};
+    var text=o.values!==undefined?o.values:$('hm-in').value;
+    var p=parse(text);
+    if(p.error) return {error:p.error, valid:false};
+    var g=p.grid, flat=[];
+    for(var i=0;i<g.length;i++) for(var j=0;j<g[i].length;j++) flat.push(g[i][j]);
+    var min=Math.min.apply(null,flat), max=Math.max.apply(null,flat);
+    var sum=0; for(var k=0;k<flat.length;k++) sum+=flat[k];
+    var mean=sum/flat.length;
+    var variance=0; for(var m=0;m<flat.length;m++) variance+=(flat[m]-mean)*(flat[m]-mean);
+    var sd=Math.sqrt(variance/flat.length);
+    var scale=o.scale||$('hm-scale').value, rampName=o.ramp||$('hm-pal').value;
+    var norm=function(v){
+      if(scale==='log'){
+        var lo=Math.log1p(Math.max(0,min)), hi=Math.log1p(Math.max(0,max));
+        return hi>lo?(Math.log1p(Math.max(0,v))-lo)/(hi-lo):0;
+      }
+      return max>min?(v-min)/(max-min):0;
+    };
+    // Name the per-cell list cellList, not cells: the returned `cells` is the
+    // COUNT, and shadowing it here means callers read a number where they
+    // asked for the array.
+    var cellList=[], hottest={value:-Infinity,row:0,col:0}, coldest={value:Infinity,row:0,col:0};
+    for(var r=0;r<g.length;r++)for(var c=0;c<g[r].length;c++){
+      var v=g[r][c], t=norm(v), rgb=ramp(t,rampName);
+      cellList.push({row:r,col:c,value:v,t:+t.toFixed(6),rgb:rgb});
+      if(v>hottest.value) hottest={value:v,row:r,col:c};
+      if(v<coldest.value) coldest={value:v,row:r,col:c};
+    }
+    return {rows:p.rows, cols:p.cols, cells:cellList.length, min:min, max:max, sum:sum,
+            mean:+mean.toFixed(6), sd:+sd.toFixed(6), median:median(flat),
+            hottest:hottest, coldest:coldest, ramp:rampName, scale:scale,
+            grid:g, cellList:cellList, spread:+(max-min).toFixed(6)};
+  }
+  function rgbOf(cell){ return 'rgb('+cell.rgb.join(',')+')'; }
+  function median(a){
+    var b=a.slice().sort(function(x,y){return x-y}), n=b.length;
+    return n%2?b[(n-1)/2]:(b[n/2-1]+b[n/2])/2;
+  }
+  function render(){
+    var r=run();
+    if(r.error){ $('hm-stats').innerHTML='<div class="ws-out">'+r.error+'</div>'; return; }
+    var cv=$('hm-canvas'), cell=Math.max(1,Math.floor(400/r.cols));
+    cv.width=cell*r.cols; cv.height=cell*r.rows;
+    var g=cv.getContext('2d');
+    g.imageSmoothingEnabled=false;
+    r.grid.forEach(function(row,ri){
+      row.forEach(function(v,ci){
+        var t=r.scale==='log'?(function(){var lo=Math.log1p(Math.max(0,r.min)),hi=Math.log1p(Math.max(0,r.max));
+            return hi>lo?(Math.log1p(Math.max(0,v))-lo)/(hi-lo):0;})(v):(r.max>r.min?(v-r.min)/(r.max-r.min):0);
+        var col=ramp(t,r.ramp);
+        g.fillStyle='rgb('+col.join(',')+')';
+        g.fillRect(ci*cell,ri*cell,cell,cell);
+      });
+    });
+    $('hm-stats').innerHTML=
+      kv('Matrix', r.rows+' x '+r.cols+' = '+r.cells+' cells') +
+      kv('Min / max', r.min+' / '+r.max+' (spread '+r.spread+')') +
+      kv('Sum', r.sum) + kv('Mean', r.mean) + kv('Std dev', r.sd) + kv('Median', r.median) +
+      kv('Hottest cell', 'row '+r.hottest.row+', col '+r.hottest.col+' = '+r.hottest.value) +
+      kv('Coldest cell', 'row '+r.coldest.row+', col '+r.coldest.col+' = '+r.coldest.value) +
+      kv('Ramp / scale', r.ramp+' / '+r.scale);
+  }
+  function kv(k,v){return '<div class="ws-kv"><span>'+k+'</span><span>'+v+'</span></div>';}
+  $('hm-go').addEventListener('click',render);
+  ['hm-in','hm-pal','hm-scale'].forEach(function(i){$(i).addEventListener('input',render)});
+  render();
+  window.__T={slug:'heatmap-generator',run:run};
+})();
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

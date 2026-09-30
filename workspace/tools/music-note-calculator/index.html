@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Note Calculator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Music Note Calculator</h1>
+      <p class="mt-1 text-xs text-white/40">Music Theory &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Converts any note to its frequency in twelve-tone equal temperament from a reference pitch you set, and names any stray frequency to the nearest note with the deviation in cents. A4 is 440 Hz by definition; the octave above it is therefore exactly 880.</p>
+  <div class="ws-grid2">
+<span class="ws-chip">EQUAL TEMPERAMENT</span><span class="ws-chip">CENTS</span><span class="ws-chip">A4 REFERENCE</span><span class="ws-chip">WEB AUDIO</span>
+<style>
+  .mnc-piano{display:flex;gap:2px;height:74px;margin-top:1rem}
+  .mnc-p{flex:1;border-radius:0 0 4px 4px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12)}
+  .mnc-p.on{background:#FF5F1F;border-color:#FF5F1F}
+  .mnc-p.blk{background:rgba(255,255,255,.03)}
+</style>
+<section class="ws-panel p-6">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div><label class="ws-label mb-2 block" for="mnc-ref">A4 reference (Hz)</label>
+      <input id="mnc-ref" type="number" class="ws-input" step="0.001" value="440"></div>
+    <div><label class="ws-label mb-2 block" for="mnc-note">Note</label>
+      <select id="mnc-note" class="ws-input">
+        <option value="0">C</option><option value="1">C# / Db</option><option value="2">D</option>
+        <option value="3">D# / Eb</option><option value="4">E</option><option value="5">F</option>
+        <option value="6">F# / Gb</option><option value="7">G</option><option value="8">G# / Ab</option>
+        <option value="9">A</option><option value="10">A# / Bb</option><option value="11">B</option>
+      </select></div>
+    <div><label class="ws-label mb-2 block" for="mnc-oct">Octave</label>
+      <input id="mnc-oct" type="number" class="ws-input" step="1" value="4"></div>
+    <div><label class="ws-label mb-2 block" for="mnc-trans">Transpose (semitones)</label>
+      <input id="mnc-trans" type="number" class="ws-input" step="1" value="0"></div>
+  </div>
+  <div class="mnc-piano" id="mnc-piano"></div>
+  <p class="mt-3 text-[11px] text-white/35">Twelve-tone equal temperament: one semitone is the twelfth root of two, so an octave is exactly a doubling.</p>
+</section>
+
+<section class="ws-panel p-6">
+  <div id="mnc-out" class="ws-out">--</div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="mnc-play" class="ws-btn !w-auto">Play note</button>
+    <button id="mnc-sweep" class="ws-btn-ghost !w-auto">Play chromatic scale</button>
+  </div>
+</section>
+
+<section class="ws-panel p-6">
+  <div id="mnc-listen" class="mt-2">
+    <label class="ws-label mb-2 block" for="mnc-hear">Frequency to analyse (Hz)</label>
+    <input id="mnc-hear" type="number" class="ws-input" step="0.001" value="440">
+    <div id="mnc-hearout" class="ws-out mt-3">--</div>
+  </div>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+function clamp(v,lo,hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function num(v,dflt){ var n = parseFloat(v); return isFinite(n) ? n : dflt; }
+// The character classes keep "</" out of this source: the page builder
+// escapes that sequence so it cannot terminate the surrounding <script>.
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/[<]/g,'&lt;').replace(/>/g,'&gt;'); }
+
+var NOTES = ['C','C# / Db','D','D# / Eb','E','F','F# / Gb','G','G# / Ab','A','A# / Bb','B'];
+// MIDI 69 is A4 by definition; everything else is a ratio away from it.
+function freqOf(midi, ref){ return ref * Math.pow(2, (midi - 69) / 12); }
+function midiOf(pitch, octave){ return (octave + 1) * 12 + pitch; }
+function noteLabel(midi){
+  var names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  var p = ((midi % 12) + 12) % 12, o = Math.floor(midi / 12) - 1;
+  return names[p] + o;
+}
+function cents(f, ref){
+  if(!(f > 0) || !(ref > 0)) return null;
+  return 1200 * Math.log(f / ref) / Math.LN2;
+}
+function nearestNote(f, ref){
+  var midiFloat = 69 + 12 * Math.log(f / ref) / Math.LN2;
+  var midi = Math.round(midiFloat);
+  return { midi: midi, exact: freqOf(midi, ref), cents: cents(f, freqOf(midi, ref)),
+           deviationSemitones: midiFloat - midi, name: noteLabel(midi) };
+}
+function readRef(){
+  var r = num(document.getElementById('mnc-ref').value, 440);
+  var clamped = false;
+  if(!(r > 0)){ r = 415; clamped = true; }          // 415 Hz is the lowest standard baroque pitch
+  if(r > 466){ r = 466; clamped = true; }             // 466 is the top of the historical range
+  return { ref: r, clamped: clamped };
+}
+function render(){
+  var s = readRef(), ref = s.ref;
+  var pitch = parseInt(document.getElementById('mnc-note').value, 10) || 0;
+  var oct = Math.round(num(document.getElementById('mnc-oct').value, 4));
+  if(oct < -1 || oct > 9){ oct = clamp(oct, -1, 9); }
+  var trans = Math.round(num(document.getElementById('mnc-trans').value, 0));
+  if(trans < -48 || trans > 48){ trans = clamp(trans, -48, 48); }
+  var midi = midiOf(pitch, oct) + trans;
+  var f = freqOf(midi, ref);
+  var lower = freqOf(midi - 1, ref), upper = freqOf(midi + 1, ref);
+  var out = document.getElementById('mnc-out');
+  out.innerHTML =
+    '<div class="ws-kv"><span>Note</span><span>' + noteLabel(midi) + ' (MIDI ' + midi + ')</span></div>' +
+    '<div class="ws-kv"><span>Frequency</span><span>' + f.toFixed(4) + ' Hz</span></div>' +
+    '<div class="ws-kv"><span>Wavelength in air (343 m/s)</span><span>' +
+      (343 / f).toFixed(4) + ' m</span></div>' +
+    '<div class="ws-kv"><span>Semitone below</span><span>' + lower.toFixed(4) + ' Hz</span></div>' +
+    '<div class="ws-kv"><span>Semitone above</span><span>' + upper.toFixed(4) + ' Hz</span></div>' +
+    '<div class="ws-kv"><span>Octave up (12 semitones)</span><span>' +
+      (f * 2).toFixed(4) + ' Hz</span></div>' +
+    '<div class="ws-kv"><span>Ratio octave / note</span><span>' + (f * 2 / f).toFixed(6) + '</span></div>' +
+    (s.clamped ? '<div class="mt-2 text-[11px] text-accent">Reference clamped to the 415-466 Hz historical band.</div>' : '');
+  var piano = document.getElementById('mnc-piano');
+  if(piano.children.length !== 12){
+    piano.innerHTML = '';
+    for(var i = 0; i < 12; i++){
+      var d = document.createElement('div');
+      d.className = 'mnc-p' + ([1,3,6,8,10].indexOf(i) >= 0 ? ' blk' : '');
+      d.title = NOTES[i];
+      piano.appendChild(d);
+    }
+  }
+  for(var j = 0; j < 12; j++) piano.children[j].className =
+    'mnc-p' + ([1,3,6,8,10].indexOf(j) >= 0 ? ' blk' : '') + (j === (((midi % 12) + 12) % 12) ? ' on' : '');
+  return { ref: ref, midi: midi, freq: f, lower: lower, upper: upper };
+}
+function renderListen(){
+  var s = readRef(), f = num(document.getElementById('mnc-hear').value, 0);
+  var o = document.getElementById('mnc-hearout');
+  if(!(f > 0)){ o.innerHTML = '<div class="ws-kv"><span>Frequency</span><span>enter a value above 0 Hz</span></div>'; return null; }
+  var n = nearestNote(f, s.ref);
+  o.innerHTML =
+    '<div class="ws-kv"><span>Input</span><span>' + f.toFixed(4) + ' Hz</span></div>' +
+    '<div class="ws-kv"><span>Nearest equal-tempered note</span><span>' + n.name + ' (MIDI ' + n.midi + ')</span></div>' +
+    '<div class="ws-kv"><span>Exact frequency of that note</span><span>' + n.exact.toFixed(4) + ' Hz</span></div>' +
+    '<div class="ws-kv"><span>Off by</span><span>' + n.cents.toFixed(2) + ' cents</span></div>';
+  return n;
+}
+['mnc-ref','mnc-oct','mnc-trans'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', function(){ render(); renderListen(); });
+});
+document.getElementById('mnc-note').addEventListener('change', render);
+document.getElementById('mnc-hear').addEventListener('input', renderListen);
+
+document.getElementById('mnc-play').addEventListener('click', function(){
+  var st = render(), c = ctx(); if(!c) return;
+  var t = c.currentTime, o = c.createOscillator(), g = c.createGain();
+  o.type = 'sine'; o.frequency.value = st.freq;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.18, t + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.95);
+});
+document.getElementById('mnc-sweep').addEventListener('click', function(){
+  var st = render(), c = ctx(); if(!c) return;
+  var t0 = c.currentTime + 0.05;
+  for(var i = 0; i < 12; i++){
+    var o = c.createOscillator(), g = c.createGain(), t = t0 + i * 0.11;
+    o.type = 'triangle'; o.frequency.value = freqOf(st.midi - ((st.midi % 12) + 12) % 12 + i, st.ref);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.16, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.12);
+  }
+});
+render(); renderListen();
+window.__T = { slug: 'music-note-calculator', run: function(opts){
+  opts = opts || {};
+  if(opts.ref !== undefined) document.getElementById('mnc-ref').value = opts.ref;
+  if(opts.pitch !== undefined) document.getElementById('mnc-note').value = opts.pitch;
+  if(opts.oct !== undefined) document.getElementById('mnc-oct').value = opts.oct;
+  var st = render(), res = { ref: st.ref, midi: st.midi, freq: st.freq,
+    name: noteLabel(st.midi), octaveUp: st.freq * 2, lower: st.lower, upper: st.upper };
+  if(opts.hear !== undefined){
+    document.getElementById('mnc-hear').value = opts.hear;
+    var n = renderListen();
+    res.nearest = n ? n.name : null; res.cents = n ? +n.cents.toFixed(4) : null;
+    res.exactHz = n ? +n.exact.toFixed(4) : null;
+  }
+  return res;
+} };
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

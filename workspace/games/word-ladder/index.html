@@ -247,8 +247,27 @@ function undo(){
   path.pop();cur=path[path.length-1];won=false;
   say('Stepped back to <span class="text-white">'+cur.toUpperCase()+'</span>.');
   render();return cur}
+// Shortest distance to the target for every word, BFS outward from the target
+// over the real dictionary. Used by hint() so a hint is never a dead end on a
+// puzzle that is genuinely solvable.
+function distTo(to){
+  const d={},q=[to];d[to]=0;
+  while(q.length){
+    const w=q.shift();
+    for(const n of neighbours(w))
+      if(d[n]===undefined){d[n]=d[w]+1;q.push(n)}}
+  return d}
 function hint(){
-  const ns=neighbours(cur).filter(w=>hamming(w,to)<hamming(cur,to));
+  // Prefer a step that is closer by letter count...
+  let ns=neighbours(cur).filter(w=>hamming(w,to)<hamming(cur,to));
+  // ...but if the target is not Hamming-reachable from here, fall back to a
+  // neighbour that really does shorten the BFS route. Without this fallback a
+  // solvable puzzle told the player "no single step gets closer", which reads
+  // exactly like an unwinnable board.
+  if(!ns.length){
+    const d=distTo(to);
+    ns=neighbours(cur).filter(w=>d[w]!==undefined&&d[w]<d[cur]);
+  }
   if(!ns.length){say('No single step gets closer. Look for a word that opens a new route.');return 'none'}
   const h=ns[Math.floor(Math.random()*ns.length)];
   say('One of these moves gets closer: <span class="text-accent">'+h.toUpperCase()+'</span>.');return h}
@@ -275,7 +294,7 @@ $('hint').onclick=hint;
 $('new').onclick=()=>{newLadder();$('inp').value='';$('fb').textContent=''};
 $('inp').addEventListener('keydown',e=>{if(e.key==='Enter')$('go').click()});
 window.__ladder={get G(){return {from,to,cur,used:path.length,path:path.slice(),best,won,nb:nb.slice()}},
-  step,undo,hint,neighbours,newLadder,WORDS,routeExists,
+  step,undo,hint,neighbours,newLadder,WORDS,routeExists,distTo,
   set(f,t){
     cur=f;to=t;path=[f];won=false;best=Math.max(best,0);
     render();
@@ -376,6 +395,8 @@ window.__ladder={get G(){return {from,to,cur,used:path.length,path:path.slice(),
 
 
 
+
+
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
@@ -427,5 +448,7 @@ window.__ladder={get G(){return {from,to,cur,used:path.length,path:path.slice(),
   letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
 .ocurp-related-all:hover{text-decoration:underline}
 </style>
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
 </body>
 </html>

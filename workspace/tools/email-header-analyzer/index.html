@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Header Analyzer | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Email Header Analyzer</h1>
+      <p class="mt-1 text-xs text-white/40">data &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Read raw email headers: unfold them, walk the Received chain from origin to destination and read the SPF, DKIM and DMARC results. <span class="ws-chip">RECEIVED CHAIN</span><span class="ws-chip">SPF / DKIM / DMARC</span><span class="ws-chip">UNFOLDING</span><span class="ws-chip">CLIENT-SIDE</span></p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-4 lg:grid-cols-2">
+    <div>
+      <label class="ws-label mb-2 block" for="em-in">Raw headers</label>
+      <textarea id="em-in" class="ws-input font-mono" rows="14" spellcheck="false">Received: from mx1.sender.com (mx1.sender.com [203.0.113.10])
+  by mx.google.com with SMTPS id abc123
+  for &lt;to@example.com&gt;; Tue, 3 Mar 2026 09:00:00 +0000 (UTC)
+Authentication-Results: mx.google.com;
+  spf=pass smtp.mailfrom=sender.com
+  dkim=pass header.d=sender.com
+  dmarc=pass
+From: "Support" &lt;no-reply@sender.com&gt;
+To: to@example.com
+Subject: Your receipt
+Return-Path: &lt;bounce@sender.com&gt;
+Message-ID: &lt;abc123@sender.com&gt;</textarea>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button id="em-go" class="ws-btn">Analyse</button>
+        <button id="em-load" class="ws-btn-ghost">Load example</button>
+      </div>
+      <p class="mt-4 text-[11px] leading-relaxed text-white/35">
+        Reads <b>Received</b> hops oldest-last, pulls out SPF / DKIM / DMARC results and
+        lists the authentication mechanisms a message actually claims. Nothing is sent
+        anywhere &mdash; it is all string work in the page.
+      </p>
+    </div>
+    <div>
+      <div id="em-score" class="ws-out mb-3"></div>
+      <div id="em-hops" class="ws-out mb-3"></div>
+      <div id="em-auth" class="ws-out"></div>
+    </div>
+  </div>
+</div>
+  </div>
+  <div class="mt-8">
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function unfold(text){
+    var lines = String(text).split(/\r?\n/), out = [];
+    lines.forEach(function(l){
+      if(/^[ \t]/.test(l) && out.length) out[out.length-1] += ' ' + l.trim();
+      else out.push(l);
+    });
+    return out.filter(function(l){ return l.trim().length; });
+  }
+  function run(input){
+    var lines = unfold(input);
+    var headers = [], hops = [], chain = [], auth = {};
+    var cur = null;
+    lines.forEach(function(l){
+      var m = /^([A-Za-z0-9-]+):\s*(.*)$/.exec(l);
+      if(m){
+        cur = { name:m[1], value:m[2].trim() };
+        headers.push(cur);
+        if(/^received$/i.test(m[1])) hops.push(cur.value);
+        if(/^authentication-results$/i.test(m[1])) auth.results = m[2];
+        if(/^(dkim-signature|domainkey-signature)$/i.test(m[1])) auth.dkimSigned = true;
+        if(/^reply-to$/i.test(m[1])) auth.replyTo = m[2];
+        if(/^return-path$/i.test(m[1])) auth.returnPath = m[2];
+      } else if(cur){ cur.value += ' ' + l; }
+    });
+    var mech = {};
+    ['spf','dkim','dmarc'].forEach(function(k){
+      var re = new RegExp(k + '\\s*=\\s*(\\w+)', 'i');
+      var f = auth.results && auth.results.match(re);
+      mech[k] = f ? f[1].toLowerCase() : 'absent';
+    });
+    // Hops: the Received headers read top-down newest-first, so reverse them.
+    chain = hops.slice().reverse();
+    var domains = chain.map(function(h){
+      var m = h.match(/from\s+([^\s(]+)/i);
+      return m ? m[1] : null;
+    }).filter(Boolean);
+    var passCount = ['spf','dkim','dmarc'].filter(function(k){ return mech[k] === 'pass'; }).length;
+    var failCount = ['spf','dkim','dmarc'].filter(function(k){ return mech[k] === 'fail' || mech[k] === 'softfail'; }).length;
+    return {
+      ok:true, headerCount:headers.length, hopCount:hops.length,
+      chain:chain, domains:domains,
+      from:(headers.filter(function(h){ return /^from$/i.test(h.name); })[0]||{}).value || null,
+      to:(headers.filter(function(h){ return /^to$/i.test(h.name); })[0]||{}).value || null,
+      subject:(headers.filter(function(h){ return /^subject$/i.test(h.name); })[0]||{}).value || null,
+      messageId:(headers.filter(function(h){ return /^message-id$/i.test(h.name); })[0]||{}).value || null,
+      spf:mech.spf, dkim:mech.dkim, dmarc:mech.dmarc,
+      passing:passCount, failing:failCount,
+      dkimSigned: !!auth.dkimSigned, returnPath:auth.returnPath || null,
+      score: passCount * 2 - failCount * 3,
+      verdict: failCount > 0 ? 'suspicious' : (passCount === 3 ? 'aligned' : 'partial')
+    };
+  }
+  function render(){
+    var r = run($('em-in').value);
+    var col = r.verdict === 'aligned' ? '#FF5F1F' : (r.verdict === 'suspicious' ? '#f87171' : '#e0f2fe');
+    $('em-score').innerHTML =
+      '<div class="flex items-center gap-3"><span class="text-2xl" style="color:' + col + '">' +
+      (r.verdict === 'aligned' ? 'ALIGNED' : (r.verdict === 'suspicious' ? 'SUSPICIOUS' : 'PARTIAL')) + '</span>' +
+      '<span class="text-white/45">score ' + r.score + '</span></div>' +
+      '<div class="mt-2 text-white/55">spf=<b>' + r.spf + '</b> &nbsp; dkim=<b>' + r.dkim + '</b> &nbsp; dmarc=<b>' + r.dmarc + '</b></div>';
+    $('em-hops').innerHTML = '<div class="ws-label mb-2">' + r.hopCount + ' hops, origin to destination</div>' +
+      (r.domains.length ? r.domains.map(function(d,i){
+        return '<div class="text-[13px] text-white/70">' + (i+1) + '. ' + d + '</div>';
+      }).join('') : '<div class="text-white/40">no Received chain</div>');
+    $('em-auth').innerHTML = '<div class="ws-label mb-2">headers</div>' +
+      '<div class="text-[13px] text-white/60">From: ' + (r.from||'—') + '</div>' +
+      '<div class="text-[13px] text-white/60">Return-Path: ' + (r.returnPath||'—') + '</div>' +
+      '<div class="text-[13px] text-white/60">DKIM signature header: ' + (r.dkimSigned ? 'present' : 'absent') + '</div>';
+  }
+  $('em-go').addEventListener('click', render);
+  $('em-in').addEventListener('input', render);
+  $('em-load').addEventListener('click', function(){ render(); });
+  render();
+  window.__T = window.__T || {};
+  window.__T['email-header-analyzer'] = { slug:'email-header-analyzer', run:run };
+})();
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

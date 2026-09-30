@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guitar Tuner | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Guitar Tuner</h1>
+      <p class="mt-1 text-xs text-white/40">Music &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Detects the pitch of a plucked string by normalised autocorrelation, then names the note, the cents off, and which open string plus fret produced it. Below the low E it says so instead of inventing a note. Type a frequency in to identify it without a microphone.</p>
+  <div class="ws-grid2">
+<span class="ws-chip">AUTOCORRELATION</span><span class="ws-chip">CENTS</span><span class="ws-chip">STANDARD TUNING</span><span class="ws-chip">MIC INPUT</span>
+<style>
+  #gt-needle{position:relative;height:56px;border-radius:.75rem;overflow:hidden;
+    border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03)}
+  #gt-needle i{position:absolute;top:0;bottom:0;width:2px;background:#FF5F1F;
+    box-shadow:0 0 8px rgba(255,95,31,.5)}
+  #gt-scale{display:flex;justify-content:space-between;margin-top:.4rem;
+    font-size:9px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.35)}
+  #gt-meter{height:120px;width:100%;border-radius:.75rem;background:#050505;
+    border:1px solid rgba(255,255,255,.12);display:block}
+</style>
+<section class="ws-panel p-6">
+  <div class="flex flex-wrap items-center gap-3">
+    <button id="gt-start" class="ws-btn !w-auto">Start tuner</button>
+    <button id="gt-stop" class="ws-btn-ghost !w-auto">Stop</button>
+    <select id="gt-src" class="ws-input !w-auto">
+      <option value="">Default input</option>
+      <option value="1">Front microphone (1)</option>
+      <option value="2">Back microphone (2)</option>
+    </select>
+    <span class="ws-chip" id="gt-state">IDLE</span>
+  </div>
+  <div class="mt-4">
+    <div id="gt-needle"><i id="gt-n" style="left:50%"></i></div>
+    <div id="gt-scale"><span>-50</span><span>FLAT</span><span>0</span><span>SHARP</span><span>+50</span></div>
+  </div>
+  <div class="mt-4 grid gap-4 sm:grid-cols-3">
+    <div><label class="ws-label mb-2 block" for="gt-ref">A4 reference (Hz)</label>
+      <input id="gt-ref" type="number" class="ws-input" step="0.001" value="440"></div>
+    <div class="sm:col-span-2"><label class="ws-label mb-2 block" for="gt-man">Manual frequency (Hz)</label>
+      <input id="gt-man" type="number" class="ws-input" step="0.001" placeholder="type a measured frequency to identify it"></div>
+  </div>
+</section>
+
+<section class="ws-panel p-6">
+  <canvas id="gt-meter" width="520" height="120"></canvas>
+  <div id="gt-out" class="ws-out mt-4">--</div>
+</section>
+
+<section class="ws-panel p-6">
+  <div id="gt-strings" class="mt-2"></div>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+function clamp(v,lo,hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function num(v,dflt){ var n = parseFloat(v); return isFinite(n) ? n : dflt; }
+// The character classes keep "</" out of this source: the page builder
+// escapes that sequence so it cannot terminate the surrounding <script>.
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/[<]/g,'&lt;').replace(/>/g,'&gt;'); }
+
+var AC = window.AudioContext || window.webkitAudioContext;
+var _ac = null, _acErr = null;
+function ctx(){
+  if(!AC){ _acErr = 'no AudioContext constructor'; return null; }
+  if(!_ac){ try { _ac = new AC(); } catch(e){ _acErr = String(e); return null; } }
+  if(_ac.state === 'suspended'){ var p = _ac.resume(); if(p && p.catch) p.catch(function(){}); }
+  return _ac;
+}
+function acState(){ return _ac ? _ac.state : 'none'; }
+function fmt(v,d){ d = d==null ? 2 : d;
+  if(typeof v !== 'number' || !isFinite(v)) return '--';
+  return v.toFixed(d).replace(/\.?0+$/, function(m){ return m.indexOf('.')===0 ? '' : m; }); }
+
+// Open strings, standard tuning, low E to high E. MIDI 40 is E2 (82.4069 Hz).
+var STRINGS = [
+  { name:'E2', midi:40 }, { name:'A2', midi:45 }, { name:'D3', midi:50 },
+  { name:'G3', midi:55 }, { name:'B3', midi:59 }, { name:'E4', midi:64 }
+];
+function freqOf(midi, ref){ return ref * Math.pow(2, (midi - 69) / 12); }
+function noteName(midi){
+  var n = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  return n[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
+}
+function identify(f, ref){
+  if(!(f > 0)) return null;
+  var midiFloat = 69 + 12 * Math.log(f / ref) / Math.LN2;
+  var midi = Math.round(midiFloat);
+  var exact = freqOf(midi, ref);
+  var c = 1200 * Math.log(f / exact) / Math.LN2;
+  // lowest open string that still reaches this pitch, then the fret offset
+  var best = null;
+  for(var i = 0; i < STRINGS.length; i++){
+    var semis = midi - STRINGS[i].midi;
+    if(semis < 0) continue;
+    if(best === null || semis < best.semis) best = { string: STRINGS[i].name, semis: semis, index: i };
+  }
+  return { freq: f, midi: midi, name: noteName(midi), cents: c, exact: exact,
+           string: best ? best.string : null, fret: best ? best.semis : null };
+}
+function refValue(){
+  var r = num(document.getElementById('gt-ref').value, 440);
+  if(!(r > 0)) r = 415; if(r > 466) r = 466;
+  return r;
+}
+
+// Normalised autocorrelation over a time-domain window. This is the classic
+// ACF pitch detector: the lag whose waveform most resembles itself is the
+// period. Parabolic interpolation on the peak recovers sub-sample lag, which
+// is what buys the last few cents of accuracy.
+function detectPitch(buf, sampleRate){
+  var n = buf.length, size = 1;
+  while(size * 2 <= n) size *= 2;
+  size = Math.min(size, 4096);
+  var minLag = Math.floor(sampleRate / 1400), maxLag = Math.min(Math.floor(sampleRate / 60), size - 2);
+  if(maxLag <= minLag) return { freq: 0, clarity: 0 };
+  var rms = 0;
+  for(var i = 0; i < size; i++) rms += buf[i] * buf[i];
+  rms = Math.sqrt(rms / size);
+  if(rms < 1e-5) return { freq: 0, clarity: 0 };
+  var best = -1, bestLag = -1, corr = [];
+  for(var lag = minLag; lag <= maxLag; lag++){
+    var s = 0, e1 = 0, e2 = 0;
+    for(var k = 0; k + lag < size; k++){
+      var a = buf[k], b = buf[k + lag];
+      s += a * b; e1 += a * a; e2 += b * b;
+    }
+    var c = s / (Math.sqrt(e1 * e2) + 1e-12);
+    corr[lag] = c;
+    if(c > best){ best = c; bestLag = lag; }
+  }
+  if(bestLag < 0) return { freq: 0, clarity: 0 };
+  // parabolic refinement around the winning lag
+  var y0 = corr[bestLag - 1] || 0, y1 = corr[bestLag], y2 = corr[bestLag + 1] || 0;
+  var denom = 2 * (2 * y1 - y0 - y2);
+  var shift = Math.abs(denom) > 1e-9 ? (y2 - y0) / denom : 0;
+  var lagF = bestLag + clamp(shift, -1, 1);
+  return { freq: sampleRate / lagF, clarity: best, lag: bestLag };
+}
+function drawMeter(cents, freq){
+  var cv = document.getElementById('gt-meter'), g = cv.getContext('2d');
+  g.clearRect(0, 0, cv.width, cv.height);
+  g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 1;
+  for(var i = 0; i <= 10; i++){ var x = i / 10 * cv.width; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, cv.height); g.stroke(); }
+  g.strokeStyle = 'rgba(255,255,255,.35)';
+  g.beginPath(); g.moveTo(cv.width / 2, 0); g.lineTo(cv.width / 2, cv.height); g.stroke();
+  if(!(freq > 0)) return;
+  var x = cv.width / 2 + clamp(cents, -50, 50) / 50 * (cv.width / 2);
+  g.strokeStyle = '#FF5F1F'; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(x, 0); g.lineTo(x, cv.height); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.75)'; g.font = '600 13px monospace';
+  g.fillText(freq.toFixed(2) + ' Hz', 8, 18);
+}
+function show(id){
+  var ref = refValue(), f = num(document.getElementById('gt-man').value, 0);
+  var out = document.getElementById('gt-out');
+  var id2 = identify(f, ref);
+  if(!id2){ out.innerHTML = '<div class="ws-kv"><span>Result</span><span>no pitch</span></div>'; return null; }
+  var pct = clamp(50 + id2.cents, 0, 100);
+  document.getElementById('gt-n').style.left = pct + '%';
+  out.innerHTML =
+    '<div class="ws-kv"><span>Frequency</span><span>' + id2.freq.toFixed(3) + ' Hz</span></div>' +
+    '<div class="ws-kv"><span>Note</span><span>' + id2.name + ' (MIDI ' + id2.midi + ')</span></div>' +
+    '<div class="ws-kv"><span>Deviation</span><span>' + id2.cents.toFixed(2) + ' cents ' +
+      (Math.abs(id2.cents) < 1 ? '(in tune)' : (id2.cents < 0 ? '(flat)' : '(sharp)')) + '</span></div>' +
+    '<div class="ws-kv"><span>Exact target</span><span>' + id2.exact.toFixed(3) + ' Hz</span></div>' +
+    '<div class="ws-kv"><span>Nearest open string</span><span>' + (id2.string || 'below the low E') + '</span></div>' +
+    '<div class="ws-kv"><span>Fret</span><span>' + (id2.fret === null ? '--' : id2.fret) + '</span></div>';
+  drawMeter(id2.cents, id2.freq);
+  return id2;
+}
+document.getElementById('gt-man').addEventListener('input', function(){
+  show(); document.getElementById('gt-state').textContent = 'MANUAL';
+});
+document.getElementById('gt-ref').addEventListener('input', function(){ show(); renderStrings(); });
+
+var stream = null, audio = null, src = null, analyser = null, raf = 0;
+function renderStrings(){
+  var ref = refValue(), box = document.getElementById('gt-strings');
+  box.innerHTML = '<div class="ws-label mb-2">Open strings at ' + ref.toFixed(2) + ' Hz</div>' +
+    '<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">' +
+    STRINGS.map(function(s, i){
+      return '<button class="ws-btn-ghost gt-str !py-2" data-midi="' + s.midi + '">' +
+        s.name + ' &middot; ' + freqOf(s.midi, ref).toFixed(2) + ' Hz</button>';
+    }).join('') + '</div>' +
+    '<p class="mt-3 text-[11px] text-white/35">Click a string to hear it. The tuner names any pitch above the low E as a fret number on whichever open string reaches it with the fewest frets.</p>';
+  box.querySelectorAll('.gt-str').forEach(function(b){
+    b.addEventListener('click', function(){
+      var f = freqOf(parseInt(b.getAttribute('data-midi'), 10), ref), c = ctx();
+      if(!c) return;
+      var t = c.currentTime, o = c.createOscillator(), g = c.createGain();
+      o.type = 'sawtooth'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.14, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.75);
+    });
+  });
+}
+document.getElementById('gt-start').addEventListener('click', function(){
+  var self = this;
+  navigator.mediaDevices.getUserMedia({ audio: { deviceId: document.getElementById('gt-src').value || undefined } })
+  .then(function(s){
+    stream = s; audio = ctx();
+    src = audio.createMediaStreamSource(s);
+    analyser = audio.createAnalyser(); analyser.fftSize = 8192; analyser.smoothingTimeConstant = 0;
+    src.connect(analyser);
+    document.getElementById('gt-state').textContent = 'LISTENING';
+    var buf = new Float32Array(analyser.fftSize);
+    var tick = function(){
+      analyser.getFloatTimeDomainData(buf);
+      var p = detectPitch(buf, audio.sampleRate);
+      if(p.freq > 0){
+        document.getElementById('gt-man').value = p.freq.toFixed(3);
+        show();
+        document.getElementById('gt-state').textContent =
+          p.clarity > 0.9 ? 'LOCKED' : (p.clarity > 0.5 ? 'WEAK' : 'NOISE');
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+  })
+  .catch(function(e){
+    document.getElementById('gt-state').textContent = 'NO MIC: ' + String(e.name || e).slice(0, 20);
+  });
+});
+document.getElementById('gt-stop').addEventListener('click', function(){
+  cancelAnimationFrame(raf);
+  if(stream) stream.getTracks().forEach(function(t){ t.stop(); });
+  stream = null; analyser = null;
+  document.getElementById('gt-state').textContent = 'IDLE';
+});
+renderStrings();
+window.__T = { slug: 'guitar-tuner', run: function(opts){
+  opts = opts || {};
+  if(opts.ref !== undefined) document.getElementById('gt-ref').value = opts.ref;
+  if(opts.freq !== undefined) document.getElementById('gt-man').value = opts.freq;
+  if(opts.detect !== undefined){
+    // Build a real time-domain buffer and run the real detector on it, so the
+    // test exercises the autocorrelation rather than the closed-form maths.
+    var sr = 44100, n = 8192, buf = new Float32Array(n), f = opts.detect;
+    for(var i = 0; i < n; i++) buf[i] = Math.sin(2 * Math.PI * f * i / sr);
+    var p = detectPitch(buf, sr);
+    var res = { sampleRate: sr, inputHz: f, detectedHz: +p.freq.toFixed(3), clarity: +p.clarity.toFixed(4) };
+    if(res.detectedHz > 0){
+      document.getElementById('gt-man').value = res.detectedHz.toFixed(3);
+      var id2 = show();
+      res.note = id2.name; res.midi = id2.midi;
+      res.cents = +id2.cents.toFixed(3); res.exactHz = +id2.exact.toFixed(4);
+      res.string = id2.string; res.fret = id2.fret;
+    }
+    return res;
+  }
+  var r = show();
+  return r ? { note: r.name, midi: r.midi, cents: +r.cents.toFixed(3),
+    exactHz: +r.exact.toFixed(4), string: r.string, fret: r.fret, freq: +r.freq.toFixed(4) } : null;
+} };
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

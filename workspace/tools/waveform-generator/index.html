@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waveform Generator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Waveform Generator</h1>
+      <p class="mt-1 text-xs text-white/40">Audio &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Sine, square, sawtooth, triangle and a duty-variable pulse, built by summing real harmonics sample by sample. Peak, RMS, crest factor and zero-crossing count are measured from the rendered samples, so a 220 Hz square really does cross zero 440 times a second.</p>
+  <div class="ws-grid2">
+<span class="ws-chip">ADDITIVE SYNTHESIS</span><span class="ws-chip">DUTY CYCLE</span><span class="ws-chip">MEASURED RMS</span><span class="ws-chip">WAV EXPORT</span>
+<style>
+  #wg-canvas{display:block;width:100%;height:240px;border-radius:.75rem;background:#050505;
+    border:1px solid rgba(255,255,255,.12)}
+</style>
+<section class="ws-panel p-6">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div><label class="ws-label mb-2 block" for="wg-type">Shape</label>
+      <select id="wg-type" class="ws-input">
+        <option value="sine">Sine</option>
+        <option value="square" selected>Square</option>
+        <option value="saw">Sawtooth</option>
+        <option value="triangle">Triangle</option>
+        <option value="pulse">Pulse (settable duty)</option>
+      </select></div>
+    <div><label class="ws-label mb-2 block" for="wg-freq">Frequency (Hz)</label>
+      <input id="wg-freq" type="number" class="ws-input" step="1" value="220"></div>
+    <div><label class="ws-label mb-2 block" for="wg-amp">Amplitude (peak)</label>
+      <input id="wg-amp" type="number" class="ws-input" step="0.01" value="1"></div>
+    <div><label class="ws-label mb-2 block" for="wg-duty">Duty cycle (%)</label>
+      <input id="wg-duty" type="number" class="ws-input" step="0.1" value="50"></div>
+    <div><label class="ws-label mb-2 block" for="wg-phase">Phase (degrees)</label>
+      <input id="wg-phase" type="number" class="ws-input" step="1" value="0"></div>
+    <div><label class="ws-label mb-2 block" for="wg-harm">Harmonics (1-12)</label>
+      <input id="wg-harm" type="number" class="ws-input" step="1" value="4"></div>
+  </div>
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <button id="wg-gen" class="ws-btn !w-auto">Render</button>
+    <button id="wg-play" class="ws-btn-ghost !w-auto">Play</button>
+    <button id="wg-sweep" class="ws-btn-ghost !w-auto">Sweep 0 to 5 kHz</button>
+    <button id="wg-wav" class="ws-btn-ghost !w-auto">Download WAV</button>
+    <span class="ws-chip" id="wg-state">READY</span>
+  </div>
+</section>
+<section class="ws-panel p-6">
+  <canvas id="wg-canvas" width="900" height="240"></canvas>
+  <div id="wg-out" class="ws-out mt-4">--</div>
+  <p class="mt-3 text-[11px] text-white/35">The rendered samples are real: a partial-sum (Fourier) oscillator for the shaped waves and a direct sample formula for sine. The RMS and peak below are measured from those samples, not from the shape's textbook value.</p>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+function clamp(v,lo,hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function num(v,dflt){ var n = parseFloat(v); return isFinite(n) ? n : dflt; }
+// The character classes keep "</" out of this source: the page builder
+// escapes that sequence so it cannot terminate the surrounding <script>.
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/[<]/g,'&lt;').replace(/>/g,'&gt;'); }
+
+var AC = window.AudioContext || window.webkitAudioContext;
+var _ac = null, _acErr = null;
+function ctx(){
+  if(!AC){ _acErr = 'no AudioContext constructor'; return null; }
+  if(!_ac){ try { _ac = new AC(); } catch(e){ _acErr = String(e); return null; } }
+  if(_ac.state === 'suspended'){ var p = _ac.resume(); if(p && p.catch) p.catch(function(){}); }
+  return _ac;
+}
+function acState(){ return _ac ? _ac.state : 'none'; }
+function fmt(v,d){ d = d==null ? 2 : d;
+  if(typeof v !== 'number' || !isFinite(v)) return '--';
+  return v.toFixed(d).replace(/\.?0+$/, function(m){ return m.indexOf('.')===0 ? '' : m; }); }
+
+var SR = 48000, DURATION = 0.25;
+var current = null;
+// Naive additive synthesis: one oscillator per partial. Four to twelve
+// partials is plenty for these shapes and keeps the numbers transparent.
+function render(type, freq, amp, duty, phaseDeg, harmonics, samples){
+  var out = new Float32Array(samples);
+  var ph = phaseDeg * Math.PI / 180;
+  var d = clamp(duty, 1, 99) / 100;
+  if(type === 'sine'){
+    for(var i = 0; i < samples; i++) out[i] = amp * Math.sin(2 * Math.PI * freq * i / SR + ph);
+    return out;
+  }
+  var coeffs;
+  if(type === 'square'){
+    // odd harmonics, 1/n
+    coeffs = []; for(var k = 1; k <= harmonics; k++) coeffs.push(k % 2 === 1 ? 1 / k : 0);
+  } else if(type === 'saw'){
+    coeffs = []; for(var s = 1; s <= harmonics; s++) coeffs.push(1 / s);
+  } else if(type === 'triangle'){
+    // odd harmonics, alternating 1/n^2
+    coeffs = []; for(var t = 1; t <= harmonics; t++) coeffs.push(t % 2 === 1 ? (Math.ceil(t / 2) % 2 === 1 ? 1 : -1) / (t * t) : 0);
+  } else { // pulse
+    coeffs = []; for(var p = 1; p <= harmonics; p++) coeffs.push((2 / (p * Math.PI)) * Math.sin(p * Math.PI * d));
+  }
+  var norm = 0;
+  for(var c = 0; c < coeffs.length; c++) norm += Math.abs(coeffs[c]);
+  norm = norm > 0 ? norm : 1;
+  for(var n = 0; n < samples; n++){
+    var tsec = n / SR, acc = 0;
+    for(var h = 0; h < coeffs.length; h++){
+      if(coeffs[h] === 0) continue;
+      acc += coeffs[h] * Math.sin(2 * Math.PI * freq * (h + 1) * tsec + ph * (h + 1));
+    }
+    out[n] = amp * acc / norm * 1.6;   // 1.6 overshoot headroom so a square reaches ~its peak
+  }
+  return out;
+}
+function measure(buf){
+  var peak = 0, sum = 0, zc = 0, prev = 0;
+  for(var i = 0; i < buf.length; i++){
+    var v = buf[i];
+    if(Math.abs(v) > peak) peak = Math.abs(v);
+    sum += v * v;
+    if(i > 0 && ((prev >= 0 && v < 0) || (prev < 0 && v >= 0))) zc++;
+    prev = v;
+  }
+  var rms = Math.sqrt(sum / buf.length);
+  var duty = null;
+  if(rms > 0 && peak > 0){
+    // For a two-level wave the mean of |x| over the top half gives the duty
+    var above = 0, total = 0;
+    for(var j = 0; j < buf.length; j++){ if(Math.abs(buf[j]) > peak / 2) above++; total++; }
+    duty = above / total;
+  }
+  return { peak: peak, rms: rms, crest: rms > 0 ? peak / rms : 0,
+           zeroCrossings: zc, dutyFraction: duty, dc: sum / buf.length };
+}
+function spectrum(buf, freq, nBins){
+  // Goertzel at a fixed set of multiples of the fundamental
+  var bins = [];
+  for(var b = 1; b <= nBins; b++) bins.push({ mult: b, mag: goertzel(buf, freq * b, SR) });
+  var total = bins.reduce(function(a, x){ return a + x.mag * x.mag; }, 0) || 1;
+  bins.forEach(function(x){ x.share = +(x.mag * x.mag / total).toFixed(5); });
+  return bins;
+}
+function goertzel(buf, f, sr){
+  var k = 2 * Math.cos(2 * Math.PI * f / sr), s1 = 0, s2 = 0;
+  for(var i = 0; i < buf.length; i++){ var s0 = buf[i] + k * s1 - s2; s2 = s1; s1 = s0; }
+  return Math.sqrt(Math.max(0, s1 * s1 + s2 * s2 - k * s1 * s2)) / (buf.length / 2);
+}
+function draw(buf, cycles){
+  var cv = document.getElementById('wg-canvas'), g = cv.getContext('2d');
+  g.clearRect(0, 0, cv.width, cv.height);
+  g.strokeStyle = 'rgba(255,255,255,.08)'; g.beginPath();
+  g.moveTo(0, cv.height / 2); g.lineTo(cv.width, cv.height / 2); g.stroke();
+  var n = Math.min(buf.length, Math.round(cycles * SR));
+  g.strokeStyle = '#FF5F1F'; g.lineWidth = 1.5; g.beginPath();
+  for(var x = 0; x < cv.width; x++){
+    var i = Math.round(x / cv.width * n);
+    var y = cv.height / 2 - clamp(buf[i], -1.2, 1.2) / 1.2 * (cv.height / 2 - 10);
+    if(x === 0) g.moveTo(x, y); else g.lineTo(x, y);
+  }
+  g.stroke();
+}
+function readSettings(){
+  return {
+    type: document.getElementById('wg-type').value,
+    freq: clamp(num(document.getElementById('wg-freq').value, 220), 1, 12000),
+    amp: clamp(num(document.getElementById('wg-amp').value, 1), 0, 1),
+    duty: clamp(num(document.getElementById('wg-duty').value, 50), 1, 99),
+    phase: num(document.getElementById('wg-phase').value, 0),
+    harmonics: Math.round(clamp(num(document.getElementById('wg-harm').value, 4), 1, 12))
+  };
+}
+function generate(){
+  var s = readSettings();
+  var buf = render(s.type, s.freq, s.amp, s.duty, s.phase, s.harmonics, Math.round(DURATION * SR));
+  current = buf;
+  var m = measure(buf);
+  draw(buf, 3);
+  var sp = spectrum(buf, s.freq, Math.min(s.harmonics, 8));
+  var out = document.getElementById('wg-out');
+  out.innerHTML =
+    '<div class="ws-kv"><span>Shape</span><span>' + s.type + (s.type === 'pulse' ? ' @ ' + s.duty.toFixed(1) + '% duty' : '') + '</span></div>' +
+    '<div class="ws-kv"><span>Samples rendered</span><span>' + buf.length + ' @ ' + SR + ' Hz</span></div>' +
+    '<div class="ws-kv"><span>Peak</span><span>' + m.peak.toFixed(6) + '</span></div>' +
+    '<div class="ws-kv"><span>RMS</span><span>' + m.rms.toFixed(6) + '</span></div>' +
+    '<div class="ws-kv"><span>Crest factor</span><span>' + m.crest.toFixed(4) + '</span></div>' +
+    '<div class="ws-kv"><span>DC offset</span><span>' + m.dc.toExponential(3) + '</span></div>' +
+    '<div class="ws-kv"><span>Zero crossings</span><span>' + m.zeroCrossings + ' = ' +
+      (m.zeroCrossings / 2).toFixed(2) + ' cycles</span></div>' +
+    (m.dutyFraction !== null ? '<div class="ws-kv"><span>Measured duty (time above half peak)</span><span>' +
+      (m.dutyFraction * 100).toFixed(2) + '%</span></div>' : '') +
+    '<div class="ws-kv"><span>Harmonic energy shares</span><span>' +
+      sp.map(function(b){ return b.mult + 'x ' + (b.share * 100).toFixed(1) + '%'; }).join('  ') + '</span></div>';
+  document.getElementById('wg-state').textContent = 'RENDERED ' + buf.length;
+  return { buf: buf, m: m, s: s, sp: sp };
+}
+document.getElementById('wg-gen').addEventListener('click', generate);
+['wg-type','wg-freq','wg-amp','wg-duty','wg-phase','wg-harm'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', generate);
+});
+function playBuffer(buf, sr){
+  var c = ctx(); if(!c) return false;
+  var b = c.createBuffer(1, buf.length, sr);
+  b.copyToChannel(buf, 0);
+  var s = c.createBufferSource(); s.buffer = b;
+  var g = c.createGain(); g.gain.value = 0.2;
+  s.connect(g); g.connect(c.destination); s.start();
+  return true;
+}
+document.getElementById('wg-play').addEventListener('click', function(){
+  if(current) playBuffer(current, SR);
+});
+document.getElementById('wg-sweep').addEventListener('click', function(){
+  var c = ctx(); if(!c) return;
+  var t = c.currentTime + 0.05, osc = c.createOscillator(), g = c.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(20, t);
+  osc.frequency.exponentialRampToValueAtTime(5000, t + 2);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(0.15, t + 0.05);
+  g.gain.setValueAtTime(0.15, t + 1.9);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 2);
+  osc.connect(g); g.connect(c.destination); osc.start(t); osc.stop(t + 2.05);
+});
+document.getElementById('wg-wav').addEventListener('click', function(){
+  if(!current) return;
+  var n = current.length, out = new ArrayBuffer(44 + n * 2), v = new DataView(out);
+  for(var i = 0; i < 4; i++) v.setUint8(i, 'RIFF'.charCodeAt(i));
+  v.setUint32(4, 36 + n * 2, true);
+  for(var j = 0; j < 4; j++){ v.setUint8(8 + j, 'WAVE'.charCodeAt(j)); v.setUint8(12 + j, 'fmt '.charCodeAt(j)); }
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, SR, true); v.setUint32(28, SR * 2, true);
+  v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  for(var k = 0; k < 4; k++) v.setUint8(36 + k, 'data'.charCodeAt(k));
+  v.setUint32(40, n * 2, true);
+  for(var m = 0; m < n; m++){
+    var s = clamp(current[m], -1, 1);
+    v.setInt16(44 + m * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([out], { type: 'audio/wav' }));
+  a.download = 'waveform.wav'; a.click();
+});
+generate();
+window.__T = { slug: 'waveform-generator', run: function(opts){
+  opts = opts || {};
+  var map = { type: 'wg-type', freq: 'wg-freq', amp: 'wg-amp', duty: 'wg-duty',
+              phase: 'wg-phase', harmonics: 'wg-harm' };
+  for(var key in map){ if(opts[key] !== undefined) document.getElementById(map[key]).value = opts[key]; }
+  if(opts.seconds !== undefined) DURATION = clamp(opts.seconds, 0.02, 2);
+  var g = generate();
+  var res = { type: g.s.type, freq: g.s.freq, samples: g.buf.length, sampleRate: SR,
+    peak: +g.m.peak.toFixed(6), rms: +g.m.rms.toFixed(6), crest: +g.m.crest.toFixed(4),
+    zeroCrossings: g.m.zeroCrossings, cycles: g.m.zeroCrossings / 2,
+    dc: +g.m.dc.toExponential(3) };
+  if(g.m.dutyFraction !== null) res.dutyPercent = +(g.m.dutyFraction * 100).toFixed(3);
+  res.harmonicShares = g.sp.map(function(b){ return b.share; });
+  res.samplesHead = Array.prototype.slice.call(g.buf, 0, 4).map(function(v){ return +v.toFixed(6); });
+  if(opts.play !== false){
+    res.contextCreated = !!_ac;
+    res.contextState = acState();
+    res.oscStarted = playBuffer(g.buf, SR);
+  }
+  return res;
+} };
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

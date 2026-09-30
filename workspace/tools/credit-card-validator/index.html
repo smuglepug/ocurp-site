@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Credit Card Validator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Credit Card Validator</h1>
+      <p class="mt-1 text-xs text-white/40">VALIDATION &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Luhn-checks a card number and names the issuer from its leading digits. Paste a number to see the weighted total that decides pass or fail.</p>
+  <div class="ws-grid2">
+
+<style>#cv-sum{font-size:2.2rem;font-weight:800;font-family:'IBM Plex Sans',monospace}</style>
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <label class="ws-label mb-2 block" for="cv-num">Card number</label>
+  <input id="cv-num" class="ws-input !text-lg tracking-[.18em]" inputmode="numeric"
+         placeholder="4111 1111 1111 1111" value="4111 1111 1111 1111">
+  <p class="mt-2 text-[11px] text-white/30">Nothing leaves the page &mdash; the Luhn sum is computed in this tab.</p>
+  <div class="mt-3 flex flex-wrap gap-2">
+    <button id="cv-check" class="ws-btn !w-auto">Check</button>
+    <button id="cv-mask" class="ws-btn-ghost !w-auto !px-4 !py-2">Show / mask</button>
+  </div>
+</section>
+<section class="ws-panel p-5" style="grid-column:1/-1">
+  <div class="ws-label mb-3">Verdict</div>
+  <div id="cv-verdict" class="flex flex-wrap items-center gap-3"></div>
+  <div id="cv-sum" class="mt-4"></div>
+  <div id="cv-rows" class="mt-3"></div>
+</section>
+<p class="mt-3 text-[11px] leading-relaxed text-white/35">How it works: the digits are doubled from the right, every second one, and the total must land on a multiple of ten.</p>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  // Issuer ranges written out as data. First match wins, longest prefix first.
+  var BRANDS=[
+    {name:'Visa',        re:/^4/,                len:[13,16,19]},
+    {name:'Mastercard',  re:/^(5[1-5]|2(2[2-9]|[3-6]\d|7[01]|720))/, len:[16]},
+    {name:'Amex',        re:/^3[47]/,            len:[15]},
+    {name:'Discover',    re:/^(6011|65|64[4-9])/,len:[16,19]},
+    {name:'JCB',         re:/^35/,               len:[16,17,18,19]},
+    {name:'Diners',      re:/^3(0[0-5]|[68])/,   len:[14,16]},
+    {name:'Maestro',     re:/^(5018|5020|5038|6304|6759|676[123])/, len:[12,13,14,15,16,17,18,19]},
+    {name:'UnionPay',    re:/^62/,               len:[16,17,18,19]}
+  ];
+  function digits(s){return String(s).replace(/[^0-9]/g,'');}
+  function luhnSum(d){
+    var sum=0, alt=false;
+    for(var i=d.length-1;i>=0;i--){
+      var n=d.charCodeAt(i)-48;
+      if(alt){ n*=2; if(n>9) n-=9; }
+      sum+=n; alt=!alt;
+    }
+    return sum;
+  }
+  function checkDigitFor(prefix){
+    // The digit that would make prefix+check pass Luhn.
+    var full=prefix+'0';
+    return String((10-(luhnSum(full)%10))%10);
+  }
+  function brandOf(d){
+    for(var i=0;i<BRANDS.length;i++){
+      var b=BRANDS[i];
+      if(b.re.test(d) && b.len.indexOf(d.length)>=0) return b;
+    }
+    for(var j=0;j<BRANDS.length;j++) if(BRANDS[j].re.test(d)) return BRANDS[j];
+    return null;
+  }
+  function run(input){
+    var raw=(input===undefined)?$('cv-num').value:input;
+    var d=digits(raw);
+    if(!d.length) return {error:'no digits', valid:false, input:raw};
+    if(d.length>19) return {error:'more than 19 digits', valid:false, input:raw};
+    var b=brandOf(d);
+    var knownLength = !!(b && b.len.indexOf(d.length)>=0);
+    var sum=luhnSum(d);
+    var valid = (sum%10===0) && knownLength;
+    var reasons=[];
+    if(d.length<12) reasons.push('too short to be a card number');
+    if(!knownLength) reasons.push(b ? 'length '+d.length+' is not valid for '+b.name : 'no issuer range matches these leading digits');
+    if(sum%10!==0) reasons.push('Luhn total '+sum+' is not a multiple of 10');
+    return {
+      input:raw, digits:d, length:d.length, valid:valid, luhnSum:sum,
+      mod10:sum%10, brand:b?b.name:'unknown', expectedLengths:b?b.len:[],
+      prefix6:d.slice(0,6), checkDigit:checkDigitFor(d.slice(0,-1)),
+      lastDigit:d.slice(-1), reason:valid?'Luhn total '+sum+' is a multiple of 10 and the length matches '+b.name:reasons.join('; ')
+    };
+  }
+  function fmt(d){return d.replace(/(.{4})/g,'$1 ').trim();}
+  function render(){
+    var r=run();
+    $('cv-num').value = r.digits ? fmt(r.digits) : $('cv-num').value;
+    var v=$('cv-verdict'), rows=$('cv-rows'), s=$('cv-sum');
+    if(r.error){
+      v.innerHTML='<span class="ws-chip" style="border-color:rgba(255,95,31,.5);color:#FF5F1F">NEEDS INPUT</span>'
+        +'<span class="text-sm text-white/50">'+r.error+'</span>';
+      s.textContent=''; rows.innerHTML=''; return;
+    }
+    v.innerHTML = r.valid
+      ? '<span class="ws-chip" style="background:#FF5F1F;border-color:#FF5F1F;color:#000">VALID</span>'
+        +'<span class="ws-chip">'+r.brand+'</span><span class="text-sm text-white/50">'+r.reason+'</span>'
+      : '<span class="ws-chip" style="border-color:rgba(255,95,31,.6);color:#FF5F1F">REJECTED</span>'
+        +'<span class="text-sm text-white/55">'+r.reason+'</span>';
+    s.innerHTML='<div class="text-[10px] uppercase tracking-[.16em] text-white/35">Luhn total</div><div id="cv-sum-v">'+r.luhnSum+' <span class="text-base text-white/35">mod 10 = '+r.mod10+'</span></div>';
+    rows.innerHTML =
+      kv('Issuer', r.brand) + kv('Length', r.length+(r.expectedLengths.length?' (allowed '+r.expectedLengths.join('/')+')':'')) +
+      kv('IIN prefix', r.prefix6) + kv('Check digit in number', r.lastDigit) +
+      kv('Check digit recomputed', r.checkDigit) + kv('Verdict', r.valid?'passes':'fails');
+  }
+  function kv(k,val){return '<div class="ws-kv"><span>'+k+'</span><span>'+val+'</span></div>';}
+  $('cv-check').addEventListener('click',render);
+  $('cv-num').addEventListener('input',render);
+  $('cv-mask').addEventListener('click',function(){
+    var d=digits($('cv-num').value);
+    if(d.length<4) return;
+    $('cv-num').value=fmt(d.slice(0,0)+'**** **** **** '+d.slice(-4));
+  });
+  render();
+  window.__T={slug:'credit-card-validator',run:run};
+})();
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>
