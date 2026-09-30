@@ -110,7 +110,8 @@ tailwind.config = { theme: { extend: {
           <option value="2">Veteran</option>
         </select></div>
       <div class="flex items-end gap-2">
-        <button id="new" class="ws-btn">New battle</button>
+        <button id="end" class="ws-btn">End turn</button>
+        <button id="new" class="ws-btn-ghost">New battle</button>
         <button id="undo" class="ws-btn-ghost">Undo</button>
       </div>
     </div>
@@ -131,7 +132,7 @@ tailwind.config = { theme: { extend: {
 
   </div>
   <div class="mt-8">
-
+<script>
 function cp(btn){
   var el=document.getElementById(btn.getAttribute('data-t')||'out');
   var t=el?el.textContent:'';
@@ -223,7 +224,7 @@ function reachable(u){
     for(var i=0;i<4;i++){
       var nx=cx+dirs[i][0], ny=cy+dirs[i][1];
       if(!inb(nx,ny)) continue;
-      if(G.unitAt(nx,ny)) continue;
+      if(unitAt(nx,ny)) continue;
       var c=moveCost(nx,ny); if(c>50) continue;
       var nd=d+c;
       if(nd<=u.mp && (dist[key(nx,ny)]===undefined || nd<dist[key(nx,ny)])){
@@ -393,6 +394,11 @@ function aiTurn(di){
        2 Soldier  - takes the best square, attacks when it can
        3 Veteran  - best square, always attacks, and gets one extra point
                      of movement so a veteran genuinely closes faster. */
+   /* The select offers 0=Recruit 1=Soldier 2=Veteran, but the rules below
+      are written against 1/2/3 (and the extra move point at di>=3). Every
+      comparison was off by one, so Recruit and Soldier both ran the
+      always-attack branch and Veteran was unreachable. Normalise once. */
+  di = (di | 0) + 1;
   for(var i=0;i<order.length;i++){
     var u=order[i]; if(!u.alive) continue;
     u.mp=KINDS[u.kind].mp+(di>=3?1:0);
@@ -498,6 +504,7 @@ document.addEventListener('click',function(e){
 });
 $('new').onclick=function(){ $('size').onchange(); newBattle(); };
 $('size').onchange=function(){};
+$('end').onclick=function(){ endTurn(); };
 $('difficulty').onchange=function(){};
 $('undo').onclick=function(){
   if(!G.hist.length){ seterr('err','Nothing to undo.'); return; }
@@ -509,6 +516,7 @@ $('size').onchange=newBattle;
 $('difficulty').onchange=function(){ if(!G) newBattle(); else render(); };
 $('new').onclick=newBattle;
 newBattle();
+</script>
 
   </div>
 </div>
@@ -561,6 +569,10 @@ newBattle();
   setInterval(scan,700);
 })();
 </script>
+
+
+
+
 
 
 

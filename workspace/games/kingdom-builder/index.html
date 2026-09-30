@@ -148,8 +148,12 @@ function newGame(){
 function say(t){G.log.unshift(t);if(G.log.length>40)G.log.pop()}
 function income(){return 4*G.counts.farm+G.counts.mill*4}
 function upkeep(){return G.counts.mill*2+G.counts.wall+G.counts.knight*5}
-// Six settlers, plus whatever the buildings shelter, minus the dead.
-function people(){let p=6+G.deaths;for(const k of KEYS)p+=G.counts[k]*SHOP[k].pop;return p}
+// Six settlers, plus whatever the buildings shelter, MINUS the dead.
+// This was `6+G.deaths`, i.e. the total was ADDED to the death count, so
+// every famine and every raid made your population go UP - starving a
+// village was the fastest way to hit the goal of 24, and the lose-by-starvation
+// branch could never fire. Deaths must subtract.
+function people(){let p=6-G.deaths;for(const k of KEYS)p+=G.counts[k]*SHOP[k].pop;return p}
 // Losing people is a permanent population loss, not a recomputed total.
 function kill(n){G.deaths+=n;if(G.deaths>6)G.deaths=6}
 function power(){return G.counts.wall*6+G.counts.knight*4+G.counts.mill*2}
@@ -322,6 +326,10 @@ window.__kingdom={get G(){return G},SHOP,newGame,buy,endSeason,people,income,upk
   setInterval(scan,700);
 })();
 </script>
+
+
+
+
 
 
 

@@ -166,7 +166,7 @@
             + '</div>'
           : '<div class="flex h-full w-full items-center justify-center bg-[#0a0a0a]">'
             + '<span class="font-display text-4xl font-black text-white/15">' + esc(e.name.slice(0, 2).toUpperCase()) + '</span></div>')
-      : '<img src="/workspace/logos/' + esc(e.slug) + '.png" alt="' + esc(e.name) + ' logo" class="h-24 w-24 rounded-2xl border border-white/10 object-cover transition-transform duration-500 group-hover:scale-[1.04]">';
+      : '<img src="/workspace/logos/' + esc(e.slug) + '.png" alt="' + esc(e.name) + ' logo" loading="lazy" decoding="async" width="96" height="96" class="h-24 w-24 rounded-2xl border border-white/10 object-cover transition-transform duration-500 group-hover:scale-[1.04]">';
     var isFav = !!(window.OcurpAuth && OcurpAuth.favourites && OcurpAuth.favourites.has(e.slug));
     var favBtn = '<button data-fav="' + esc(e.slug) + '" title="' + (isFav ? 'Remove from your profile' : 'Save to your profile') + '"'
       + ' aria-label="Save to profile" aria-pressed="' + (isFav ? 'true' : 'false') + '"'
@@ -207,6 +207,16 @@
       + '</div></a>';
   }
 
+  /* Painting 285 cards in a single innerHTML blocks the main thread long enough
+     that the page sits blank, then pops in fully-formed -- measured at 6.5s to
+     DOMContentLoaded on /workspace/tools/ against 0.6-1.2s on every other
+     listing. The browser cannot lay out or paint anything until that one
+     assignment finishes, so lazy images below the fold all start fetching in the
+     same tick: 251 requests fired before first paint.
+
+     Chunking lets the browser breathe between batches, so the first screenful
+     appears in the first frame and the rest streams in. Same markup, same order,
+     same count -- only the timing changes. */
   function render() {
     var q = (search.value || '').trim().toLowerCase();
     var items = RAW.filter(function (e) {
@@ -214,30 +224,70 @@
       var hay = (e.name + ' ' + e.blurb + ' ' + e.tags.join(' ')).toLowerCase();
       return inCat && (!q || hay.indexOf(q) !== -1);
     });
-    grid.innerHTML = items.map(cardHTML).join('');
+    if (grid.__chunkTimer) { clearTimeout(grid.__chunkTimer); grid.__chunkTimer = 0; }
+    grid.__chunkToken = (grid.__chunkToken || 0) + 1;
+    var token = grid.__chunkToken;
+    var CHUNK = 24;
+    var html = items.map(cardHTML);
+    grid.innerHTML = html.slice(0, CHUNK).join('');
+    var i = CHUNK;
+    (function step() {
+      if (grid.__chunkToken !== token) return;   /* a newer render won */
+      if (i >= html.length) return;
+      grid.insertAdjacentHTML('beforeend', html.slice(i, i + CHUNK).join(''));
+      i += CHUNK;
+      grid.__chunkTimer = setTimeout(step, 0);
+    })();
     count.textContent = items.length + ' of ' + RAW.length + ' shown';
     empty.classList.toggle('hidden', items.length > 0);
-    cats.innerHTML = Object.keys(CATS).map(function (id) { return chip(id, CATS[id]); }).join('');
+    /* "All" is not in CATS -- CATS only holds the real category ids. Without an
+       explicit All chip there is no way back once a category is picked: the
+       filter is a one-way door. Added first so it is always available. */
+    cats.innerHTML = chip('all', 'All') + Object.keys(CATS).map(function (id) { return chip(id, CATS[id]); }).join('');
     cats.querySelectorAll('[data-cat]').forEach(function (b) {
       b.addEventListener('click', function () { active = b.getAttribute('data-cat'); render(); });
     });
-    /* star: save to the profile. Inside the card link, so stop the navigation. */
-    grid.querySelectorAll('[data-fav]').forEach(function (b) {
-      b.addEventListener('click', function (ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        if (!window.OcurpAuth || !OcurpAuth.favourites) return;
-        OcurpAuth.favourites.toggle(b.getAttribute('data-fav'));  /* prompts sign-in when logged out */
-        render();
-      });
+    wireCards();
+  }
+
+  /* Star buttons live inside the card <a>, so a click has to be stopped before it
+     navigates. They are attached by delegation on the grid rather than per-button:
+     with chunked rendering the later batches are appended after render() returns,
+     and a querySelectorAll pass would miss them entirely -- half the stars would
+     be dead with no error to show for it. */
+  function wireCards() {
+    if (grid.__favWired) return;
+    grid.__favWired = true;
+    grid.addEventListener('click', function (ev) {
+      var b = ev.target.closest && ev.target.closest('[data-fav]');
+      if (!b) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (!window.OcurpAuth || !OcurpAuth.favourites) return;
+      OcurpAuth.favourites.toggle(b.getAttribute('data-fav'));  /* prompts sign-in when logged out */
+      render();
     });
   }
 
   /* re-render when sign-in state changes, so stars reflect the new account */
   if (window.OcurpAuth && OcurpAuth.onChange) OcurpAuth.onChange(function () { render(); });
   /* auth resolves asynchronously, so favourites are not known when the grid is
-     first built. Re-render unconditionally once it lands (3 cheap passes). */
-  [150, 600, 1600].forEach(function (t) { setTimeout(render, t); });
+     first built. Three unconditional re-renders used to run at 150/600/1600ms on
+     top of the initial one -- four full passes over 285 cards each, which is most
+     of the 6.5s this page was taking. Poll until the favourites set actually
+     changes, then stop. */
+  (function waitForAuth() {
+    var tries = 0;
+    (function tick() {
+      var f = (window.OcurpAuth && OcurpAuth.favourites) || null;
+      var sig = f ? Array.prototype.slice.call(f).sort().join(',') : null;
+      if (sig !== null && sig !== window.__favSig) {
+        window.__favSig = sig;
+        render();
+      }
+      if (++tries < 12 && sig === null) setTimeout(tick, 250);
+    })();
+  })();
 
   search.addEventListener('input', render);
   render();

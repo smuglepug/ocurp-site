@@ -3,11 +3,11 @@ const CATS = {"marketplace": "MARKETPLACE", "portfolio": "PORTFOLIO", "media": "
 const RAW = [
   {slug:"wearbenin",name:"WearBenin",cat:"marketplace",url:"https://smuglepug.github.io/wearbenin-site",blurb:"Benin clothing marketplace — browse and buy authentic pieces.",tags:["E-COMMERCE","FASHION"],ready:true},
   {slug:"rentify",name:"Rentify Events",cat:"marketplace",url:"https://rentifyevents.com",blurb:"Event marketplace for Benin City — find venues, decor, catering and MCs in one place.",tags:["EVENTS","MARKETPLACE"],cover:"/workspace/covers/rentify.jpg",ready:true},
-  {slug:"toolstack",name:"Toolstack Labs",cat:"media",url:"https://www.youtube.com/@ToolstackLabs",blurb:"Tech explainer channel — tools and tech, explained simply.",tags:["YOUTUBE","TECH"],ready:true},
+  {slug:"toolstack",name:"Toolstack Labs",cat:"media",url:"https://www.youtube.com/@ToolstackLabs",blurb:"Tech explainer channel — tools and tech, explained simply.",tags:["YOUTUBE","TECH"],cover:"/workspace/covers/toolstack.jpg",ready:true},
   {slug:"jobhub",name:"JobHub",cat:"portfolio",url:"#",blurb:"Job board and hiring platform.",tags:["JOBS","MARKETPLACE"],ready:false},
   {slug:"portfolio",name:"Owen Osayi — The Founder",cat:"portfolio",url:"/",blurb:"This site. Engineering, design and algorithmic thinking, unified.",tags:["PORTFOLIO","PERSONAL"],ready:true},
   {slug:"fun-websites",name:"Fun Websites",cat:"fun",url:"https://parade.com/1116816/marynliles/fun-websites/",blurb:"A hand-picked shelf of genuinely fun things to waste time on - the good kind of waste.",tags:["FUN","CURATED"],ready:true},
-  {slug:"neal-fun",name:"Neal.fun",cat:"fun",url:"https://neal.fun",blurb:"Small, strange, addictive browser games. The reason half this site's games exist.",tags:["GAMES","FUN"],ready:true},
+  {slug:"neal-fun",name:"Neal.fun",cat:"fun",url:"https://neal.fun",blurb:"Small, strange, addictive browser games. The reason half this site's games exist.",tags:["GAMES","FUN"],cover:"/workspace/covers/neal-fun.jpg",ready:true},
   {slug:"the-pudding",name:"The Pudding",cat:"fun",url:"https://pudding.cool",blurb:"Data stories that actually respect you. The gold standard for explainers.",tags:["DATA","STORIES"],cover:"/workspace/covers/the-pudding.jpg",ready:true},
   {slug:"wonderland",name:"Wonderland",cat:"fun",url:"https://www.wonderlandengine.com",blurb:"Build 3D scenes in the browser and walk around them. No install, no account.",tags:["3D","CREATE"],cover:"/workspace/covers/wonderland.jpg",ready:true},
   {slug:"patatap",name:"Patatap",cat:"fun",url:"https://patatap.com",blurb:"Every key and click makes a sound and a shape. Deeply simple, endlessly good.",tags:["SOUND","PLAY"],ready:true},

@@ -110,8 +110,13 @@ const SPR=[
  ["00011000","00111100","01111110","11011011","11111111","10011001","10100101","00111100"]];
 const PTS=[10,20,10,30];
 
+// The campaign is FINITE. Without this, newWave() is unbounded and the game
+// has no win state at all: the stepInterval/fireRate ramps bottom out at their
+// floors, the block lands every ~3s, and a perfect player still eventually dies.
+// "Clear every wave" has to mean something.
+const MAX_WAVES=5;
 const S={W:W,H:H,ship:null,bullets:[],shots:[],foe:[],shields:[],score:0,lives:3,wave:0,
- running:false,over:false,safe:0,t:0,foeX:0,foeY:0,dir:1,drop:0,shotsFired:0,kills:0};
+ running:false,over:false,won:false,safe:0,t:0,foeX:0,foeY:0,dir:1,drop:0,shotsFired:0,kills:0};
 window.spaceInvadersState=S;
 const K={};
 let acc=0,last=performance.now(),foeTimer=0,shotTimer=0,clearT=0,boom=null;
@@ -141,7 +146,7 @@ function newWave(){
   $('msg').textContent='Wave '+S.wave+' \u2014 hold the line.';
 }
 function reset(){
-  S.score=0;S.lives=3;S.over=false;S.running=false;S.t=0;S.safe=0;S.kills=0;S.shotsFired=0;
+  S.score=0;S.lives=3;S.over=false;S.won=false;S.running=false;S.t=0;S.safe=0;S.kills=0;S.shotsFired=0;S.wave=0;
   S.bullets=[];S.shots=[];S.foe=[];S.foeX=0;S.foeY=0;S.dir=1;S.drop=0;boom=null;clearT=0;
   S.ship={x:W/2,y:H-30};
   buildShields();hud();draw();
@@ -154,7 +159,7 @@ function fireRate(){return Math.max(0.16,0.95-S.wave*0.11)}
 function ex(f){return S.foeX+f.c*CW+CW/2}
 function ey(f){return S.foeY+f.r*CH+CH/2}
 function live(){return S.foe.filter(f=>f.a)}
-function shoot(){if(S.over||!S.running)return;S.bullets.push({x:S.ship.x,y:S.ship.y-12});S.shotsFired++}
+function shoot(){if(S.over||S.won||!S.running)return;S.bullets.push({x:S.ship.x,y:S.ship.y-12});S.shotsFired++}
 
 // Erase one 4px cell. Player shots bite from underneath, enemy shots from above,
 // which is what keeps your own line of fire open.
@@ -261,7 +266,16 @@ function update(dt){
   }
   if(!live().length){
     clearT+=dt;
-    if(clearT>1.1)newWave();
+    // The last wave is the win. Without this branch every clear just calls
+    // newWave() and the game can only ever end in GAME OVER.
+    if(clearT>1.1){
+      if(S.wave>=MAX_WAVES){
+        S.won=true;S.running=false;saveBest();
+        $('msg').textContent='They\u2019re gone. '+S.score+' points, '+S.kills+' invaders. You win.';
+        hud();return;
+      }
+      newWave();
+    }
   }
 }
 function hud(){
@@ -307,7 +321,7 @@ function draw(){
   if(S.over){
     cx.fillStyle='rgba(10,10,10,.78)';cx.fillRect(0,0,W,H);
     cx.fillStyle='#FF5F1F';cx.font='900 26px Manrope,sans-serif';cx.textAlign='center';
-    cx.fillText('GAME OVER',W/2,H/2-6);
+    cx.fillText(S.won?'YOU WIN':'GAME OVER',W/2,H/2-6);
     cx.fillStyle='rgba(255,255,255,.6)';cx.font='700 13px IBM Plex Sans,monospace';
     cx.fillText(S.score+' POINTS \u00b7 '+S.kills+' INVADERS',W/2,H/2+20);
   }
@@ -390,6 +404,10 @@ requestAnimationFrame(loop);</script>
   setInterval(scan,700);
 })();
 </script>
+
+
+
+
 
 
 
