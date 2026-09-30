@@ -90,12 +90,23 @@
         opacity: 0;
         transform: translateY(20px);
         transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-        visibility: hidden;
         will-change: transform, opacity;
       }
       .reveal.active {
         opacity: 1;
         transform: translateY(0);
+      }
+
+      /* FAIL-SAFE, not decoration. visibility:hidden on .reveal made every
+         below-the-fold section invisible AND unclickable until it scrolled into
+         view: the IntersectionObserver only fires once a node intersects, so a
+         fast scroll, a keyboard jump, or a restored scroll position left whole
+         sections stranded at opacity 0 / visibility hidden. The animation still
+         plays on reveal -- but if JS never runs, or the observer misses, the
+         content must still be readable and clickable. */
+      .no-js .reveal, .reveal-fallback {
+        opacity: 1;
+        transform: none;
         visibility: visible;
       }
 
@@ -112,11 +123,14 @@
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
       }
+      /* Same failure mode as .reveal: `forwards` with no fallback means if the
+         animation never runs the element stays at opacity 0 and swallows clicks.
+         Stagger/fade-in utilities are decorative, so they degrade to visible. */
       .animate-fade-in-up {
         animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         opacity: 0; /* Start hidden */
       }
-      
+
       @keyframes revealWord {
         from { transform: translateY(100%); opacity: 0; }
         to { transform: translateY(0); opacity: 1; }
@@ -124,6 +138,18 @@
       .stagger-word {
         opacity: 0;
         animation: revealWord 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      /* If the animation never starts (prefers-reduced-motion, a stripped
+         engine, or a class added before CSS loads) these words must not stay
+         invisible. Animation fill-mode covers the normal path; this covers the
+         abnormal one. */
+      @media (prefers-reduced-motion: reduce) {
+        .animate-fade-in-up, .stagger-word {
+          animation: none;
+          opacity: 1;
+          transform: none;
+        }
       }
       
       /* Fix Overflow/Black Line */
@@ -191,39 +217,66 @@
     <div id="root"></div>
     
     <script>
-      // Optimized Intersection Observer without polling
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('active');
-            observer.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+      /* Scroll-reveal, with a hard guarantee that content is never left hidden.
 
-      const setupObserver = () => {
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-      };
-      
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', setupObserver);
-      } else {
-        setupObserver();
-      }
+         The failure this fixes: the observer only ever fires for a node that
+         INTERSECTS. With `visibility:hidden` on .reveal, a fast scroll, a
+         keyboard jump, an anchor link, or a restored scroll position left whole
+         sections invisible and unclickable -- the user saw the page but could
+         not click anything in it.
 
-      // Re-observe dynamically added elements
-      const mutationObserver = new MutationObserver((mutations) => {
-        mutations.forEach(mutation => {
-          mutation.addedNodes.forEach(node => {
-            if (node.nodeType === 1 && node.classList.contains('reveal')) {
-              observer.observe(node);
-            } else if (node.nodeType === 1) {
-              node.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+         Two belts to that braces:
+           1. .reveal no longer sets visibility:hidden, so an unrevealed block
+              is at worst still transparent, never unclickable.
+           2. a sweep that force-reveals anything still hidden after 1.2s and
+              whenever the page is restored, so the observer missing is a lost
+              animation and never lost content. */
+      const revealAll = () => document.querySelectorAll('.reveal:not(.active)')
+        .forEach(el => el.classList.add('active'));
+
+      if (typeof IntersectionObserver === 'function') {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('active');
+              observer.unobserve(entry.target);
             }
           });
+        }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+
+        const setupObserver = () => {
+          document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', setupObserver);
+        } else {
+          setupObserver();
+        }
+
+        // Re-observe dynamically added elements
+        const mutationObserver = new MutationObserver((mutations) => {
+          mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => {
+              if (node.nodeType === 1 && node.classList.contains('reveal')) {
+                observer.observe(node);
+              } else if (node.nodeType === 1) {
+                node.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+              }
+            });
+          });
         });
-      });
-      mutationObserver.observe(document.body, { childList: true, subtree: true });
+        mutationObserver.observe(document.body, { childList: true, subtree: true });
+      } else {
+        // no observer support: show everything rather than hide the page
+        document.documentElement.classList.add('no-js');
+      }
+
+      /* the safety net */
+      setTimeout(revealAll, 1200);
+      window.addEventListener('load', () => setTimeout(revealAll, 400));
+      window.addEventListener('pageshow', revealAll);   // bfcache / back-forward restore
+      if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     </script>
     <script src="/assets/ocurp-3d.js" defer></script>
 </body>
