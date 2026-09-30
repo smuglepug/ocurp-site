@@ -70,4 +70,5 @@ const RAW = [
   {slug:"rock-paper-scissors",name:"Rock Paper Scissors",cat:"game",blurb:"The rival throws a fixed printed sequence, so read the next throw and answer it. Nothing here is luck - keys 1 / 2 / 3 also work.",tags:["GAMES","ARCADE","PUZZLE"],ready:true},
   {slug:"sliding-puzzle",name:"Sliding Puzzle",cat:"game",blurb:"Literal boards with a stated move solution, so the level you read is the level you play. Solve inside the move budget or run out and lose.",tags:["GAMES","PUZZLE","LOGIC"],ready:true},
   {slug:"snake-battle",name:"Snake Battle",cat:"game",blurb:"One duel point at a time: you move, then the rival answers. A greedy AI that shrinks the larger axis gap toward you, never into itself.",tags:["GAMES","ARCADE","AI"],ready:true},
+  {slug:"missile-command",name:"Missile Command",cat:"game",blurb:"Three batteries, six cities and a magazine that never refills. Twelve waves, four cities lost ends it.",tags:["GAMES","ARCADE","DEFENCE"],ready:true},
 ];
