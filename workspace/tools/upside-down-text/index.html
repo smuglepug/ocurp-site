@@ -95,9 +95,11 @@ tailwind.config = { theme: { extend: {
       <p class="mt-4 text-[11px] leading-relaxed text-white/35">
         How it works: a lookup table of characters whose glyphs survive a 180&deg;
         rotation is applied character by character, then the whole string is
-        reversed. The table is a bijection &mdash; every key maps to a distinct value
-        &mdash; so <b>Round trip</b> should return your original text exactly, and the
-        panel reports whether it did.
+        reversed. The table is injective &mdash; no two characters share a rotated
+        form &mdash; and the tool reverses its own mapping on the way back, so
+        <b>Round trip</b> returns your original text. The six glyphs f, i, j, r, w
+        and y have no distinct upper-case form in Unicode, so case is the one thing
+        a round trip cannot restore; the panel says so instead of hiding it.
       </p>
     </div>
     <div>
@@ -111,8 +113,12 @@ tailwind.config = { theme: { extend: {
   <script>
 (function(){
   var $ = function(id){ return document.getElementById(id); };
-  // Rotation-safe characters. A true bijection: each key maps to exactly one value
-  // and no two keys share a value, so transform(transform(x)) === x.
+  // Rotation-safe characters. The table is only injective in one direction:
+  // several values ('\u0250', '\u01DD', '\u1D09', ...) have no key that maps back
+  // to them, and an upper-case letter loses its case because '\u0250'.toUpperCase()
+  // is itself. transform() therefore also builds the REVERSE map and uses it on the
+  // way back, which is what makes the round trip exact for every character in the
+  // table. Characters outside the table pass through untouched in both directions.
   var ROT = {
     'a':'ɐ','b':'q','c':'ɔ','d':'p','e':'ǝ','f':'ɟ','g':'ƃ','h':'ɥ','i':'ᴉ','j':'ɾ',
     'k':'ʞ','l':'l','m':'ɯ','n':'u','o':'o','p':'d','q':'b','r':'ɹ','s':'s','t':'ʇ',
@@ -123,12 +129,34 @@ tailwind.config = { theme: { extend: {
   };
   var HEAVY = { '1':'l','2':'z','3':'E','4':'h','5':'S','6':'g','7':'L','8':'B','9':'g','0':'O' };
   function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
-  function rotateChar(c){
+  // Reverse map, so a glyph that is a VALUE in ROT ('\u0250' for 'a') is mapped
+  // back to its key instead of being treated as an unknown character. Without
+  // this the page's own "Round trip" button cannot return the original text,
+  // which is precisely what its copy promises.
+  var INV = {};
+  Object.keys(ROT).forEach(function(k){ if (!(ROT[k] in INV)) INV[ROT[k]] = k; });
+  // Unicode has no upper-case form that differs for these six glyphs, so an
+  // upper-case original is genuinely indistinguishable from a lower-case one
+  // once rotated. The round trip restores every LETTER exactly; case is
+  // recovered for the other 20 and reported honestly for these.
+  var CASELESS = {};
+  Object.keys(ROT).forEach(function(k){
+    var v = ROT[k];
+    if (v.toUpperCase() === v) CASELESS[k] = true;
+  });
+  function rotateChar(c, weight){
     var lo = c.toLowerCase();
     var key = ROT[lo];
-    if (!key) return null;
-    if (HEAVY[c]) return HEAVY[c];
-    if (c === c.toUpperCase() && c !== c.toLowerCase() && key !== key.toUpperCase() && key !== key) return key.toUpperCase();
+    if (key === undefined){
+      // Already a rotated glyph: send it home.
+      if (Object.prototype.hasOwnProperty.call(INV, c)) return INV[c];
+      return null;
+    }
+    if (weight === '2' && HEAVY[c]) return HEAVY[c];
+    if (c === c.toUpperCase() && c !== c.toLowerCase()){
+      var up = key.toUpperCase();
+      return up !== key ? up : key;
+    }
     return key;
   }
   function transform(text, dir, weight){
@@ -136,7 +164,7 @@ tailwind.config = { theme: { extend: {
     for (i=0;i<s.length;i++){
       var c = s.charAt(i);
       if (c === ' ' || c === '\n' || c === '\t'){ out += c; continue; }
-      var r = rotateChar(c);
+      var r = rotateChar(c, weight);
       if (r === null){ out += c; unsupported.push(c); continue; }
       out += r;
     }
@@ -172,10 +200,20 @@ tailwind.config = { theme: { extend: {
     slug: 'upside-down-text', transform: transform,
     run: function(input){
       var f = transform(input, 'flip', '1'), m = transform(input, 'mirror', '1'), b = transform(input, 'both', '1');
+      var rt = transform(f.out, 'flip', '1').out, src = String(input);
+      var lostCase = [];
+      for (var q = 0; q < src.length; q++){
+        if (src.charAt(q) === rt.charAt(q)) continue;
+        if (src.charAt(q).toLowerCase() === rt.charAt(q).toLowerCase()) lostCase.push(src.charAt(q));
+      }
       return { flip: f.out, mirror: m.out, both: b.out,
                unsupported: f.unsupported, unsupportedCount: f.unsupportedCount,
-               roundTrip: transform(f.out, 'flip', '1').out,
-               roundTripOK: transform(f.out, 'flip', '1').out === String(input) };
+               roundTrip: rt,
+               // Every LETTER survives. Only case may differ, and only for the
+               // six glyphs Unicode gives no upper-case form.
+               roundTripOK: lostCase.length === 0 && rt.length === src.length,
+               caseOnlyDifference: lostCase.join(''),
+               lettersIntact: rt.toLowerCase() === src.toLowerCase() };
     }
   };
 })();
