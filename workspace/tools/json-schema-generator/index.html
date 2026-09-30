@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Schema Generator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Infer a draft-07 schema from an example value, edit it, then validate a document and read every error path. Runs entirely in your browser - nothing is...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/json-schema-generator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JSON Schema Generator">
+<meta property="og:description" content="Infer a draft-07 schema from an example value, edit it, then validate a document and read every error path. Runs entirely in your browser - nothing is...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/json-schema-generator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="JSON Schema Generator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JSON Schema Generator">
+<meta name="twitter:description" content="Infer a draft-07 schema from an example value, edit it, then validate a document and read every error path. Runs entirely in your browser - nothing is...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="JSON Schema Generator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Schema Generator","url":"https://ocurp.space/workspace/tools/json-schema-generator/","description":"Infer a draft-07 schema from an example value, edit it, then validate a document and read every error path. Runs entirely in your browser - nothing is...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">JSON Schema Generator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Data & Code — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">JSON</span><span class="ws-chip">SCHEMA</span><span class="ws-chip">VALIDATE</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <label class="ws-label mb-2 block" for="src">Example JSON value</label>
+    <textarea id="src" class="ws-input min-h-[220px] font-mono" spellcheck="false"></textarea>
+    <div class="mt-3 flex flex-wrap items-center gap-2">
+      <button id="inf" class="ws-btn">Infer schema</button>
+      <button id="flat" class="ws-btn-ghost !px-3 !py-1.5">Add $schema key</button>
+      <button id="sample" class="ws-btn-ghost !px-3 !py-1.5">Sample</button>
+      <span class="ml-auto text-[11px] text-white/40" id="hint">Edit the schema on the right - validation uses it, not the inference.</span>
+    </div>
+    <div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div>
+  </section>
+
+  <div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+
+  <section class="mt-4 grid gap-4 lg:grid-cols-2">
+    <div class="ws-panel p-5">
+      <div class="mb-3 flex items-center justify-between">
+        <span class="ws-label">Schema (draft-07) &mdash; editable</span>
+        <button class="ws-btn-ghost !px-3 !py-1.5" onclick="cpText(this,'schema')">Copy</button>
+      </div>
+      <textarea id="schema" class="ws-input min-h-[340px] font-mono text-[12px]"
+        spellcheck="false"></textarea>
+    </div>
+    <div class="ws-panel p-5">
+      <div class="mb-3 flex items-center justify-between">
+        <span class="ws-label">Document to validate</span>
+        <button class="ws-btn-ghost !px-3 !py-1.5" onclick="cpText(this,'doc')">Copy</button>
+      </div>
+      <textarea id="doc" class="ws-input min-h-[340px] font-mono text-[12px]"
+        spellcheck="false"></textarea>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button id="val" class="ws-btn">Validate</button>
+        <button id="bad" class="ws-btn-ghost !px-3 !py-1.5">Load a broken document</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="ws-panel mt-4 p-5">
+    <div class="mb-3 flex items-center justify-between">
+      <span class="ws-label">Validation report</span>
+      <span class="ws-chip" id="verdict">-</span>
+    </div>
+    <div id="report" class="text-sm"></div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+var RE_DATE=/^\d{4}-\d{2}-\d{2}$/;
+var RE_TIME=/^\d{2}:\d{2}(:\d{2})?$/;
+var RE_EMAIL=/^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$/;
+var RE_URI=/^[a-zA-Z][a-zA-Z0-9+.\-]*:\/\/[^\s]+$/;
+var RE_UUID=/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+function jsType(v){
+  if(v===null) return 'null';
+  if(Array.isArray(v)) return 'array';
+  return typeof v;                 // string | number | boolean | object
+}
+// A format guess only applies to a single string; anything else stays plain.
+function guessFormat(s){
+  if(RE_UUID.test(s)) return 'uuid';
+  if(RE_EMAIL.test(s)) return 'email';
+  if(RE_DATE.test(s) && !isNaN(Date.parse(s))) return 'date';
+  if(RE_TIME.test(s)) return 'time';
+  if(RE_URI.test(s)) return 'uri';
+  if(/^[a-f0-9]{6}$/i.test(s)) return 'color';
+  return null;
+}
+function jsMerge(a,b){
+  // Union of two inferred object shapes; used to merge array items.
+  if(a.type!=='object'||b.type!=='object') return a;
+  var o={type:'object',properties:{},required:[]};
+  var keys={}; Object.keys(a.properties||{}).forEach(function(k){keys[k]=1});
+  Object.keys(b.properties||{}).forEach(function(k){keys[k]=1});
+  Object.keys(keys).sort().forEach(function(k){
+    var pa=(a.properties||{})[k], pb=(b.properties||{})[k];
+    o.properties[k] = pa && pb ? jsMerge(pa,pb) : (pa||pb);
+  });
+  var ra=(a.required||[]).filter(function(k){return keys[k]});
+  var rb=(b.required||[]).filter(function(k){return keys[k]});
+  var inter=ra.filter(function(k){return rb.indexOf(k)>=0});
+  o.required=inter.sort();
+  if(a.additionalProperties!==undefined) o.additionalProperties=a.additionalProperties;
+  return o;
+}
+function jsInfer(v){
+  var t=jsType(v);
+  if(t==='object'){
+    var props={}, req=[];
+    Object.keys(v).sort().forEach(function(k){
+      props[k]=jsInfer(v[k]); req.push(k);
+    });
+    var o={type:'object'};
+    if(Object.keys(props).length){ o.properties=props; o.required=req.sort(); }
+    else o.additionalProperties=true;
+    return o;
+  }
+  if(t==='array'){
+    if(!v.length) return {type:'array',items:{}};
+    var it=v.map(jsInfer).reduce(jsMerge);
+    return {type:'array',items:it};
+  }
+  if(t==='string'){
+    var f=guessFormat(v);
+    return f?{type:'string',format:f}:{type:'string'};
+  }
+  if(t==='number') return {type:(v<0||Number.isInteger(v))?'integer':'number'};
+  return {type:t};
+}
+
+// ── validator ───────────────────────────────────────────────────────────────
+function jsTypeOk(v,t){
+  if(t==='integer') return typeof v==='number'&&Number.isInteger(v);
+  return jsType(v)===t;
+}
+function jvFormatOk(v,fmt){
+  var s=String(v);
+  switch(fmt){
+    case 'email': return RE_EMAIL.test(s);
+    case 'date': return RE_DATE.test(s)&&!isNaN(Date.parse(s));
+    case 'time': return RE_TIME.test(s);
+    case 'uri': return RE_URI.test(s);
+    case 'uuid': return RE_UUID.test(s);
+    case 'date-time': return !isNaN(Date.parse(s));
+    default: return true;          // unknown formats are annotations, not rules
+  }
+}
+// Recursive. Returns [{path,msg}] with JSONPath-style locations.
+function jsValidate(data,schema){
+  var errs=[];
+  function walk(v,s,p){
+    if(!s||typeof s!=='object') return;
+    if(s.type){
+      var ts=Array.isArray(s.type)?s.type:[s.type], ok=ts.some(function(t){return jsTypeOk(v,t)});
+      if(!ok){ errs.push({path:p,msg:'must be '+ts.join(' or ')+' but is '+jsType(v)}); return; }
+    }
+    if(s.enum&&s.enum.indexOf(v)<0)
+      errs.push({path:p,msg:'must be one of '+JSON.stringify(s.enum)});
+    if(typeof v==='number'){
+      if(typeof s.minimum==='number'&&v<s.minimum) errs.push({path:p,msg:'must be >= '+s.minimum});
+      if(typeof s.maximum==='number'&&v>s.maximum) errs.push({path:p,msg:'must be <= '+s.maximum});
+      if(typeof s.multipleOf==='number'&&v%s.multipleOf!==0)
+        errs.push({path:p,msg:'must be a multiple of '+s.multipleOf});
+    }
+    if(typeof v==='string'){
+      if(typeof s.minLength==='number'&&v.length<s.minLength)
+        errs.push({path:p,msg:'must be at least '+s.minLength+' characters'});
+      if(typeof s.maxLength==='number'&&v.length>s.maxLength)
+        errs.push({path:p,msg:'must be at most '+s.maxLength+' characters'});
+      if(s.pattern){ var re; try{ re=new RegExp(s.pattern); }catch(e){ re=null; }
+        if(re&&!re.test(v)) errs.push({path:p,msg:'does not match pattern '+s.pattern}); }
+      if(s.format&&!jvFormatOk(v,s.format))
+        errs.push({path:p,msg:'is not a valid '+s.format+' ('+JSON.stringify(v)+')'});
+    }
+    if(Array.isArray(v)){
+      if(typeof s.minItems==='number'&&v.length<s.minItems)
+        errs.push({path:p,msg:'must have at least '+s.minItems+' item(s)'});
+      if(typeof s.maxItems==='number'&&v.length>s.maxItems)
+        errs.push({path:p,msg:'must have at most '+s.maxItems+' item(s)'});
+      if(s.items) v.forEach(function(it,i){ walk(it,s.items,p+'['+i+']'); });
+    }
+    if(v&&typeof v==='object'&&!Array.isArray(v)){
+      var props=s.properties||{};
+      (s.required||[]).forEach(function(k){
+        if(!(k in v)) errs.push({path:p+'.'+k,msg:'is required but missing'});
+      });
+      Object.keys(props).forEach(function(k){
+        if(k in v) walk(v[k],props[k],p+'.'+k);
+      });
+      if(s.additionalProperties===false){
+        Object.keys(v).forEach(function(k){
+          if(!(k in props)) errs.push({path:p+'.'+k,msg:'is not an allowed property'});
+        });
+      } else if(s.additionalProperties&&typeof s.additionalProperties==='object'){
+        Object.keys(v).forEach(function(k){
+          if(!(k in props)) walk(v[k],s.additionalProperties,p+'.'+k);
+        });
+      }
+    }
+  }
+  walk(data,schema,'$');
+  return errs;
+}
+
+// ── ui ──────────────────────────────────────────────────────────────────────
+function cpText(btn,pid){
+  var t=$(pid).textContent;
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function jcount(node){
+  var n={props:0,required:0,depth:0};
+  (function walk(s,d){
+    if(!s||typeof s!=='object') return;
+    n.depth=Math.max(n.depth,d);
+    if(s.properties){ n.props+=Object.keys(s.properties).length;
+      n.required+=(s.required||[]).length;
+      Object.keys(s.properties).forEach(function(k){ walk(s.properties[k],d+1); }); }
+    if(s.items) walk(s.items,d+1);
+  })(node,0);
+  return n;
+}
+function infer(){
+  var raw=$('src').value;
+  try{
+    var v=JSON.parse(raw);
+    var sch=jsInfer(v);
+    var full={$schema:'http://json-schema.org/draft-07/schema#'};
+    Object.keys(sch).forEach(function(k){ full[k]=sch[k]; });
+    $('schema').value=JSON.stringify(full,null,2);
+    $('err').textContent='';
+    var c=jcount(sch);
+    show([['Properties',c.props],['Required',c.required],
+          ['Max depth',c.depth],['Sample keys',Object.keys(v&&typeof v==='object'?v:{}).length]]);
+    window.__schema = {infer:jsInfer, validate:jsValidate, current:sch,
+      counts:function(){return jcount(sch);}, guessFormat:guessFormat};
+    validate();
+    return full;
+  }catch(e){
+    $('err').textContent='\u2717 '+e.message; $('err').style.color='#f87171';
+    show([['Properties','-'],['Required','-'],['Max depth','-'],['Sample keys','-']]);
+    return null;
+  }
+}
+function validate(){
+  var s,d;
+  try{ s=JSON.parse($('schema').value); }
+  catch(e){ $('verdict').textContent='SCHEMA PARSE ERROR';
+           $('report').innerHTML='<div class="text-sm text-red-400">\u2717 schema is not valid JSON: '+esc(e.message)+'</div>';
+           window.__validation=null; return null; }
+  try{ d=JSON.parse($('doc').value); }
+  catch(e){ $('verdict').textContent='DOCUMENT PARSE ERROR';
+           $('report').innerHTML='<div class="text-sm text-red-400">\u2717 document is not valid JSON: '+esc(e.message)+'</div>';
+           window.__validation=null; return null; }
+  var errs=jsValidate(d,s);
+  if(errs.length){
+    $('verdict').textContent='INVALID \u2014 '+errs.length+' ERROR'+(errs.length>1?'S':'');
+    $('report').innerHTML='<ul class="space-y-1.5">'+errs.map(function(e){
+      return '<li class="flex flex-wrap items-baseline gap-2 rounded-lg border border-red-500/25 bg-red-500/5 px-3 py-2">'
+        +'<code class="font-mono text-[12px] font-bold text-accent">'+esc(e.path)+'</code>'
+        +'<span class="text-sm text-white/70">'+esc(e.msg)+'</span></li>'; }).join('')+'</ul>';
+  } else {
+    $('verdict').textContent='VALID';
+    $('report').innerHTML='<div class="flex items-center gap-2 text-sm text-white/70">'
+      +'<span class="text-accent">\u2713</span> Every rule in the schema was satisfied.</div>';
+  }
+  window.__validation = {valid:errs.length===0, errors:errs};
+  return errs;
+}
+$('inf').addEventListener('click',infer);
+$('val').addEventListener('click',validate);
+$('schema').addEventListener('change',validate);
+$('doc').addEventListener('change',validate);
+$('flat').addEventListener('click',function(){
+  try{ var s=JSON.parse($('schema').value);
+      if(s.$schema) { delete s.$schema; $('schema').value=JSON.stringify(s,null,2); }
+  }catch(e){}
+});
+$('sample').addEventListener('click',function(){
+  $('src').value='{\n  "id": 42,\n  "name": "Owen Osayi",\n  "email": "owen@ocurp.space",\n  "site": "https://ocurp.space",\n  "joined": "2024-07-04",\n  "active": true,\n  "profile": { "city": "Cotonou", "handle": "@owen" },\n  "tags": ["founder", "engineer"],\n  "projects": [\n    { "title": "Runway", "stars": 12, "live": true },\n    { "title": "Clinic", "stars": 4, "live": false }\n  ]\n}'; $('doc').value='{\n  "id": 42,\n  "name": "Owen Osayi",\n  "email": "owen@ocurp.space",\n  "site": "https://ocurp.space",\n  "joined": "2024-07-04",\n  "active": true,\n  "profile": { "city": "Cotonou", "handle": "@owen" },\n  "tags": ["founder", "engineer"],\n  "projects": [\n    { "title": "Runway", "stars": 12, "live": true },\n    { "title": "Clinic", "stars": 4, "live": false }\n  ]\n}'; infer();
+});
+$('bad').addEventListener('click',function(){ $('doc').value='{\n  "id": 1,\n  "name": "Owen",\n  "email": 12345,\n  "joined": "2024-07-04",\n  "profile": { "handle": 7 },\n  "tags": ["founder"]\n}'; validate(); });
+$('src').value='{\n  "id": 42,\n  "name": "Owen Osayi",\n  "email": "owen@ocurp.space",\n  "site": "https://ocurp.space",\n  "joined": "2024-07-04",\n  "active": true,\n  "profile": { "city": "Cotonou", "handle": "@owen" },\n  "tags": ["founder", "engineer"],\n  "projects": [\n    { "title": "Runway", "stars": 12, "live": true },\n    { "title": "Clinic", "stars": 4, "live": false }\n  ]\n}';
+$('doc').value='{\n  "id": 42,\n  "name": "Owen Osayi",\n  "email": "owen@ocurp.space",\n  "site": "https://ocurp.space",\n  "joined": "2024-07-04",\n  "active": true,\n  "profile": { "city": "Cotonou", "handle": "@owen" },\n  "tags": ["founder", "engineer"],\n  "projects": [\n    { "title": "Runway", "stars": 12, "live": true },\n    { "title": "Clinic", "stars": 4, "live": false }\n  ]\n}';
+infer();
+// Re-exposed after infer() has run so the test hook always carries the
+// CURRENT inferred schema, even if the user later edits the textarea.
+window.__schema = {infer:jsInfer, validate:jsValidate, guessFormat:guessFormat,
+  current:window.__schema.current,
+  counts:function(){ try{ return jcount(JSON.parse($('schema').value)); }catch(e){ return {}; } }};
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/json-schema/">
+      <span class="ocurp-related-n">JSON Schema Generator (Full)</span>
+      <span class="ocurp-related-b">Paste a sample document and get a draft-07 JSON Schema inferred from it, with required lis</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-to-sql/">
+      <span class="ocurp-related-n">JSON to SQL Converter</span>
+      <span class="ocurp-related-b">Turn a JSON document into a CREATE TABLE statement with matching column types.</span>
+    </a></li>
+    <li><a href="/workspace/tools/csv-json/">
+      <span class="ocurp-related-n">CSV to JSON</span>
+      <span class="ocurp-related-b">Convert delimited text and JSON both ways.</span>
+    </a></li>
+    <li><a href="/workspace/tools/csv-to-json/">
+      <span class="ocurp-related-n">CSV to JSON Pro</span>
+      <span class="ocurp-related-b">Quoted fields, escaped newlines and delimiter sniffing handled correctly.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-diff/">
+      <span class="ocurp-related-n">JSON Diff</span>
+      <span class="ocurp-related-b">Compare two JSON documents key by key and see exactly what was added, removed or changed.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-formatter/">
+      <span class="ocurp-related-n">JSON Prettifier</span>
+      <span class="ocurp-related-b">Format, minify and validate JSON with a live error pointer.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

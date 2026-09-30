@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unit Circle & Trig — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Drag the angle and read sin, cos, tan and radians to four decimals, with the exact common-angle table and a practice mode. Runs entirely in your browser -...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/unit-circle/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Unit Circle &amp; Trig">
+<meta property="og:description" content="Drag the angle and read sin, cos, tan and radians to four decimals, with the exact common-angle table and a practice mode. Runs entirely in your browser -...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/unit-circle/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Unit Circle &amp; Trig on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Unit Circle &amp; Trig">
+<meta name="twitter:description" content="Drag the angle and read sin, cos, tan and radians to four decimals, with the exact common-angle table and a practice mode. Runs entirely in your browser -...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Unit Circle &amp; Trig on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Unit Circle & Trig","url":"https://ocurp.space/workspace/tools/unit-circle/","description":"Drag the angle and read sin, cos, tan and radians to four decimals, with the exact common-angle table and a practice mode. Runs entirely in your browser -...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Unit Circle & Trig</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">TRIG</span><span class="ws-chip">GEOMETRY</span><span class="ws-chip">MATH</span></div>
+        </div>
+      
+<style>
+  #uc-wrap{position:relative;width:max-content;max-width:100%;margin:0 auto}
+  #uc-canvas{display:block;width:100%;max-width:400px;height:auto;border-radius:1rem;
+    border:1px solid rgba(255,255,255,.12);background:#050505;touch-action:none;cursor:grab}
+  #uc-table td,#uc-table th{padding:.35rem .6rem}
+  .uc-live{font-variant-numeric:tabular-nums}
+</style>
+
+  <section class="ws-panel p-6">
+    <div class="uc-wrap"><canvas id="uc-canvas" width="400" height="400"></canvas></div>
+
+    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div><label class="ws-label mb-2 block" for="uc-deg">Angle (degrees)</label>
+        <input id="uc-deg" type="number" class="ws-input" step="1" value="30"></div>
+      <div><label class="ws-label mb-2 block" for="uc-rad">Angle (radians)</label>
+        <input id="uc-rad" type="number" class="ws-input" step="0.01" value="0.5236"></div>
+      <div class="sm:col-span-2"><label class="ws-label mb-2 block" for="uc-range">Drag the circle or slide</label>
+        <input id="uc-range" type="range" min="-360" max="360" step="0.1" class="ws-input !p-0" value="30"></div>
+    </div>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <button id="uc-cc" class="ws-btn-ghost !px-3 !py-1.5">Play / pause sweep</button>
+      <button id="uc-reset" class="ws-btn-ghost !px-3 !py-1.5">Reset to 0</button>
+    </div>
+    <div class="mt-3 text-[11px] font-mono text-white/45" id="uc-quad"></div>
+  </section>
+
+  <div id="uc-stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5"></div>
+
+  <section class="ws-panel mt-4 p-5">
+    <div class="mb-3 flex items-center justify-between">
+      <span class="ws-label">Exact common angles</span>
+      <button class="ws-btn-ghost !px-3 !py-1.5" onclick="ucCopyTable(this)">Copy table</button>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm uc-live">
+        <thead class="ws-label"><tr>
+          <th class="py-2 pr-4">&deg;</th><th class="py-2 pr-4">rad</th>
+          <th class="py-2 pr-4">sin</th><th class="py-2 pr-4">cos</th>
+          <th class="py-2 pr-4">tan</th><th class="py-2 pr-4">Quadrant</th>
+        </tr></thead>
+        <tbody id="uc-table"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="ws-panel mt-4 p-6">
+    <div class="flex flex-wrap items-end gap-4">
+      <div><div class="ws-label mb-2">Question</div>
+        <div id="uc-q" class="font-display text-lg font-black text-white">Press &ldquo;Next question&rdquo;</div></div>
+      <div><label class="ws-label mb-2 block" for="uc-a">Your answer (value or radical)</label>
+        <input id="uc-a" class="ws-input !w-52" placeholder="e.g. 0.5 or sqrt(3)/2"></div>
+      <div class="flex gap-2">
+        <button id="uc-check" class="ws-btn">Check</button>
+        <button id="uc-next" class="ws-btn-ghost">Next question</button>
+      </div>
+    </div>
+    <div class="mt-3 flex flex-wrap items-center gap-5">
+      <span class="ws-chip" id="uc-score">SCORE 0 / 0</span>
+      <span class="text-xs text-white/50" id="uc-fb"></span>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+// Exact values for every angle a right triangle or the unit circle produces.
+// Written out as display strings because the point is the SURPRISE that
+// sqrt(3)/2 and 0.8660 are the same number.
+var UC_TABLE = [
+  [0,'0','1','0','1'],          [30,'&pi;/6','1/2','&radic;3/2','&radic;3/3','1'],
+  [45,'&pi;/4','&radic;2/2','&radic;2/2','1','1'],
+  [60,'&pi;/3','&radic;3/2','1/2','&radic;3','1'],
+  [90,'&pi;/2','1','0','undefined','axis'],
+  [120,'2&pi;/3','&radic;3/2','-1/2','-&radic;3','2'],
+  [135,'3&pi;/4','&radic;2/2','-&radic;2/2','-1','2'],
+  [150,'5&pi;/6','1/2','-&radic;3/2','-&radic;3/3','2'],
+  [180,'&pi;','0','-1','0','axis'],
+  [210,'7&pi;/6','-1/2','-&radic;3/2','&radic;3/3','3'],
+  [225,'5&pi;/4','-&radic;2/2','-&radic;2/2','1','3'],
+  [240,'4&pi;/3','-&radic;3/2','-1/2','&radic;3','3'],
+  [270,'3&pi;/2','-1','0','undefined','axis'],
+  [300,'5&pi;/3','-&radic;3/2','1/2','-&radic;3','4'],
+  [315,'7&pi;/4','-&radic;2/2','&radic;2/2','-1','4'],
+  [330,'11&pi;/6','-1/2','&radic;3/2','-&radic;3/3','4']
+];
+
+function ucNorm(d){ d=((d%360)+360)%360; return Math.round(d*1e9)/1e9; }
+// Degrees in, exact trig out. tan is null (not Infinity) on the axes.
+function ucTrig(deg){
+  var rad = deg*Math.PI/180;
+  var s = Math.sin(rad), c = Math.cos(rad);
+  // Snap the float error so cos(90 deg) really is 0 and not 6.1e-17.
+  if(Math.abs(s)<1e-12) s=0; if(Math.abs(c)<1e-12) c=0;
+  return {deg:deg, rad:rad, sin:s, cos:c, tan:(c===0?null:s/c)};
+}
+// Display to 4 dp; undefined is a word, never "Infinity" or "NaN".
+function ucF4(n){ if(n===null||!isFinite(n)) return 'undefined';
+  var v=Math.round(n*10000)/10000; if(Object.is(v,-0)) v=0; return v.toFixed(4); }
+function ucFmt(deg){
+  var t=ucTrig(deg);
+  return {deg:ucF4(t.deg), rad:ucF4(t.rad), sin:ucF4(t.sin), cos:ucF4(t.cos), tan:ucF4(t.tan)};
+}
+function ucQuadrant(deg){
+  var d=ucNorm(deg), ax=(d===0||d===90||d===180||d===270);
+  if(ax) return 'Axis (on the circle)';
+  return 'Quadrant '+Math.floor(d/90+1);
+}
+
+var ucAng=30, ucSweep=false;
+function ucSet(deg,fromRange){
+  ucAng=deg;
+  if(!fromRange) $('uc-range').value=Math.max(-360,Math.min(360,deg));
+  if(document.activeElement!==$('uc-deg')) $('uc-deg').value=Math.round(deg*1e4)/1e4;
+  if(document.activeElement!==$('uc-rad')) $('uc-rad').value=Math.round(deg*Math.PI/180*1e4)/1e4;
+  ucDraw(); ucRender();
+}
+function ucRender(){
+  var f=ucFmt(ucAng), d=ucNorm(ucAng);
+  $('uc-stats').innerHTML=[['sin',f.sin],['cos',f.cos],['tan',f.tan],
+                          ['radians',f.rad],['degrees',f.deg]].map(function(p){
+    return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+      +'<div class="font-display text-xl font-black text-accent uc-live" data-v="'+p[0]+'">'+p[1]+'</div>'
+      +'<div class="ws-label mt-1">'+p[0]+'</div></div>';}).join('');
+  $('uc-quad').textContent='Normalised: '+d+'°  \u00b7  '+ucQuadrant(deg0(ucAng))
+    +'  \u00b7  terminal side is '+(Math.abs(Math.cos(ucAng*Math.PI/180))<1e-12?'0 (the y-axis)':(Math.cos(ucAng*Math.PI/180)>0?'+x':'−x'));
+  // Keep the row for the current angle highlighted in the exact table.
+  var rows=$('uc-table').rows;
+  for(var i=0;i<rows.length;i++) rows[i].className=(parseFloat(rows[i].dataset.deg)===d)?'bg-white/[0.07]':'';
+}
+function deg0(d){ return ((d%360)+360)%360; }
+
+function ucDraw(){
+  var cv=$('uc-canvas'), g=cv.getContext('2d'), W=cv.width, H=cv.height;
+  var cx=W/2, cy=H/2, R=Math.min(W,H)/2-24;
+  g.clearRect(0,0,W,H); g.fillStyle='#050505'; g.fillRect(0,0,W,H);
+  var d=ucNorm(ucAng);
+  // Quadrant wash - highlights which quadrant the ray sits in.
+  var qs=[[0,90],[90,180],[180,270],[270,360]];
+  for(var i=0;i<4;i++){
+    var a0=qs[i][0], a1=qs[i][1];
+    var inq = (d>a0 && d<a1) || (a0===0&&d===0) || (d===a1 && a1!==0 && a1!==360);
+    if(!inq) continue;
+    g.beginPath(); g.moveTo(cx,cy);
+    g.arc(cx,cy,R,a0*Math.PI/180,a1*Math.PI/180); g.closePath();
+    g.fillStyle='rgba(255,95,31,.16)'; g.fill();
+  }
+  // Axes.
+  g.strokeStyle='rgba(255,255,255,.18)'; g.lineWidth=1;
+  g.beginPath(); g.moveTo(cx-R-8,cy); g.lineTo(cx+R+8,cy);
+  g.moveTo(cx,cy-R-8); g.lineTo(cx,cy+R+8); g.stroke();
+  // Tick marks each 15 degrees, labelled each 30.
+  for(var t=0;t<360;t+=15){
+    var a=t*Math.PI/180, big=(t%30===0), rr=big?R-10:R-5;
+    g.strokeStyle=big?'rgba(255,255,255,.45)':'rgba(255,255,255,.18)';
+    g.beginPath();
+    g.moveTo(cx+Math.cos(a)*(R-rr),cy-Math.sin(a)*(R-rr));
+    g.lineTo(cx+Math.cos(a)*R,cy-Math.sin(a)*R); g.stroke();
+    if(big){ g.fillStyle='rgba(255,255,255,.4)'; g.font='9px monospace'; g.textAlign='center';
+      g.fillText(String(t),cx+Math.cos(a)*(R+11),cy-Math.sin(a)*(R+11)+3); }
+  }
+  // Unit circle.
+  g.strokeStyle='rgba(255,255,255,.35)'; g.lineWidth=1.5;
+  g.beginPath(); g.arc(cx,cy,R,0,2*Math.PI); g.stroke();
+  // The ray, then the projected point.
+  var th=ucAng*Math.PI/180, px=cx+Math.cos(th)*R, py=cy-Math.sin(th)*R;
+  g.strokeStyle='#FF5F1F'; g.lineWidth=2.5;
+  g.beginPath(); g.moveTo(cx,cy); g.lineTo(px,py); g.stroke();
+  g.setLineDash([3,3]); g.strokeStyle='rgba(255,95,31,.45)'; g.lineWidth=1;
+  g.beginPath(); g.moveTo(cx,py); g.lineTo(px,py); g.moveTo(px,cy); g.lineTo(px,py); g.stroke();
+  g.setLineDash([]);
+  g.fillStyle='#FF5F1F'; g.beginPath(); g.arc(px,py,6,0,2*Math.PI); g.fill();
+  g.fillStyle='rgba(255,255,255,.8)'; g.beginPath(); g.arc(cx,cy,3.5,0,2*Math.PI); g.fill();
+  g.fillStyle='#FF5F1F'; g.font='bold 12px monospace'; g.textAlign='left';
+  g.fillText('('+ucF4(Math.cos(th))+(Math.sin(th)>=0?', ':', ')+ucF4(Math.sin(th))+')',px+9,py-8);
+}
+
+function ucTableHTML(){
+  return UC_TABLE.map(function(r){
+    var q = r[5]==='axis' ? 'Axis' : ('Quadrant '+r[5]);
+    return row(['<span data-deg="'+r[0]+'">'+r[0]+'&deg;</span>','<span data-deg="'+r[0]+'">'+r[1]+'</span>',
+      '<span data-deg="'+r[0]+'">'+r[2]+'</span>','<span data-deg="'+r[0]+'">'+r[3]+'</span>',
+      '<span data-deg="'+r[0]+'">'+r[4]+'</span>','<span data-deg="'+r[0]+'">'+q+'</span>']);
+  }).join('');
+}
+function ucCopyTable(btn){
+  var txt=UC_TABLE.map(function(r){
+    var q=r[5]==='axis'?'Axis':'Quadrant '+r[5];
+    return [r[0]+'\u00b0',r[1],r[2],r[3],r[4],q].join('\t');}).join('\n');
+  try{navigator.clipboard.writeText(txt)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy table'},1200);
+}
+
+// ── practice ────────────────────────────────────────────────────────────────
+var ucQ=null, ucRight=0, ucAsked=0;
+// Accept "0.5", ".5", "sqrt(3)/2", "√3/2", "1/2", "-1" …
+function ucParseAnswer(s){
+  s=String(s).trim().replace(/\s+/g,'').replace(/\u221a/g,'sqrt').replace(/[−–—]/g,'-');
+  if(!s) return NaN;
+  var m=s.match(/^(-?)sqrt\((\d+(?:\.\d+)?)\)(?:\/(\d+(?:\.\d+)?))?$/i);
+  if(m){ var v=Math.sqrt(parseFloat(m[2]));
+    if(m[3]) v=v/parseFloat(m[3]); return m[1]==='-'?-v:v; }
+  m=s.match(/^(-?)(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/);
+  if(m) return parseFloat(m[2])/parseFloat(m[3]);
+  var n=parseFloat(s); return isFinite(n)?n:NaN;
+}
+function ucNew(){
+  var pool=UC_TABLE.filter(function(r){ return r[5]!=='axis' || r[0]===0 || r[0]===180; });
+  var r=pool[Math.floor(Math.random()*pool.length)];
+  var fn=ucRand(['sin','cos','tan']);
+  var idx={sin:2,cos:3,tan:4}[fn];
+  var vals=ucParseAnswer(r[idx]);
+  if(fn==='tan' && !isFinite(vals)){ // never ask the undefined tangent
+    fn='sin'; idx=2; vals=ucParseAnswer(r[2]);
+  }
+  ucQ={deg:r[0],fn:fn,exact:r[idx],val:vals};
+  $('uc-q').textContent='What is '+fn+'('+r[0]+'°) ?';
+  $('uc-a').value=''; $('uc-fb').textContent='';
+  if(!isFinite(vals)) $('uc-fb').textContent='(no answer - tangent undefined here)';
+}
+function ucRand(a){ return a[Math.floor(Math.random()*a.length)]; }
+function ucCheck(){
+  if(!ucQ){ $('uc-fb').textContent='Press \u201cNext question\u201d first'; return; }
+  var got=ucParseAnswer($('uc-a').value), ok=isFinite(got)&&isFinite(ucQ.val)&&Math.abs(got-ucQ.val)<5e-4;
+  ucAsked++; if(ok) ucRight++;
+  $('uc-score').textContent='SCORE '+ucRight+' / '+ucAsked;
+  $('uc-fb').textContent = isFinite(got)
+    ? (ok ? '\u2713 correct ('+ucQ.exact+')' : '\u2717 '+ucQ.fn+'('+ucQ.deg+'\u00b0) = '+ucQ.exact)
+    : '\u2717 enter a number, a fraction like 1/2, or a radical like sqrt(3)/2';
+  $('uc-fb').style.color = (isFinite(got)&&ok)?'#4ade80':'#f87171';
+}
+
+// ── wiring ──────────────────────────────────────────────────────────────────
+$('uc-range').addEventListener('input',function(){ ucSet(parseFloat(this.value)||0,true); });
+$('uc-deg').addEventListener('input',function(){ var v=parseFloat(this.value); if(isFinite(v)) ucSet(v); });
+$('uc-rad').addEventListener('input',function(){ var v=parseFloat(this.value);
+  if(isFinite(v)) ucSet(v*180/Math.PI); });
+$('uc-reset').addEventListener('click',function(){ ucSet(0); });
+$('uc-check').addEventListener('click',ucCheck);
+$('uc-next').addEventListener('click',ucNew);
+$('uc-a').addEventListener('keydown',function(e){ if(e.key==='Enter') ucCheck(); });
+
+(function sweep(){
+  if(!ucSweep) return;
+  ucSet(ucNorm(ucAng)+0.7);
+  requestAnimationFrame(sweep);
+})();
+$('uc-cc').addEventListener('click',function(){
+  ucSweep=!ucSweep;
+  this.textContent = ucSweep?'Pause sweep':'Play / pause sweep';
+  if(ucSweep) sweep();
+});
+var dragging=false;
+function ucPoint(ev){
+  var cv=$('uc-canvas'), b=cv.getBoundingClientRect();
+  var x=((ev.clientX-b.left)/b.width)*cv.width-cv.width/2;
+  var y=-(((ev.clientY-b.top)/b.height)*cv.height-cv.height/2);
+  ucSet(Math.atan2(y,x)*180/Math.PI);
+}
+$('uc-canvas').addEventListener('pointerdown',function(e){
+  dragging=true; this.setPointerCapture(e.pointerId); ucPoint(e); e.preventDefault(); });
+$('uc-canvas').addEventListener('pointermove',function(e){ if(dragging) ucPoint(e); });
+['pointerup','pointercancel'].forEach(function(k){
+  $('uc-canvas').addEventListener(k,function(){ dragging=false; }); });
+
+$('uc-table').innerHTML=ucTableHTML();
+ucSet(30);
+window.__uc = {trig:ucTrig, fmt:ucFmt, quadrant:ucQuadrant, f4:ucF4, norm:ucNorm,
+  table:UC_TABLE, set:ucSet, newQ:ucNew, check:ucCheck,
+  answer:function(){return ucQ;}, score:function(){return {right:ucRight,asked:ucAsked};},
+  parseAnswer:ucParseAnswer};
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calculator/">
+      <span class="ocurp-related-n">Calculator</span>
+      <span class="ocurp-related-b">Everyday arithmetic and percentages, for quick sums.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calorie-calculator/">
+      <span class="ocurp-related-n">Calorie Calculator</span>
+      <span class="ocurp-related-b">Daily calories from age, weight, activity and goal, using the Mifflin-St Jeor equation.</span>
+    </a></li>
+    <li><a href="/workspace/tools/chance-calculator/">
+      <span class="ocurp-related-n">Chance Calculator</span>
+      <span class="ocurp-related-b">Work out percentages, ratios and the odds of something happening from a set of counts.</span>
+    </a></li>
+    <li><a href="/workspace/tools/compound-interest/">
+      <span class="ocurp-related-n">Compound Interest</span>
+      <span class="ocurp-related-b">Project savings or investments forward with optional monthly deposits.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

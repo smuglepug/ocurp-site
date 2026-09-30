@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Placeholder Image Generator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Type a size and a label, then download a real PNG, a real SVG or a copyable data URI. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/placeholder-image/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Placeholder Image Generator">
+<meta property="og:description" content="Type a size and a label, then download a real PNG, a real SVG or a copyable data URI. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/placeholder-image/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Placeholder Image Generator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Placeholder Image Generator">
+<meta name="twitter:description" content="Type a size and a label, then download a real PNG, a real SVG or a copyable data URI. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Placeholder Image Generator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Placeholder Image Generator","url":"https://ocurp.space/workspace/tools/placeholder-image/","description":"Type a size and a label, then download a real PNG, a real SVG or a copyable data URI. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Placeholder Image Generator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">PLACEHOLDER</span><span class="ws-chip">PNG</span><span class="ws-chip">CANVAS</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div><label class="ws-label mb-2 block" for="w">Width (px)</label>
+        <input id="w" type="number" class="ws-input" min="16" max="4000" value="800"></div>
+      <div><label class="ws-label mb-2 block" for="h">Height (px)</label>
+        <input id="h" type="number" class="ws-input" min="16" max="4000" value="600"></div>
+      <div><label class="ws-label mb-2 block" for="txt">Text</label>
+        <input id="txt" class="ws-input" value="TEST"></div>
+      <div><label class="ws-label mb-2 block" for="fs">Font size (px)</label>
+        <input id="fs" type="number" class="ws-input" min="6" max="400" value="64"></div>
+      <div><label class="ws-label mb-2 block" for="bg">Background</label>
+        <input id="bg" type="color" value="#0d0d0d" class="h-12 w-full cursor-pointer rounded-lg border border-white/10 bg-transparent"></div>
+      <div><label class="ws-label mb-2 block" for="fg">Text colour</label>
+        <input id="fg" type="color" value="#FF5F1F" class="h-12 w-full cursor-pointer rounded-lg border border-white/10 bg-transparent"></div>
+      <div><label class="ws-label mb-2 block" for="bg2">Background (hex)</label>
+        <input id="bg2" class="ws-input font-mono" value="#0d0d0d"></div>
+      <div><label class="ws-label mb-2 block" for="fg2">Text colour (hex)</label>
+        <input id="fg2" class="ws-input font-mono" value="#FF5F1F"></div>
+    </div>
+
+    <div class="mt-4 flex flex-wrap items-center gap-4">
+      <label class="flex items-center gap-2 text-sm text-white/70">
+        <input id="dim" type="checkbox" checked> Draw the W&times;H label</label>
+      <label class="flex items-center gap-2 text-sm text-white/70">
+        <input id="grid" type="checkbox"> Faint grid</label>
+      <div class="flex flex-wrap gap-2">
+        <button id="png" class="ws-btn">Download PNG</button>
+        <button id="svg" class="ws-btn-ghost">Download SVG</button>
+        <button id="copypng" class="ws-btn-ghost">Copy data URI</button>
+      </div>
+    </div>
+    <div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div>
+  </section>
+
+  <div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+
+  <section class="ws-panel mt-4 p-5">
+    <div class="ws-label mb-3">Preview</div>
+    <div class="flex max-h-[420px] items-center justify-center overflow-auto rounded-lg border border-white/10 bg-black/40 p-3">
+      <canvas id="ph-canvas" width="800" height="600" style="max-width:100%;max-height:400px"></canvas>
+    </div>
+  </section>
+
+  <section class="ws-panel mt-4 p-5">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <span class="ws-label">Data URI</span>
+      <button class="ws-btn-ghost !px-3 !py-1.5" onclick="cpText(this,'out')">Copy</button>
+    </div>
+    <pre id="out" class="ws-out max-h-[160px] overflow-auto rounded-lg border border-white/10 bg-black/40 p-3"></pre>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+function phHex(v,fb){
+  v=String(v||'').trim();
+  if(/^#[0-9a-fA-F]{6}$/.test(v)) return v.toUpperCase();
+  if(/^#[0-9a-fA-F]{3}$/.test(v)) return ('#'+v[1]+v[1]+v[2]+v[2]+v[3]+v[3]).toUpperCase();
+  return fb;
+}
+function phN(id,lo,hi,fb){
+  var v=parseFloat($(id).value);
+  if(!isFinite(v)) v=fb;
+  v=Math.round(v);
+  return Math.max(lo,Math.min(hi,v));
+}
+// The one painter. Everything else - PNG, SVG, data URI - is derived from these
+// numbers so the three outputs can never disagree.
+function phGeom(){
+  return {w:phN('w',16,4000,800), h:phN('h',16,4000,600),
+          t:$('txt').value, fs:phN('fs',6,400,64),
+          bg:phHex($('bg2').value,'#0D0D0D'), fg:phHex($('fg2').value,'#FF5F1F'),
+          dim:$('dim').checked, grid:$('grid').checked};
+}
+function phDraw(gm){
+  var cv=$('ph-canvas');
+  cv.width=gm.w; cv.height=gm.h;           // the attributes ARE the image size
+  var g=cv.getContext('2d');
+  g.fillStyle=gm.bg; g.fillRect(0,0,gm.w,gm.h);
+  if(gm.grid){
+    g.strokeStyle='rgba(255,255,255,.06)'; g.lineWidth=1;
+    for(var x=0;x<gm.w;x+=Math.max(10,gm.w/16)){ g.beginPath(); g.moveTo(x+.5,0); g.lineTo(x+.5,gm.h); g.stroke(); }
+    for(var y=0;y<gm.h;y+=Math.max(10,gm.h/16)){ g.beginPath(); g.moveTo(0,y+.5); g.lineTo(gm.w,y+.5); g.stroke(); }
+  }
+  // A stroke around the glyphs keeps the text readable on any background.
+  g.textAlign='center'; g.textBaseline='middle';
+  g.lineWidth=Math.max(2,gm.fs/16); g.strokeStyle=gm.bg;
+  g.font='700 '+gm.fs+'px Manrope, Inter, sans-serif';
+  var cy=gm.h/2;
+  if(gm.t){ g.strokeText(gm.t,gm.w/2,cy); g.fillStyle=gm.fg; g.fillText(gm.t,gm.w/2,cy); }
+  if(gm.dim){
+    var ds=Math.max(10,Math.round(gm.fs*0.34));
+    g.font='700 '+ds+'px monospace';
+    g.lineWidth=Math.max(1,ds/14);
+    g.strokeText(gm.w+'\u00d7'+gm.h,gm.w/2,cy+gm.fs*0.78);
+    g.fillText(gm.w+'\u00d7'+gm.h,gm.w/2,cy+gm.fs*0.78);
+  }
+  return cv;
+}
+// Hand-written so the SVG is a real vector file, not a canvas screenshot.
+function phSVG(gm){
+  var fs=gm.fs, cy=gm.h/2;
+  var s='<svg xmlns="http://www.w3.org/2000/svg" width="'+gm.w+'" height="'+gm.h+'"'
+     +' viewBox="0 0 '+gm.w+' '+gm.h+'">'
+     +'<rect width="100%" height="100%" fill="'+gm.bg+'"/>';
+  if(gm.t) s+='<text x="50%" y="'+(cy+fs*0.35).toFixed(2)+'" text-anchor="middle"'
+     +' font-family="Manrope, Inter, sans-serif" font-size="'+fs+'" font-weight="700"'
+     +' fill="'+gm.fg+'">'+phEsc(gm.t)+'</text>';
+  if(gm.dim){ var ds=Math.max(10,Math.round(fs*0.34));
+    s+='<text x="50%" y="'+(cy+fs*0.78+ds*0.35).toFixed(2)+'" text-anchor="middle"'
+     +' font-family="monospace" font-size="'+ds+'" font-weight="700" fill="'+gm.fg+'">'
+     +gm.w+'\u00d7'+gm.h+'</text>'; }
+  return s+'</svg>';
+}
+function phEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function phDownload(text,mime,name){
+  var url=URL.createObjectURL(new Blob([text],{type:mime}));
+  var a=document.createElement('a');
+  a.href=url; a.download=name; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); setTimeout(function(){URL.revokeObjectURL(url)},2000);
+}
+function cpText(btn,pid){
+  var t=$(pid).textContent;
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function run(){
+  var gm=phGeom();
+  // Keep the two colour pairs in step so hex and picker never disagree.
+  $('bg').value=gm.bg; $('fg').value=gm.fg;
+  $('w').value=gm.w; $('h').value=gm.h; $('fs').value=gm.fs;
+  var cv=phDraw(gm);
+  var uri;
+  try{ uri=cv.toDataURL('image/png'); }
+  catch(e){ uri=''; $('err').textContent='\u2717 canvas export failed: '+e.message; $('err').style.color='#f87171'; }
+  $('out').textContent=uri;
+  show([['Size', gm.w+'\u00d7'+gm.h], ['Pixels', String(gm.w*gm.h)],
+        ['PNG data URI', Math.round(uri.length/1024)+' KB'], ['SVG markup', phSVG(gm).length+' B']]);
+  // Keep the canvas size on the hook so a test can assert the real pixel
+  // dimensions; uri() stays a function that always reads the live textarea,
+  // so it can never go stale and can never shadow the caller's uri().
+  if(window.__ph){ window.__ph.width=cv.width; window.__ph.height=cv.height; }
+}
+['w','h','txt','fs','bg','bg2','fg','fg2','dim','grid'].forEach(function(id){
+  $(id).addEventListener('input',run); $(id).addEventListener('change',run); });
+$('png').addEventListener('click',function(){
+  var uri=$('out').textContent;
+  if(!uri) return;
+  var a=document.createElement('a');
+  a.href=uri;
+  a.download='placeholder-'+$('w').value+'x'+$('h').value+'.png';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+});
+$('svg').addEventListener('click',function(){
+  phDownload(phSVG(phGeom()),'image/svg+xml','placeholder-'+$('w').value+'x'+$('h').value+'.svg');
+});
+$('copypng').addEventListener('click',function(){
+  cpText(this,'out');
+});
+$('txt').value='TEST';
+run();
+window.__ph = {geom:phGeom, uri:function(){return $('out').textContent;},
+  svg:function(){return phSVG(phGeom());}, run:run,
+  size:function(){var c=$('ph-canvas');return {w:c.width,h:c.height};}};
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/signature-generator/">
+      <span class="ocurp-related-n">Signature Generator</span>
+      <span class="ocurp-related-b">Draw a signature with mouse, pen or finger and download it as a transparent PNG.</span>
+    </a></li>
+    <li><a href="/workspace/tools/certificate-generator/">
+      <span class="ocurp-related-n">Certificate Generator</span>
+      <span class="ocurp-related-b">Design an award or achievement certificate and download it as a 1400x990 PNG.</span>
+    </a></li>
+    <li><a href="/workspace/tools/background-remover/">
+      <span class="ocurp-related-n">Background Remover</span>
+      <span class="ocurp-related-b">Cut the background off a photo in your browser — no upload, no watermark.</span>
+    </a></li>
+    <li><a href="/workspace/tools/cubic-bezier/">
+      <span class="ocurp-related-n">Cubic Bezier Editor</span>
+      <span class="ocurp-related-b">Drag the two control points on a curve, watch the easing play and copy the cubic-bezier CS</span>
+    </a></li>
+    <li><a href="/workspace/tools/favicon-maker/">
+      <span class="ocurp-related-n">Favicon Maker</span>
+      <span class="ocurp-related-b">One image to 16/32/48/180/512 favicons plus a .ico bundle.</span>
+    </a></li>
+    <li><a href="/workspace/tools/flow-field/">
+      <span class="ocurp-related-n">Flow Field</span>
+      <span class="ocurp-related-b">Generative particle flow fields that stream around the cursor like a living system.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

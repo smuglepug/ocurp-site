@@ -1,0 +1,62 @@
+# ocurp.space -- LiteSpeed (Hostinger)
+# Apache-style rewrites are IGNORED on LiteSpeed unless RewriteOptions is set,
+# so both are included. The site is multi-page static HTML, so this is a safety
+# net rather than a requirement: every real route is a real file.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteOptions All
+  RewriteBase /
+
+  # Force HTTPS and strip the www, so one canonical host serves everything.
+  RewriteCond %{HTTPS} !=on
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # Existing file or directory: serve it. Never rewrite a real asset.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Anything else falls back to the homepage shell.
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+
+# Long cache for FINGERPRINTED assets, none for HTML so edits go live at once.
+#
+# The 1-week JS rule below was actively harmful. appsite/assets/index-rentify-live-20260904.js
+# has a FIXED name, so "cache it for a week" meant a deploy took up to 7 days to reach
+# anyone -- measured live: the CDN was serving a bundle 4411s (73 min) stale with
+# Age: 4411 and x-hcdn-cache-status: HIT, while the file on disk was already correct.
+# That is why a fix could be deployed, verified by curl, and still not appear in the
+# browser. Cache the fingerprinted listing assets hard; revalidate the bundles.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType text/css "access plus 1 day"
+
+  # index.html must be revalidated or it pins the whole app to a stale bundle.
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+# The homepage bundle has a fixed name (not content-hashed), so it cannot be cached
+# long. must-revalidate + a short TTL makes a deploy visible on the next load instead
+# of up to a week later.
+<FilesMatch "\.(js)$">
+  Header set Cache-Control "public, max-age=300, must-revalidate"
+</FilesMatch>
+
+<FilesMatch "index-rentify-live">
+  Header set Cache-Control "public, max-age=300, must-revalidate"
+</FilesMatch>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+</IfModule>

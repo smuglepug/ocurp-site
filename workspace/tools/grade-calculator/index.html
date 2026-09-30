@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grade Calculator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Weighted grade across assignments, letter and GPA scales, and the mark on the final you actually need to hit your target. Runs entirely in your browser -...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/grade-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Grade Calculator">
+<meta property="og:description" content="Weighted grade across assignments, letter and GPA scales, and the mark on the final you actually need to hit your target. Runs entirely in your browser -...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/grade-calculator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Grade Calculator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Grade Calculator">
+<meta name="twitter:description" content="Weighted grade across assignments, letter and GPA scales, and the mark on the final you actually need to hit your target. Runs entirely in your browser -...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Grade Calculator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Grade Calculator","url":"https://ocurp.space/workspace/tools/grade-calculator/","description":"Weighted grade across assignments, letter and GPA scales, and the mark on the final you actually need to hit your target. Runs entirely in your browser -...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Grade Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GRADES</span><span class="ws-chip">GPA</span><span class="ws-chip">WEIGHTED</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Weighted assignment table</span><div class="flex gap-2"><button id="addrow" class="ws-btn-ghost">Add row</button><button id="clear" class="ws-btn-ghost">Clear</button></div></div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">Assignment</th><th class="py-2 pr-4">Score</th><th class="py-2 pr-4">Out of</th><th class="py-2 pr-4">Weight %</th><th class="py-2 pr-4"></th></tr></thead><tbody id="rows"></tbody></table></div><p class="mt-3 text-[11px] text-white/40">Weights are normalised against the rows you filled in, so a 40% table behaves the same way as a 100% one. Leave an assignment out by clearing its score.</p><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><div class="mt-4 grid gap-4 lg:grid-cols-2"><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">What do I need on the final?</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="need" onclick="cp(this)"></button></div><div><label class="ws-label mb-2 block" for="scale">Grading scale</label><select id="scale" class="ws-input !w-full"><option value="pct" selected>Percentage (A = 90)</option><option value="letter">Letter points (A = 4.0)</option><option value="uk">UK points (A = 4.0, B = 3.5, C = 3, D = 2, E = 1)</option><option value="gpa4">GPA 4.0 scale (A+ = 4.0)</option></select></div><div class="mt-3 grid gap-4 sm:grid-cols-2"><div><label class="ws-label mb-2 block" for="cur">Current weighted average (%)</label><input id="cur" type="number" class="ws-input" placeholder="82" value="82"></div><div><label class="ws-label mb-2 block" for="fw">Final exam weight (%)</label><input id="fw" type="number" class="ws-input" placeholder="30" value="30"></div></div><div class="mt-3 grid gap-4 sm:grid-cols-2"><div><label class="ws-label mb-2 block" for="tgt">Target grade (%)</label><input id="tgt" type="number" class="ws-input" placeholder="90" value="90"></div><div><label class="ws-label mb-2 block" for="maxm">Max final mark</label><input id="maxm" type="number" class="ws-input" placeholder="100" value="100"></div></div><div class="mt-4 text-[11px] leading-relaxed text-white/40"><div class="mt-4" id="need"></div><div class="mt-4 text-[11px] leading-relaxed text-white/40">Needed = (target − current × course weight) ÷ final weight, where course weight = 1 − final weight as a fraction.</div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">What-if mark table</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="whatif" onclick="cp(this)"></button></div><div class="grid gap-4 sm:grid-cols-2"><div><label class="ws-label mb-2 block" for="mcur">Current average (%)</label><input id="mcur" type="number" class="ws-input" placeholder="82" value="82"></div><div><label class="ws-label mb-2 block" for="mfw">Final exam weight (%)</label><input id="mfw" type="number" class="ws-input" placeholder="30" value="30"></div></div><div class="mt-4" id="whatif"></div></section></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">What-if on the final</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="wtbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Mark on final</th><th class="py-2 pr-4">Course average</th><th class="py-2 pr-4">Grade</th><th class="py-2 pr-4">GPA</th></tr></thead><tbody id="wtbl"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Breakdown</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Property</th><th class="py-2 pr-4">Value</th></tr></thead><tbody id="tbl"></tbody></table></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+var ROWSEED=[["Homework", 88, 100, 20], ["Midterm", 76, 100, 30], ["Lab report", 92, 100, 20], ["Quizzes", 81, 100, 30]];
+/* --- grade scales ------------------------------------------------------- */
+/* Each returns {grade, gpa, label} for a percentage. Kept as data so the
+   breakdown table can show the scale that produced the verdict. */
+var SCALES={
+  pct:{name:'Percentage (A = 90)', bands:[[90,'A'],[80,'B'],[70,'C'],[60,'D'],[0,'F']],
+    gpa:[[93,4],[90,4],[87,3.7],[83,3.3],[80,3],[77,2.7],[73,2.3],[70,2],[67,1.7],[60,1],[0,0]]},
+  letter:{name:'Letter points (A = 4.0)',
+    bands:[[90,'A'],[80,'B'],[70,'C'],[60,'D'],[0,'F']], gpa:null},
+  uk:{name:'UK points',
+    bands:[[70,'A'],[60,'B'],[50,'C'],[40,'D'],[0,'E']], gpa:null},
+  gpa4:{name:'GPA 4.0 scale',
+    bands:[[97,'A+'],[93,'A'],[90,'A-'],[87,'B+'],[83,'B'],[80,'B-'],[77,'C+'],[73,'C'],
+           [70,'C-'],[67,'D+'],[63,'D'],[60,'D-'],[0,'F']], gpa:null}
+};
+/* Convert a grade LABEL to points on the 4.0 scale. UK C = 3.0, D = 2.0,
+   E = 1.0 and F = 0, which is the standard UK undergraduate mapping. */
+var LABELPTS={'A+':4,'A':4,'A-':3.7,'B+':3.3,'B':3,'B-':2.7,'C+':2.3,'C':2,'C-':1.7,
+  'D+':1.3,'D':1,'D-':1,'E':1,'F':0};
+var UKPTS={'A':4,'B':3.5,'C':3,'D':2,'E':1,'F':0};
+function labelFor(pct, key){
+  var b=SCALES[key].bands;
+  for(var i=0;i<b.length;i++) if(pct>=b[i][0]) return b[i][1];
+  return 'F';
+}
+function gpaFor(pct, key){
+  var s=SCALES[key];
+  if(s.gpa){ for(var i=0;i<s.gpa.length;i++) if(pct>=s.gpa[i][0]) return s.gpa[i][1]; return 0; }
+  var lab=labelFor(pct,key);
+  if(key==='uk') return UKPTS[lab]!==undefined?UKPTS[lab]:0;
+  if(key==='letter'){ return Math.round(Math.min(4, Math.max(0,pct/25*4))*100)/100; }
+  return LABELPTS[lab]!==undefined?LABELPTS[lab]:0;
+}
+function grade(pct, key){ return {pct:pct, label:labelFor(pct,key), gpa:gpaFor(pct,key)}; }
+/* --- the target maths --------------------------------------------------- */
+function neededFor(currentPct, finalWeightPct, targetPct){
+  var w=finalWeightPct/100;
+  if(!(w>0)) return {possible:false, reason:'the final has to carry some weight'};
+  var courseW=1-w;
+  if(!(courseW>0)) return {possible:false, reason:'the final cannot be 100% of the grade'};
+  var raw=(targetPct-currentPct*courseW)/w;
+  return {possible:true, value:raw, courseWeight:courseW, capped:Math.min(100,Math.max(0,raw))};
+}
+/* --- the assignment table ----------------------------------------------- */
+var rows=[];
+function drawRows(){
+  $('rows').innerHTML=rows.map(function(r,i){
+    return '<tr class="border-t border-white/5">'
+      +'<td class="py-2 pr-4"><input class="ws-input" data-f="n" data-i="'+i+'" value="'
+        +esc(r.name)+'"></td>'
+      +'<td class="py-2 pr-4"><input class="ws-input" type="number" data-f="s" data-i="'+i+'" value="'
+        +(r.score===''?'':r.score)+'"></td>'
+      +'<td class="py-2 pr-4"><input class="ws-input" type="number" data-f="m" data-i="'+i+'" value="'
+        +(r.max===''?'':r.max)+'"></td>'
+      +'<td class="py-2 pr-4"><input class="ws-input" type="number" data-f="w" data-i="'+i+'" value="'
+        +r.weight+'"></td>'
+      +'<td class="py-2 pr-4"><button class="ws-btn-ghost !px-2 !py-1" data-x="'+i
+        +'" onclick="rmRow('+i+')">Remove</button></td></tr>';}).join('');
+}
+function rmRow(i){ rows.splice(i,1); drawRows(); run(); }
+$('rows').addEventListener('input',function(e){
+  var t=e.target, i=+t.getAttribute('data-i'), f=t.getAttribute('data-f');
+  if(isNaN(i)||!f) return;
+  if(f==='n') rows[i].name=t.value;
+  else rows[i][f]=t.value===''?'':Number(t.value);
+  run();
+});
+$('addrow').addEventListener('click',function(){
+  rows.push({name:'New assignment', score:'', max:100, weight:10}); drawRows(); run();
+});
+$('clear').addEventListener('click',function(){ rows=[]; drawRows(); run(); });
+/* Weighted mean over the rows that have a score AND a positive max. Weights
+   are renormalised, so a table that sums to 40 behaves like a table to 100. */
+function weighted(){
+  var live=rows.filter(function(r){ return r.score!=='' && Number(r.max)>0; });
+  if(!live.length) return {ok:false};
+  var wsum=live.reduce(function(a,r){ return a+(Number(r.weight)||0); },0);
+  if(!(wsum>0)) return {ok:false, noWeight:true};
+  var earned=live.reduce(function(a,r){ return a + r.score/Number(r.max)*100*(Number(r.weight)||0); },0);
+  return {ok:true, pct:earned/wsum, wsum:wsum, n:live.length,
+          total:rows.length, raw:earned, missing:rows.length-live.length};
+}
+function tbl(){
+  var v=weighted(), key=$('scale').value;
+  $('need').innerHTML = v.ok
+    ? '<div class="text-[11px] text-white/40">You need on the final</div>'
+      +'<div class="mt-1 font-display text-3xl font-black text-accent">'
+      + (v.pct>=$('tgt').value ? 'nothing - the target is already met'
+                               : r(neededFor(v.pct,$('fw').value,$('tgt').value).capped,2)+'%')
+      +'</div>'
+      + neededLine(v, key)
+    : '<div class="text-sm text-white/40">Add at least one scored assignment above.</div>';
+  // The "what-if mark table" panel is driven by mcur/mfw so the target panel
+  // above can be driven by cur/fw against the real assignment table without
+  // the two contradicting each other.
+  var mcur=Number($('mcur').value), mfw=Number($('mfw').value);
+  var marks=[0,50,60,70,80,90,100], out=[];
+  marks.forEach(function(final){
+    if(!(mfw>0)||!(mfw<100)) return;
+    var cw=1-mfw/100;
+    var pct=((final/100)*mfw+(mcur/100)*cw)*100;
+    var g=grade(pct,key);
+    var reach = pct>=$('tgt').value;
+    out.push(row(['<span class="font-black '+(reach?'text-accent':'text-white/70')+'">'
+        +final+'%</span>', r(pct,2)+'%',
+      '<span class="'+(reach?'text-accent font-black':'')+'">'+g.label+'</span>',
+      r(g.gpa,2)]));
+  });
+  $('wtbl').innerHTML = out.length ? out.join('')
+    : row(['-', 'Set the final weight between 1 and 99 to build the table.', '-', '-']);
+  $('whatif').innerHTML='<div class="ws-label">Course average at each final mark (from '
+    +r(mcur,2)+'% with a '+r(mfw,1)+'% final)</div>'
+    + (mfw>0 && mfw<100 ? marks.map(function(m){
+        var cw=1-mfw/100;
+        var pct=((m/100)*mfw+(mcur/100)*cw)*100;
+        var g=grade(pct,key);
+        return '<div class="mt-2 flex items-center justify-between rounded-lg border'
+          +' border-white/10 bg-white/[0.03] px-3 py-2">'
+          +'<span class="font-mono text-xs">final '+m+'%</span>'
+          +'<span class="font-mono text-xs text-white/60">'+r(pct,2)+'% &middot; '+g.label
+          +' &middot; GPA '+r(g.gpa,2)+'</span></div>';}).join('')
+      : '<div class="mt-2 text-[11px] text-[#f87171]">The final weight has to be '
+       +'between 1 and 99%.</div>');
+  if(v.ok){
+    var g=grade(v.pct,key);
+    show([['Weighted average', r(v.pct,2)+'%'], ['Grade', g.label],
+          ['GPA (4.0)', r(g.gpa,2)], ['Counted rows', v.n+' of '+v.total]]);
+    $('tbl').innerHTML =
+        row(['Weighted average', r(v.pct,2)+'%'])
+      + row(['Grade', '<span class="text-accent font-black">'+g.label+'</span>'])
+      + row(['GPA on the 4.0 scale', r(g.gpa,2)])
+      + row(['Scale in use', SCALES[key].name])
+      + row(['Weights supplied', r(v.wsum,1)+'% (renormalised)'])
+      + row(['Rows counted', v.n+' of '+v.total+(v.missing?' ('+v.missing+' unscored)':'')])
+      + row(['Letters needed for an A', cutoffs(key).map(function(c){
+          return c+'%'; }).join(', ')])
+      + row(['Formula', 'Σ (score ÷ out of × 100 × weight) ÷ Σ weight']);
+  } else {
+    show([['Weighted average','-'],['Grade','-'],['GPA (4.0)','-'],['Counted rows','0']]);
+    $('tbl').innerHTML='<tr><td class="py-3 text-white/40" colspan="2">No scored rows yet.</td></tr>';
+  }
+  if(v.ok) seterr('err', v.noWeight?'at least one row needs a weight above zero':'');
+}
+function neededLine(v, key){
+  var n=neededFor(v.pct,$('fw').value,$('tgt').value);
+  if(!n.possible) return '<div class="mt-2 text-[11px] text-[#f87171]">'
+    +n.reason+' - set the final weight to something between 1 and 99.</div>';
+  if(v.pct>=$('tgt').value) return '<div class="mt-2 text-[11px] text-[#4ade80]">'
+    +'You are already at '+r(v.pct,2)+'%, above the '+r($('tgt').value,2)
+    +'% target. Any mark keeps the target.</div>';
+  if(n.value>100) {
+    /* The smallest final weight that makes the target reachable solves
+       (tgt - cur*(1-w))/w <= 100  =>  w >= (tgt - cur)/(100 - cur).
+       The old expression (tgt - cur)/tgt ignored the (100 - cur) divisor and
+       under-reported the weight by a wide margin - at cur=83.1, tgt=90 it told
+       the user 7.7%, where a 7.7% final needs a 172% mark. It also pointed the
+       wrong way: a SMALLER final weight makes the target harder, not easier. */
+    var minW=$('tgt').value-v.pct>0 && 100-v.pct>0
+      ? ($('tgt').value-v.pct)/(100-v.pct)*100 : null;
+    return '<div class="mt-2 text-[11px] text-[#f87171]">'
+      +'You would need <span class="font-black">'+r(n.value,2)+'%</span> - above 100, so the '
+      +'target is out of reach at this weight. '
+      +(minW!==null && minW<100
+          ? 'A final weight of at least <span class="font-black">'+r(minW,1)+'%</span> would make it reachable. '
+          : 'No final weight can reach this target from here. ')
+      +'the honest answer is a different target, not a fake number.</div>';
+  }
+  if(n.value<0) return '<div class="mt-2 text-[11px] text-[#4ade80]">You cannot score below '
+    +r(-n.value,2)+'% and miss the target.</div>';
+  return '<div class="mt-2 text-[11px] text-white/45">= ('+r($('tgt').value,2)+' − '
+    +r(v.pct,2)+' × '+r(n.courseWeight,2)+') ÷ '+r($('fw').value/100,2)
+    +' &nbsp;=&nbsp; <span class="text-accent font-black">'+r(n.value,2)+'%</span></div>';
+}
+function cutoffs(key){
+  var b=SCALES[key].bands, out=[];
+  for(var i=0;i<b.length;i++) if(b[i][1]==='A'||b[i][1]==='A+') out.push(b[i][0]);
+  return out.length?out:[90];
+}
+function run(){ tbl(); }
+bind(['scale','cur','fw','tgt','maxm','mcur','mfw'], run);
+rows=ROWSEED.map(function(r){ return {name:r[0],score:r[1],max:r[2],weight:r[3]}; });
+// Exposed AFTER rows is assigned, otherwise __gc.rows captures the empty
+// pre-seed array and every assertion reads zero rows.
+window.__gc={weighted:weighted, neededFor:neededFor, grade:grade, gpaFor:gpaFor,
+  labelFor:labelFor, cutoffs:cutoffs, run:run, get rows(){return rows;}};
+drawRows(); run();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi/">
+      <span class="ocurp-related-n">BMI Calculator</span>
+      <span class="ocurp-related-b">Body mass index with healthy-range context.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calculator/">
+      <span class="ocurp-related-n">Calculator</span>
+      <span class="ocurp-related-b">Everyday arithmetic and percentages, for quick sums.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

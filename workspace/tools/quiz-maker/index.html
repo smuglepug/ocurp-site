@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Maker — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Write multiple-choice questions, mark the key, then run the quiz shuffled and score it with a review list of every miss. Runs entirely in your browser -...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/quiz-maker/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Quiz Maker">
+<meta property="og:description" content="Write multiple-choice questions, mark the key, then run the quiz shuffled and score it with a review list of every miss. Runs entirely in your browser -...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/quiz-maker/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Quiz Maker on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Quiz Maker">
+<meta name="twitter:description" content="Write multiple-choice questions, mark the key, then run the quiz shuffled and score it with a review list of every miss. Runs entirely in your browser -...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Quiz Maker on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Quiz Maker","url":"https://ocurp.space/workspace/tools/quiz-maker/","description":"Write multiple-choice questions, mark the key, then run the quiz shuffled and score it with a review list of every miss. Runs entirely in your browser -...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Quiz Maker</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Study & Career — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">QUIZ</span><span class="ws-chip">MCQ</span><span class="ws-chip">STUDY</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2"><div><label class="ws-label mb-2 block" for="q">Question</label><input id="q" type="text" class="ws-input" placeholder="Type the question" value="What is the capital city of Benin?"></div><div><label class="ws-label mb-2 block" for="ans">Correct answer</label><select id="ans" class="ws-input !w-44"><option value="0" selected>Option 1</option><option value="1">Option 2</option><option value="2">Option 3</option><option value="3">Option 4</option></select></div></div><div class="mt-4 grid gap-3 sm:grid-cols-2"><div><label class="ws-label mb-2 block" for="o0">Option A</label><input id="o0" type="text" class="ws-input" placeholder="First option" value="Porto-Novo"></div><div><label class="ws-label mb-2 block" for="o1">Option B</label><input id="o1" type="text" class="ws-input" placeholder="Second option" value="Cotonou"></div><div><label class="ws-label mb-2 block" for="o2">Option C</label><input id="o2" type="text" class="ws-input" placeholder="Third option" value="Abomey-Calavi"></div><div><label class="ws-label mb-2 block" for="o3">Option D</label><input id="o3" type="text" class="ws-input" placeholder="Fourth option" value="Parakou"></div></div><div class="mt-4 flex flex-wrap gap-2"><button id="add" class="ws-btn">Add / update question</button><button id="start" class="ws-btn-ghost">Start quiz</button><button id="shuf" class="ws-btn-ghost">Shuffle options</button><button id="exp" class="ws-btn-ghost">Export JSON</button><button id="imp" class="ws-btn-ghost">Import JSON</button><button id="seed" class="ws-btn-ghost">Load sample</button></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Quiz bank</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="btbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">#</th><th class="py-2 pr-4">Question</th><th class="py-2 pr-4">Correct</th><th class="py-2 pr-4">Actions</th></tr></thead><tbody id="btbl"></tbody></table></div></section><section class="ws-panel mt-4 p-6" id="runner"><div class="flex items-center justify-between"><span class="ws-label" id="rq-label">Runner</span><span id="rq-count" class="font-display text-sm font-black text-accent">-</span></div><div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10"><div id="rq-bar" class="h-full bg-accent" style="width:0%"></div></div><div id="rq-q" class="mt-5 font-display text-lg font-black">Press <span class="text-accent">Start quiz</span> to begin - questions and options are shuffled every run.</div><div id="rq-opts" class="mt-4 grid gap-2"></div><div id="rq-fb" class="mt-4 text-sm"></div><div class="mt-4 flex flex-wrap gap-2" id="rq-nav"><button id="check" class="ws-btn">Check answer</button><button id="skip" class="ws-btn-ghost">Skip</button><button id="quit" class="ws-btn-ghost">Quit and see score</button></div></section><section class="ws-panel mt-4 p-6" id="result" style="display:none"><div class="flex items-end justify-between"><div><div class="ws-label">Score</div><div id="sc-big" class="mt-1 font-display text-4xl font-black text-accent">-</div><div id="sc-sub" class="mt-1 text-xs text-white/50">-</div></div><button class="ws-btn-ghost !px-3 !py-1.5" data-t="scout" onclick="cp(this)">Copy</button></div><pre id="scout" class="ws-out mt-4"></pre><div id="review" class="mt-4 grid gap-3"></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+var SEED=[{"q": "What is the capital city of Benin?", "o": ["Porto-Novo", "Cotonou", "Abomey-Calavi", "Parakou"], "a": 0}, {"q": "In Python, what does a list comprehension return?", "o": ["A generator object", "A new list", "A tuple", "None"], "a": 1}, {"q": "Which HTTP status code means 'Not Found'?", "o": ["301", "401", "404", "500"], "a": 2}, {"q": "What is 17 percent of 250?", "o": ["42.5", "40", "47.5", "45"], "a": 0}];
+var quiz=[], rq=null, ri=0, rorder=[], picked=null, answers=[], done=false;
+/* Fisher-Yates. A correct sort of random float is a trap here: sort() is stable
+   in modern engines and a comparison of raw Math.random() collapses ties. */
+function shuf(a){
+  var x=a.slice();
+  for(var i=x.length-1;i>0;i--){
+    var j=Math.floor(Math.random()*(i+1));
+    var t=x[i]; x[i]=x[j]; x[j]=t;
+  }
+  return x;
+}
+function blank(q,o,a){ return {q:q, o:o.slice(), a:a}; }
+function bankTable(){
+  $('btbl').innerHTML=quiz.map(function(c,i){
+    return row(['<span class="text-white/40">'+String(i+1)+'</span>',
+      esc(c.q.slice(0,46))+(c.q.length>46?'…':''),
+      '<span class="text-accent">'+esc(c.o[c.a]||'—')+'</span>',
+      '<button class="ws-btn-ghost !px-2 !py-1" data-e="'+i+'" onclick="editQ('+i+')">Edit</button>'
+        +' <button class="ws-btn-ghost !px-2 !py-1" data-d="'+i+'" onclick="delQ('+i+')">Delete</button>']);
+  }).join('') || '<tr><td class="py-3 text-white/40" colspan="4">No questions yet - add one above or load the sample.</td></tr>';
+  show([['Questions',String(quiz.length)],
+        ['Total options',String(quiz.length*4)],
+        ['Answered key',quiz.length+' set'],
+        ['Average guess', quiz.length? (1/4*100).toFixed(1)+'%' : '25.0%']]);
+}
+function editQ(i){
+  var c=quiz[i]; $('q').value=c.q;
+  [0,1,2,3].forEach(function(k){ $('o'+k).value=c.o[k]||''; });
+  $('ans').value=String(c.a); window.__qm.edit=i; $('q').focus();
+}
+function delQ(i){ quiz.splice(i,1); bankTable(); }
+function collect(){
+  var o=[0,1,2,3].map(function(k){ return $('o'+k).value.trim(); });
+  var a=parseInt($('ans').value,10);
+  if(isNaN(a)||a<0||a>3) a=0;
+  return {q:$('q').value.trim(), o:o, a:a};
+}
+function valid(c){
+  if(!c.q){ seterr('err','the question text is empty'); return false; }
+  var filled=c.o.filter(Boolean).length;
+  if(filled<2){ seterr('err','give at least two options'); return false; }
+  if(!c.o[c.a]){ seterr('err','the correct answer must be one of the four options'); return false; }
+  seterr('err',''); return true;
+}
+$('add').addEventListener('click',function(){
+  var c=collect(); if(!valid(c)) return;
+  if(window.__qm.edit!=null && quiz[window.__qm.edit]){ quiz[window.__qm.edit]=c;
+    window.__qm.edit=null; seterr('err','question updated'); }
+  else quiz.push(c);
+  bankTable();
+});
+$('seed').addEventListener('click',function(){
+  quiz=SEED.map(function(s){ return blank(s.q,s.o,s.a); }); window.__qm.edit=null;
+  bankTable(); seterr('err','');
+});
+$('shuf').addEventListener('click',function(){
+  quiz.forEach(function(c){
+    // keep the answer attached to its text, then reorder
+    var correct=c.o[c.a];
+    c.o=shuf(c.o); c.a=c.o.indexOf(correct);
+  });
+  bankTable();
+});
+$('start').addEventListener('click',function(){
+  if(!quiz.length){ seterr('err','add at least one question first'); return; }
+  seterr('err','');
+  rorder=shuf(quiz.map(function(_,i){return i;}));
+  ri=0; answers=[]; done=false; picked=null; rq=null;
+  $('result').style.display='none'; $('runner').style.display='';
+  nextQ();
+});
+function nextQ(){
+  if(ri>=rorder.length){ finish(); return; }
+  var base=quiz[rorder[ri]];
+  // shuffle the option ORDER, not the stored bank entry
+  var correct=base.o[base.a];
+  var opts=shuf(base.o.map(function(_,k){return k;})).map(function(k){ return base.o[k]; });
+  rq={ref:base, opts:opts, a:opts.indexOf(correct)}; picked=null;
+  $('rq-count').textContent='Question '+(ri+1)+' of '+rorder.length;
+  $('rq-bar').style.width=(ri/rorder.length*100)+'%';
+  $('rq-q').textContent=base.q;
+  $('rq-fb').innerHTML='';
+  $('rq-opts').innerHTML=opts.map(function(t,i){
+    return '<button class="ws-btn-ghost !justify-start !text-left" data-o="'+i+'"'
+      +' onclick="pick('+i+')">'+String.fromCharCode(65+i)+'. '+esc(t)+'</button>';}).join('');
+  $('check').textContent='Check answer';
+}
+function pick(i){
+  if(picked!=null) return;
+  picked=i;
+  var bs=$('rq-opts').querySelectorAll('button');
+  for(var k=0;k<bs.length;k++)
+    bs[k].className = 'ws-btn-ghost !justify-start !text-left'+(k===i?' !border-accent !text-accent':'');
+}
+$('check').addEventListener('click',function(){
+  if(done) return;
+  if(ri>=rorder.length){ finish(); return; }
+  if(picked==null){ $('rq-fb').innerHTML=
+    '<span class="text-[#f87171]">Pick an option first.</span>'; return; }
+  if($('check').textContent==='Next question'){ ri++; nextQ(); return; }
+  var ok=picked===rq.a;
+  answers.push({q:rq.ref.q, picked:rq.opts[picked], correct:rq.opts[rq.a], ok:ok});
+  var bs=$('rq-opts').querySelectorAll('button');
+  for(var k=0;k<bs.length;k++){
+    var good=(k===rq.a);
+    bs[k].className='ws-btn-ghost !justify-start !text-left '
+      +(good?'!border-[#4ade80] !text-[#4ade80]':(k===picked&&!ok?'!border-[#f87171] !text-[#f87171]':''));
+  }
+  $('rq-fb').innerHTML=(ok
+    ? '<span class="text-[#4ade80] font-black">Correct.</span>'
+    : '<span class="text-[#f87171] font-black">Not quite.</span> The answer is <span class="text-accent">'
+      +esc(rq.opts[rq.a])+'</span>');
+  $('check').textContent='Next question';
+});
+$('skip').addEventListener('click',function(){
+  if(done) return;
+  if(ri>=rorder.length){ finish(); return; }
+  var base=quiz[rorder[ri]];
+  answers.push({q:base.q, picked:'(skipped)', correct:base.o[base.a], ok:false});
+  ri++; picked=null; nextQ();
+});
+$('quit').addEventListener('click',function(){ finish(); });
+function finish(){
+  done=true; picked=null;
+  var right=answers.filter(function(a){return a.ok;}).length;
+  var total=quiz.length, pctAns=total? right/total*100 : 0;
+  var verdict=pctAns>=90?'Excellent - exam ready.' : pctAns>=70?'Solid - a couple of gaps to close.'
+    : pctAns>=50?'Passable - the misses are worth another pass.' : 'Worth a full re-run.';
+  $('sc-big').textContent=right+' / '+total+'  ('+r(pctAns,1)+'%)';
+  $('sc-sub').textContent=verdict;
+  $('scout').textContent=quiz.map(function(c,i){
+    return (i+1)+'. '+c.q+'\n   correct: '+c.o[c.a];}).join('\n')
+    +'\n\nScore: '+right+'/'+total+'  ('+r(pctAns,1)+'%)';
+  var wrong=answers.filter(function(a){return !a.ok;});
+  $('review').innerHTML = '<div class="ws-label">Review - '+wrong.length+' to revisit</div>'
+    + (wrong.length? wrong.map(function(a){
+        return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-3">'
+          +'<div class="text-sm font-bold">'+esc(a.q)+'</div>'
+          +'<div class="mt-1 text-xs text-white/45">you said <span class="text-[#f87171]">'
+          +esc(a.picked)+'</span> &middot; correct <span class="text-[#4ade80]">'
+          +esc(a.correct)+'</span></div></div>';}).join('')
+      : '<div class="rounded-xl border border-[#4ade80]/30 bg-[#4ade80]/5 p-3 text-sm text-[#4ade80]">'
+        +'Nothing to review - full marks.</div>');
+  $('result').style.display='';
+  $('rq-q').textContent='Quiz finished.';
+  $('rq-opts').innerHTML=''; $('rq-fb').innerHTML='';
+  $('rq-count').textContent=right+' of '+total;
+  $('rq-bar').style.width='100%';
+  window.__qm.answers=answers.slice();
+  window.__qm.right=right;
+}
+$('exp').addEventListener('click',function(){
+  if(!quiz.length){ seterr('err','nothing to export yet'); return; }
+  var a=document.createElement('a');
+  a.download='quiz.json';
+  a.href='data:application/json;charset=utf-8,'
+    +encodeURIComponent(JSON.stringify({title:'Quiz', questions:quiz},null,2));
+  a.click();
+});
+$('imp').addEventListener('click',function(){
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange=function(){ var f=inp.files[0]; if(!f) return;
+    var fr=new FileReader();
+    fr.onload=function(){ try{
+        var o=JSON.parse(fr.result);
+        var arr=Array.isArray(o)?o:o.questions;
+        if(!arr||!arr.length) throw new Error('no questions in that file');
+        var n=0;
+        arr.forEach(function(c){
+          var opts=(c.o||c.options||[]).map(String);
+          var key=opts.indexOf(String((c.options&&c.correct)||c.correct||c.a));
+          if(key<0) key=typeof c.a==='number'?Math.min(3,Math.max(0,c.a)):0;
+          if(c.q && opts.length>=2){ quiz.push(blank(String(c.q), opts, key)); n++; }
+        });
+        if(!n) throw new Error('no question had a stem and two options');
+        window.__qm.edit=null; bankTable(); seterr('err','imported '+n+' question'+(n===1?'':'s'));
+      }catch(e){ seterr('err','could not read that file: '+e.message); } };
+    fr.readAsText(f); };
+  inp.click();
+});
+window.__qm={quiz:function(){return quiz;}, shuf:shuf, edit:null,
+  answers:function(){return answers;}, right:function(){return right;}};
+quiz=SEED.map(function(s){ return blank(s.q,s.o,s.a); });
+bankTable();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/citation-generator/">
+      <span class="ocurp-related-n">Citation Generator</span>
+      <span class="ocurp-related-b">APA, MLA and Harvard references from a source.</span>
+    </a></li>
+    <li><a href="/workspace/tools/flashcards/">
+      <span class="ocurp-related-n">Flashcards</span>
+      <span class="ocurp-related-b">Spaced-repetition decks that live in your browser.</span>
+    </a></li>
+    <li><a href="/workspace/tools/habit-tracker/">
+      <span class="ocurp-related-n">Habit Tracker</span>
+      <span class="ocurp-related-b">Track habits across the week on a click-to-toggle grid with live streaks and completion pe</span>
+    </a></li>
+    <li><a href="/workspace/tools/notes/">
+      <span class="ocurp-related-n">Quick Notes</span>
+      <span class="ocurp-related-b">A scratchpad that opens with a worked sample note and counts words, lines, sentences and r</span>
+    </a></li>
+    <li><a href="/workspace/tools/spaced-repetition/">
+      <span class="ocurp-related-n">Spaced Repetition Scheduler</span>
+      <span class="ocurp-related-b">A real SM-2 deck: grade each card Again, Hard, Good or Easy and get true intervals, real d</span>
+    </a></li>
+    <li><a href="/workspace/tools/todo/">
+      <span class="ocurp-related-n">To-Do List</span>
+      <span class="ocurp-related-b">A task list with three priority levels, click-to-complete rows, a progress bar and an open</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

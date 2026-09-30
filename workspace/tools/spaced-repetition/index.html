@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spaced Repetition Scheduler — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="A real SM-2 deck: grade each card Again, Hard, Good or Easy and get true intervals, real due dates and a 21-day forecast. Runs entirely in your browser -...">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/spaced-repetition/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Spaced Repetition Scheduler">
+<meta property="og:description" content="A real SM-2 deck: grade each card Again, Hard, Good or Easy and get true intervals, real due dates and a 21-day forecast. Runs entirely in your browser -...">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/spaced-repetition/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Spaced Repetition Scheduler on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Spaced Repetition Scheduler">
+<meta name="twitter:description" content="A real SM-2 deck: grade each card Again, Hard, Good or Easy and get true intervals, real due dates and a 21-day forecast. Runs entirely in your browser -...">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Spaced Repetition Scheduler on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Spaced Repetition Scheduler","url":"https://ocurp.space/workspace/tools/spaced-repetition/","description":"A real SM-2 deck: grade each card Again, Hard, Good or Easy and get true intervals, real due dates and a 21-day forecast. Runs entirely in your browser -...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Spaced Repetition Scheduler</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Study & Career — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">SM-2</span><span class="ws-chip">SCHEDULER</span><span class="ws-chip">STUDY</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="front">Card front (question)</label><input id="front" type="text" class="ws-input" placeholder="e.g. Capital of Benin" value="Capital of Benin"></div><div><label class="ws-label mb-2 block" for="back">Card back (answer)</label><input id="back" type="text" class="ws-input" placeholder="e.g. Porto-Novo" value="Porto-Novo"></div><div><label class="ws-label mb-2 block" for="deckpick">Deck</label><select id="deckpick" class="ws-input !w-48"><option value="active" selected>Active deck</option></select></div><div class="flex items-end gap-2 pb-0.5"><button id="add" class="ws-btn">Add card</button><button id="bulk" class="ws-btn-ghost">Bulk add</button></div></div><p class="mt-3 text-[11px] leading-relaxed text-white/40">Bulk add takes one <span class="font-mono text-white/60">question|answer</span> pair per line. Grades follow SM-2: Again resets the card to a 1-day interval and drops the ease factor, Hard repeats the last interval, Good runs the 1 / 6 / interval x ease ladder, Easy jumps the queue and boosts ease.</p><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div class="mt-4 grid gap-4 lg:grid-cols-2"><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Bulk loader</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="bulk" onclick="cp(this)"></button></div><div><label class="ws-label mb-2 block" for="bulk">Cards to add in bulk</label><textarea id="bulk" class="ws-input min-h-[120px] font-mono" placeholder="front|back per line">What is the capital of Benin?|Porto-Novo
+SM-2 easiness factor default|2.5
+Interval after the second successful review|6 days
+Bode's rule: feet of sea level per Fahrenheit of temperature|1 foot
+The derivative of sin(x)|cos(x)</textarea></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Review</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="qc" onclick="cp(this)"></button></div><div class="flex flex-wrap gap-2"><button id="reveal" class="ws-btn">Show answer</button><button id="exp" class="ws-btn-ghost">Export deck (JSON)</button><button id="imp" class="ws-btn-ghost">Import deck</button><button id="reset" class="ws-btn-ghost">Reset sample deck</button></div><div class="mt-4 flex items-center justify-between"><span class="ws-label">Progress on this card</span><span id="pct" class="font-display text-lg font-black text-accent">0%</span></div><div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10"><div id="bar" class="h-full bg-accent" style="width:0%"></div></div><div id="qc" class="mt-3 text-sm font-black"></div><div class="mt-3 grid grid-cols-4 gap-2" id="gradebtns"><button id="g0" class="ws-btn">Again</button><button id="g3" class="ws-btn">Hard</button><button id="g4" class="ws-btn">Good</button><button id="g5" class="ws-btn">Easy</button></div><div class="mt-3 text-[11px] text-white/35">Again &middot; Hard &middot; Good &middot; Easy are SM-2 quality 1, 3, 4 and 5.</div></section></div><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">21-day review forecast</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="hist" onclick="cp(this)"></button></div><div class="flex h-40 items-end gap-[3px]" id="hist"></div><div class="mt-2 flex justify-between text-[10px] text-white/35"><span>Today</span><span>+10 days</span><span>+20 days</span></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Deck</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Card</th><th class="py-2 pr-4">Ease</th><th class="py-2 pr-4">Interval</th><th class="py-2 pr-4">Reps</th><th class="py-2 pr-4">Next review</th><th class="py-2 pr-4">Grade</th></tr></thead><tbody id="tbl"></tbody></table></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+var SEED="What is the capital of Benin?|Porto-Novo\nSM-2 easiness factor default|2.5\nInterval after the second successful review|6 days\nBode's rule: feet of sea level per Fahrenheit of temperature|1 foot\nThe derivative of sin(x)|cos(x)";
+var KEY='w22a.sm2.deck.v1', CID=0, ORDER=[0,3,4,5], cur=null, revealed=false;
+function today(){ var d=new Date(); d.setHours(0,0,0,0); return d; }
+function iso(d){ return d.toISOString().slice(0,10); }
+function addDays(d,n){ var x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+function newCard(q,a){ return {id:'c'+(++CID), q:q, a:a, ef:2.5, iv:0, reps:0,
+  due:iso(today()), lapses:0, last:''}; }
+function load(){
+  try{ var raw=localStorage.getItem(KEY); if(!raw) return null;
+    var o=JSON.parse(raw); if(o && o.cards && o.cards.length) return o; }catch(e){}
+  return null;
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify({cards:cards(), n:CID}));
+  }catch(e){} }
+function cards(){ return (window.__sr && window.__sr.deck) || deck; }
+function freshDeck(){
+  CID=0;
+  return SEED.split('\n').map(function(l){ var p=l.split('|');
+    return newCard(p[0], p[1]||''); });
+}
+function seed(){
+  var o=load();
+  if(o){ deck=o.cards; CID=o.n||deck.length;
+    var m=0; deck.forEach(function(c){ m=Math.max(m,parseInt(c.id.slice(1),10)||0); });
+    if(m>CID) CID=m; }
+  else deck=freshDeck();
+  if(window.__sr) window.__sr.deck=deck;
+  save();
+}
+/* Pure SM-2 step. Returns a new card object; the input is untouched so the
+   test hook can call it without disturbing what is on screen. */
+function sm2(card, g){
+  var c=JSON.parse(JSON.stringify(card));
+  c.last=g;
+  if(g<3){
+    c.reps=0; c.iv=1; c.lapses=(c.lapses||0)+1;
+    c.ef=Math.max(1.3, c.ef-0.2);
+  } else {
+    if(c.reps===0) c.iv=1;
+    else if(c.reps===1) c.iv=6;
+    else c.iv=Math.max(1, Math.round(c.iv*c.ef));
+    c.ef=Math.max(1.3, c.ef+(0.1-(5-g)*(0.08+(5-g)*0.02)));
+    c.reps+=1;
+  }
+  c.ef=Math.round(c.ef*100)/100;
+  c.due=iso(addDays(today(), c.iv));
+  return c;
+}
+var GN={0:'Again',3:'Hard',4:'Good',5:'Easy'};
+var GCLASS={0:'ws-btn',3:'ws-btn-ghost',4:'ws-btn',5:'ws-btn'};
+function pickDue(){
+  var t=today(), due=dueList();
+  cur=due.length?due[0]:(deck.length?deck.slice().sort(function(a,b){
+    return a.due<b.due?-1:a.due>b.due?1:0;})[0]:null);
+  revealed=false; draw();
+}
+function dueList(){ return deck.filter(function(c){ return c.due<=iso(today()); }); }
+function draw(){
+  var t=today();
+  if(!cur){ $('qc').innerHTML='<span class="text-white/40">No cards in the deck.</span>';
+    $('pct').textContent='0%'; $('bar').style.width='0%';
+    render(); return; }
+  $('qc').innerHTML='<span class="text-accent">'+esc(cur.q)+'</span>';
+  $('pct').textContent=cur.reps+' reps';
+  $('bar').style.width=Math.min(100, cur.reps*22+8)+'%';
+  if(revealed){
+    var q=document.getElementById('ansbox');
+    if(!q){ q=document.createElement('div');
+      q.id='ansbox'; q.className='mt-3 rounded-xl border border-white/10 bg-white/[0.04] p-4 text-sm';
+      $('gradebtns').parentNode.insertBefore(q, $('gradebtns')); }
+    q.innerHTML='<div class="ws-label mb-1">Answer</div>'+esc(cur.a)
+      +'<div class="mt-2 text-[11px] text-white/40">Ease '+r(cur.ef,2)
+      +' &middot; next interval '+cur.iv+' day'+(cur.iv===1?'':'s')
+      +' &middot; due '+cur.due+'</div>';
+  }
+  render();
+}
+function render(){
+  var t=today(), due=dueList().length, t0=today();
+  show([['Cards',String(deck.length)],['Due now',String(due)],
+        ['Learning',String(deck.filter(function(c){return c.reps<3;}).length)],
+        ['Mature 21d+',String(deck.filter(function(c){return c.iv>=21;}).length)]]);
+  // 21-day forecast histogram
+  var buckets=new Array(21).fill(0);
+  deck.forEach(function(c){
+    var diff=Math.round((new Date(c.due+'T00:00:00')-t0)/86400000);
+    if(diff<0) buckets[0]++;
+    else if(diff<21) buckets[diff]++;
+  });
+  var max=Math.max(1, Math.max.apply(null, buckets));
+  $('hist').innerHTML=buckets.map(function(n,i){
+    var h=Math.round(n/max*100);
+    return '<div class="flex-1 rounded-t bg-accent/80" style="height:'+Math.max(2,h)+'%"'
+      +' title="+'+(i===0?'today':('+'+i+'d'))+': '+n+'"></div>';}).join('');
+  $('tbl').innerHTML=deck.map(function(c){
+    var dueNow=c.due<=iso(t);
+    return row([esc(c.q.slice(0,40)), r(c.ef,2), c.iv+'d', String(c.reps),
+      '<span class="'+(dueNow?'text-accent font-black':'text-white/70')+'">'+c.due+'</span>',
+      c.last?GN[c.last]:'<span class="text-white/30">new</span>']);}).join('')
+    || '<tr><td class="py-3 text-white/40" colspan="6">Deck is empty.</td></tr>';
+}
+function addPair(q,a){
+  q=String(q||'').trim(); a=String(a||'').trim();
+  if(!q){ seterr('err','a card needs a question'); return false; }
+  deck.push(newCard(q,a)); return true;
+}
+$('add').addEventListener('click',function(){
+  seterr('err','');
+  if(addPair($('front').value,$('back').value)){ $('front').value=''; $('back').value='';
+    $('front').focus(); }
+  window.__sr.deck=deck; save(); pickDue();
+});
+$('bulk').addEventListener('click',function(){
+  var lines=$('bulk').value.split('\n').map(function(s){return s.trim()}).filter(Boolean), n=0;
+  lines.forEach(function(l){ var p=l.split('|'); if(addPair(p[0],p[1])) n++; });
+  seterr('err', n? '' : 'no usable "question|answer" lines found');
+  window.__sr.deck=deck; save(); pickDue();
+});
+$('reveal').addEventListener('click',function(){ if(cur){ revealed=true; draw(); } });
+[0,3,4,5].forEach(function(g){
+  $('g'+g).addEventListener('click',function(){
+    if(!cur) return;
+    var i=deck.indexOf(cur);
+    deck[i]=sm2(cur,g); window.__sr.deck=deck; save();
+    revealed=false; pickDue();
+  });
+});
+$('exp').addEventListener('click',function(){
+  var a=document.createElement('a');
+  a.download='sm2-deck.json';
+  a.href='data:application/json;charset=utf-8,'
+    +encodeURIComponent(JSON.stringify({cards:deck},null,2));
+  a.click();
+});
+$('imp').addEventListener('click',function(){
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange=function(){ var f=inp.files[0]; if(!f) return;
+    var fr=new FileReader();
+    fr.onload=function(){ try{
+        var o=JSON.parse(fr.result); var arr=Array.isArray(o)?o:o.cards;
+        if(!arr||!arr.length) throw new Error('no cards in that file');
+        var n=0;
+        arr.forEach(function(c){ if(addPair(c.q,c.a)){ var t=deck[deck.length-1];
+          ['ef','iv','reps','due','lapses','last'].forEach(function(k){
+            if(c[k]!==undefined) t[k]=c[k]; });
+          t.id='i'+(++CID); n++; } });
+        window.__sr.deck=deck; save(); pickDue();
+        seterr('err', n? '' : 'that file had no usable cards');
+      }catch(e){ seterr('err','could not read that file: '+e.message); } };
+    fr.readAsText(f); };
+  inp.click();
+});
+$('reset').addEventListener('click',function(){
+  try{ localStorage.removeItem(KEY); }catch(e){}
+  deck=freshDeck(); window.__sr.deck=deck; save(); pickDue();
+});
+seed();
+window.__sr = {deck:deck, sm2:sm2, addDays:addDays, iso:iso, newCard:newCard,
+  today:today, dueList:dueList};
+pickDue();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/citation-generator/">
+      <span class="ocurp-related-n">Citation Generator</span>
+      <span class="ocurp-related-b">APA, MLA and Harvard references from a source.</span>
+    </a></li>
+    <li><a href="/workspace/tools/flashcards/">
+      <span class="ocurp-related-n">Flashcards</span>
+      <span class="ocurp-related-b">Spaced-repetition decks that live in your browser.</span>
+    </a></li>
+    <li><a href="/workspace/tools/habit-tracker/">
+      <span class="ocurp-related-n">Habit Tracker</span>
+      <span class="ocurp-related-b">Track habits across the week on a click-to-toggle grid with live streaks and completion pe</span>
+    </a></li>
+    <li><a href="/workspace/tools/notes/">
+      <span class="ocurp-related-n">Quick Notes</span>
+      <span class="ocurp-related-b">A scratchpad that opens with a worked sample note and counts words, lines, sentences and r</span>
+    </a></li>
+    <li><a href="/workspace/tools/quiz-maker/">
+      <span class="ocurp-related-n">Quiz Maker</span>
+      <span class="ocurp-related-b">Write multiple-choice questions, mark the key, then run the quiz shuffled and score it wit</span>
+    </a></li>
+    <li><a href="/workspace/tools/todo/">
+      <span class="ocurp-related-n">To-Do List</span>
+      <span class="ocurp-related-b">A task list with three priority levels, click-to-complete rows, a progress bar and an open</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
