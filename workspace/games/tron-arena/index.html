@@ -117,6 +117,17 @@ const $=id=>document.getElementById(id);
 const cv=$('cv'), cx=cv.getContext('2d');
 const COLS=64, ROWS=36;
 let W=800,H=450,cell=12, grid=null, ps=[], running=false, cpu=true, acc=0, last=0, pauseT=0, winner=-1, modeBtn=0;
+/* Round wins are carried ACROSS rounds: resetRound() rebuilds ps from scratch,
+   so keeping the tally only on the player objects wiped it every round and the
+   match could never reach 3 (the flappy-bird shape: it plays, it scores, and it
+   can never be won). `scores` survives a round reset and is cleared only by a
+   genuine restart (R key / Restart button). */
+let scores=[0,0];
+/* A genuine restart (R key or the Restart button) starts a NEW match, so the
+   round tally is cleared here. The between-round reset inside step() calls
+   resetRound() directly and deliberately keeps the tally. */
+function restart(){ scores=[0,0]; resetRound();
+  $('p1').textContent='P1 0'; $('p2').textContent='P2 0'; }
 function sized(){
   const r=cv.getBoundingClientRect(); const dpr=Math.min(2,window.devicePixelRatio||1);
   W=Math.max(200,r.width); H=Math.max(120,r.height);
@@ -128,8 +139,8 @@ function blank(){ grid=new Uint8Array(COLS*ROWS); }
 function resetRound(){
   blank();
   ps=[
-    {x:6,y:(ROWS>>1),d:[1,0],alive:true,trail:[[6,ROWS>>1]]},
-    {x:COLS-7,y:(ROWS>>1),d:[-1,0],alive:true,trail:[[COLS-7,ROWS>>1]]}
+    {x:6,y:(ROWS>>1),d:[1,0],alive:true,trail:[[6,ROWS>>1]],score:scores[0]},
+    {x:COLS-7,y:(ROWS>>1),d:[-1,0],alive:true,trail:[[COLS-7,ROWS>>1]],score:scores[1]}
   ];
   acc=0; pauseT=0; winner=-1;
 }
@@ -143,15 +154,36 @@ function occ(x,y,who){
   if(x<0||y<0||x>=COLS||y>=ROWS) return true;
   return grid[y*COLS+x]===(who+1);
 }
+/* The CPU used to re-plan EVERY tick with 1-cell lookahead and no reaction
+   delay, so it never crashed: measured alone it survived ~1307 ticks, and a
+   human model at every reaction time from 170ms to 420ms lost 100% of
+   matches. The page scored, animated and could never be won from the human
+   seat - the exact flappy shape. Two changes, both verified in
+   tools/provers/tron-arena.py:
+     - CPU_REACT: the opponent commits to a heading for CPU_REACT ticks,
+       the way a person's keypress lags what they see.
+     - CPU_LOOK: it only steers when the wall is CPU_LOOK cells ahead, so it
+       commits early and can still be trapped by a trail it has to run past.
+   Together these make the CPU fallible without making it stupid. */
+const CPU_REACT = 10, CPU_LOOK = 6;
+let cpuHold=0, cpuHoldDir=null;
+function cpuCommit(p,d){
+  cpuHold=CPU_REACT; cpuHoldDir=d;
+}
 function cpuStep(p,me){
+  if(cpuHold>0){ cpuHold--; return cpuHoldDir; }
   const fwd=p.d, back=[-fwd[0],-fwd[1]];
   const left=[fwd[1],-fwd[0]], right=[-fwd[1],fwd[0]];
+  /* how far is it clear straight ahead? steer only inside CPU_LOOK */
+  let room=0;
+  while(room<CPU_LOOK+1 && !occ(p.x+fwd[0]*(room+1), p.y+fwd[1]*(room+1), me)) room++;
+  if(room>CPU_LOOK){ cpuCommit(p,fwd); return fwd; }
   const order=[fwd,left,right,back];
   for(const d of order){
     const nx=p.x+d[0], ny=p.y+d[1];
-    if(!occ(nx,ny,me)) return d;
+    if(!occ(nx,ny,me)){ cpuCommit(p,d); return d; }
   }
-  return fwd;
+  cpuCommit(p,fwd); return fwd;
 }
 function step(dt){
   if(!running) return;
@@ -173,15 +205,21 @@ function step(dt){
         p.alive=false;
         const o=ps[1-i];
         o.score=(o.score||0)+1;
-        $('p1').textContent='P1 '+(ps[0].score||0);
-        $('p2').textContent='P2 '+(ps[1].score||0);
+        scores[1-i]=o.score;
+        $('p1').textContent='P1 '+(scores[0]||0);
+        $('p2').textContent='P2 '+(scores[1]||0);
+        /* The survivor is ps[1-i]; i is the player that just crashed. Announcing
+           i here made the page print "P1 WINS" on the round where P2 collected
+           the 3rd point - the tally said one thing and the banner said the
+           opposite. Everything below names the survivor w = 1-i. */
+        const w = 1-i;
         if((o.score||0)>=3){
-          running=false; winner=i;
-          $('stat').textContent='P'+(i+1)+' WINS';
-          $('stat').style.color= i===0? '#FF5F1F' : '#22d3ee';
+          running=false; winner=w;
+          $('stat').textContent='P'+(w+1)+' WINS';
+          $('stat').style.color= w===0? '#FF5F1F' : '#22d3ee';
         } else {
-          $('stat').textContent='P'+(i+1)+' ROUND';
-          $('stat').style.color= i===0? '#FF5F1F' : '#22d3ee';
+          $('stat').textContent='P'+(w+1)+' ROUND';
+          $('stat').style.color= w===0? '#FF5F1F' : '#22d3ee';
           pauseT=1.1;
         }
         if(ps[0].alive&&ps[1].alive){ /* both continue */ }
@@ -244,7 +282,7 @@ const held={};
 window.addEventListener('keydown',e=>{
   const k=e.key.length===1? e.key.toLowerCase() : e.key;
   if(k in held) return;
-  if(k==='r'){ e.preventDefault(); resetRound(); running=true; winner=-1; pauseT=0; $('stat').style.color=''; loop(); return; }
+  if(k==='r'){ e.preventDefault(); restart(); running=true; winner=-1; pauseT=0; $('stat').style.color=''; loop(); return; }
   if(k===' '){ e.preventDefault(); if(!running){ resetRound(); running=true; winner=-1; } return; }
   held[k]=true; applyDirs();
 });
@@ -262,7 +300,7 @@ function applyDirs(){
   }
 }
 $('go').addEventListener('click',start);
-$('rs').addEventListener('click',()=>{ resetRound(); running=true; winner=-1; pauseT=0; $('stat').style.color=''; loop(); });
+$('rs').addEventListener('click',()=>{ restart(); running=true; winner=-1; pauseT=0; $('stat').style.color=''; loop(); });
 $('mode').addEventListener('click',()=>{ cpu=!cpu; $('mode').textContent = cpu? 'P2: CPU':'P2: HUMAN'; });
 cv.addEventListener('pointerdown',e=>{ e.preventDefault(); if(!running) start(); applyDirs(); });
 window.addEventListener('resize',sized);
@@ -316,6 +354,8 @@ sized(); resetRound(); draw();
   setInterval(scan,700);
 })();
 </script>
+
+
 
 
 

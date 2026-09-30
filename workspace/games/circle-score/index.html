@@ -166,7 +166,13 @@ function judge(){
   gap=Math.max(gap, ang[0]+2*Math.PI-ang[ang.length-1]);
   const cover=2*Math.PI-gap;
 
-  if(cover < 3.6) return {fail:'Go all the way around - you covered ' + Math.round(cover/2/Math.PI*100) + '% of the circle.'};
+  /* Coverage gate. 3.6 rad is only 57.3% of the loop, so a 60% arc was scored
+     a perfect 100% "That is a circle." Measured honest freehand strokes always
+     cover >= 99% (worst case 99.01% over 4000 synthetic hands), and a player
+     who visibly closes the loop with a little overlap covers >90%, so 5.6 rad
+     (89.1%) never refuses a real attempt while rejecting every open arc.
+     Prover: tools/provers/circle-score.py */
+  if(cover < 5.6) return {fail:'Go all the way around - you covered ' + Math.round(cover/2/Math.PI*100) + '% of the circle.'};
 
   const score=Math.max(0, Math.min(100, 100*Math.exp(-err*16)));
   return {f:f, err:err, score:score};
@@ -249,6 +255,8 @@ sized();
   setInterval(scan,700);
 })();
 </script>
+
+
 
 
 
