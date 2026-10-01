@@ -179,7 +179,7 @@
        looked like abstract wallpaper. A real image gets the banner to itself;
        the pattern is only for entries with no artwork. */
     var banner = isWebsites && e.cover ? logo : (coverArt(e) + '<div class="relative">' + logo + '</div>');
-    var art = '<div class="relative flex h-44 items-center justify-center overflow-hidden rounded-t-2xl bg-[#0a0a0a]">'
+    var art = '<div class="relative flex h-40 items-center justify-center overflow-hidden rounded-t-[1.25rem] bg-[#0a0a0a] md:h-48">'
       + banner
       + '<div class="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-[#0a0a0a]/'
       + (isWebsites && e.cover ? '45' : '75')
@@ -195,9 +195,9 @@
       + (e.ready ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 17 17 7M9 7h8v8"/></svg>' : '')
       + '</span>';
     var target = isWebsites ? ' target="_blank" rel="noopener"' : '';
-    return '<a href="' + href + '"' + target + ' class="group relative flex flex-col overflow-hidden rounded-2xl border border-white/20 bg-white/[0.06] transition-all duration-300 hover:-translate-y-1 hover:border-accent/60 hover:bg-white/[0.09]" data-card>'
+    return '<a href="' + href + '"' + target + ' class="group relative flex flex-col overflow-hidden rounded-[1.25rem] md:rounded-[1.75rem] border border-white/20 bg-white/[0.06] transition-all duration-300 hover:-translate-y-1 hover:border-accent/60 hover:bg-white/[0.09]" data-card>'
       + art
-      + '<div class="flex flex-1 flex-col p-4 md:p-6">'
+      + '<div class="flex flex-1 flex-col p-5 md:p-7 lg:p-8">'
       + '<div class="flex items-center justify-between gap-3"><span class="font-mono text-[9px] font-black uppercase tracking-[0.24em] text-white/55">' + esc(cat) + '</span>' + status + '</div>'
       + '<h3 class="mt-3 font-display text-2xl font-black leading-tight tracking-tight text-white transition-colors duration-300 group-hover:text-accent">' + esc(e.name) + '</h3>'
       + '<p class="mt-3 line-clamp-2 text-sm leading-relaxed text-white/60">' + esc(e.blurb || e.desc || '') + '</p>'

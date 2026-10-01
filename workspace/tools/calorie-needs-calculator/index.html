@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calorie Needs Calculator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-copy.ok { animation: none }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Calorie Needs Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Health & Fitness &mdash; Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">BMR</span><span class="ws-chip">TDEE</span><span class="ws-chip">MIFFLIN</span><span class="ws-chip">MACROS</span><span class="ws-chip">CALORIES</span></div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Mifflin-St Jeor BMR for men and women, the six real activity multipliers, TDEE as BMR times the multiplier, then a lose-500 / maintain / gain-300 goal and the macros that follow - with every variable of the formula printed back at you.</p>
+
+<section class="ws-panel mt-4 p-5">
+  <div class="mb-3 flex items-center justify-between"><span class="ws-label">About you</span>
+    <span class="ws-chip">PRE-FILLED</span></div>
+  <div class="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+    <div><label class="ws-label mb-2 block" for="sex">Sex</label><select id="sex" class="ws-input"><option value="m" selected>Male</option><option value="f">Female</option></select></div>
+    <div><label class="ws-label mb-2 block" for="age">Age (years)</label>
+      <input id="age" type="number" step="1" min="14" max="100" class="ws-input" value="30"></div>
+    <div><label class="ws-label mb-2 block" for="kg">Weight (kg)</label>
+      <input id="kg" type="number" step="0.1" min="30" max="300" class="ws-input" value="80"></div>
+    <div><label class="ws-label mb-2 block" for="cm">Height (cm)</label>
+      <input id="cm" type="number" step="0.1" min="120" max="230" class="ws-input" value="180"></div>
+    <div><label class="ws-label mb-2 block" for="ft">Height (ft)</label>
+      <input id="ft" type="number" step="1" min="3" max="8" class="ws-input" value="5"></div>
+    <div><label class="ws-label mb-2 block" for="inch">Height (in)</label>
+      <input id="inch" type="number" step="0.1" min="0" max="11.9" class="ws-input" value="10.87"></div>
+  </div>
+  <div id="err" class="mt-3 text-[11px] text-white/45"></div>
+</section>
+
+<section class="ws-panel mt-4 p-5">
+  <div class="mb-3 flex items-center justify-between"><span class="ws-label">Mifflin-St Jeor, term by term</span>
+    <span id="sextag" class="ws-chip">-</span></div>
+  <div id="kvbmr"></div>
+</section>
+
+<section class="ws-panel mt-4 p-5">
+  <div class="mb-3 flex items-center justify-between"><span class="ws-label">Activity multiplier</span>
+    <span class="ws-chip">HARRIS-BENEDICT</span></div>
+  <div class="grid gap-4 md:grid-cols-2">
+    <div><label class="ws-label mb-2 block" for="activity">Activity level</label><select id="activity" class="ws-input"><option value="sedentary">sedentary  (x1.2)</option><option value="light">light  (x1.375)</option><option value="moderate" selected>moderate  (x1.55)</option><option value="active">active  (x1.725)</option><option value="athlete">athlete  (x1.9)</option><option value="extra">extra  (x2)</option></select></div>
+    <div>
+      <label class="ws-label mb-2 block">What that level means</label>
+      <div id="actdesc" class="ws-out h-[42px]"></div>
+    </div>
+  </div>
+  <div class="mt-4">
+    <label class="ws-label mb-2 block" for="ex">Per-week exercise sessions</label>
+    <input id="ex" type="number" step="1" min="0" max="14" class="ws-input" value="4">
+    <div class="mt-1 text-[11px] text-white/40" id="exhint"></div>
+  </div>
+  <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">Level</th><th class="py-2 pr-4">Factor</th><th class="py-2 pr-4">TDEE (kcal)</th><th class="py-2 pr-4">Means</th></tr></thead><tbody id="acttbl"><tr><td colspan="4" style="opacity:.5">Nothing to show yet.</td></tr></tbody></table></div>
+</section>
+
+<section class="ws-panel mt-4 p-5">
+  <div class="mb-3 flex items-center justify-between"><span class="ws-label">Goal</span>
+    <span class="ws-chip">FLAT ADJUSTMENT</span></div>
+  <div class="grid gap-4 md:grid-cols-2">
+    <div><label class="ws-label mb-2 block" for="goal">Goal</label><select id="goal" class="ws-input"><option value="lose" selected>lose (-500)</option><option value="maintain">maintain</option><option value="gain">gain (+300)</option></select></div>
+    <div>
+      <label class="ws-label mb-2 block" for="kcal">Daily calories</label>
+      <input id="kcal" type="number" step="10" min="800" max="6000" class="ws-input" value="2259">
+      <div class="mt-1 text-[11px] text-white/40" id="kcalhint"></div>
+    </div>
+  </div>
+  <div class="mt-4 grid gap-3 sm:grid-cols-3" id="goalcards"></div>
+</section>
+
+<section class="ws-panel mt-4 p-5">
+  <div class="mb-3 flex items-center justify-between"><span class="ws-label">Macros</span>
+    <span class="ws-chip">BY PERCENTAGE OR GRAMS</span></div>
+  <div class="grid gap-4 md:grid-cols-2">
+    <div><label class="ws-label mb-2 block" for="mode">Protein split</label><select id="mode" class="ws-input"><option value="pct" selected>By percentage of calories</option><option value="grams">By grams per kg</option></select></div>
+    <div id="pctwrap">
+      <label class="ws-label mb-2 block" for="pct">Protein split (% of calories)</label>
+      <input id="pct" type="number" step="5" min="10" max="60" class="ws-input" value="30">
+      <div class="mt-1 text-[11px] text-white/40" id="pcthint">Carbs and fat split what is left, 40/30.</div>
+    </div>
+    <div id="gwrap" style="display:none">
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="ws-label mb-2 block" for="pk">Protein (g per kg)</label>
+          <input id="pk" type="number" step="0.1" min="0.5" max="4" class="ws-input" value="1.8">
+        </div>
+        <div>
+          <label class="ws-label mb-2 block" for="fk">Fat share of calories (%)</label>
+          <input id="fk" type="number" step="5" min="10" max="60" class="ws-input" value="30">
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mt-4 grid gap-3 md:grid-cols-4" id="macros"></div>
+  <div class="mt-4" id="protcheck"></div>
+</section>
+
+<section class="ws-panel mt-4 p-5">
+  <div class="ws-label mb-2">Read-out</div>
+  <pre id="out" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre>
+</section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  window.__T = window.__T || {};
+
+  var CM_PER_IN = 2.54;
+  var ACT = [('sedentary', 1.2, 'desk job, little or no exercise'), ('light', 1.375, 'light exercise 1-3 days a week'), ('moderate', 1.55, 'moderate exercise 3-5 days a week'), ('active', 1.725, 'hard exercise 6-7 days a week'), ('athlete', 1.9, 'twice daily or physical job'), ('extra', 2.0, 'manual labour, or a twice-daily block')], GOALS = [('lose', -500, 'lose ~0.45 kg a week'), ('maintain', 0, 'hold the weight'), ('gain', 300, 'gain ~0.27 kg a week, lean')];
+  var KCAL_PCT = 0.5, PROT_PCT = 0.30, CARB_PCT = 0.40;
+  var FAT_PCT = 0.30, PROT_GKG = 1.8;
+  var KCAL_PER_G = {'protein': 4.1, 'carb': 4.1, 'fat': 9.0};
+  // Set the moment the user types in the calorie box, so a later goal or
+  // activity change does not quietly wipe their override.
+  var kcalTouched = false;
+
+  function r1(x){ return Math.round(x * 10) / 10; }
+  function r0(x){ return Math.round(x); }
+  function fmt(x){ return r0(x).toLocaleString('en-US'); }
+
+  function compute(o){
+    var male = o.sex === 'm';
+    var act = null, i;
+    for(i = 0; i < ACT.length; i++) if(ACT[i][0] === o.activity) act = ACT[i];
+    if(!act) return null;
+    var goal = null;
+    for(i = 0; i < GOALS.length; i++) if(GOALS[i][0] === o.goal) goal = GOALS[i];
+    if(!goal) return null;
+
+    // Mifflin-St Jeor 1990 - the terms are kept separate so the page can show
+    // the substitution instead of asserting a number.
+    var t_weight = 10 * o.kg;
+    var t_height = 6.25 * o.cm;
+    var t_age    = 5 * o.age;
+    var constant = male ? 5 : -161;
+    var bmr = t_weight + t_height - t_age + constant;
+    var tdee = bmr * act[1];
+    var goalKcal = tdee + goal[1];
+    if(goalKcal < 1200) goalKcal = 1200;
+
+    var out = {
+      sex: o.sex, age: o.age, kg: o.kg, cm: o.cm,
+      formula: male ? 'Mifflin-St Jeor (men): 10W + 6.25H - 5A + 5'
+                    : 'Mifflin-St Jeor (women): 10W + 6.25H - 5A - 161',
+      constant: constant,
+      term_weight: t_weight, term_height: t_height, term_age: t_age,
+      bmr: r1(bmr), tdee: r1(tdee),
+      activity: o.activity, activity_label: act[0], multiplier: act[1],
+      activity_desc: act[2],
+      goal: o.goal, goal_delta: goal[1], goal_label: goal[2],
+      tdee_within: r1(goalKcal >= tdee + goal[1] - 0.5)
+    };
+    var g = out.goal === 'lose' ? -1 : out.goal === 'gain' ? 1 : 0;
+    out.kcal = r1(goalKcal);
+
+    // Macros on the chosen split. In grams mode protein is anchored to body
+    // weight instead of a share of calories, so it is solved for a share first.
+    var pPct;
+    if(o.mode === 'grams' && o.protein_g_per_kg !== undefined){
+      // kg * g/kg * kcal/g / kcal  ->  the share of calories protein occupies.
+      pPct = o.kg * o.protein_g_per_kg * KCAL_PER_G.protein / goalKcal;
+      if(pPct > 0.8) pPct = 0.8;
+    } else {
+      pPct = o.protein_pct;
+    }
+    var fatPct = o.fat_pct !== undefined ? o.fat_pct : FAT_PCT;
+    var cPct = 1 - KCAL_PCT - pPct - fatPct;
+    if(cPct < 0){ fatPct = Math.max(0, 1 - KCAL_PCT - pPct); cPct = 0; }
+    if(fatPct < 0){ fatPct = 0; cPct = Math.max(0, 1 - KCAL_PCT - pPct); }
+    out.mode = o.mode || 'pct';
+    out.protein_pct = r1(pPct * 1000) / 10;
+    out.carb_pct = r1(cPct * 1000) / 10;
+    out.fat_pct = r1(fatPct * 1000) / 10;
+    out.protein_g = r1(out.kcal * pPct / KCAL_PER_G.protein);
+    out.carb_g = r1(out.kcal * cPct / KCAL_PER_G.carb);
+    out.fat_g = r1(out.kcal * fatPct / KCAL_PER_G.fat);
+    // Do the macros actually add back up to the calories? A split that does
+    // not is the classic way a macro calculator lies.
+    out.macro_kcal = r1(out.protein_g * KCAL_PER_G.protein + out.carb_g * KCAL_PER_G.carb
+                        + out.fat_g * KCAL_PER_G.fat);
+    out.macro_sum_pct = r1(out.protein_pct + out.carb_pct + out.fat_pct);
+    out.protein_g_per_kg = r1(out.protein_g / o.kg);
+    out.protein_1p8_g = r1(PROT_GKG * o.kg);
+    out.meets_1p8 = out.protein_g >= out.protein_1p8_g - 1;
+    // Below the resting floor is not a plan, it is a symptom.
+    out.below_bmr = out.kcal < bmr - 0.5;
+    out.bmr_pct = r1(out.kcal / bmr * 100);
+    return out;
+  }
+
+  function kvHtml(rows){
+    return rows.map(function(p){
+      return '<div class="flex items-baseline justify-between gap-4 py-1.5 border-b border-white/5 last:border-0">'
+        + '<span style="opacity:.55">' + p[0] + '</span><span class="font-mono">' + p[1] + '</span></div>';
+    }).join('');
+  }
+
+  function render(c){
+    $('sextag').textContent = c.sex === 'm' ? 'MEN' : 'WOMEN';
+    $('kvbmr').innerHTML = kvHtml([
+      ['10 &times; weight', fmt(c.term_weight) + '   (10 &times; ' + c.kg + ' kg)'],
+      ['6.25 &times; height', fmt(c.term_height) + '   (6.25 &times; ' + c.cm + ' cm)'],
+      ['5 &times; age', fmt(c.term_age) + '   (5 &times; ' + c.age + ' y)'],
+      ['Sex constant', (c.constant > 0 ? '+ ' : '&minus; ') + Math.abs(c.constant)],
+      ['BMR', fmt(c.bmr) + ' kcal/day'],
+      ['&times; activity', '&times; ' + c.multiplier + '  (' + c.activity_desc + ')'],
+      ['TDEE', fmt(c.tdee) + ' kcal/day']
+    ]);
+    $('actdesc').textContent = c.activity_desc;
+    $('exhint').textContent = c.activity === 'sedentary'
+      ? 'sedentary is a desk job, so sessions are close to zero'
+      : c.activity === 'athlete' || c.activity === 'extra'
+        ? 'two sessions a day or a physical job - four is a floor, not a match'
+        : 'about ' + c.activity + ' level sits near 3-5 days';
+
+    document.getElementById('acttbl').innerHTML = ACT.map(function(a){
+      var on = a[0] === c.activity;
+      return '<tr><td class="py-1.5 pr-4"' + (on ? ' style="color:#FF5F1F"' : '') + '>'
+        + (on ? '&bull; ' : '') + a[0] + '</td><td class="py-1.5 pr-4 font-mono">' + a[1].toFixed(3)
+        + '</td><td class="py-1.5 pr-4 font-mono">' + fmt(c.bmr * a[1]) + '</td>'
+        + '<td class="py-1.5 pr-4" style="opacity:.55">' + a[2] + '</td></tr>';
+    }).join('');
+
+    document.getElementById('goalcards').innerHTML = GOALS.map(function(g){
+      var kcal = c.tdee + g[1];
+      var on = g[0] === c.goal;
+      return '<div class="rounded-xl border p-4" style="border-color:' + (on ? '#FF5F1F' : 'rgba(255,255,255,.1)') + ';background:' + (on ? 'rgba(255,95,31,.06)' : 'rgba(255,255,255,.03)') + '">'
+        + '<div class="ws-label mb-1">' + g[0] + (g[1] ? ' (' + (g[1] > 0 ? '+' : '') + g[1] + ')' : '') + '</div>'
+        + '<div class="font-mono text-lg">' + fmt(kcal) + ' kcal</div>'
+        + '<div class="mt-1 text-[11px]" style="opacity:.5">' + g[2] + '</div></div>';
+    }).join('');
+    $('kcalhint').textContent = 'TDEE ' + fmt(c.tdee)
+      + (c.goal_delta ? (c.goal_delta > 0 ? ' + ' : ' - ') + Math.abs(c.goal_delta) : '')
+      + ' = ' + fmt(c.tdee + c.goal_delta) + ' kcal'
+      + (c.overridden ? '  (you overrode this box)' : '');
+
+    var cells = [
+      ['Protein', c.protein_g + ' g', c.protein_pct + '% &middot; ' + c.protein_g + ' g &middot; ' + c.protein_g_per_kg + ' g/kg'],
+      ['Carbs', c.carb_g + ' g', c.carb_pct + '% &middot; ' + c.carb_g + ' g'],
+      ['Fat', c.fat_g + ' g', c.fat_pct + '% &middot; ' + c.fat_g + ' g'],
+      ['Total', fmt(c.kcal) + ' kcal', c.macro_sum_pct + '% of calories &rarr; ' + fmt(c.macro_kcal) + ' kcal']
+    ];
+    $('macros').innerHTML = cells.map(function(p){
+      return '<div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">'
+        + '<div class="ws-label mb-1">' + p[0] + '</div>'
+        + '<div class="font-mono text-lg">' + p[1] + '</div>'
+        + '<div class="mt-1 text-[11px]" style="opacity:.55">' + p[2] + '</div></div>';
+    }).join('');
+
+    $('protcheck').innerHTML = [
+      c.meets_1p8
+        ? 'At ' + c.protein_g + ' g protein you clear the ' + c.protein_1p8_g + ' g that 1.8 g/kg implies for ' + c.kg + ' kg.'
+        : 'At ' + c.protein_g + ' g protein you sit under the ' + c.protein_1p8_g + ' g that 1.8 g/kg implies for ' + c.kg + ' kg - raise the protein split or the calories.',
+      c.below_bmr
+        ? 'Warning: ' + fmt(c.kcal) + ' kcal is below the ' + fmt(c.bmr) + ' kcal your body uses at rest. That is not a fat-loss plan, it is a medical problem.'
+        : 'The target is ' + c.bmr_pct + '% of BMR, which is the floor most coaching guidance accepts.',
+      'Macro split sums to ' + c.macro_sum_pct + '% and the grams add back up to ' + fmt(c.macro_kcal) + ' kcal against a ' + fmt(c.kcal) + ' kcal target.'
+    ].map(function(s){ return '<div class="text-[11px] leading-relaxed text-white/45">&bull; ' + s + '</div>'; }).join('');
+
+    $('out').textContent = [
+      'CALORIE NEEDS',
+      '------------',
+      c.formula,
+      'W = ' + c.kg + ' kg, H = ' + c.cm + ' cm, A = ' + c.age,
+      '',
+      '  10W        = ' + fmt(c.term_weight),
+      '+ 6.25H     = ' + fmt(c.term_height),
+      '- 5A        = ' + fmt(c.term_age),
+      '+ constant = ' + (c.constant > 0 ? '+ ' + c.constant : '- ' + Math.abs(c.constant)),
+      '  BMR       = ' + fmt(c.bmr) + ' kcal',
+      '',
+      'TDEE = BMR x ' + c.multiplier + ' (' + c.activity_desc + ')',
+      '     = ' + fmt(c.bmr) + ' x ' + c.multiplier + ' = ' + fmt(c.tdee) + ' kcal',
+      '',
+      'Goal  ' + c.goal + ': ' + fmt(c.tdee) + ' ' + (c.goal_delta ? (c.goal_delta > 0 ? '+ ' : '- ') + Math.abs(c.goal_delta) : '+ 0') + ' = ' + fmt(c.kcal) + ' kcal',
+      '',
+      'Macros at ' + c.protein_pct + '% / ' + c.carb_pct + '% / ' + c.fat_pct + '%',
+      '  protein ' + c.protein_g + ' g  (' + c.protein_g_per_kg + ' g/kg)',
+      '  carbs   ' + c.carb_g + ' g',
+      '  fat     ' + c.fat_g + ' g',
+      '  total   ' + fmt(c.macro_kcal) + ' kcal'
+    ].join('\n');
+    return c;
+  }
+
+  function syncUnits(){
+    var ft = parseFloat($('ft').value), inch = parseFloat($('inch').value);
+    if(isFinite(ft) && isFinite(inch)){
+      $('cm').value = r1((ft * 12 + inch) * CM_PER_IN);
+    }
+  }
+
+  function read(){
+    syncUnits();
+    var cm = parseFloat($('cm').value), kg = parseFloat($('kg').value), age = parseFloat($('age').value);
+    if(!isFinite(cm) || cm < 120 || cm > 230) return { err: 'Height must be 120 cm to 230 cm.' };
+    if(!isFinite(kg) || kg < 30 || kg > 300) return { err: 'Weight must be 30 kg to 300 kg.' };
+    if(!isFinite(age) || age < 14 || age > 100) return { err: 'Age must be 14 to 100.' };
+    var o = { sex: $('sex').value, cm: cm, kg: kg, age: age,
+              activity: $('activity').value, goal: $('goal').value,
+              mode: $('mode').value, protein_pct: KCAL_PCT };
+    if(o.mode === 'grams'){
+      // Grams mode: the user sets protein per kg, fat takes the remainder as
+      // a share of the leftover calories after protein and carbs.
+      o.protein_g_per_kg = parseFloat($('pk').value);
+      if(!isFinite(o.protein_g_per_kg) || o.protein_g_per_kg <= 0)
+        return { err: 'Protein per kg must be above zero.' };
+      o.fat_pct = parseFloat($('fk').value) / 100;
+      if(!isFinite(o.fat_pct) || o.fat_pct < 0 || o.fat_pct > 1)
+        return { err: 'Fat share must be between 0 and 100 percent.' };
+    } else {
+      o.protein_pct = Math.min(60, Math.max(10, parseFloat($('pct').value) || 30)) / 100;
+    }
+    return o;
+  }
+
+  function go(){
+    var o = read();
+    if(o.err){
+      $('err').textContent = o.err;
+      window.__T['calorie-needs-calculator'].last = null;
+      return null;
+    }
+    $('err').textContent = '';
+    var c = compute(o);
+    // The calorie box follows the goal until the user edits it. Editing is a
+    // deliberate override, so from then on only an explicit edit of the box
+    // changes it - a goal or activity change must not silently undo it.
+    if(!kcalTouched) $('kcal').value = r0(c.kcal);
+    var typed = parseFloat($('kcal').value);
+    if(isFinite(typed) && typed > 0){
+      c.kcal = r1(typed);
+      c.overridden = true;
+      c.protein_g = r1(c.kcal * c.protein_pct / KCAL_PER_G.protein);
+      c.carb_g = r1(c.kcal * c.carb_pct / KCAL_PER_G.carb);
+      c.fat_g = r1(c.kcal * c.fat_pct / KCAL_PER_G.fat);
+      c.macro_kcal = r1(c.protein_g * KCAL_PER_G.protein + c.carb_g * KCAL_PER_G.carb
+                        + c.fat_g * KCAL_PER_G.fat);
+      c.protein_g_per_kg = r1(c.protein_g / o.kg);
+      c.meets_1p8 = c.protein_g >= c.protein_1p8_g - 1;
+      c.below_bmr = c.kcal < c.bmr - 0.5;
+      c.bmr_pct = r1(c.kcal / c.bmr * 100);
+    } else {
+      c.overridden = false;
+    }
+    render(c);
+    window.__T['calorie-needs-calculator'].last = c;
+    return c;
+  }
+
+  // Grams mode swaps the two split inputs for a per-kg pair.
+  $('mode').addEventListener('change', function(){
+    var g = $('mode').value === 'grams';
+    $('pctwrap').style.display = g ? 'none' : '';
+    $('gwrap').style.display = g ? '' : 'none';
+    go();
+  });
+
+  ['sex','age','kg','cm','ft','inch','activity','goal','pct','pk','fk'].forEach(function(id){
+    $(id).addEventListener('input', go);
+    $(id).addEventListener('change', go);
+  });
+  $('kcal').addEventListener('input', function(){ kcalTouched = true; go(); });
+  go();
+
+  window.__T['calorie-needs-calculator'] = {
+    slug: 'calorie-needs-calculator',
+    ACTIVITIES: ACT, GOALS: GOALS,
+    kcal_per_g: KCAL_PER_G,
+    run: function(o){
+      o = o || {};
+      ['sex','age','kg','cm','activity','goal'].forEach(function(k){ if(o[k] !== undefined) $(k).value = o[k]; });
+      if(o.ft !== undefined){ $('ft').value = o.ft; $('inch').value = o.inch !== undefined ? o.inch : 0; }
+      if(o.cm !== undefined) $('cm').value = o.cm;
+      if(o.protein_pct !== undefined) $('pct').value = o.protein_pct;
+      if(o.mode !== undefined) $('mode').value = o.mode;
+      if(o.protein_g_per_kg !== undefined) $('pk').value = o.protein_g_per_kg;
+      if(o.fat_pct !== undefined) $('fk').value = Math.round(o.fat_pct * 100);
+      $('mode').dispatchEvent(new Event('change'));
+      if(o.kcal !== undefined){ kcalTouched = true; $('kcal').value = o.kcal; }
+      return go();
+    }
+  };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colour Blindness Simulator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Colour Blindness Simulator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Design & Colour — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ACCESSIBILITY</span><span class="ws-chip">CVD</span><span class="ws-chip">VIENOT</span><span class="ws-chip">CONTRAST</span></div>
+        </div>
+      
+<section class="ws-panel mt-4 p-5">
+  <div class="mb-3 flex items-center justify-between"><span class="ws-label">Inputs</span>
+    <span class="ws-chip">LINEAR RGB</span></div>
+  <div class="grid gap-4 md:grid-cols-2">
+    <div><label class="ws-label mb-2 block" for="mode">Condition</label><select id="mode" class="ws-input"><option value="protanopia">Protanopia - no L cones (red)</option><option value="deuteranopia" selected>Deuteranopia - no M cones (green, most common)</option><option value="tritanopia">Tritanopia - no S cones (blue)</option><option value="protanomaly">Protanomaly - reduced red (anomalous trichromat)</option><option value="deuteranomaly">Deuteranomaly - reduced green (anomalous trichromat)</option></select></div>
+    <div>
+      <label class="ws-label mb-2 block" for="hex">Colour (hex)</label>
+      <input id="hex" type="text" class="ws-input" value="#FF5F1F" spellcheck="false">
+      <div class="mt-2 flex items-center gap-3">
+        <span id="swatch" class="inline-block h-9 w-16 rounded-lg border border-white/15"></span>
+        <span id="hexnorm" class="font-mono text-xs text-white/60">#FF5F1F</span>
+      </div>
+    </div>
+  </div>
+  <div class="mt-4 grid gap-4 md:grid-cols-2">
+    <div>
+      <label class="ws-label mb-2 block" for="sev">Severity <span id="sevlab">100</span>%</label>
+      <input id="sev" type="range" min="0" max="100" step="5" value="100" class="w-full">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="txt">Preview text</label>
+      <input id="txt" type="text" class="ws-input" value="Colour Under Test 12345">
+    </div>
+  </div>
+  <div id="err" class="mt-3 text-[11px] text-white/45"></div>
+</section>
+
+<section class="ws-panel mt-4 p-5">
+  <div class="mb-3 flex items-center justify-between"><span class="ws-label">Original vs simulated</span>
+    <span id="condlab" class="ws-chip">-</span></div>
+  <div class="grid gap-3 md:grid-cols-2">
+    <div>
+      <div class="ws-label mb-2">Original <span id="orighex" class="opacity-60"></span></div>
+      <div id="paneA" class="flex h-40 items-center justify-center rounded-xl border border-white/10 bg-black p-3 text-center">
+        <span id="sampleA" class="break-all font-display text-2xl font-black">-</span>
+      </div>
+    </div>
+    <div>
+      <div class="ws-label mb-2">Simulated <span id="simhex" class="opacity-60"></span></div>
+      <div id="paneB" class="flex h-40 items-center justify-center rounded-xl border border-white/10 bg-black p-3 text-center">
+        <span id="sampleB" class="break-all font-display text-2xl font-black">-</span>
+      </div>
+    </div>
+  </div>
+  <div id="cards"></div>
+</section>
+
+<section class="ws-panel mt-4 p-5">
+  <div class="mb-3 flex items-center justify-between">
+    <span class="ws-label">Your own image</span>
+    <label class="ws-chip cursor-pointer">Choose file<input id="file" type="file" accept="image/*" class="hidden"></label>
+  </div>
+  <div class="grid gap-3 md:grid-cols-2">
+    <div><div class="ws-label mb-2">Original</div><canvas id="cA" class="w-full rounded-xl border border-white/10 bg-black"></canvas></div>
+    <div><div class="ws-label mb-2">Simulated</div><canvas id="cB" class="w-full rounded-xl border border-white/10 bg-black"></canvas></div>
+  </div>
+  <div id="err2" class="mt-3 text-[11px] text-white/45"></div>
+</section>
+
+<section class="ws-panel mt-4 p-5">
+  <div class="mb-3 flex items-center justify-between"><span class="ws-label">Anchor checks</span>
+    <span class="ws-chip">HANDS ON</span></div>
+  <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">Case</th><th class="py-2 pr-4">Result</th><th class="py-2 pr-4">Components</th><th class="py-2 pr-4">Reference</th></tr></thead><tbody><tr><td colspan="4" style="opacity:.5">Nothing to show yet.</td></tr></tbody></table></div>
+  <div class="mt-3 text-[11px] leading-relaxed text-white/35">
+    Each row is a published reference point for the matrices above, computed here
+    with the same code path the page uses. If any row drifts, the maths broke.
+  </div>
+</section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  window.__T = window.__T || {};
+
+  // Vienot, Brettel & Mollon 1999 - linear-RGB simulation matrices.
+  var M = {
+    protanopia:   [[0.11238,0.88762,0.00000],[0.11238,0.88762,0.00000],[0.00401,-0.00401,1.00000]],
+    deuteranopia: [[0.29275,0.70725,0.00000],[0.29275,0.70725,0.00000],[-0.02234,0.02234,1.00000]],
+    tritanopia:   [[1.00000,0.14461,-0.14461],[0.00000,0.85659,0.14341],[0.00000,0.85659,0.14341]]
+  };
+  // The anomalies are the dichromatic projection faded in by severity, so they
+  // reuse the same matrix - that is the published model, not a shortcut.
+  var ANOMALY = { protanomaly:'protanopia', deuteranomaly:'deuteranopia' };
+
+  function clamp(v){ return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function s2l(c){
+    c = c / 255;
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  }
+  function l2s(v){
+    v = clamp(v);
+    var c = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+    return Math.max(0, Math.min(255, Math.round(c * 255)));
+  }
+  function hex2rgb(h){
+    h = String(h).trim().replace(/^#/, '');
+    if(/^[0-9a-fA-F]{3}$/.test(h)) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    if(!/^[0-9a-fA-F]{6}$/.test(h)) return null;
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+  }
+  function rgb2hex(r){ return '#' + r.map(function(v){ return ('0'+v.toString(16)).slice(-2); }).join('').toUpperCase(); }
+
+  // Apply one condition to one linear triplet. sev is 0..1.
+  function project(cond, lin, sev){
+    var key = ANOMALY[cond] || cond;
+    var m = M[key];
+    var out = [0,0,0], i, j;
+    for(i = 0; i < 3; i++){
+      out[i] = m[i][0]*lin[0] + m[i][1]*lin[1] + m[i][2]*lin[2];
+    }
+    // Blend in *linear* light: interpolating in gamma space would darken the
+    // midpoint and is the usual reason a hand-rolled slider looks wrong.
+    for(i = 0; i < 3; i++) lin[i] = (1 - sev) * lin[i] + sev * out[i];
+    return lin;
+  }
+  function simHex(hex, cond, sev){
+    var rgb = hex2rgb(hex);
+    if(!rgb) return null;
+    var lin = rgb.map(s2l);
+    project(cond, lin, sev);
+    return lin.map(l2s);
+  }
+
+  function hexOk(){ return hex2rgb($('hex').value) !== null; }
+
+  // ---- reference points, independent of the controls -------------------
+  var ANCHORS = [
+    ['#FF0000', 'protanopia',   1.00, [94, 94, 13]],
+    ['#FF0000', 'deuteranopia', 1.00, [147, 147, 0]],
+    ['#FF0000', 'tritanopia',   1.00, [255, 0, 0]],
+    ['#0000FF', 'tritanopia',   1.00, [0, 106, 106]],
+    ['#00FF00', 'protanopia',   0.25, [130, 252, 0]],
+    ['#00FF00', 'deuteranopia', 1.00, [109, 109, 15]]
+  ];
+
+  function anchors(){
+    return ANCHORS.map(function(a){
+      var got = simHex(a[0], a[1], a[2]);
+      return [a[0] + ' &middot; ' + a[1] + ' ' + Math.round(a[2]*100) + '%',
+              rgb2hex(got),
+              'rgb(' + got.join(', ') + ')',
+              rgb2hex(got) === rgb2hex(a[3]) ? 'match' : 'MISMATCH'];
+    });
+  }
+
+  function seterr(id, msg){ $(id).textContent = msg || ''; }
+
+  var last = {};
+
+  function paintText(){
+    var cond = $('mode').value;
+    var sev = parseInt($('sev').value, 10) / 100;
+    var txt = $('txt').value || 'Sample';
+    $('sevlab').textContent = $('sev').value;
+    var ok = hexOk();
+    var base = ok ? $('hex').value.trim().replace(/^#/,'') : null;
+    var sim = ok ? rgb2hex(simHex($('hex').value, cond, sev)) : null;
+    $('swatch').style.background = ok ? $('hex').value : 'transparent';
+    $('hexnorm').textContent = ok ? base.toUpperCase() : 'not a hex colour';
+    $('orighex').textContent = ok ? '#' + base.toUpperCase() : '';
+    $('simhex').textContent = sim || '';
+    $('sampleA').textContent = txt;
+    $('sampleB').textContent = txt;
+    $('sampleA').style.color = ok ? '#' + base.toUpperCase() : '#fff';
+    $('sampleB').style.color = sim || '#fff';
+    var names = {}; window.__T['colour-blind-simulator'].COND.forEach(function(o){ names[o[0]] = o[1]; });
+    $('condlab').textContent = names[cond] + ' @ ' + Math.round(sev*100) + '%';
+    return { ok: ok, condition: cond, severity: sev, base_hex: base ? '#'+base.toUpperCase() : null,
+             simulated_hex: sim, text: txt };
+  }
+
+  function cardsHtml(d){
+    if(!d.ok) return '';
+    var rgb = hex2rgb(d.base_hex).map(function(v){ return s2l(v); });
+    var before = rgb.map(function(v){ return l2s(v); });
+    var after = simHex(d.base_hex, d.condition, d.severity);
+    return '<div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">'
+      + '<div class="rounded-xl border border-white/10 bg-white/[0.03] p-4"><div class="ws-label mb-1">Linear RGB in</div><div class="font-mono text-sm">' + before.join(', ') + '</div></div>'
+      + '<div class="rounded-xl border border-white/10 bg-white/[0.03] p-4"><div class="ws-label mb-1">Simulated RGB</div><div class="font-mono text-sm">' + after.join(', ') + '</div></div>'
+      + '<div class="rounded-xl border border-white/10 bg-white/[0.03] p-4"><div class="ws-label mb-1">Result</div><div class="font-mono text-lg">' + d.simulated_hex + '</div></div>'
+      + '<div class="rounded-xl border border-white/10 bg-white/[0.03] p-4"><div class="ws-label mb-1">Severity</div><div class="font-mono text-lg">' + Math.round(d.severity*100) + '%</div></div>'
+      + '</div>';
+  }
+
+  function run(){
+    var d = paintText();
+    if(!d.ok){
+      seterr('err', 'Enter a hex colour like #FF5F1F - 3 or 6 digits.');
+      seterr('err2', '');
+      window.__T['colour-blind-simulator'].last = null;
+      return d;
+    }
+    seterr('err', '');
+    var old = document.getElementById('cards');
+    if(old) old.remove();
+    var holder = document.createElement('div');
+    holder.id = 'cards';
+    holder.innerHTML = cardsHtml(d);
+    $('simhex').parentNode.parentNode.parentNode.appendChild(holder);
+    d.anchors = anchors();
+    var rows = document.getElementById('atbl');
+    if(rows){
+      rows.innerHTML = d.anchors.map(function(r){
+        return '<tr><td class="py-1.5 pr-4">' + r[0] + '</td><td class="py-1.5 pr-4 font-mono">' + r[1]
+             + '</td><td class="py-1.5 pr-4 font-mono" style="opacity:.6">' + r[2] + '</td><td class="py-1.5 pr-4">'
+             + r[3] + '</td></tr>';
+      }).join('');
+    }
+    seterr('err2', 'No image loaded yet - the text panes above are live without one.');
+    window.__T['colour-blind-simulator'].last = d;
+    return d;
+  }
+
+  // ---- image path -------------------------------------------------------
+  var srcImg = null;
+  function drawImage(){
+    var a = $('cA'), b = $('cB');
+    if(!srcImg){
+      [a, b].forEach(function(c){
+        c.width = 320; c.height = 200;
+        var x = c.getContext('2d');
+        x.fillStyle = '#050505'; x.fillRect(0, 0, 320, 200);
+        x.fillStyle = 'rgba(255,255,255,.3)'; x.font = '13px monospace';
+        x.fillText('no image', 12, 100);
+      });
+      return;
+    }
+    var w = Math.min(srcImg.width, 640), h = Math.round(srcImg.height * (w / srcImg.width));
+    a.width = b.width = w; a.height = b.height = h;
+    var ga = a.getContext('2d'), gb = b.getContext('2d');
+    ga.drawImage(srcImg, 0, 0, w, h);
+    var img = ga.getImageData(0, 0, w, h), d = img.data;
+    var cond = $('mode').value, sev = parseInt($('sev').value, 10) / 100;
+    var i;
+    for(i = 0; i < d.length; i += 4){
+      if(d[i+3] === 0) continue;
+      var lin = project(cond, [s2l(d[i]), s2l(d[i+1]), s2l(d[i+2])], sev);
+      d[i] = l2s(lin[0]); d[i+1] = l2s(lin[1]); d[i+2] = l2s(lin[2]);
+    }
+    gb.putImageData(img, 0, 0);
+  }
+
+  $('file').addEventListener('change', function(e){
+    var f = e.target.files && e.target.files[0];
+    if(!f) return;
+    var url = URL.createObjectURL(f), img = new Image();
+    img.onload = function(){ srcImg = img; drawImage(); seterr('err2', 'Showing ' + img.width + 'x' + img.height + ' under ' + $('mode').value + '.'); };
+    img.onerror = function(){ seterr('err2', 'That file could not be decoded as an image.'); };
+    img.src = url;
+  });
+
+  ['mode','sev','hex','txt'].forEach(function(id){
+    $(id).addEventListener('input', run);
+    $(id).addEventListener('change', function(){ drawImage(); run(); });
+  });
+  drawImage();
+  run();
+
+  window.__T['colour-blind-simulator'] = {
+    slug: 'colour-blind-simulator',
+    COND: [('protanopia', 'Protanopia - no L cones (red)'), ('deuteranopia', 'Deuteranopia - no M cones (green, most common)'), ('tritanopia', 'Tritanopia - no S cones (blue)'), ('protanomaly', 'Protanomaly - reduced red (anomalous trichromat)'), ('deuteranomaly', 'Deuteranomaly - reduced green (anomalous trichromat)')],
+    matrices: M,
+    simHex: simHex,
+    run: function(o){
+      if(o.hex !== undefined) $('hex').value = o.hex;
+      if(o.condition !== undefined) $('mode').value = o.condition;
+      if(o.severity !== undefined) $('sev').value = String(Math.round(o.severity * 100));
+      if(o.text !== undefined) $('txt').value = o.text;
+      drawImage();
+      return run();
+    }
+  };
+})();
+</script>
+</body>
+</html>
