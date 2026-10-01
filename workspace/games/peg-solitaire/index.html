@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peg Solitaire — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="Peg Solitaire - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/peg-solitaire/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Peg Solitaire">
+<meta property="og:description" content="Peg Solitaire - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/peg-solitaire/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Peg Solitaire on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Peg Solitaire">
+<meta name="twitter:description" content="Peg Solitaire - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Peg Solitaire on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Peg Solitaire","url":"https://ocurp.com/workspace/games/peg-solitaire/","description":"Peg Solitaire - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Peg Solitaire</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">PUZZLE</span><span class="ws-chip">BOARD</span><span class="ws-chip">CANVAS</span></div>
+  </div>
+
+  <section class="ws-panel p-6">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <select id="level" class="ws-input" style="width:auto;padding:.55rem .8rem;font-size:.7rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase" aria-label="Layout"></select>
+      <button id="rs" class="ws-btn-ghost">Reset</button>
+      <button id="undo" class="ws-btn-ghost">Undo</button>
+      <button id="hint" class="ws-btn">Hint</button>
+      <span class="ws-chip" id="score">0 PEGS</span>
+      <span class="ws-chip" id="moves">0 MOVES</span>
+      <span class="ws-chip" id="stat">PLAYING</span>
+    </div>
+    <canvas id="cv" class="mx-auto block w-full touch-none rounded-xl border border-white/15" style="aspect-ratio:1/1;max-width:520px;max-height:74vh"></canvas>
+    <p class="mt-3 text-center text-xs text-white/45">Click a peg, then click the empty hole two steps away in a straight line — or click the peg and press the direction key. One peg left wins. A move budget guards against wandering.</p>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'), cx=cv.getContext('2d');
+
+/* ------------------------------------------------------------------ board --
+   The English 33-hole cross, in Beasley notation: columns a..g -> x 0..6,
+   rows 1..7 -> y 0..6. '#' is "no hole", '.' an empty hole, 'o' a peg.
+   Layout strings are 7 rows of 7 characters joined by '/'.               */
+const BOARD=[
+  '##...##',
+  '##...##',
+  '.......',
+  '.......',
+  '.......',
+  '##...##',
+  '##...##'];
+/* Level 1 is the classic opening: every hole filled except the centre d4.
+   Levels 2 and 3 were generated by walking REVERSE moves outward from the
+   solved position, so each is solvable by construction - the reverse walk
+   read backwards is a legal solution. tools/provers/peg-solitaire.py
+   re-solves each of these exactly, independently of this comment.        */
+const LEVELS=[
+  {name:'Classic 32',    layout:'##ooo##/##ooo##/ooooooo/ooo.ooo/ooooooo/##ooo##/##ooo##', budget:32},
+  {name:'Crossed 20',    layout:'##oo.##/##oo.##/......o/oooo.oo/oo.ooo./##ooo##/##oo.##', budget:26},
+  {name:'Scattered 16',  layout:'##...##/##..o##/.o...oo/.ooo.o./..oooo./##o.o##/##.oo##', budget:22}];
+
+/* row-major hole list + index -> pixel mapping, rebuilt on resize */
+let HOLES=[], IDX=new Map(), W=520, H=520, PAD=26, CELL=1;
+function buildGeometry(){
+  HOLES=[]; IDX=new Map();
+  for(let r=0;r<7;r++) for(let c=0;c<7;c++)
+    if(BOARD[r][c]!=='#'){ IDX.set(r*7+c, HOLES.length); HOLES.push([c,r]); }
+  CELL=Math.max(10, (Math.min(W,H)-PAD*2)/6);
+  OX=Math.round(W/2 - 3*CELL); OY=Math.round(H/2 - 3*CELL);
+}
+let OX=0, OY=0;
+
+/* ------------------------------------------------------------------- game -- */
+let occ=new Set(), sel=null, moves=0, status='playing', levelIdx=0, hist=[];
+let hintMove=null, flash=0, msg='';
+
+function loadLevel(i){
+  levelIdx=i; hist=[];
+  const lay=LEVELS[i].layout.split('/');
+  occ=new Set();
+  for(let r=0;r<7;r++) for(let c=0;c<7;c++)
+    if(lay[r][c]==='o') occ.add(r*7+c);
+  sel=null; moves=0; status='playing'; hintMove=null; msg=''; flash=0;
+  upd(); draw();
+}
+
+/* pegJump(o,d): the honest rule. A jump needs an OCCUPIED origin, an
+   OCCUPIED jumped hole and an EMPTY destination, all three collinear and
+   spaced two apart along one lattice line. Anything else is not a move. */
+const DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
+function pegJump(o,d){
+  if(!occ.has(o)) return null;
+  const [oc,orr]=coord(o), [dc,dr]=coord(d);
+  for(const [sx,sy] of DIRS){
+    if(dc-oc===2*sx && dr-orr===2*sy){
+      const m=orr*7+(oc+sx);
+      if(IDX.has(m) && occ.has(m) && !occ.has(d)) return m;
+    }
+  }
+  return null;
+}
+function coord(k){ return [k%7, Math.floor(k/7)]; }
+function hole(c,r){ return IDX.has(r*7+c) ? r*7+c : null; }
+
+function doJump(o,d){
+  if(status!=='playing') return false;
+  const m=pegJump(o,d);
+  if(m===null) return false;
+  hist.push([occ.has(o), o, m, d, occ.has(d)]);
+  occ.delete(o); occ.delete(m); occ.add(d);
+  moves++; sel=null; hintMove=null; flash=1;
+  /* FAIL 1: no pegs at all. */
+  if(occ.size===0){ status='lost'; msg='Every peg gone.'; }
+  else if(occ.size===1){ status='won'; msg='Solved.'; }
+  /* FAIL 2: budget spent with pegs still on the board. */
+  else if(moves>=LEVELS[levelIdx].budget){ status='lost'; msg='Out of moves.'; }
+  upd(); draw();
+  return true;
+}
+
+function undo(){
+  if(!hist.length || status!=='playing') return;
+  const h=hist.pop();
+  if(h[0]) occ.add(h[1]);
+  occ.add(h[2]);
+  occ.delete(h[3]);
+  if(!h[4]) occ.delete(h[3]);
+  moves=Math.max(0,moves-1); sel=null; hintMove=null; msg='';
+  upd(); draw();
+}
+
+/* One legal move, chosen so the player is never shown an impossible hint.
+   Prefers a jump that empties the most crowded rim area. */
+function findHint(){
+  const all=[];
+  for(const o of occ) for(const d of HOLES){
+    const k=d[1]*7+d[0];
+    if(occ.has(k)) continue;
+    const m=pegJump(o,k);
+    if(m!==null) all.push([o,m,k]);
+  }
+  if(!all.length) return null;
+  const rim=h=>Math.abs(coord(h)[0]-3)+Math.abs(coord(h)[1]-3);
+  all.sort((a,b)=> rim(b[0])-rim(a[0]));
+  return all[0];
+}
+
+function upd(){
+  $('score').textContent=occ.size+(occ.size===1?' PEG':' PEGS');
+  $('moves').textContent=moves+' / '+LEVELS[levelIdx].budget+' MOVES';
+  $('stat').textContent = status==='won' ? 'SOLVED' : status==='lost' ? 'FAILED'
+                          : occ.size===1 ? 'SOLVED' : 'PLAYING';
+  $('stat').style.color = (status==='won') ? '#4ade80' : (status==='lost') ? '#FF5F1F' : '';
+}
+
+/* ------------------------------------------------------------------ input -- */
+function px(k){ const [c,r]=coord(k); return [OX+c*CELL, OY+r*CELL]; }
+function hit(mx,my){
+  for(const k of occ){ const [x,y]=px(k); if(Math.abs(mx-x)<=CELL*.42 && Math.abs(my-y)<=CELL*.42) return k; }
+  for(let r=0;r<7;r++) for(let c=0;c<7;c++){ if(!IDX.has(r*7+c)) continue;
+    const x=OX+c*CELL, y=OY+r*CELL; if(Math.abs(mx-x)<=CELL*.42 && Math.abs(my-y)<=CELL*.42) return r*7+c; }
+  return null;
+}
+function onTap(mx,my){
+  if(status!=='playing') return;
+  const k=hit(mx,my); if(k===null) return;
+  if(sel!==null && pegJump(sel,k)!==null){ doJump(sel,k); return; }
+  sel = occ.has(k) ? (sel===k ? null : k) : null;
+  hintMove=null; draw();
+}
+cv.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  const r=cv.getBoundingClientRect();
+  const sx=W/r.width, sy=H/r.height;
+  onTap((e.clientX-r.left)*sx, (e.clientY-r.top)*sy);
+});
+window.addEventListener('keydown',e=>{
+  const k=e.key;
+  if(k==='r'||k==='R'){ loadLevel(levelIdx); return; }
+  if(k==='u'||k==='U'||(k==='z'&&(e.ctrlKey||e.metaKey))){ undo(); return; }
+  if(k==='h'||k==='H'){ const h=findHint(); hintMove=h?[h[0],h[2]]:null; flash=h?1:0; draw(); return; }
+  if(status!=='playing') return;
+  /* Arrow: jump the SELECTED peg in that direction, else take the first
+     legal jump that starts from the selected hole's line. */
+  const map={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1],
+             a:[-1,0],d:[1,0],w:[0,-1],s:[0,1]};
+  const v=map[k]; if(!v) return;
+  e.preventDefault();
+  if(sel!==null){
+    const [c,r]=coord(sel); const d=hole(c+2*v[0], r+2*v[1]);
+    if(d!==null && doJump(sel,d)) return;
+  }
+  /* no selection: auto-select the only legal origin in that direction */
+  for(const o of occ){ const [c,r]=coord(o); const d=hole(c+2*v[0], r+2*v[1]);
+    if(d!==null && pegJump(o,d)!==null){ sel=o; doJump(o,d); return; } }
+});
+
+$('rs').addEventListener('click',()=>loadLevel(levelIdx));
+$('undo').addEventListener('click',undo);
+$('hint').addEventListener('click',()=>{ const h=findHint(); hintMove=h?[h[0],h[2]]:null; if(h) flash=1; draw(); });
+const lv=$('level');
+LEVELS.forEach((L,i)=>{ const o=document.createElement('option'); o.value=i;
+  o.textContent=(i+1)+'. '+L.name+' ('+L.layout.split('/').join('').split('o').length-1+' pegs)';
+  lv.appendChild(o); });
+lv.addEventListener('change',()=>loadLevel(parseInt(lv.value,10)));
+
+/* ------------------------------------------------------------------- draw -- */
+function sized(){
+  const r=cv.getBoundingClientRect(); const dpr=Math.min(2,window.devicePixelRatio||1);
+  W=Math.max(200,r.width); H=Math.max(200,r.height);
+  cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  buildGeometry(); draw();
+}
+function draw(){
+  cx.fillStyle='#0d0d0d'; cx.fillRect(0,0,W,H);
+  const R=CELL*0.34;
+  for(let r=0;r<7;r++) for(let c=0;c<7;c++){
+    if(!IDX.has(r*7+c)) continue;
+    const x=OX+c*CELL, y=OY+r*CELL;
+    cx.beginPath(); cx.arc(x,y,R*0.62,0,Math.PI*2);
+    cx.fillStyle='rgba(255,255,255,.05)'; cx.fill();
+    cx.strokeStyle='rgba(255,255,255,.09)'; cx.lineWidth=1; cx.stroke();
+  }
+  if(hintMove){
+    const [a,b]=hintMove; const [ax,ay]=px(a), [bx,by]=px(b);
+    cx.strokeStyle='rgba(255,95,31,.55)'; cx.lineWidth=2; cx.setLineDash([4,4]);
+    cx.beginPath(); cx.moveTo(ax,ay); cx.lineTo(bx,by); cx.stroke(); cx.setLineDash([]);
+  }
+  for(const k of occ){
+    const [x,y]=px(k);
+    const g=cx.createRadialGradient(x-R*0.35,y-R*0.4,R*0.15,x,y,R);
+    const hot=(hintMove&&hintMove[0]===k&&flash>0);
+    g.addColorStop(0, hot?'#ffd9c2':'#ffb28c'); g.addColorStop(1, hot?'#FF5F1F':'#c2410c');
+    cx.beginPath(); cx.arc(x,y,R,0,Math.PI*2); cx.fillStyle=g; cx.fill();
+    cx.strokeStyle='rgba(0,0,0,.35)'; cx.lineWidth=1; cx.stroke();
+  }
+  if(sel!==null){
+    const [x,y]=px(sel);
+    cx.beginPath(); cx.arc(x,y,R*1.5,0,Math.PI*2);
+    cx.strokeStyle='#FF5F1F'; cx.lineWidth=2; cx.stroke();
+  }
+  if(status==='won'||status==='lost'){
+    cx.fillStyle='rgba(5,5,5,.74)'; cx.fillRect(0,0,W,H);
+    cx.fillStyle= status==='won'?'#4ade80':'#FF5F1F';
+    cx.font='800 26px Manrope,sans-serif'; cx.textAlign='center';
+    cx.fillText(status==='won'?'SOLVED':'FAILED', W/2, H/2-6);
+    cx.fillStyle='rgba(255,255,255,.6)'; cx.font='600 12px Inter,sans-serif';
+    cx.fillText(msg+' — press R to reset', W/2, H/2+20);
+    cx.textAlign='left';
+  }
+}
+window.addEventListener('resize',sized);
+function tick(){ if(flash>0) flash-=0.05; requestAnimationFrame(()=>{ draw(); tick(); }); }
+lv.value='0'; loadLevel(0); sized(); tick();
+
+/* Test hook: read the REAL board state back out and drive exact moves, so a
+   headless check measures the shipped rules rather than the comment above. */
+window.__peg={
+  get occ(){ return [...occ]; }, get moves(){ return moves; },
+  get status(){ return status; }, get sel(){ return sel; },
+  get holes(){ return HOLES.length; }, get level(){ return levelIdx; },
+  get budget(){ return LEVELS[levelIdx].budget; },
+  LEVELS, pegJump, findHint, loadLevel,
+  jump(o,d){ return doJump(o,d); },
+  select(k){ sel=k; draw(); return sel; },
+  legal(){
+    const out=[];
+    for(const o of occ) for(const [c,r] of HOLES){ const d=r*7+c;
+      if(occ.has(d)) continue; if(pegJump(o,d)!==null) out.push([o,d]); }
+    return out;
+  }
+};
+</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.className&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body; near(o); }
+    box.textContent=msg||'';
+  };
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+
+<link rel="stylesheet" href="/workspace/play.css?v=20261001e">
+<script src="/workspace/play.js?v=20261001e" defer></script>
+</body>
+</html>

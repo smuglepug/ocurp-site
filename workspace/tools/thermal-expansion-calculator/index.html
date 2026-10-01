@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thermal Expansion Calculator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-copy.ok { animation: none }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Thermal Expansion Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Physics & Engineering &mdash; Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">THERMAL EXPANSION</span><span class="ws-chip">ALPHA</span><span class="ws-chip">RESTRAINED STRESS</span><span class="ws-chip">DILATATION</span><span class="ws-chip">LINEAR EXPANSION</span></div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Linear and volumetric expansion for 25 materials, the exact cubic volume factor next to the first-order 3&#945;&#916;T approximation, the compressive stress a fully restrained member builds, and the inverse solve for the temperature that produces a given change in length.</p>
+<section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div class="lg:col-span-2"><label class="ws-label mb-2 block" for="mat">Material (alpha is per kelvin, E in GPa)</label><select id="mat" class="ws-input"></select></div><div><label class="ws-label mb-2 block" for="alpha">Alpha &#945; (1e-6 / K)</label><input id="alpha" type="number" class="ws-input" placeholder="" value="11.7"></div><div><label class="ws-label mb-2 block" for="E">Young&#8217;s modulus E (GPa)</label><input id="E" type="number" class="ws-input" placeholder="" value="207"></div><div><label class="ws-label mb-2 block" for="L0">Length L&#8320; (mm)</label><input id="L0" type="number" class="ws-input" placeholder="" value="1000"></div><div><label class="ws-label mb-2 block" for="W">Width W (mm)</label><input id="W" type="number" class="ws-input" placeholder="" value="20"></div><div><label class="ws-label mb-2 block" for="H">Height H (mm)</label><input id="H" type="number" class="ws-input" placeholder="" value="20"></div><div><label class="ws-label mb-2 block" for="T0">Start temp T&#8320; (&#176;C)</label><input id="T0" type="number" class="ws-input" placeholder="" value="20"></div><div><label class="ws-label mb-2 block" for="T1">End temp T&#8321; (&#176;C)</label><input id="T1" type="number" class="ws-input" placeholder="" value="220"></div><div><label class="ws-label mb-2 block" for="solve">Solve for</label><select id="solve" class="ws-input !w-80"><option value="delta" selected>&#916;L from &#916;T (classic)</option><option value="t1">T&#8321; from a required &#916;L</option></select></div><div><label class="ws-label mb-2 block" for="fix">Constraint</label><select id="fix" class="ws-input !w-64"><option value="free">Free to expand</option><option value="restrained">Fully restrained (stress builds)</option><option value="gap">Ends touch a hard stop / gap</option></select></div><div><label class="ws-label mb-2 block" for="dec">Rounds to</label><select id="dec" class="ws-input !w-full"><option value="3">3 dp</option><option value="5" selected>5 dp</option><option value="7">7 dp</option></select></div></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy result</button></div><div class="grid gap-4 sm:grid-cols-2"><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Change in length</div><div id="big" class="mt-2 font-display text-3xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Heat to absorb</div><div id="heat" class="mt-2 font-display text-2xl font-black text-accent">-</div><div id="heatsub" class="mt-1 text-xs text-white/45">-</div></div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Geometry and stress</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="finlen" onclick="cp(this)"></button></div><div class="grid gap-4 sm:grid-cols-3"><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Final length L&#8321;</div><div id="finlen" class="mt-2 font-display text-2xl font-black text-accent">-</div><div id="finlensub" class="mt-1 text-xs text-white/45">-</div></div><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Volumetric change</div><div id="vol" class="mt-2 font-display text-2xl font-black text-accent">-</div><div id="volsub" class="mt-1 text-xs text-white/45">-</div></div><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Restrained stress</div><div id="stress" class="mt-2 font-display text-2xl font-black text-accent">-</div><div id="stresssub" class="mt-1 text-xs text-white/45">-</div></div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Working</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="w" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">Quantity</th><th class="py-2 pr-4">Value</th><th class="py-2 pr-4">Note</th></tr></thead><tbody id="w"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Growth against temperature</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="scan" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">Step (&#176;C)</th><th class="py-2 pr-4">L (mm)</th><th class="py-2 pr-4">W (mm)</th><th class="py-2 pr-4">H (mm)</th><th class="py-2 pr-4">Volume (mm&#179;)</th><th class="py-2 pr-4">Strain</th></tr></thead><tbody id="scan"></tbody></table></div></section><div class="mt-4 ws-out" id="howout">-</div>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var e=document.getElementById('stats');if(e)e.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(msg){var e=document.getElementById('err');if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(n===null||n===undefined||!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function fx(n,d){
+  if(n===null||n===undefined) return String(n);
+  if(!isFinite(n)) return n>0?'infinity':(n<0?'-infinity':'undefined');
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function sgn(n,d){var v=fx(n,d);return (v>0?'+':'')+v;}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function tr(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+function setrows(id,rows){var e=document.getElementById(id);if(e)e.innerHTML=rows.join('');}
+function num(id,alt){var el=$(id);if(!el)return alt;
+  var v=parseFloat(el.value); return isFinite(v)?v:alt;}
+function init(){var f=arguments[0];bind(Array.prototype.slice.call(arguments,1),f);f();}
+
+// ---- pure maths ------------------------------------------------------------
+// Linear:  L1 = L0 (1 + alpha dT)  =>  dL = L0 alpha dT
+// Volumetric (isotropic, first order in dT):  dV/V = 3 alpha dT.
+// The exact volume ratio (1+a dT)^3 is also shown, so the small-dT
+// approximation is visibly an approximation rather than a hidden one.
+function linear(alpha,dT,L0){ return L0*alpha*dT; }
+function length(alpha,dT,L0){ return L0*(1+alpha*dT); }
+function alphaOf(mu,perK){ return mu/1e6; }            // micro-per-K -> per-K
+function exactVolume(a1,a2,a3,alpha,dT){
+  var k=1+alpha*dT;
+  return a1*a2*a3*k*k*k;
+}
+function approxVolume(a1,a2,a3,alpha,dT){
+  return a1*a2*a3*(1+3*alpha*dT);
+}
+function stress(alpha,dT,E){
+  return -E*1000*alpha*dT;      // E in GPa -> MPa: 1 GPa = 1000 MPa
+}
+function neededT(alpha,dL,L0){ return dL/(L0*alpha); }
+function freeExpansionRatio(alpha,dT){ return 1+alpha*dT; }
+
+// Cold: dT negative, so a shrink. Guard the cases that would silently print
+// Infinity or NaN: zero dT, and the inversion where L0 or alpha is zero.
+function solveAll(alphaMu,E,L0,T0,T1,dec){
+  var a=alphaOf(alphaMu,1);
+  var dT=T1-T0;
+  var out={alpha:a, alphaMu:alphaMu, dT:dT, E:E, L0:L0, T0:T0, T1:T1, ok:true, err:null};
+  if(!(a>0)){ out.ok=false; out.err='alpha must be greater than zero.'; return out; }
+  if(!(L0>0)){ out.ok=false; out.err='L0 must be greater than zero.'; return out; }
+  if(!isFinite(dT)){ out.ok=false; out.err='Temperatures must be numbers.'; return out; }
+  out.dL=linear(a,dT,L0);
+  out.L1=length(a,dT,L0);
+  out.strain=a*dT;
+  out.ratio=freeExpansionRatio(a,dT);
+  out.perKelvinStrainPct=a*dT*100;
+  out.allowedT=neededT(a,out.dL,L0);
+  if(isFinite(E) && E>0){
+    out.sig=stress(a,dT,E);
+    out.sigMPa=out.sig;
+    // Yield is flagged, not computed - we do not ship a yield-strength table.
+    out.sigOut='sigma = -E alpha dT = -(' + fx(E,3) + ' GPa)(' + fx(a*1e6,4)
+      + 'e-6/K)(' + fx(dT,4) + ' K) = ' + fx(out.sig,3) + ' MPa';
+  } else { out.sig=null; out.sigOut='E not given - no stress computed.'; }
+  // a gap: how much room is needed for a free body to reach T1
+  out.gapNeeded=out.dL;
+  out.expansionPerK=a*L0;      // mm per kelvin
+  out.expansionPerM=a*1000;    // mm per kelvin, expressed per metre
+  return out;
+}
+
+var MATS = [["Aluminium 6061-T6", 23.6, 68.9, 2700, 167, 0.33], ["Copper C11000", 16.5, 117, 8960, 401, 0.34], ["Steel AISI 304 stainless", 17.3, 193, 8000, 16, 0.3], ["Steel AISI 1020 / mild", 11.7, 207, 7850, 50, 0.3], ["Cast iron", 10.5, 170, 7200, 46, 0.26], ["Brass C36000", 19.3, 103, 8530, 150, 0.34], ["Bronze (phosphor)", 18.9, 110, 8800, 60, 0.34], ["Titanium Ti-6Al-4V", 8.6, 114, 4430, 7, 0.34], ["Inconel 718", 13.0, 200, 8190, 11, 0.3], ["Magnesium AZ31", 26.0, 45, 1770, 96, 0.35], ["Zinc die cast", 23.0, 100, 6800, 116, 0.25], ["Aluminium oxide (alumina)", 8.3, 300, 3960, 30, 0.22], ["Fused silica", 0.55, 73, 2200, 1.4, 0.17], ["Soda-lime glass", 9.0, 70, 2500, 1.0, 0.22], ["Borosilicate (Pyrex 7740)", 3.3, 64, 2230, 1.1, 0.2], ["Wood, oak, along the grain", 4.6, 11, 750, 0.16, 0.3], ["Wood, oak, across the grain", 30.0, 11, 750, 0.16, 0.3], ["Quartz, along the c-axis", 7.5, 97, 2650, 1.4, 0.17], ["Invar 36", 1.2, 140, 8050, 15, 0.3], ["Concrete (typical)", 10.0, 30, 2400, 1.4, 0.2], ["Nylon 6,6", 80.0, 3.0, 1140, 0.25, 0.4], ["PTFE (Teflon)", 100.0, 0.5, 2200, 0.25, 0.46], ["ABS plastic", 70.0, 2.3, 1050, 0.18, 0.37], ["Sapphire", 5.3, 400, 3960, 30, 0.23], ["Graphite (in-plane)", 3.0, 380, 2200, 100, 0.2]];
+
+function calc(){
+  var dec=num('dec',5);
+  var i=+($('mat')||{}).value||0;
+  var m=MATS[i]||MATS[0];
+  var alphaMu=num('alpha',m[1]), E=num('E',m[2]);
+  var L0=num('L0',1000), W=num('W',20), H=num('H',20);
+  var T0=num('T0',20), T1=num('T1',220);
+  var solve=($('solve')||{}).value||'delta';
+  var fix=($('fix')||{}).value||'free';
+  var r=solveAll(alphaMu,E,L0,T0,T1,dec);
+  if(!r.ok){ seterr(r.err); return; }
+  // Invert: the user asked for the unknown end temperature, not dT.
+  if(solve==='t1'){
+    var dl=num('dl',0);
+    if(!(r.alpha>0)){ seterr('alpha must be positive to solve for T1.'); return; }
+    r.dT=dl/(L0*r.alpha); r.T1=T0+r.dT; r.dL=dl; r.L1=L0+dl; r.strain=r.alpha*r.dT;
+    r.ratio=freeExpansionRatio(r.alpha,r.dT);
+  }
+  seterr('');
+  if(fix==='restrained'){
+    if(!(E>0)){ seterr('A restrained body needs Young&#8217;s modulus to report stress.'); return; }
+  }
+  var V0=L0*W*H;
+  var V1=L0*W*H*Math.pow(r.ratio,3);
+  var dV=V1-V0;
+  var heat=null;
+  var rho=MATS[i]?MATS[i][3]:null, kk=MATS[i]?MATS[i][4]:null;
+  if(rho&&kk){
+    // m = rho V; the mass does not change, so use the cold volume; c ~ 475 J/kgK
+    var mass=rho*V0*1e-9;   // mm^3 -> m^3
+    heat=mass*475*Math.abs(r.dT);
+  }
+  $('big').textContent=sgn(r.dL,dec)+' mm';
+  $('bigsub').textContent='strain ' + sgn(r.strain*1e6,dec) + ' microstrain, '
+    + (r.dT>=0?'growing':'shrinking')+' over '+fx(Math.abs(r.dT),3)+' K';
+  $('heat').textContent = heat===null ? M() : fx(heat,dec)+' J';
+  $('heatsub').textContent = heat===null
+    ? 'no density / k in the table for this material'
+    : 'm c |dT| with m = '+fx(mass,4)+' kg, c = 475 J/kgK (mean over this range)';
+  var L1txt = fix==='restrained' ? fx(L0,dec)+' mm (held)' : fx(r.L1,dec)+' mm';
+  $('finlen').textContent=L1txt;
+  $('finlensub').textContent=(fix==='restrained'
+    ? 'free growth suppressed; the strain becomes stress'
+    : 'L0 (1 + a dT) = '+fx(L0,dec)+' (1 + '+fx(r.alpha*1e6,4)+'e-6 x '+fx(r.dT,4)+')');
+  $('vol').textContent=sgn(dV,dec)+' mm' + String.fromCharCode(179);
+  $('volsub').textContent='exact factor '+fx(Math.pow(r.ratio,3),8)
+    + ' vs 1+3a dT = '+fx(1+3*r.alpha*r.dT,8);
+  $('stress').textContent = r.sig===null?M():fx(r.sig,dec)+' MPa';
+  $('stresssub').textContent = r.sigOut;
+  show([['alpha per K',fx(r.alpha,10)],
+        ['dT',fx(r.dT,4)+' K'],
+        ['mm per K',fx(r.expansionPerK,6)],
+        ['T for that dL',fx(r.allowedT,dec)+' &#176;C'],
+        ['ratio L1/L0',fx(r.ratio,dec)],
+        ['alpha dT',fx(r.alpha*r.dT*100,4)+' %']]);
+  var rows=[
+    ['&#945;',fx(alphaMu,4)+' x 10' + String.fromCharCode(8315,8312) + ' K' + String.fromCharCode(8315,185),
+     'mild steel value is 11.7; aluminium 23.6; fused silica 0.55'],
+    ['&#916;T',fx(r.dT,4)+' K','&#176;C differences equal K differences'],
+    ['strain &#949; = &#945;&#916;T',sgn(r.strain*1e6,4)+' microstrain','dimensionless'],
+    ['&#916;L = &#945; L&#8320; &#916;T',sgn(r.dL,dec)+' mm','the classic form'],
+    ['&#916;L / L&#8320;',sgn(r.strain*1e3,4)+' mm/mm',''],
+    ['V&#8320; = L&#8320; W H',fx(V0,dec)+' mm' + String.fromCharCode(179),'20 x 20 mm bar example'],
+    ['V&#8321; = V&#8320;(1+&#945;&#916;T)' + String.fromCharCode(179),fx(V1,dec)+' mm'+String.fromCharCode(179),'cubic law'],
+    ['&#916;V/V&#8320;',sgn(dV/V0*100,4)+' %',''],
+    ['&Delta;v/V (first order)',sgn(3*r.alpha*r.dT*100,4)+' %','3&#945;&#916;T - compare the two above'],
+    ['&#963; = E &#945; &#916;T', r.sig===null?M():fx(r.sig,dec)+' MPa','compression when restrained'],
+    ['force needed to restrain (A&#963;)', (W>0&&H>0&&r.sig!==null)
+        ? fx(W*H*r.sig,dec)+' N' : M(), 'A = W H = '+fx(W*H,4)+' mm'+String.fromCharCode(178)]
+  ];
+  if(fix==='restrained'&&r.sig!==null) rows.push(['equivalent restrained strain','-','E alpha dT = '+fx(-r.sig/1000,6)+' -> fully recovered on cooling']);
+  if(fix==='gap') rows.push(['gap needed','>= '+fx(r.gapNeeded,dec)+' mm','or the member takes the load instead']);
+  setrows('w',rows.map(function(x){ return tr([x[0],'<span class="font-mono text-accent">'+x[1]+'</span>',x[2]]); }));
+  var rows2=[], STEPS=20, lo=Math.min(T0,T1), hi=Math.max(T0,T1);
+  for(var j=0;j<=STEPS;j++){
+    var t=lo+(hi-lo)*j/STEPS, dtt=t-T0;
+    var ll=length(r.alpha,dtt,L0), ww=length(r.alpha,dtt,W), hh=length(r.alpha,dtt,H);
+    rows2.push(tr([fx(t,3),fx(ll,5),fx(ww,5),fx(hh,5),fx(ll*ww*hh,dec),sgn(r.alpha*dtt*1e6,4)]));
+  }
+  setrows('scan',rows2);
+  $('howout').textContent =
+    'LINEAR      L1 = L0 (1 + a dT)          dL = L0 a dT\n'
+    +'VOLUMETRIC  dV/V = 3 a dT (first order); the exact cubic is (1 + a dT)^3,\n'
+    +'            which is what the growth table plots. They differ by 3(a dT)^2,\n'
+    +'            so at a dT = 0.01 the exact volume is 0.03 % larger.\n'
+    +'RESTRAINED  sigma = -E a dT, compressive, independent of the length.\n'
+    +'            That is why a long bar and a short bar of the same material\n'
+    +'            crack identically when squeezed between rigid walls.\n'
+    +'SOLVE BACK  dT = dL / (L0 a)   so   T1 = T0 + dL / (L0 a).\n\n'
+    +'alpha is quoted per kelvin AND per degC - a temperature DIFFERENCE is the\n'
+    +'same number in both, but an ABSOLUTE temperature is not. Using 20 C where\n'
+    +'273.15 K belongs shifts every answer by 0.0068 of its size.\n\n'
+    +'The stress here is Hookean and linear. Above roughly 0.3 of the yield\n'
+    +'strength a metal yields instead of storing E e, so treat any number past\n'
+    +'that as a lower bound, not a prediction.';
+}
+
+(function(){
+  var sel=$('mat');
+  sel.innerHTML=MATS.map(function(m,i){
+    return '<option value="'+i+'">'+esc(m[0])+'  (&#945;='+m[1]+'e-6/K)</option>';}).join('');
+  sel.addEventListener('change',function(){
+    var m=MATS[+sel.value];
+    $('alpha').value=fx(m[1],4); $('E').value=fx(m[2],3); calc();
+  });
+  var extra=document.createElement('div');
+  extra.className='lg:col-span-2';
+  extra.innerHTML='<label class="ws-label mb-2 block" for="dl">If solving for T&#8321;, give the '
+    +'required change in length &#916;L (mm)</label>'
+    +'<input id="dl" type="number" step="any" class="ws-input" value="1.2">';
+  var solveEl=$('solve');
+  solveEl.parentElement.parentElement.appendChild(extra);
+  function toggleDL(){
+    var s=$('solve').value==='t1';
+    extra.style.opacity=s?1:0.3;
+    $('dl').disabled=!s;
+  }
+  $('solve').addEventListener('change',function(){ toggleDL(); calc(); });
+  bind(['alpha','E','L0','W','H','T0','T1','dl','fix','dec'],calc);
+  toggleDL(); calc();
+})();
+
+window.__thermal = {solveAll:solveAll, linear:linear, length:length, alphaOf:alphaOf,
+                    exactVolume:exactVolume, approxVolume:approxVolume,
+                    stress:stress, neededT:neededT};
+</script>
+</body>
+</html>

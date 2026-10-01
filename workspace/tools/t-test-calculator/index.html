@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>t-test Calculator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-copy.ok { animation: none }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">t-test Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Physics & Engineering &mdash; Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">T-TEST</span><span class="ws-chip">P-VALUE</span><span class="ws-chip">WELCH</span><span class="ws-chip">PAIRED</span><span class="ws-chip">COHEN'S D</span><span class="ws-chip">HEDGES' G</span></div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">One-sample, Welch, pooled and paired t tests with real p-values from the regularised incomplete beta function, Cohen's d and Hedges' g, and the critical value found by bisection. Type two data sets or paste a column; it never rounds before it decides.</p>
+<section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="mode">Test</label><select id="mode" class="ws-input !w-96"><option value="one" selected>One-sample t-test (against a known mean)</option><option value="welch">Two-sample t-test, Welch (unequal variances)</option><option value="pooled">Two-sample t-test, pooled (equal variances)</option><option value="paired">Paired t-test (same subjects, before / after)</option></select></div><div><label class="ws-label mb-2 block" for="tail">Tail</label><select id="tail" class="ws-input !w-56"><option value="two" selected>Two-tailed (H&#8321;: means differ)</option><option value="one-g">One-tailed, greater than</option><option value="one-l">One-tailed, less than</option></select></div><div><label class="ws-label mb-2 block" for="d1">Data set A</label><textarea id="d1" class="ws-input !h-24 min-h-[6rem]" rows="3">12, 15, 11, 18, 14, 16, 13, 17, 15, 16</textarea></div><div><label class="ws-label mb-2 block" for="d2">Data set B</label><textarea id="d2" class="ws-input !h-24 min-h-[6rem]" rows="3"></textarea></div><div><label class="ws-label mb-2 block" for="mu0">H&#8320; value &mdash; assumed mean, or 0 for a paired test</label><input id="mu0" type="number" step="any" class="ws-input" value="15"></div><div><label class="ws-label mb-2 block" for="dec">Rounds to</label><select id="dec" class="ws-input !w-full"><option value="3">3 dp</option><option value="4" selected>4 dp</option><option value="6">6 dp</option></select></div></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy result</button></div><div class="grid gap-4 sm:grid-cols-2"><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">t statistic</div><div id="big" class="mt-2 font-display text-3xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">p-value</div><div id="pv" class="mt-2 font-display text-2xl font-black text-accent">-</div><div id="pvsub" class="mt-1 text-xs text-white/45">-</div></div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Interpretation</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="dec" onclick="cp(this)"></button></div><div class="grid gap-4 sm:grid-cols-2"><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Decision at alpha = <span id="alphalab">0.05</span></div><div id="dec" class="mt-2 font-display text-2xl font-black text-accent">-</div><div id="decsub" class="mt-1 text-xs text-white/45">-</div></div><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Effect size</div><div id="cohen" class="mt-2 font-display text-2xl font-black text-accent">-</div><div id="cohensub" class="mt-1 text-xs text-white/45">-</div></div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Critical values</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="critout" onclick="cp(this)">Copy</button></div><div class="grid gap-3 sm:grid-cols-2"><div><label class="ws-label mb-2 block" for="alpha">Significance level alpha</label><input id="alpha" type="number" step="any" class="ws-input" value="0.05"></div><div><label class="ws-label mb-2 block">Critical value t* for this test</label><input id="tcritlab" class="ws-input" readonly value="-" style="text-align:left"></div></div><div class="mt-4 ws-out" id="critout">-</div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Working</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="w" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">Quantity</th><th class="py-2 pr-4">Symbol</th><th class="py-2 pr-4">Value</th></tr></thead><tbody id="w"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Per-sample summaries</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="sums" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">n</th><th class="py-2 pr-4">mean</th><th class="py-2 pr-4">sum of squares</th><th class="py-2 pr-4">variance (s&#178;)</th><th class="py-2 pr-4">s</th></tr></thead><tbody id="sums"></tbody></table></div></section><div class="mt-4 ws-out" id="howout">-</div>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var e=document.getElementById('stats');if(e)e.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(msg){var e=document.getElementById('err');if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(n===null||n===undefined||!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function fx(n,d){
+  if(n===null||n===undefined) return String(n);
+  if(!isFinite(n)) return n>0?'infinity':(n<0?'-infinity':'undefined');
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function sgn(n,d){var v=fx(n,d);return (v>0?'+':'')+v;}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function tr(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+function setrows(id,rows){var e=document.getElementById(id);if(e)e.innerHTML=rows.join('');}
+function num(id,alt){var el=$(id);if(!el)return alt;
+  var v=parseFloat(el.value); return isFinite(v)?v:alt;}
+function init(){var f=arguments[0];bind(Array.prototype.slice.call(arguments,1),f);f();}
+
+// ---- special functions -----------------------------------------------------
+// Natural log of the gamma function, Lanczos g=7, n=9.
+var LG_C=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,
+          -176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,
+          1.5056327351493116e-7];
+function lgamma(x){
+  if(x<0.5) return Math.log(Math.PI/Math.sin(Math.PI*x))-lgamma(1-x);
+  x-=1; var a=LG_C[0], t=x+7.5;
+  for(var i=1;i<9;i++) a+=LG_C[i]/(x+i);
+  return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a);
+}
+function betacf(a,b,x){
+  var MAXIT=200, EPS=3e-16, FPMIN=1e-300;
+  var qab=a+b, qap=a+1, qam=a-1, c=1, d=1-qab*x/qap;
+  if(Math.abs(d)<FPMIN) d=FPMIN;
+  d=1/d; var h=d;
+  for(var m=1;m<=MAXIT;m++){
+    var m2=2*m;
+    var aa=m*(b-m)*x/((qam+m2)*(a+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN) d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN) c=FPMIN;
+    d=1/d; h*=d*c;
+    aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN) d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN) c=FPMIN;
+    d=1/d;
+    var del=d*c; h*=del;
+    if(Math.abs(del-1)<EPS) break;
+  }
+  return h;
+}
+function betai(a,b,x){
+  if(x<=0) return 0;
+  if(x>=1) return 1;
+  var bt=Math.exp(lgamma(a+b)-lgamma(a)-lgamma(b)+a*Math.log(x)+b*Math.log(1-x));
+  if(x < (a+1)/(a+b+2)) return bt*betacf(a,b,x)/a;
+  return 1-bt*betacf(b,a,1-x)/b;
+}
+// Two-tailed p for a t distribution: p = I_{nu/(nu+t^2)}(nu/2, 1/2)
+function t2Tail(t,nu){
+  if(!(nu>0)) return NaN;
+  if(!isFinite(t)) return 0;
+  return betai(nu/2, 0.5, nu/(nu+t*t));
+}
+function tDist(x,nu){ return Math.exp(lgamma((nu+1)/2)-lgamma(nu/2))
+  /Math.sqrt(nu*Math.PI)*Math.pow(1+x*x/nu, -(nu+1)/2); }
+
+// Invert the two-tailed p by bisection: monotone in |t|, so bisection is
+// unconditionally safe and needs no initial bracket.
+function tQuantile(pTail,nu){
+  if(!(pTail>0&&pTail<1)) return NaN;
+  var lo=0, hi=1;
+  while(t2Tail(hi,nu)>pTail && hi<1e6) hi*=2;
+  for(var i=0;i<200;i++){
+    var mid=(lo+hi)/2;
+    if(t2Tail(mid,nu)>pTail) lo=mid; else hi=mid;
+  }
+  return (lo+hi)/2;
+}
+
+// ---- sample maths ----------------------------------------------------------
+function parseNums(s){
+  return String(s||'').split(/[\s,;]+/).filter(function(t){return t.length;})
+    .map(function(t){ return parseFloat(t); })
+    .filter(function(v){ return isFinite(v); });
+}
+function stats(a){
+  var n=a.length, i, s=0;
+  for(i=0;i<n;i++) s+=a[i];
+  var mean=s/n;
+  var ss=0;
+  for(i=0;i<n;i++) ss+=(a[i]-mean)*(a[i]-mean);
+  var v=(n>1)?ss/(n-1):0;
+  return {n:n, mean:mean, ss:ss, v:v, s:Math.sqrt(v)};
+}
+function oneSample(a,mu0){
+  var A=stats(a);
+  if(A.n<2) throw new Error('one-sample t needs at least 2 numbers');
+  if(!(A.v>0)) throw new Error('all the values are identical, so s = 0 and t is undefined');
+  var se=A.s/Math.sqrt(A.n);
+  var t=(A.mean-mu0)/se;
+  return {t:t, df:A.n-1, A:A, se:se, diff:A.mean-mu0, kind:'one', pooled:null, sem:se};
+}
+function welch(a,b){
+  var A=stats(a), B=stats(b);
+  if(A.n<2||B.n<2) throw new Error('each group needs at least 2 numbers');
+  if(!(A.v>0)||!(B.v>0)) throw new Error('a group with zero variance has no standard error');
+  var v1=A.v/A.n, v2=B.v/B.n;
+  var se2=v1+v2, se=Math.sqrt(se2);
+  var dfw=se2*se2/((v1*v1)/(A.n-1)+(v2*v2)/(B.n-1));
+  return {t:(A.mean-B.mean)/se, df:dfw, A:A, B:B, se:se, diff:A.mean-B.mean,
+          kind:'welch', v1:v1, v2:v2};
+}
+function pooled(a,b){
+  var A=stats(a), B=stats(b);
+  if(A.n<2||B.n<2) throw new Error('each group needs at least 2 numbers');
+  var df=A.n+B.n-2;
+  var sp2=((A.n-1)*A.v+(B.n-1)*B.v)/df;
+  var se=Math.sqrt(sp2*(1/A.n+1/B.n));
+  if(!(se>0)) throw new Error('zero pooled variance - the two groups are identical');
+  var F=A.v/B.v;
+  return {t:(A.mean-B.mean)/se, df:df, A:A, B:B, se:se, diff:A.mean-B.mean,
+          kind:'pooled', sp2:sp2, F:F};
+}
+function paired(a,b){
+  if(a.length!==b.length) throw new Error('paired test needs the same number of readings in both columns (got '+a.length+' and '+b.length+')');
+  var d=[],i;
+  for(i=0;i<a.length;i++) d.push(a[i]-b[i]);
+  var r=oneSample(d,0);
+  r.kind='paired'; r.D=stats(d); r.diffs=d;
+  return r;
+}
+function ttest(mode,a,b,mu0){
+  if(mode==='one') return oneSample(a,mu0);
+  if(mode==='welch') return welch(a,b);
+  if(mode==='pooled') return pooled(a,b);
+  if(mode==='paired') return paired(a,b);
+  throw new Error('unknown test');
+}
+function pValue(t,df,tail){
+  var two=t2Tail(t,df);
+  if(tail==='two') return two;
+  var one=two/2;
+  if(tail==='one-g') return t>=0?one:1-one;
+  return t<=0?one:1-one;
+}
+function cohensD(res){
+  if(res.kind==='one'||res.kind==='paired'){
+    var sd=res.kind==='paired'?res.D.s:res.A.s;
+    return {d:res.diff/sd, kind:"Cohen's d (vs s of the readings)"};
+  }
+  var sp=Math.sqrt(((res.A.n-1)*res.A.v+(res.B.n-1)*res.B.v)/((res.A.n+1)*res.B.n-2));
+  var h=(1+1/res.B.n)*res.A.v+(1+1/res.A.n)*res.B.v;
+  var den=(res.A.n+res.B.n-2);
+  return {d:res.diff/sp, h:res.diff/Math.sqrt(h), kind:"Cohen's d (pooled) and Hedges' g (bias corrected)"};
+}
+
+function pText(p){
+  if(!(p>0)) return 'p < 1e-16 (underflows double precision)';
+  if(p<1e-4) return 'p < 0.0001';
+  return 'p = '+fx(p,6);
+}
+
+function calc(){
+  var mode=($('mode')||{}).value||'one';
+  var tail=($('tail')||{}).value||'two';
+  var dec=num('dec',4);
+  var a=parseNums(($('d1')||{}).value), b=parseNums(($('d2')||{}).value);
+  var mu0=num('mu0',0), alpha=num('alpha',0.05);
+  $('alphalab').textContent=fx(alpha,4);
+  var res;
+  try{ res=ttest(mode,a,b,mu0); }catch(e){ seterr(e.message); return; }
+  seterr('');
+  var p=pValue(res.t,res.df,tail);
+  var pc=(tail==='two')?alpha/2:alpha;
+  var tcrit=tQuantile(pc,res.df);
+  $('big').textContent=fx(res.t,dec);
+  $('bigsub').textContent='df = '+fx(res.df,Math.min(dec,6))+(Math.abs(res.df-Math.round(res.df))>1e-9?' (Welch-Satterthwaite)':'');
+  $('pv').textContent=(p<1e-6?fx(p,2)+'e-6' : fx(p,Math.max(dec,6)));
+  $('pvsub').textContent=pText(p);
+  var reject = p<alpha;
+  $('dec').textContent = reject?'Reject H0':'Do not reject H0';
+  $('decsub').textContent=(tail==='two'?'two-tailed, ':'')+'alpha = '+fx(alpha,4)
+    +', t* = '+fx(tcrit,dec)+', |t| = '+fx(Math.abs(res.t),dec)
+    +' -> '+((Math.abs(res.t)>tcrit)?'past':'inside')+' the critical value';
+  var es=cohensD(res);
+  $('cohen').textContent=fx(es.d,dec);
+  $('cohensub').textContent=es.kind+(es.h!==undefined?' , g = '+fx(es.h,dec):'');
+  show([['difference of means',fx(res.diff,dec)],
+        ['standard error',fx(res.se,dec)],
+        ['|t| vs t*',fx(Math.abs(res.t),dec)+' vs '+fx(tcrit,dec)],
+        ['p < alpha',(p<alpha?'yes':'no')]]);
+  var mu0ref = (($('mu0')||{}).value) || '0';
+  var rows=[
+    ['mean A', res.A?('x&#772; = '+fx(res.A.mean,dec)):'&#8212;', 'arithmetic mean'],
+    ['mean B', res.B?('x&#772; = '+fx(res.B.mean,dec)):'&#8212;', ''],
+    ['difference', (res.kind==='one' ? 'x&#772; - ' + fx(mu0ref,dec) + ' = ' + fx(res.diff,dec)
+                                      : 'x&#772;A - x&#772;B = ' + fx(res.diff,dec)),
+      'the numerator of t'],
+    ['standard error', 'SE = '+fx(res.se,Math.max(dec,6)), res.kind==='pooled'?('sqrt(s_p^2(1/nA+1/nB)) = sqrt(' + fx(res.sp2,6) + ' * '+fx(1/res.A.n+1/res.B.n,6) + ')'):(res.kind==='welch'?('sqrt(sA^2/nA + sB^2/nB) = sqrt('+fx(res.v1,6)+' + '+fx(res.v2,6)+')'):(res.kind==='paired'?'s_d / sqrt(n)':'s / sqrt(n)'))],
+    ['t statistic', 't = '+fx(res.t,Math.max(dec,6)), res.kind==='pooled'?'(A-B)/SE':(res.kind==='welch'?'(A-B)/sqrt(sA^2/nA+sB^2/nB)':'(mean - mu0)/(s/sqrt(n))')],
+    ['degrees of freedom', 'df = '+fx(res.df,Math.max(dec,6)), res.kind==='welch'?'(sA^2/nA + sB^2/nB)^2 / ( (sA^2/nA)^2/(nA-1) + (sB^2/nB)^2/(nB-1) )':'n - 1'+(res.kind==='pooled'?' or nA+nB-2':'')],
+    ['p-value', pText(p), tail==='two'?'I_{df/(df+t^2)}(df/2, 1/2)':'one half of that'],
+    ['critical t', 't* = '+fx(tcrit,dec), tail==='two'?('|t| > '+fx(tcrit,dec)+' to reject'):('t > '+fx(tcrit,dec)+' to reject in the chosen direction')]
+  ];
+  if(res.kind==='paired') rows.splice(2,0,['mean difference', 'd&#772; = '+fx(res.D.mean,dec),'paired t works on the differences']);
+  if(res.kind==='pooled') rows.push(['variance ratio', 'F = '+fx(res.F,dec),'F is near 1 when the pooled test is defensible']);
+  setrows('w',rows.map(function(x){ return tr([x[0],'<span class="font-mono">'+x[1]+'</span>',x[2]]); }));
+  var sums=[];
+  function push(S,label){ if(S) sums.push(tr([S.n,fx(S.mean,Math.max(dec,6)),fx(S.ss,Math.max(dec,6)),fx(S.v,Math.max(dec,6)),fx(S.s,Math.max(dec,6))])); }
+  if(res.kind==='paired'){ push(res.D,'D'); push(res.B?res.B:null); push(res.A?res.A:null); }
+  else { push(res.A); push(res.B); }
+  setrows('sums',sums);
+  $('critout').textContent =
+    'df = '+fx(res.df,Math.max(dec,6))+'   alpha = '+fx(alpha,4)+'   '+(tail==='two'?'two-tailed':'one-tailed')+'\n'
+    +'t* = '+fx(tcrit,dec)+'\n'
+    +'density at t = 0 is '+fx(tDist(0,res.df),6)+'   (df=1 gives the Cauchy 0.31831)\n'
+    +'P(-t* < T < t*) = '+(tail==='two'?fx(1-alpha,6):'')+'\n'
+    +'At df -> infinity this becomes the normal test, where t* -> '+fx(tQuantile(alpha/2,1e7),6)+'.';
+  $('tcritlab').value = fx(tcrit,dec);
+  $('howout').textContent =
+    'two-tailed p = I_{df/(df+t^2)}( df/2 , 1/2 ), the regularised incomplete beta\n'
+    +'function. The critical value is found by bisecting p(t) because p is strictly\n'
+    +'decreasing in |t| - no starting bracket and no Newton step to diverge.\n\n'
+    +'Welch-Satterthwaite df is the (sum of variances)^2 over the weighted sum of\n'
+    +'squared-variance terms. It lands between nA-1 and nB-1 and is fractional\n'
+    +'whenever the group sizes or variances differ - that is expected, not a bug.\n\n'
+    +'Paired t on d_i = A_i - B_i removes between-subject variance. It assumes the\n'
+    +'DIFFERENCES are normal, not the two columns separately.\n\n'
+    +'df = 1 gives the Cauchy distribution: f(0) = 1/pi = 0.318310. If your\n'
+    +'df is small, check that central-difference moment first.';
+}
+
+(function(){
+  function swap(){ var m=($('mode')||{}).value;
+    var two=(m==='welch'||m==='pooled'||m==='paired');
+    $('d2').parentElement.style.opacity = two?1:0.35;
+    $('d1').parentElement.querySelector('label').textContent =
+      m==='paired'?'Data set A (before)':(two?'Data set A':'Data set (the sample)');
+  }
+  $('mode').addEventListener('change',function(){
+    if($('mode').value==='paired' && !$('d2').value.trim())
+      $('d2').value='10, 12, 9, 15, 11, 13, 14, 12, 13, 14';
+    swap(); calc();
+  });
+  bind(['d1','d2','tail','mu0','alpha','dec'],calc);
+  swap(); calc();
+})();
+
+window.__ttest={ttest:ttest, pValue:pValue, t2Tail:t2Tail, tQuantile:tQuantile,
+                 stats:stats, betai:betai, lgamma:lgamma, tDist:tDist,
+                 oneSample:oneSample, welch:welch, pooled:pooled, paired:paired,
+                 cohensD:cohensD, parseNums:parseNums};
+</script>
+</body>
+</html>

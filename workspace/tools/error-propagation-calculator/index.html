@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Error Propagation Calculator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-copy.ok { animation: none }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Error Propagation Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Physics & Engineering &mdash; Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">UNCERTAINTY</span><span class="ws-chip">SIGMA</span><span class="ws-chip">PARTIAL DERIVATIVES</span><span class="ws-chip">QUADRATURE</span><span class="ws-chip">SIGNIFICANT FIGURES</span></div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Push measurement uncertainties through any expression. The partial derivatives are taken numerically from the same parsed expression that produces the answer, so the two can never disagree, and quadrature and worst-case are shown side by side instead of quietly picking one rule.</p>
+<section class="ws-panel p-6"><div class="grid gap-4 lg:grid-cols-3"><div class="lg:col-span-2"><div class="ws-label mb-2">Variables &mdash; value, uncertainty, and whether that uncertainty is a percentage of the value</div><div id="vars" class="grid gap-3"></div><div class="mt-3 flex flex-wrap gap-2"><button class="ws-btn-ghost !px-3 !py-2" onclick="addVar()">Add variable</button><button class="ws-btn-ghost !px-3 !py-2" onclick="delVar()">Remove last</button></div></div><div><div><label class="ws-label mb-2 block" for="expr">Expression f(x&#8321;, x&#8322;, &#8230;) in x, + - * / ^ and brackets</label><input id="expr" class="ws-input" value="a / b"></div><div class="mt-4"><label class="ws-label mb-2 block" for="preset">Worked examples</label><select id="preset" class="ws-input"></select></div><div class="mt-4"><div><label class="ws-label mb-2 block" for="dec">Rounds to</label><select id="dec" class="ws-input !w-full"><option value="2">2 dp</option><option value="3">3 dp</option><option value="5" selected>5 dp</option><option value="8">8 dp</option></select></div></div></div></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy result</button></div><div class="grid gap-4 sm:grid-cols-2"><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Result with uncertainty</div><div id="big" class="mt-2 font-display text-3xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Relative uncertainty</div><div id="rel" class="mt-2 font-display text-2xl font-black text-accent">-</div><div id="relsub" class="mt-1 text-xs text-white/45">-</div></div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Interval summary</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="sumout" onclick="cp(this)">Copy</button></div><div class="ws-out" id="sumout">-</div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Term-by-term working</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="w" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">Variable</th><th class="py-2 pr-4">Value</th><th class="py-2 pr-4">&#963;(x)</th><th class="py-2 pr-4">&#8706;f/&#8706;x</th><th class="py-2 pr-4">&#963;(f)&#183;&#8706;f/&#8706;x</th><th class="py-2 pr-4">Share of &#963;&#178;</th><th class="py-2 pr-4">Share of &#963;</th></tr></thead><tbody id="w"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">How this was computed</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="howout" onclick="cp(this)">Copy method</button></div><div class="ws-out" id="howout">-</div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var e=document.getElementById('stats');if(e)e.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(msg){var e=document.getElementById('err');if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(n===null||n===undefined||!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function fx(n,d){
+  if(n===null||n===undefined) return String(n);
+  if(!isFinite(n)) return n>0?'infinity':(n<0?'-infinity':'undefined');
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function sgn(n,d){var v=fx(n,d);return (v>0?'+':'')+v;}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function tr(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+function setrows(id,rows){var e=document.getElementById(id);if(e)e.innerHTML=rows.join('');}
+function num(id,alt){var el=$(id);if(!el)return alt;
+  var v=parseFloat(el.value); return isFinite(v)?v:alt;}
+function init(){var f=arguments[0];bind(Array.prototype.slice.call(arguments,1),f);f();}
+
+// ---- pure maths ------------------------------------------------------------
+// Partials are central differences on the SAME parsed expression that produces
+// f, so a displayed f and a displayed df/dx can never come from two different
+// formulas.
+function shunting(tokens){
+  var out=[], ops=[], prec={'+':1,'-':1,'*':2,'/':2,'^':3,'u-':4}, ar={'+':1,'-':1,'*':1,'/':1,'^':1};
+  for(var i=0;i<tokens.length;i++){
+    var t=tokens[i];
+    if(/^[a-zA-Z_]\w*$/.test(t)){ out.push({t:'var',v:t}); }
+    else if(/^\d+(\.\d+)?([eE][-+]?\d+)?$/.test(t)){ out.push({t:'num',v:parseFloat(t)}); }
+    else if(t==='('){ ops.push('('); }
+    else if(t===')'){
+      while(ops.length&&ops[ops.length-1]!=='(') out.push({t:'op',v:ops.pop()});
+      if(!ops.length) throw new Error('unbalanced brackets');
+      ops.pop();
+    }
+    else if(t==='-' && (i===0 || /[(\s+\-*/^]/.test(tokens[i-1]||''))){ ops.push('u-'); }
+    else {
+      var p=prec[t];
+      if(p===undefined) throw new Error('unknown symbol "'+t+'"');
+      while(ops.length){
+        var o=ops[ops.length-1];
+        if(o==='(') break;
+        if(prec[o]>p || (prec[o]===p && ar[o] && ar[t])) out.push({t:'op',v:ops.pop()});
+        else break;
+      }
+      ops.push(t);
+    }
+  }
+  while(ops.length){ var o=ops.pop(); if(o==='(') throw new Error('unbalanced brackets'); out.push({t:'op',v:o}); }
+  return out;
+}
+function evalRpn(rpn,env){
+  var st=[];
+  for(var i=0;i<rpn.length;i++){
+    var t=rpn[i];
+    if(t.t==='num'){ st.push(t.v); continue; }
+    if(t.t==='var'){
+      var v=env[t.v];
+      if(v===undefined) throw new Error('unknown variable "'+t.v+'"');
+      st.push(v); continue;
+    }
+    if(t.v==='u-'){ st.push(-st.pop()); continue; }
+    var b=st.pop(), a=st.pop();
+    if(t.v==='+') st.push(a+b);
+    else if(t.v==='-') st.push(a-b);
+    else if(t.v==='*') st.push(a*b);
+    else if(t.v==='/') st.push(a/b);
+    else if(t.v==='^') st.push(Math.pow(a,b));
+    else throw new Error('unknown operator');
+  }
+  if(st.length!==1) throw new Error('malformed expression');
+  return st[0];
+}
+var _cache={};
+function compile(src){
+  src=String(src);
+  if(_cache.src===src) return _cache.rpn;
+  var toks=src.match(/[a-zA-Z_]\w*|\d+(?:\.\d+)?(?:[eE][-+]?\d+)?|[()+\-*/^]/g);
+  if(!toks||!toks.length) throw new Error('type an expression');
+  if(toks.join('')!==src.replace(/\s+/g,'')) throw new Error('only x, numbers, + - * / ^ and brackets');
+  var rpn=shunting(toks);
+  _cache={src:src, rpn:rpn};
+  return rpn;
+}
+function deriv(rpn,name,env){
+  var x=env[name], h=Math.max(1e-7*Math.abs(x||1),1e-9);
+  var e1={},e2={},k; for(k in env){e1[k]=env[k];e2[k]=env[k];}
+  e1[name]=x+h; e2[name]=x-h;
+  return (evalRpn(rpn,e1)-evalRpn(rpn,e2))/(2*h);
+}
+function rules(terms,mode){
+  var abs=0,q=0,s=0,i;
+  for(i=0;i<terms.length;i++){ abs+=Math.abs(terms[i]); q+=terms[i]*terms[i]; s+=terms[i]; }
+  return {linear:(mode==='signed'?Math.abs(s):abs), quad:Math.sqrt(q), signed:s};
+}
+
+// sig_f^2 = SUM_i (df/dx_i)^2 sig_i^2  +  2 SUM_{i<j} rho_ij (df/dx_i)(df/dx_j) sig_i sig_j
+function propagate(rpn, xs, ss, corrmat, env0){
+  var n=xs.length, env={}, i, j;
+  for(i=0;i<n;i++) env[xs[i]] = (env0 && env0[xs[i]]!==undefined) ? env0[xs[i]] : xs[i];
+  var f=evalRpn(rpn,env);
+  var d=[], terms=[], varSum=0, cov=0;
+  for(i=0;i<n;i++){
+    var g=deriv(rpn,xs[i],env);
+    d.push(g);
+    var t=g*ss[i];
+    terms.push(t);
+    varSum+=t*t;
+  }
+  for(i=0;i<n;i++) for(j=i+1;j<n;j++){
+    var rho=(corrmat && corrmat[i] && corrmat[i][j]!==undefined) ? corrmat[i][j] : 0;
+    if(rho) cov+=2*rho*terms[i]*terms[j];
+  }
+  var total=varSum+cov;
+  var lin=0; for(i=0;i<terms.length;i++) lin+=Math.abs(terms[i]);
+  return {f:f, d:d, terms:terms, varQuad:varSum, cov:cov, varTotal:total,
+          sigQuad:Math.sqrt(Math.max(0,varSum)),
+          sigTotal:Math.sqrt(Math.max(0,total)), linear:lin};
+}
+
+function sigFigs(f,s){
+  if(!(s>0)||!isFinite(f)||f===0) return '-';
+  var rel=s/Math.abs(f);
+  if(rel>=1) return '1 (f is uncertain to better than its own value)';
+  var k=Math.ceil(-Math.log10(rel));
+  if(k<1) k=1;
+  if(k>15) k=15;
+  return String(k);
+}
+
+// ---- UI --------------------------------------------------------------------
+var VARS=[];
+function defaultVars(){ VARS=[{n:'a',v:10.0,s:2.0,pc:1},{n:'b',v:3.00,s:0.20,pc:1}]; }
+function renderVars(){
+  var h='';
+  VARS.forEach(function(x,i){
+    h+='<div class="grid grid-cols-12 items-end gap-2">'
+      +'<div class="col-span-3"><div class="ws-label mb-1">name</div>'
+      +'<input class="ws-input vname" data-i="'+i+'" value="'+esc(x.n)+'"></div>'
+      +'<div class="col-span-4"><div class="ws-label mb-1">value</div>'
+      +'<input type="number" step="any" class="ws-input vval" data-i="'+i+'" value="'+esc(x.v)+'"></div>'
+      +'<div class="col-span-3"><div class="ws-label mb-1">&#963;</div>'
+      +'<input type="number" step="any" class="ws-input vsig" data-i="'+i+'" value="'+esc(x.s)+'"></div>'
+      +'<div class="col-span-2"><div class="ws-label mb-1">% of value</div>'
+      +'<select class="ws-input vpc" data-i="'+i+'">'
+      +'<option value="1"'+(x.pc?' selected':'')+'>yes</option>'
+      +'<option value="0"'+(!x.pc?' selected':'')+'>no</option></select></div>'
+      +'</div>';
+  });
+  var e=$('vars'); if(!e) return;
+  e.innerHTML=h;
+  function each(sel,fn){ e.querySelectorAll(sel).forEach(function(el){
+    el.addEventListener('input',function(){ fn(+el.getAttribute('data-i'),el); });
+    el.addEventListener('change',function(){ fn(+el.getAttribute('data-i'),el); }); }); }
+  each('.vname',function(i,el){ VARS[i].n=el.value; calc(); });
+  each('.vval',function(i,el){ var p=parseFloat(el.value); VARS[i].v=isFinite(p)?p:0; calc(); });
+  each('.vsig',function(i,el){ var p=parseFloat(el.value); VARS[i].s=isFinite(p)?p:0; calc(); });
+  each('.vpc',function(i,el){ VARS[i].pc=(el.value==='1'); calc(); });
+}
+function addVar(){
+  VARS.push({n:'x'+VARS.length,v:1,s:0.1,pc:0});
+  renderVars(); calc();
+}
+function delVar(){
+  if(VARS.length>1){ VARS.pop(); renderVars(); calc(); }
+}
+window.addVar=addVar; window.delVar=delVar;
+
+function calc(){
+  if(!VARS.length) defaultVars();
+  var dec=num('dec',5);
+  var src=($('expr')||{}).value||'';
+  var xs=[],vs=[],ss=[],i;
+  for(i=0;i<VARS.length;i++){
+    var x=VARS[i], n=String(x.n||'').trim();
+    if(!n) continue;
+    var v=parseFloat(x.v); if(!isFinite(v)) v=0;
+    var s=parseFloat(x.s); if(!isFinite(s)) s=0;
+    xs.push(n); vs.push(v); ss.push(x.pc?Math.abs(v)*s/100:s);
+  }
+  if(!xs.length){ seterr('Give at least one named variable.'); return; }
+  var rpn, res;
+  try{ rpn=compile(src); }catch(e){ seterr(e.message); return; }
+  var env={}; for(i=0;i<xs.length;i++) env[xs[i]]=vs[i];
+  try{ res=propagate(rpn,xs,ss,null,env); }
+  catch(e){ seterr(e.message); return; }
+  if(!isFinite(res.f)){ seterr('The expression is not finite for these values.'); return; }
+  seterr('');
+  var relPct=Math.abs(res.f)>0 ? res.sigTotal/Math.abs(res.f)*100 : Infinity;
+  $('big').textContent=fx(res.f,dec)+' \u00B1 '+fx(res.sigTotal,dec);
+  $('bigsub').textContent=fx(relPct,4)+' % relative \u2014 '
+    +(relPct<5?'tight':(relPct<20?'moderate':'loose'));
+  $('rel').textContent=fx(relPct,dec)+' %';
+  $('relsub').textContent='worst case (linear rule) '+fx(Math.abs(res.f)>0?res.linear/Math.abs(res.f)*100:0,4)+' %';
+  show([['&#963; independent inputs',fx(res.sigQuad,dec)],
+        ['&#931;|&#8706;f/&#8706;x|&#183;&#963;',fx(res.linear,dec)],
+        ['quad / linear',fx(res.sigQuad/(res.linear||1),4)],
+        ['variance',fx(res.varTotal,Math.max(dec,4))]]);
+  var sqTot=0; res.terms.forEach(function(t){ sqTot+=t*t; });
+  setrows('w',res.terms.map(function(t,i){
+    return tr(['<span class="font-mono text-accent">'+esc(xs[i])+'</span>', fx(vs[i],dec),
+               fx(ss[i],dec), fx(res.d[i],dec), fx(t,dec),
+               fx(sqTot>0?t*t/sqTot*100:0,3)+' %',
+               fx(res.sigTotal>0?Math.abs(t)/res.sigTotal*100:0,3)+' %']);
+  }));
+  var k95=1.959963985, k2=2, f=res.f, s=res.sigTotal;
+  $('sumout').textContent=
+    'f                = '+fx(f,dec)+'\n'
+    +'1 sigma          +/-'+fx(s,dec)+'    -> ['+fx(f-s,dec)+' , '+fx(f+s,dec)+']\n'
+    +'2 sigma          +/-'+fx(k2*s,dec)+'   -> ['+fx(f-k2*s,dec)+' , '+fx(f+k2*s,dec)+']\n'
+    +'95 % (1.959964)  +/-'+fx(k95*s,dec)+' -> ['+fx(f-k95*s,dec)+' , '+fx(f+k95*s,dec)+']\n'
+    +'worst case       +/-'+fx(res.linear,dec)+'   (every sign adverse)\n'
+    +'report f to '+sigFigs(f,s)+' significant figure(s)';
+  $('howout').textContent=
+    'sig_f^2 = SUM_i ( df/dx_i )^2 sig_i^2                       [independent inputs]\n'
+    +'        + 2 SUM_{i<j} rho_ij ( df/dx_i )( df/dx_j ) sig_i sig_j  [correlated]\n\n'
+    +'Each df/dx_i is a central difference of the parsed expression itself,\n'
+    +'step ~ 1e-7 * |x_i|, so the answer and the slopes shown in the table\n'
+    +'above are the same function - not two hand-typed formulas.\n\n'
+    +'Quadrature (root sum of squares) is the right rule for independent\n'
+    +'random errors. The linear sum of |df/dx_i| sig_i is the right rule for\n'
+    +'bounded systematic errors, and it is always >= the quadrature value.\n'
+    +'When the two agree to a few per cent, no term dominates; when the\n'
+    +'quad / linear ratio is near 1, exactly one term dominates everything.\n\n'
+    +'If the relative uncertainty is 10 % or more, quote only the first one\n'
+    +'or two significant figures of f - the rest is noise.';
+}
+
+(function(){
+  var sel=$('preset');
+  var opts='<option value="">choose a worked example</option>';
+  EXAMPLES.forEach(function(e,i){ opts+='<option value="'+i+'">'+esc(e[0])+'</option>'; });
+  sel.innerHTML=opts;
+  sel.addEventListener('change',function(){
+    if(sel.value==='') return;
+    var e=EXAMPLES[+sel.value];
+    $('expr').value=e[0];
+    VARS=e[1].map(function(v){ return {n:v[0],v:v[1],s:v[2],pc:1}; });
+    renderVars(); calc();
+  });
+  defaultVars(); renderVars();
+  init(calc,'expr','dec');
+  calc();
+})();
+
+window.__errprop = {propagate:propagate, rules:rules, compile:compile,
+                    evalRpn:evalRpn, deriv:deriv, sigFigs:sigFigs};
+
+var EXAMPLES = [["a / b", [["a", 10.0, 2.0], ["b", 3.0, 0.2]]], ["a + b + c", [["a", 10.0, 2.0], ["b", 4.0, 0.5], ["c", 2.5, 0.3]]], ["a * b", [["a", 4.0, 0.1], ["b", 7.0, 0.5]]], ["sqrt(a)", [["a", 16.0, 0.4]]], ["a^2", [["a", 3.0, 0.2]]], ["ln(a)", [["a", 100.0, 5.0]]], ["a / (b + c)", [["a", 5.0, 0.3], ["b", 4.0, 0.4], ["c", 1.0, 0.2]]], ["sin(a) * b", [["a", 0.5, 0.02], ["b", 2.0, 0.1]]], ["(a - b) / (a + b)", [["a", 12.0, 0.5], ["b", 10.0, 0.5]]]];
+</script>
+</body>
+</html>

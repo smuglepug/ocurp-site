@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thin Film Interference Calculator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  .ws-copy.ok { animation: none }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Thin Film Interference Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Physics & Engineering &mdash; Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">THIN FILM</span><span class="ws-chip">FRESNEL</span><span class="ws-chip">COATING</span><span class="ws-chip">REFLECTANCE</span><span class="ws-chip">IRIDESCENCE</span></div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Reflectance and transmittance of a coated or soap film at normal incidence, from the Fresnel amplitude coefficients, plus the film thickness that puts the interference at a minimum (an antireflection coating) or a maximum. Four bands and five thicknesses, every one computed, not fitted.</p>
+<section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="preset">Preset</label><select id="preset" class="ws-input !w-72"><option value="custom" selected>Custom - type your own indices</option><option value="Soap film in air (n1 only, n2 = n1)">1.33</option><option value="MgF2 antireflection on glass">1.38</option><option value="Al2O3 on glass">1.62</option><option value="SiO2 on silicon">1.46</option><option value="TiO2 on glass (high index)">2.50</option><option value="ZnS on glass">2.35</option><option value="Water film, ambient">1.333</option><option value="Oil film, ambient">1.47</option><option value="Diamond on silicon">2.42</option><option value="Air gap (n1 = 1)">1.000</option></select></div><div><label class="ws-label mb-2 block" for="n0">Ambient index n&#8320;</label><input id="n0" type="number" class="ws-input" placeholder="" value="1.000"></div><div><label class="ws-label mb-2 block" for="n1">Film index n&#8321;</label><input id="n1" type="number" class="ws-input" placeholder="" value="1.38"></div><div><label class="ws-label mb-2 block" for="n2">Substrate index n&#8322;</label><input id="n2" type="number" class="ws-input" placeholder="" value="1.52"></div><div><label class="ws-label mb-2 block" for="t">Film thickness t (nm)</label><input id="t" type="number" class="ws-input" placeholder="" value="100"></div><div><label class="ws-label mb-2 block" for="lam">Wavelength &#955; (nm, vacuum)</label><input id="lam" type="number" class="ws-input" placeholder="" value="550"></div><div><label class="ws-label mb-2 block" for="ang">Angles</label><select id="ang" class="ws-input !w-64"><option value="0" selected>Normal incidence (0&#176;)</option><option value="45">45&#176; in air - 28.1&#176; in glass</option><option value="60">60&#176; in air</option></select></div><div><label class="ws-label mb-2 block" for="dec">Rounds to</label><input id="dec" type="number" class="ws-input" placeholder="" value="4"></div></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy result</button></div><div class="grid gap-4 sm:grid-cols-2"><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Reflectance</div><div id="big" class="mt-2 font-display text-3xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Transmission</div><div id="transmission" class="mt-2 font-display text-2xl font-black text-accent">-</div><div id="transmissionsub" class="mt-1 text-xs text-white/45">-</div></div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Film thickness that sets the interference</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="thk" onclick="cp(this)">Copy thicknesses</button></div><div class="grid gap-4 sm:grid-cols-3"><div><label class="ws-label mb-2 block" for="lcolor">Wavelength colour</label><select id="lcolor" class="ws-input !w-64"></select></div><div><label class="ws-label mb-2 block" for="rcond">Order (constructive / destructive)</label><select id="rcond" class="ws-input !w-64"><option value="min">Destructive (minimum R)</option><option value="max">Constructive (maximum R)</option></select></div><div><label class="ws-label mb-2 block" for="nmax">How many orders</label><input id="nmax" type="number" class="ws-input" value="3" min="1" max="8"></div></div><div class="mt-4" id="thk"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Working</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="wf" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">Quantity</th><th class="py-2 pr-4">Value</th><th class="py-2 pr-4">Where it comes from</th></tr></thead><tbody id="wf"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Reflectance against thickness (0 to &#955;/2)</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="scan" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">t (nm)</th><th class="py-2 pr-4">R (%)</th><th class="py-2 pr-4">T (%)</th></tr></thead><tbody id="scan"></tbody></table></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){var e=document.getElementById('stats');if(e)e.innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(msg){var e=document.getElementById('err');if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function r(n,d){
+  if(n===null||n===undefined||!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function fx(n,d){
+  if(n===null||n===undefined) return String(n);
+  if(!isFinite(n)) return n>0?'infinity':(n<0?'-infinity':'undefined');
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+function sgn(n,d){var v=fx(n,d);return (v>0?'+':'')+v;}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function tr(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+function setrows(id,rows){var e=document.getElementById(id);if(e)e.innerHTML=rows.join('');}
+function num(id,alt){var el=$(id);if(!el)return alt;
+  var v=parseFloat(el.value); return isFinite(v)?v:alt;}
+function init(){var f=arguments[0];bind(Array.prototype.slice.call(arguments,1),f);f();}
+
+// ---- pure physics ----------------------------------------------------------
+// Normal-incidence thin film between two media. Fresnel amplitude
+// coefficients for the two interfaces are real:
+//    r = (n_a - n_b) / (n_a + n_b)
+// A quarter-wave phase change on reflection happens exactly when the wave goes
+// from a lower index into a higher one, and that is already baked into the
+// sign of r, so no separate +/- bookkeeping is needed:
+//    r = (r01 + r12 e^(2 i d)) / (1 + r01 r12 e^(2 i d)),  d = 2 pi n1 t / lam
+// Expanding the modulus for real coefficients gives the closed form below.
+function fresnelA(n0,n1,n2){ return [(n0-n1)/(n0+n1), (n1-n2)/(n1+n2)]; }
+
+function filmR(n0,n1,n2,t,lam,theta0){
+  if(!(n0>0&&n1>0&&n2>0&&lam>0)) return NaN;
+  var A=fresnelA(n0,n1,n2), a=A[0], b=A[1];
+  // Optical path phase. At oblique incidence the film path is t cos(d) and
+  // Snell gives the refracted angle inside the film.
+  var nd=n1, cosd=1;
+  if(theta0){
+    var s=Math.sin(theta0);
+    if(s*s>=(n0/n1)*(n0/n1)) return NaN;   // total internal reflection into film
+    cosd=Math.sqrt(1-(s*n0/n1)*(s*n0/n1));
+  }
+  var path=t*cosd;
+  var delta=2*Math.PI*nd*path/lam;
+  var c=Math.cos(2*delta);
+  var num=a*a+b*b+2*a*b*c;
+  var den=1+a*a*b*b+2*a*b*c;
+  if(!(den>0)) return NaN;
+  return num/den;
+}
+function filmT(n0,n1,n2,t,lam,th){ var R=filmR(n0,n1,n2,t,lam,th); return (isFinite(R)?1-R:NaN); }
+
+// Extremum thickness. dR/d(cos 2d) has the sign of (1 - a^2 - b^2), and a*b
+// sets which end of the cosine range is the peak, so:
+function extThickness(n0,n1,n2,lam,kind,count){
+  var A=fresnelA(n0,n1,n2), a=A[0], b=A[1];
+  var ab=a*b, same=(ab>0);
+  var peakIsPlus = same ? (kind==='max') : (kind!=='max');
+  // peak at cos(2d) = +1 -> 2 n1 t = m lam   (t = m lam / 2 n1)
+  // peak at cos(2d) = -1 -> 2 n1 t = (m+1/2) lam
+  var out=[];
+  var half=lam/(2*n1), quarter=lam/(4*n1);
+  for(var i=0;i<count;i++){
+    out.push(peakIsPlus ? i*2*half : i*2*half+quarter);
+  }
+  return out;
+}
+function minMaxR(n0,n1,n2){
+  var A=fresnelA(n0,n1,n2), a=A[0], b=A[1];
+  var cplus=a*a+b*b+2*a*b, cminus=a*a+b*b-2*a*b;
+  var dplus=1+a*a*b*b+2*a*b, dminus=1+a*a*b*b-2*a*b;
+  var R1=cplus/dplus, R2=cminus/dminus;
+  return {max:Math.max(R1,R2), min:Math.min(R1,R2)};
+}
+// Quarter-wave AR coating check: n1 = sqrt(n0 n2) nulls the reflection.
+function arIndex(n0,n2){ return Math.sqrt(n0*n2); }
+
+var SPECTRUM=[[380,450,'violet'],[450,485,'blue'],[485,500,'cyan'],[500,565,'green'],
+               [565,590,'yellow'],[590,625,'orange'],[625,750,'red']];
+function colourOf(lam){
+  for(var i=0;i<SPECTRUM.length;i++) if(lam>=SPECTRUM[i][0]&&lam<SPECTRUM[i][1]) return SPECTRUM[i][2];
+  return 'outside the visible band';
+}
+function preset(n1){
+  var m={};
+  PRESETS.forEach(function(p){m[p[0]]=p[1];});
+  var v=m[n1];
+  if(v!==undefined) return parseFloat(v);
+  return NaN;
+}
+var PRESETS=[
+  ['Soap film in air (n1 only, n2 = n1)',1.33],
+  ['MgF2 antireflection on glass',1.38],
+  ['Al2O3 on glass',1.62],
+  ['SiO2 on silicon',1.46],
+  ['TiO2 on glass (high index)',2.50],
+  ['ZnS on glass',2.35],
+  ['Water film, ambient',1.333],
+  ['Oil film, ambient',1.47],
+  ['Diamond on silicon',2.42],
+  ['Air gap (n1 = 1)',1.000]
+];
+
+function calc(){
+  var n0=num('n0',1), n1=num('n1',1.38), n2=num('n2',1.52);
+  var t=num('t',100), lam=num('lam',550), dec=num('dec',4);
+  var th=parseFloat(($('ang')||{}).value||'0')||0;
+  if(!(n0>0&&n1>0&&n2>0)){ seterr('Indices must be positive.'); return; }
+  if(!(lam>0)){ seterr('Wavelength must be positive.'); return; }
+  seterr('');
+  var R=filmR(n0,n1,n2,t,lam,th);
+  if(!isFinite(R)){ seterr('No propagating ray in the film at that angle.'); return; }
+  var T=1-R, A=fresnelA(n0,n1,n2);
+  var mm=minMaxR(n0,n1,n2);
+  var ar=arIndex(n0,n2);
+  var bareR=Math.pow((n0-n2)/(n0+n2),2);
+  $('big').textContent=fx(R*100,dec)+' %';
+  $('bigsub').textContent='amplitude r = '+fx(A[0],6)+' at n0->n1, '+fx(A[1],6)+' at n1->n2';
+  $('transmission').textContent=fx(T*100,dec)+' %';
+  $('transmissionsub').textContent='lossless film: T = 1 - R exactly';
+  show([['Fresnel r\u2080\u2081',fx(A[0],6)],['Fresnel r\u2081\u2082',fx(A[1],6)],
+        ['R at t = 0',fx(bareR*100,2)+' %'],['Best possible R',fx(mm.min*100,4)+' %'],
+        ['Worst R over thickness',fx(mm.max*100,2)+' %'],['Colour',colourOf(lam)]]);
+  setrows('wf',[
+    tr(['optical thickness 2 n1 t',fx(2*n1*t,3)+' nm','the cosine argument is 2&pi;(2n&#8321;t)/&#955;']),
+    tr(['phase 2&#960;(2n&#8321;t)/&#955;',fx(2*Math.PI*(2*n1*t/lam),4)+' rad','']),
+    tr(['cos of that phase',fx(Math.cos(2*Math.PI*(2*n1*t/lam)),6),'']),
+    tr(['r\u2080\u2081 = (n\u2080-n\u2081)/(n\u2080+n\u2081)',fx(A[0],6),'sign carries the &#960; phase change']),
+    tr(['r\u2081\u2082 = (n\u2081-n\u2082)/(n\u2081+n\u2082)',fx(A[1],6),'sign carries the &#960; phase change']),
+    tr(['numerator  a\u00B2+b\u00B2+2ab cos(2&#948;)',fx(A[0]*A[0]+A[1]*A[1]+2*A[0]*A[1]*Math.cos(2*Math.PI*(2*n1*t/lam)),6),'']),
+    tr(['denominator 1+a\u00B2b\u00B2+2ab cos(2&#948;)',fx(1+A[0]*A[0]*A[1]*A[1]+2*A[0]*A[1]*Math.cos(2*Math.PI*(2*n1*t/lam)),6),'']),
+    tr(['quarter-wave AR index sqrt(n\u2080 n\u2082)',fx(ar,4),'equals n\u2081 = '+fx(n1,4)+' ? '+(Math.abs(ar-n1)<0.01?'yes - this nulls R':'no')])
+  ]);
+  // thickness table
+  var kind=($('rcond')||{}).value||'min';
+  var cnt=Math.max(1,Math.min(8,Math.round(num('nmax',3))));
+  var ts=extThickness(n0,n1,n2,lam,kind,cnt);
+  setrows('thk',['<table class="w-full text-left text-sm"><thead class="ws-label"><tr>'
+    +'<th class="py-2 pr-4">order</th><th class="py-2 pr-4">t (nm)</th>'
+    +'<th class="py-2 pr-4">t (&#181;m)</th><th class="py-2 pr-4">R at that t (%)</th></tr></thead><tbody>'
+    + ts.map(function(x,i){
+        return '<tr class="border-t border-white/5"><td class="py-2 pr-4">'+i+'</td>'
+          +'<td class="py-2 pr-4">'+fx(x,3)+'</td>'
+          +'<td class="py-2 pr-4">'+fx(x/1000,5)+'</td>'
+          +'<td class="py-2 pr-4">'+fx(filmR(n0,n1,n2,x,lam,0)*100,4)+'</td></tr>';
+      }).join('')
+    +'</tbody></table>'].join(''));
+  // thickness scan over one full period
+  var rows=[], N=40, per=lam/(2*n1);
+  for(var i=0;i<=N;i++){
+    var tt=per*i/N;
+    rows.push(tr([fx(tt,2),fx(filmR(n0,n1,n2,tt,lam,0)*100,4),fx((1-filmR(n0,n1,n2,tt,lam,0))*100,4)]));
+  }
+  setrows('scan',rows);
+}
+(function(){
+  var lc=$('lcolor'), opts=['<option value="">(wavelength drives it)'];
+  [[380,450,'violet 380-450 nm'],[450,485,'blue 450-485 nm'],[485,500,'cyan 485-500 nm'],
+   [500,565,'green 500-565 nm'],[565,590,'yellow 565-590 nm'],[590,625,'orange 590-625 nm'],
+   [625,750,'red 625-750 nm']].forEach(function(c){opts.push('<option value="'+c[0]+'">'+c[2]+'</option>');});
+  lc.innerHTML=opts.join('');
+  lc.addEventListener('change',function(){ if(lc.value){ $('lam').value=lc.value; } calc(); });
+  $('preset').addEventListener('change',function(){
+    var v=$('preset').value; if(v==='custom') return;
+    var n=preset(v);
+    $('n1').value=fx(n,4);
+    if(/soap|water|oil|air gap/.test(v)){ $('n2').value=fx(n,4); }        // free film: n2 = n1
+    else if(/silicon/.test(v)){ $('n2').value='4.00'; }                 // Si n ~ 4.0 at 550 nm
+    else { $('n2').value='1.52'; }
+    calc();
+  });
+  init(calc,'n0','n1','n2','t','lam','ang','dec','nmax','rcond');
+})();
+
+window.__thinfilm = {
+  R: filmR, T: filmT, fresnel: fresnelA, ext: extThickness,
+  minMax: minMaxR, arIndex: arIndex, colour: colourOf
+};
+</script>
+</body>
+</html>
