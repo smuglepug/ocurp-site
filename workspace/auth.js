@@ -248,7 +248,7 @@
     panel.querySelector('#ocurp-google').addEventListener('click', function () {
       checkGoogle().then(function (on) {
         if (on) { signInWithGoogle(); return; }
-        note.innerHTML = 'Google sign-in is not switched on for this project yet. In Supabase: <strong>Authentication &rarr; Providers &rarr; Google</strong>, then add <code>http://localhost:8899/**</code> and <code>https://ocurp.space/**</code> to the redirect list.';
+        note.innerHTML = 'Google sign-in is not switched on for this project yet. In Supabase: <strong>Authentication &rarr; Providers &rarr; Google</strong>, then add <code>http://localhost:8899/**</code> and <code>https://ocurp.com/**</code> to the redirect list.';
         note.style.color = 'rgba(255,95,31,.85)';
       });
     });
