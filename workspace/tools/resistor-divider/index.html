@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resistor Voltage Divider | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Resistor Voltage Divider</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">VOLTAGE DIVIDER</span><span class="ws-chip">OHM</span><span class="ws-chip">ELECTRONICS</span><span class="ws-chip">LOAD</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><div><label class="ws-label mb-2 block" for="mode">Mode</label><select id="mode" class="ws-input !w-full"><option value="fwd" selected>Forward: Vs, R1, R2 → Vout</option><option value="inv">Inverse: given Vout and load, solve R1</option></select></div><div><label class="ws-label mb-2 block" for="vs">Source Vs (V)</label><input id="vs" type="number" class="ws-input" placeholder="5" value="5"></div><div><label class="ws-label mb-2 block" for="r1">R1 — top (Ω)</label><input id="r1" type="number" class="ws-input" placeholder="10000" value="10000"></div><div><label class="ws-label mb-2 block" for="r2">R2 — bottom (Ω)</label><input id="r2" type="number" class="ws-input" placeholder="10000" value="10000"></div><div><label class="ws-label mb-2 block" for="vout">Target Vout (V)</label><input id="vout" type="number" class="ws-input" placeholder="2.5" value="2.5"></div><div><label class="ws-label mb-2 block" for="rl">Load RL on output (Ω)</label><input id="rl" type="number" class="ws-input" placeholder="100000" value="100000"></div><div><label class="ws-label mb-2 block" for="runit">R1 unit</label><input id="runit" type="text" class="ws-input" placeholder=""></div></div><div class="mt-4 flex flex-wrap gap-4"><label class="flex items-center gap-2 text-sm text-white/70"><input id="useRL" type="checkbox" class="accent-[#FF5F1F]"> Load RL is connected on the output</label></div><div class="mt-4 flex flex-wrap gap-2" id="quick"></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy summary</button></div><div class="rounded-xl border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Output voltage</div><div id="big" class="mt-2 font-display text-4xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Working</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Quantity</th><th class="py-2 pr-4">Value</th></tr></thead><tbody id="tbl"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Notes</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="notes" onclick="cp(this)"></button></div><p class="text-xs leading-relaxed text-white/45">A divider is only ideal while the load draws nothing. The output impedance is <span class="text-white/70">R1∥R2</span>, so once RL comes within about 100× of R2 the parallel pair is dominated by the load and Vout sags far below Vs·R2/(R1+R2). Buffer the output (op-amp follower) or use a much smaller divider impedance.</p></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  // Pad to the requested decimals. Without this grp(20000,2) returned
+  // '20,000' and a money column rendered as a bare integer.
+  while(parts.length<2) parts.push('');
+  if(d>0 && parts[1].length<d) parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+function ohm(v){ return v >= 1000 ? grp(v/1000,4)+' kΩ' : r(v,4)+' Ω'; }
+function divForward(vs, r1, r2, rl){
+  if(!(isFinite(vs) && isFinite(r1) && isFinite(r2))) return {err:'Vs, R1 and R2 must be numbers'};
+  if(r1 <= 0 || r2 <= 0) return {err:'R1 and R2 must be above zero ohms'};
+  if(vs < 0) return {err:'source voltage must be zero or more'};
+  var rt = r1 + r2;
+  var i = vs / rt;              // unloaded series current
+  var vopen = i * r2;           // unloaded output
+  var req = r2;                 // resistance actually tied to the node
+  if(isFinite(rl) && rl > 0) req = r2*rl/(r2+rl);   // R2 in parallel with the load
+  // Loading drops the node: with R1 above req the divider is exactly Vs*req/(R1+req).
+  var vout = vs * req / (r1 + req);
+  var rpar = r1 * req / (r1 + req);
+  var iTotal = vs / (r1 + req);
+  var iLoad = isFinite(rl) && rl > 0 ? vout / rl : 0;
+  return {i:iTotal, iNoLoad:i, vopen:vopen, vout:vout,
+          pR1:iTotal*iTotal*r1, pR2:vout*vout/req,
+          pTotal:vs*iTotal, rpar:rpar, iLoad:iLoad};
+}
+function divInverse(vs, vout, r2, rl){
+  if(!(isFinite(vs) && isFinite(vout) && isFinite(r2))) return {err:'Vs, Vout and R2 must be numbers'};
+  if(r2 <= 0) return {err:'R2 must be above zero ohms'};
+  if(vs <= 0) return {err:'source must be above zero volts'};
+  if(vout <= 0 || vout >= vs) return {err:'target Vout must be between 0 and Vs'};
+  var load = (isFinite(rl) && rl > 0) ? rl : Infinity;
+  // KCL at the node: (Vs-V)/R1 = V/R2 + V/RL  ->  R1 = Vs*Req/V - R2 - RL
+  var req = load === Infinity ? r2 : r2*load/(r2+load);
+  var r1 = vs * req / vout - req;
+  if(!isFinite(r1)) return {err:'no finite R1 gives that Vout with this load'};
+  if(r1 <= 0) return {err:'no positive R1 reaches ' + r(vout,4) + ' V: the divider '
+      + 'cannot step down that far without a buffer (R1 would be '
+      + r(r1,3) + ' Ω)'};
+  var f = divForward(vs, r1, r2, load);
+  if(f.err) return f;
+  f.r1solved = r1;
+  return f;
+}
+var QUICK = [['5','10000','10000'],['3.3','47000','10000'],['12','100000','47000'],
+             ['1.8','1000','1000'],['24','33000','6800']];
+$('quick').innerHTML = QUICK.map(function(q,i){
+  return '<button class="ws-btn-ghost !px-3 !py-1.5" data-i="'+i+'" onclick="useQuick(this)">'
+    + q[0]+'V '+q[1]+'/'+q[2]+'</button>';}).join('');
+function useQuick(b){
+  var q=QUICK[Number(b.getAttribute('data-i'))];
+  $('mode').value='fwd'; $('vs').value=q[0]; $('r1').value=q[1]; $('r2').value=q[2];
+  $('useRL').checked=false; run();
+}
+window.__T = window.__T || {};
+window.__T['resistor-divider'] = {divForward:divForward, divInverse:divInverse,
+  run:function(o){
+    o=o||{};
+    var mode=o.mode||'fwd';
+    var vs=o.vs===undefined?5:o.vs, r1=o.r1===undefined?10000:o.r1,
+        r2=o.r2===undefined?10000:o.r2, vout=o.vout===undefined?2.5:o.vout,
+        rl=o.useRL ? (o.rl===undefined?100000:o.rl) : NaN;
+    var f = mode==='inv' ? divInverse(vs,vout,r2,rl) : divForward(vs,r1,r2,rl);
+    if(f.err) return {error:f.err};
+    var out={Vout:f.vout, I_A:f.i, P_R1_mW:f.pR1*1000, P_total_mW:f.pTotal*1000,
+             Rpar:r(f.rpar,4)};
+    if(f.r1solved!==undefined) out.R1=r(f.r1solved,4);
+    if(isFinite(f.iLoad)) out.load_pct = r((1-f.vout/f.vopen)*100,4);
+    return out;
+  }};
+function run(){
+  var vs=parseFloat($('vs').value), r1=parseFloat($('r1').value),
+      r2=parseFloat($('r2').value), vout=parseFloat($('vout').value),
+      rl=parseFloat($('rl').value), useRL=$('useRL').checked;
+  var f = $('mode').value==='inv'
+      ? divInverse(vs, vout, r2, useRL?rl:NaN)
+      : divForward(vs, r1, r2, useRL?rl:NaN);
+  if(f.err){ seterr('err', f.err); $('big').textContent='—'; $('bigsub').textContent='—';
+            $('tbl').innerHTML=''; show([]); return; }
+  seterr('err','');
+  var warns = [];
+  if(useRL && rl <= r2*100){
+    warns.push('Load ' + ohm(rl) + ' is within 100× of R2 (' + ohm(r2) +
+      ') — the divider is no longer ideal, the load dominates.');
+  }
+  $('big').textContent = r(f.vout,4) + ' V';
+  $('bigsub').textContent = ($('mode').value==='inv'
+        ? 'Vout with R1 solved for: ' + ohm(f.r1solved)
+        : 'unloaded ' + r(f.vopen,4) + ' V, loaded ' + r(f.vout,4) + ' V')
+        + (warns.length ? ' ⚠' : '');
+  $('tbl').innerHTML =
+    (f.r1solved!==undefined ? row(['R1 solved', ohm(f.r1solved)]) : '') +
+    row(['Source voltage', r(vs,4) + ' V']) +
+    row(['R1 (top)', ohm(r1)]) +
+    row(['R2 (bottom)', ohm(r2)]) +
+    row(['Current through pair', r(f.i*1000,4) + ' mA (' + r(f.i*1e6,4) + ' µA)']) +
+    row(['Power in R1', r(f.pR1*1000,6) + ' mW']) +
+    row(['Power in R2', r(f.pR2*1000,6) + ' mW']) +
+    row(['Power from source', r(f.pTotal*1000,6) + ' mW']) +
+    row(['Output impedance R1∥R2', ohm(f.rpar)]) +
+    (isFinite(f.iLoad) ? row(['Load current', r(f.iLoad*1000,4) + ' mA'])
+                       : row(['Load current', 'none — output unloaded'])) +
+    (useRL && rl ? row(['Sag vs ideal', r((1 - f.vout/f.vopen)*100,4) + ' %']) : '') +
+    row(['Warnings', warns.length ? '<span class="text-accent">'+warns.join(' ')+'</span>' : 'none']);
+  show([['Vout', r(f.vout,4)+' V'],
+        ['Current', r(f.i*1000,4)+' mA'],
+        ['P in R1', r(f.pR1*1000,6)+' mW'],
+        ['Sag', (useRL&&rl) ? r((1-f.vout/f.vopen)*100,4)+' %' : '0 %']]);
+}
+bind(['vs','r1','r2','vout','rl','mode'], run);
+$('useRL').addEventListener('change', run);
+run();
+</script>
+</body>
+</html>

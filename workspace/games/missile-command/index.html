@@ -279,15 +279,34 @@ mcv.addEventListener('pointerdown',function(ev){
   for(let i=0;i<3;i++){const d=Math.abs(MC.BATX[i]-x);if(d<bd){bd=d;bi=i}}
   mcFire(bi,x,y);mcHud()});
 
-let mcrunning=false;
+let mcrunning=false, mclooped=false, mcacc=0;
+// FIX 1 (re-entrancy): mcLoop re-arms itself with requestAnimationFrame, so a
+// Launch click mid-game (the `else` path: no reset) used to start a SECOND rAF
+// chain that never stopped. Every extra click advanced the physics once more per
+// frame, silently making the game faster and faster. mclooped makes the loop
+// single-instance.
+// FIX 2 (frame-rate independence): mcStep() advances a fixed MC.STEEP=1/60 s and
+// was called exactly once per rAF, so the game ran at fps/60x real speed -- 2.4x
+// too fast on a 144 Hz panel. mcacc accumulates real elapsed time and drains it
+// in whole 1/60 s steps, so the game keeps true 60 Hz timing at any refresh rate.
 function mcLoop(){
-  if(!mcrunning)return;
-  mcStep();mcDraw();mcHud();
-  if(!mc.over)requestAnimationFrame(mcLoop)}
+  if(!mcrunning){mclooped=false;return};
+  const now=performance.now();
+  let dt=(now-mcacc.t)/1000; mcacc.t=now;
+  if(dt>0.25)dt=0.25;                 // a backgrounded tab must not teleport the sim
+  mcacc.left+=dt;
+  let n=0;
+  while(mcacc.left>=MC.STEEP&&n<8){mcacc.left-=MC.STEEP;mcStep();n++}
+  mcDraw();mcHud();
+  if(mc.over){mclooped=false;mcrunning=false;return}
+  requestAnimationFrame(mcLoop)}
+mcacc={left:0,t:0};
+// mcArm is the ONLY thing that ever starts a chain, and mclooped keeps it to one.
+function mcArm(){if(mclooped||!mcrunning)return;mclooped=true;mcacc.t=performance.now();requestAnimationFrame(mcLoop)}
 MCD('mc-start').onclick=function(){
   if(mc.over||!mc.started){mcReset();mc.started=true}
-  mcrunning=true;mcLoop()};
-MCD('mc-restart').onclick=function(){mcrunning=false;mcReset();mcDraw();mcHud()};
+  mcrunning=true;mcArm()};
+MCD('mc-restart').onclick=function(){mcrunning=false;mcReset();mcDraw();mcHud();mcArm()};
 
 mcReset();mcDraw();mcHud();
 
@@ -302,44 +321,8 @@ window.__missile_command={C:MC,G:function(){return mc},
   cities:function(){let p=0;for(let i=0;i<MC.CITY_N;i++)if(mc.cities&(1<<i))p++;return p},
   nearest:function(x){let bi=0,bd=1e9;for(let i=0;i<3;i++){const d=Math.abs(MC.BATX[i]-x);if(d<bd){bd=d;bi=i}}return bi}};</script>
 
-
-
-
-
-
-<link rel="stylesheet" href="/workspace/play.css?v=20261001a">
-<script src="/workspace/play.js?v=20261001a" defer></script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<link rel="stylesheet" href="/workspace/play.css?v=20261001d">
+<script src="/workspace/play.js?v=20261001d" defer></script>
 
 
 <!--ocurp-related-->

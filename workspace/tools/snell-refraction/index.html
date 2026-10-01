@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snell's Law & Refraction | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Snell's Law & Refraction</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">SNELL</span><span class="ws-chip">REFRACTION</span><span class="ws-chip">OPTICS</span><span class="ws-chip">FRESNEL</span><span class="ws-chip">TIR</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><div><label class="ws-label mb-2 block" for="target">Solve for</label><select id="target" class="ws-input !w-full"><option value="t2" selected>Refraction angle θ2</option><option value="n2">Second index n2</option><option value="n1">First index n1</option></select></div><div><label class="ws-label mb-2 block" for="n1">Incident medium n₁</label><input id="n1" type="number" class="ws-input" placeholder="1.00" value="1.00"></div><div><label class="ws-label mb-2 block" for="t1">Incident angle θ₁ (°)</label><input id="t1" type="number" class="ws-input" placeholder="30" value="30"></div><div><label class="ws-label mb-2 block" for="n2">Second medium n₂</label><input id="n2" type="number" class="ws-input" placeholder="1.50" value="1.50"></div><div><label class="ws-label mb-2 block" for="t2">Refraction angle θ₂ (°)</label><input id="t2" type="number" class="ws-input" placeholder="30" value="30"></div></div><div class="mt-4 flex flex-wrap gap-2" id="quick"></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy summary</button></div><div class="rounded-xl border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Refraction angle</div><div id="big" class="mt-2 font-display text-4xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Working</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Quantity</th><th class="py-2 pr-4">Value</th></tr></thead><tbody id="tbl"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Notes</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="notes" onclick="cp(this)"></button></div><p class="text-xs leading-relaxed text-white/45">Snell holds for rays at a smooth interface between two homogeneous media. Total internal reflection needs light going from a higher index to a lower one AND an angle past the critical value — from low to high there is no critical angle and no TIR. Fresnel here is for a <span class="text-white/70">lossless</span> interface at normal-ish conditions; real surfaces add absorption, so T = 1 − R understates what a coloured or absorbing medium transmits. These are the textbook indices, not wavelength- and temperature-dependent measured ones.</p></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  // Pad to the requested decimals. Without this grp(20000,2) returned
+  // '20,000' and a money column rendered as a bare integer.
+  while(parts.length<2) parts.push('');
+  if(d>0 && parts[1].length<d) parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+function D2R(d){ return d * Math.PI / 180; }
+function R2D(rad){ return rad * 180 / Math.PI; }
+// Snell for the angle case: sin(theta2) = (n1/n2) sin(theta1). Solving for
+// an INDEX is different (sin(theta2) is fixed at 1 there), so the two index
+// branches live in run() rather than being forced through this one.
+function solve(n1, t1deg, n2, target){
+  if(!(n1 > 0)) return {err:'n₁ must be above zero'};
+  if(!(n2 > 0)) return {err:'n₂ must be above zero'};
+  if(!(isFinite(t1deg))) return {err:'θ₁ must be a number'};
+  if(t1deg < 0 || t1deg > 90) return {err:'θ₁ must be between 0° and 90°'};
+  var t1 = D2R(t1deg), s1 = Math.sin(t1), ratio = n1 / n2;
+  if(ratio > 1){
+    var crit = R2D(Math.asin(1 / ratio));   // 1/ratio = n2/n1
+    if(t1deg > crit + 1e-9){
+      return {tir:true, crit:crit, n1:n1, n2:n2,
+              // total internal reflection: nothing crosses the boundary
+              Rs:1, Rp:1, R:1, T:0, t2:null, a:ratio * s1};
+    }
+  }
+  var a = ratio * s1;              // this is sin(theta2)
+  var t2 = Math.asin(a);
+  return {t2:R2D(t2), a:a, n1:n1, n2:n2};
+}
+// Lossless unpolarised Fresnel. Requires both angles already valid.
+function fresnel(n1, t1deg, n2, t2deg){
+  var c1 = Math.cos(D2R(t1deg)), c2 = Math.cos(D2R(t2deg));
+  var rs = ((n1*c1 - n2*c2) / (n1*c1 + n2*c2));
+  var rp = ((n2*c1 - n1*c2) / (n2*c1 + n1*c2));
+  var Rs = rs*rs, Rp = rp*rp;
+  return {Rs:Rs*100, Rp:Rp*100, R:(Rs+Rp)/2*100,
+          Ts:(1-Rs)*100, Tp:(1-Rp)*100, T:(2-Rs-Rp)/2*100};
+}
+function solve(n1, t1deg, n2, target){
+  if(!(n1 > 0)) return {err:'n₁ must be above zero'};
+  if(!(n2 > 0)) return {err:'n₂ must be above zero'};
+  if(!(isFinite(t1deg))) return {err:'θ₁ must be a number'};
+  if(t1deg < 0 || t1deg > 90) return {err:'θ₁ must be between 0° and 90°'};
+  var s1 = Math.sin(D2R(t1deg)), ratio = n1 / n2;
+  var a = ratio * s1;                     // this is sin(theta2)
+  var crit = ratio > 1 ? R2D(Math.asin(1 / ratio)) : null;
+  // Solving for n2 is different: sin(theta2) is FIXED by the given theta2, so
+  // n2 = n1 sin(theta1)/sin(theta2). run() owns that branch; this guard only
+  // checks that theta1 is a usable angle.
+  if(target === 'n2'){
+    if(!(t1deg > 0)) return {err:'solving for n₂ needs a non-zero θ₁ — at 0° every '
+      + 'index transmits at 0°, so n₂ is unconstrained'};
+    return {crit:crit, a:a};
+  }
+  if(a > 1) return {tir:true, crit:crit, a:a, n1:n1, n2:n2};
+  var t2 = R2D(Math.asin(a));
+  return {t2:t2, a:a, crit:crit, n1:n1, n2:n2};
+}
+var QUICK = [['1.00','30','1.50'],['1.00','0','1.50'],['1.50','45','1.00'],
+             ['1.00','45','1.33'],['1.52','30','1.00']];
+$('quick').innerHTML = QUICK.map(function(q,i){
+  return '<button class="ws-btn-ghost !px-3 !py-1.5" data-i="'+i+'" onclick="useQuick(this)">'
+    + 'n='+q[0]+' '+q[1]+'°→n='+q[2]+'</button>';}).join('');
+function useQuick(b){
+  var q=QUICK[Number(b.getAttribute('data-i'))];
+  $('target').value='t2'; $('n1').value=q[0]; $('t1').value=q[1]; $('n2').value=q[2]; run();
+}
+window.__T = window.__T || {};
+window.__T['snell-refraction'] = {solve:solve, fresnel:fresnel,
+  run:function(o){
+    o=o||{};
+    var n1=o.n1===undefined?1.0:o.n1, t1=o.t1===undefined?30:o.t1,
+        n2=o.n2===undefined?1.5:o.n2, target=o.target||'t2';
+    if(target === 'n2'){
+      if(!(n1>0)) return {error:'n₁ must be above zero'};
+      if(!(t1>0)) return {error:'at θ₁ = 0° any n₂ transmits at 0° — n₂ is unconstrained'};
+      if(!(o.t2>0)) return {error:'solving for n₂ needs a θ₂ above 0°'};
+      var need = n1*Math.sin(D2R(t1)) / Math.sin(D2R(o.t2));
+      if(need < 0) return {error:'implied n₂ is negative'};
+      return {n2:need, t2:o.t2};
+    }
+    var s = solve(n1, t1, n2, target);
+    if(s.err) return {error:s.err};
+    if(s.tir) return {tir:true, critAngle:r(s.crit,6), a:r(s.a,6)};
+    var f = fresnel(n1, t1, n2, s.t2);
+    var out = {t2:r(s.t2,6), crit: s.crit===null ? null : r(s.crit,6),
+               sinT2:r(s.a,6), R:r(f.R,6), T:r(f.T,6),
+               Rs:r(f.Rs,6), Rp:r(f.Rp,6)};
+    if(target === 'n1'){
+      // n1 sin(t1) = n2 sin(t2) -> n1 = n2 sin(t2) / sin(t1).
+      var t2in = o.t2 === undefined ? s.t2 : o.t2;
+      if(!(t2in > 0)) return {error:'solving for n₁ needs a non-zero θ₂'};
+      var s1 = Math.sin(D2R(t1));
+      if(!(s1 > 0)) return {error:'solving for n₁ needs a θ₁ above 0°'};
+      var need = n2*Math.sin(D2R(t2in)) / s1;
+      if(need > n1) return {error:'total internal reflection — n₁ would have to be '
+        + r(need,6) + ' or lower'};
+      return {n1:need, t2:t2in};
+    }
+    return out;
+  }};
+function run(){
+  var n1=parseFloat($('n1').value), t1=parseFloat($('t1').value),
+      n2=parseFloat($('n2').value), t2in=parseFloat($('t2').value),
+      target=$('target').value;
+  var s;
+  if(target === 'n2'){
+      if(!(n1 > 0)) s = {err:'n₁ must be above zero'};
+      else if(!(t1 > 0)) s = {err:'at θ₁ = 0° every index transmits at 0°, so n₂ is unconstrained'};
+      else if(!(t2in > 0)) s = {err:'solving for n₂ needs a θ₂ above 0°'};
+      else {
+        var need = n1 * Math.sin(D2R(t1)) / Math.sin(D2R(t2in));
+        if(need < n2) s = {err:'inconsistent: n₂ = ' + r(need,6)
+          + ' would refract that ray at θ₂ = ' + r(t2in,4)
+          + '°, but you set n₂ = ' + r(n2,4)};
+        else s = {tir:false, t2:t2in, a:Math.sin(D2R(t2in)), crit:null, n1:need, n2:need};
+      }
+    }
+  else if(target === 'n1'){
+    if(!(n2 > 0)){ s = {err:'n₂ must be above zero'}; }
+    else if(!(t1 > 0)){ s = {err:'solving for n₁ needs a θ₁ above 0°'}; }
+    else if(!(t2in > 0)){ s = {err:'solving for n₁ needs a θ₂ above 0°'}; }
+    else {
+      // n1 = n2 sin(t2)/sin(t1). Above that the ray cannot get out of n1 at all.
+      var need = n2 * Math.sin(D2R(t2in)) / Math.sin(D2R(t1));
+      if(need > n1) s = {err:'total internal reflection: to refract at θ₂ = '
+        + r(t2in,4) + '° out of n₂ = ' + r(n2,4) + ', n₁ must be ' + r(need,6)
+        + ' or less'};
+      else s = {tir:false, t2:t2in, a:Math.sin(D2R(t2in)), crit:null, n1:need, n2:n2};
+    }
+  } else s = solve(n1, t1, n2, 't2');
+  if(s.err){ seterr('err', s.err); $('big').textContent='—'; $('bigsub').textContent='—';
+            $('tbl').innerHTML=''; show([]); return; }
+  if(s.tir){
+    seterr('err','TOTAL INTERNAL REFLECTION: θ₁ = ' + r(t1,4) + '° is past the '
+      + 'critical angle of ' + r(s.crit,4) + '° for n₁ = ' + r(n1,4)
+      + ' → n₂ = ' + r(n2,4) + '. sin θ₂ would be ' + r(s.a,4)
+      + ' > 1, so there is no refracted ray: R = 100%, T = 0%.');
+    $('big').textContent = 'No refraction';
+    $('bigsub').textContent = 'total internal reflection — R 100%, T 0%';
+    $('tbl').innerHTML =
+      row(['Condition', 'θ₁ > asin(n₂/n₁) = ' + r(s.crit,4) + '°']) +
+      row(['θ₁', r(t1,4) + '°']) +
+      row(['Critical angle', '<span class="text-accent">' + r(s.crit,4) + '°</span>']) +
+      row(['sin θ₂ would be', r(s.a,6) + ' (impossible, max 1)']) +
+      row(['Reflectance R', '100.0000 %']) +
+      row(['Transmittance T', '0.0000 %']);
+    show([['Critical angle', r(s.crit,4)+'°'], ['R', '100.0000 %'],
+          ['T', '0.0000 %'], ['θ₁', r(t1,4)+'°']]);
+    return;
+  }
+  seterr('err','');
+  var f = fresnel(n1, t1, n2, s.t2);
+  $('big').textContent = r(s.t2,4) + '°';
+  $('bigsub').textContent = target === 'n2' ? 'n₂ = ' + r(s.n2,6) + ' gives θ₂ = '
+    + r(s.t2,4) + '°' : target === 'n1' ? 'n₁ = ' + r(s.n1,6) + ' at θ₂ = '
+    + r(s.t2,4) + '°' : 'θ₁ = ' + r(t1,4) + '° from n₁ = ' + r(n1,4);
+  var critTxt = s.crit === null
+    ? 'none — going from low to high index, TIR cannot occur'
+    : r(s.crit,4) + '°' + (t1 > s.crit ? ' (past it)' : '');
+  $('tbl').innerHTML =
+    row(['n₁ sin θ₁', r(n1 * Math.sin(D2R(t1)),8)]) +
+    row(['n₂ sin θ₂', r(n2 * Math.sin(D2R(s.t2)),8)]) +
+    row(['θ₁ incident', r(t1,4) + '°']) +
+    row(['θ₂ refracted', '<span class="text-accent">' + r(s.t2,4) + '°</span>']) +
+    row(['Deviation from normal', r(t1 - s.t2,4) + '°']) +
+    row(['Critical angle', critTxt]) +
+    row(['TIR', s.crit === null ? 'impossible in this direction' : (t1 > s.crit ? '<span class="text-accent">yes</span>' : 'no')]) +
+    row(['Reflectance s (Rs)', r(f.Rs,4) + ' %']) +
+    row(['Reflectance p (Rp)', r(f.Rp,4) + ' %']) +
+    row(['Reflectance unpolarised', '<span class="text-accent">' + r(f.R,4) + ' %</span>']) +
+    row(['Transmittance', r(f.T,4) + ' %']) +
+    row(['Sum check R+T', r(f.R + f.T,6) + ' %']);
+  show([['θ₂', r(s.t2,4)+'°'], ['R', r(f.R,4)+' %'],
+        ['T', r(f.T,4)+' %'], ['Critical', critTxt.split(' ')[0]]]);
+}
+bind(['n1','t1','n2','t2','target'], run);
+run();
+</script>
+</body>
+</html>

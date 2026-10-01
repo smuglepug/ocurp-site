@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookie Decoder — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Decode a Set-Cookie or Cookie header into name. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/cookie-decoder/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Cookie Decoder">
+<meta property="og:description" content="Decode a Set-Cookie or Cookie header into name. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/cookie-decoder/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Cookie Decoder on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cookie Decoder">
+<meta name="twitter:description" content="Decode a Set-Cookie or Cookie header into name. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Cookie Decoder on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Cookie Decoder","url":"https://ocurp.com/workspace/tools/cookie-decoder/","description":"Decode a Set-Cookie or Cookie header into name. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Cookie Decoder</h1>
+      <p class="mt-1 text-xs text-white/40">security &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Paste a Set-Cookie or Cookie header and get the name, the value and every attribute decoded, with Max-Age and Expires resolved to an exact date and a plain duration. Flags a missing Secure or HttpOnly, a SameSite=None that modern browsers reject outright, and a Domain wide enough to leak the cookie to subdomains. <span class="ws-chip">ATTRIBUTES</span> <span class="ws-chip">EXPIRY</span> <span class="ws-chip">FLAGS</span></p>
+  <div class="ws-grid2">
+<div class="md:col-span-2 lg:col-span-3">
+<label class="ws-label mb-2 block" for="ck-s">Set-Cookie / Cookie header</label>
+<textarea id="ck-s" rows="4" class="ws-input" style="font-family:'IBM Plex Sans',monospace;line-height:1.7;resize:vertical">sid=abc123; Domain=.ocurp.com; Path=/; Max-Age=3600; Secure; HttpOnly; SameSite=Lax</textarea>
+<div class="mt-4 flex flex-wrap items-center gap-3">
+<button id="ck-go" class="ws-btn" style="width:auto">Decode</button>
+<button id="ck-dl" class="ws-btn-ghost" style="width:auto">Copy report</button>
+<button id="ck-cl" class="ws-btn-ghost" style="width:auto">Load a leaky cookie</button>
+</div>
+<div class="mt-3 font-mono text-[11px] text-white/45" id="ck-err"></div>
+<div id="ck-stats" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"></div>
+<div class="mt-5 grid gap-5 lg:grid-cols-2">
+  <div><div class="ws-label mb-2">Name and value</div>
+    <div id="ck-pair"></div>
+    <div class="ws-label mb-2 mt-5">Attributes</div>
+    <div id="ck-attrs"></div></div>
+  <div><div class="ws-label mb-2">Lifetime</div>
+    <div id="ck-life"></div>
+    <div class="ws-label mb-2 mt-5">Security flags</div>
+    <pre id="ck-flags" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre></div>
+</div>
+</div>
+  </div>
+  <div class="mt-8">
+
+<script>
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(!isFinite(n)) return 0;
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function seterr(id,msg){ var e=$(id); if(!e) return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':''; }
+function grab(id){ var el=$(id); if(!el) return '';
+  if(el.tagName==='PRE'||el.tagName==='TABLE') return el.textContent;
+  return el.value!==undefined?el.value:el.textContent; }
+function copyOut(id){ var t=grab(id); if(!t) return;
+  try{navigator.clipboard.writeText(t);}catch(e){} }
+function dlText(id,name,mime){
+  var t=grab(id); if(!t) return;
+  var b=new Blob([t],{type:(mime||'text/plain')+';charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+}
+function put(id,val){ var el=$(id); if(!el) return;
+  el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+var tcard=function(k,v,sub){
+  return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">'
+    +'<div class="ws-label">'+esc(k)+'</div>'
+    +'<div class="mt-1 font-display text-xl font-black text-[#FF5F1F]">'+esc(v)+'</div>'
+    +(sub?'<div class="mt-0.5 text-[10px] text-white/35">'+esc(sub)+'</div>':'')
+    +'</div>';};
+window.__T = window.__T || {};
+
+// Split on ';' only. Expires= carries a comma ("Wed, 09 Jun 2027 10:18:14 GMT")
+// but never a semicolon, so ';' is the only safe delimiter.
+function ckSplit(raw){
+  return String(raw||'').split(';').map(function(s){return s.trim();})
+    .filter(function(s){return s.length;});
+}
+function ckDur(sec){
+  sec=Math.abs(Math.round(sec));
+  var d=Math.floor(sec/86400), h=Math.floor(sec%86400/3600),
+      m=Math.floor(sec%3600/60), s=sec%60, parts=[];
+  if(d) parts.push(d+' day'+(d===1?'':'s'));
+  if(h) parts.push(h+' hour'+(h===1?'':'s'));
+  if(m) parts.push(m+' minute'+(m===1?'':'s'));
+  if(s||!parts.length) parts.push(s+' second'+(s===1?'':'s'));
+  return parts.join(' ');
+}
+function ckDate(iso){
+  var t=Date.parse(iso);
+  if(isNaN(t)) return null;
+  return {iso:iso,ms:t,local:new Date(t).toString().slice(0,33)};
+}
+function ckDecode(raw){
+  var parts=ckSplit(raw);
+  if(!parts.length) return null;
+  var eq=parts[0].indexOf('=');
+  var name=eq<0?parts[0]:parts[0].slice(0,eq);
+  var value=eq<0?'':parts[0].slice(eq+1);
+  var attrs=[], maxAge=null, expires=null, sameSite=null;
+  var secure=false, httpOnly=false, domain=null, path=null, partitioned=false;
+  for(var i=1;i<parts.length;i++){
+    var p=parts[i], e=p.indexOf('='), k=(e<0?p:p.slice(0,e)).trim().toLowerCase();
+    var v=e<0?true:p.slice(e+1).trim();
+    var rec={name:k,value:v===true?null:v};
+    if(k==='domain'){domain=String(v); attrs.push(rec);}
+    else if(k==='path'){path=String(v); attrs.push(rec);}
+    else if(k==='max-age'){maxAge=parseInt(v,10); attrs.push(rec);}
+    else if(k==='expires'){expires=String(v); attrs.push(rec);}
+    else if(k==='secure'){secure=true; rec.value='(flag)'; attrs.push(rec);}
+    else if(k==='httponly'){httpOnly=true; rec.value='(flag)'; attrs.push(rec);}
+    else if(k==='samesite'){sameSite=String(v).replace(/^./,function(c){return c.toUpperCase();}); rec.value=sameSite; attrs.push(rec);}
+    else if(k==='partitioned'){partitioned=true; rec.value='(flag)'; attrs.push(rec);}
+    else attrs.push(rec);
+  }
+  var flags=[];
+  if(!secure) flags.push({code:'no-secure',level:'high',
+    title:'Secure is missing',
+    why:'Without Secure the cookie is still sent over plain http, so anyone on the path can read or rewrite the session.'});
+  else flags.push({code:'secure',level:'ok',title:'Secure is set',
+    why:'The browser only transmits this cookie over https.'});
+  if(!httpOnly) flags.push({code:'no-httponly',level:'high',
+    title:'HttpOnly is missing',
+    why:'Any script on the page can read the cookie value through document.cookie.'});
+  else flags.push({code:'httponly',level:'ok',title:'HttpOnly is set',
+    why:'document.cookie cannot see this value, so XSS cannot steal it.'});
+  if(sameSite==='None'&&!secure)
+    flags.push({code:'samesite-none-insecure',level:'high',
+      title:'SameSite=None without Secure is rejected',
+      why:'Chrome, Edge and Firefox all refuse SameSite=None unless Secure is present. The cookie is dropped outright.'});
+  if(sameSite===null)
+    flags.push({code:'no-samesite',level:'medium',
+      title:'No SameSite attribute',
+      why:'Modern browsers default to Lax, but stating it keeps older clients from sending the cookie on cross-site POSTs.'});
+  // Too broad only when the attribute names a bare TLD or a public suffix:
+  // Domain=ocurp.com is normal (it means "and its subdomains"), Domain=.com
+  // hands the cookie to the entire internet. Flagging every two-label domain
+  // would cry wolf on almost every real Set-Cookie.
+  var SUFFIXES=['co.uk','org.uk','ac.uk','gov.uk','com.au','net.au','org.au','co.jp',
+                'ne.jp','or.jp','com.br','com.mx','co.in','co.za','com.tr','com.cn'];
+  if(domain){
+    var labels=String(domain).replace(/^\./,'').split('.').filter(Boolean);
+    var last2=labels.slice(-2).join('.').toLowerCase();
+    var isSuffix=(labels.length<=1)||SUFFIXES.indexOf(last2)>=0;
+    if(isSuffix) flags.push({code:'broad-domain',level:'high',
+      title:'Cookie scoped to a public suffix',
+      why:'A Domain= naming a TLD or a public suffix such as '+last2+
+          ' hands this cookie to every site beneath it. Browsers reject this outright; scope it to your own host.'});
+  }
+  var highs=flags.filter(function(f){return f.level==='high';}).length;
+  var meds=flags.filter(function(f){return f.level==='medium';}).length;
+  var lifes=[];
+  if(maxAge!==null&&!isNaN(maxAge)){
+    var secs=maxAge, rel=secs>=0?'expires in ':'expired ';
+    lifes.push({label:'Max-Age',raw:String(secs),human:rel+ckDur(secs)+' ('+secs+' s)',
+                date:new Date(Date.now()+secs*1000).toString().slice(0,33)});
+  }
+  if(expires){
+    var d=ckDate(expires);
+    if(d){
+      var secsR=Math.round((d.ms-Date.now())/1000);
+      lifes.push({label:'Expires',raw:expires,human:d.local,date:d.local});
+      lifes.push({label:'Expires in',raw:secsR+' s',human:(secsR>=0?'':'-')+ckDur(secsR),date:''});
+    } else lifes.push({label:'Expires',raw:expires,human:'unparseable',date:''});
+  }
+  var session=!lifes.length;
+  return {name:name,value:value,attrs:attrs,attrCount:attrs.length,domain:domain,path:path,
+    secure:secure,httpOnly:httpOnly,sameSite:sameSite,partitioned:partitioned,
+    maxAge:maxAge,expires:expires,sessionCookie:session,lifes:lifes,flags:flags,
+    high:highs,medium:meds,
+    verdict:highs?'WEAK':(meds?'REVIEW':'STRONG')};
+}
+function ckRender(){
+  var raw=$('ck-s').value;
+  if(!raw.trim()){ seterr('ck-err','paste a Set-Cookie or Cookie header'); return null; }
+  var res=ckDecode(raw);
+  seterr('ck-err','');
+  $('ck-stats').innerHTML=
+      tcard('Attributes',res.attrCount)
+    + tcard('Secure',res.secure?'yes':'NO')
+    + tcard('HttpOnly',res.httpOnly?'yes':'NO')
+    + tcard('SameSite',res.sameSite||'unset')
+    + tcard('Lifetime',res.sessionCookie?'session':ckDur(res.maxAge!==null&&!isNaN(res.maxAge)?res.maxAge:0))
+    + tcard('Verdict',res.verdict,res.high+' high / '+res.medium+' medium');
+  $('ck-pair').innerHTML=
+      '<div class="ws-panel p-4"><div class="ws-label">Name</div>'
+    +'<div class="mt-1 break-all font-mono text-lg text-white">'+esc(res.name)+'</div>'
+    +'<div class="ws-label mt-3">Value</div>'
+    +'<div class="mt-1 break-all font-mono text-sm text-[#FF5F1F]">'
+    +esc(res.value===''?'(empty)':res.value)+'</div></div>';
+  $('ck-attrs').innerHTML=res.attrs.length?res.attrs.map(function(a){
+    return '<div class="ws-kv"><span>'+esc(a.name)+'</span><span>'
+      +(a.value===null?'(flag)':esc(a.value))+'</span></div>';
+  }).join(''):'<div class="text-xs text-white/35">No attributes - this is a bare cookie pair.</div>';
+  $('ck-life').innerHTML=res.lifes.length?res.lifes.map(function(l){
+    return '<div class="ws-panel mb-2 p-4"><div class="ws-label">'+esc(l.label)+'</div>'
+      +'<div class="mt-1 font-mono text-sm text-white">'+esc(l.human)+'</div>'
+      +(l.raw!==l.human?'<div class="mt-0.5 text-[10px] text-white/35">raw: '+esc(l.raw)+'</div>':'')
+      +'</div>';
+  }).join(''):'<div class="ws-panel p-4 text-xs text-white/45">Session cookie: no Max-Age and no Expires, so it dies when the browser closes.</div>';
+  $('ck-flags').textContent=res.flags.map(function(f){
+    return '['+f.level.toUpperCase()+'] '+f.title+'\n    '+f.why;
+  }).join('\n\n');
+  return res;
+}
+$('ck-go').addEventListener('click',ckRender);
+$('ck-dl').addEventListener('click',function(){copyOut('ck-flags');});
+$('ck-cl').addEventListener('click',function(){
+  put('ck-s','track=xyz789; Domain=.com; Path=/; SameSite=None');});
+$('ck-s').addEventListener('input',ckRender);
+window.__T['cookie-decoder']={slug:'cookie-decoder',run:function(i){
+  if(i.cookie!==undefined) put('ck-s',i.cookie);
+  var res=ckRender();
+  if(!res) return JSON.stringify({error:'empty'});
+  return JSON.stringify({name:res.name,value:res.value,attrCount:res.attrCount,
+    attrs:res.attrs.map(function(a){return a.name;}),secure:res.secure,httpOnly:res.httpOnly,
+    sameSite:res.sameSite,sessionCookie:res.sessionCookie,maxAge:res.maxAge,
+    lifetime:res.lifes.length?res.lifes[0].human:null,
+    verdict:res.verdict,codes:res.flags.map(function(f){return f.code;})});
+}};
+ckRender();
+</script>
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/csp-analyzer/">
+      <span class="ocurp-related-n">CSP Analyzer</span>
+      <span class="ocurp-related-b">Paste a Content-Security-Policy header and get every directive split out with its source l</span>
+    </a></li>
+    <li><a href="/workspace/tools/cors-explainer/">
+      <span class="ocurp-related-n">CORS Preflight Explainer</span>
+      <span class="ocurp-related-b">Paste the OPTIONS request and the response headers of a CORS preflight and walk every rule</span>
+    </a></li>
+    <li><a href="/workspace/tools/jwt-token-inspector/">
+      <span class="ocurp-related-n">JWT Token Inspector</span>
+      <span class="ocurp-related-b">Decode a JWT header and payload without verifying the signature, with base64url handled co</span>
+    </a></li>
+    <li><a href="/workspace/tools/password-strength-meter/">
+      <span class="ocurp-related-n">Password Strength Meter</span>
+      <span class="ocurp-related-b">A real entropy estimate in bits from character-class pools with a repetition penalty, an e</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/acronym-generator/">
+      <span class="ocurp-related-n">Acronym Generator</span>
+      <span class="ocurp-related-b">Build initialisms, recursive acronyms and random words from a phrase, plus a back-expander</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

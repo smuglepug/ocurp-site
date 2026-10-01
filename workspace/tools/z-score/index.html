@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Z-Score Calculator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Z-Score Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">Z-SCORE</span><span class="ws-chip">STANDARD SCORE</span><span class="ws-chip">STATISTICS</span><span class="ws-chip">DEVIATION</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="mode">Direction</label><select id="mode" class="ws-input !w-full"><option value="x2z" selected>x → z (standard score)</option><option value="z2x">z → x (back to raw value)</option></select></div><div><label class="ws-label mb-2 block" for="x">Raw value x</label><input id="x" type="number" class="ws-input" placeholder="130" value="130"></div><div><label class="ws-label mb-2 block" for="z">z score</label><input id="z" type="number" class="ws-input" placeholder="2" value="2"></div><div><label class="ws-label mb-2 block" for="mean">Mean (x̄)</label><input id="mean" type="number" class="ws-input" placeholder="100" value="100"></div><div><label class="ws-label mb-2 block" for="sd">Standard deviation (SD, n−1)</label><input id="sd" type="number" class="ws-input" placeholder="15" value="15"></div><div><label class="ws-label mb-2 block" for="basis">Sample SD basis</label><input id="basis" type="text" class="ws-input" placeholder="sample"></div></div><div class="mt-5 border-t border-white/10 pt-4"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Sample (comma or space separated)</span></div><textarea id="data" class="ws-input h-24 w-full font-mono text-sm" placeholder="2, 4, 6, 8, 10">2, 4, 6, 8, 10</textarea><div class="mt-3 flex flex-wrap gap-4"><label class="flex items-center gap-2 text-sm text-white/70"><input id="pop" type="checkbox" class="accent-[#FF5F1F]"> Use population SD (divide by n)</label></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy summary</button></div><div class="rounded-xl border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Standard score</div><div id="big" class="mt-2 font-display text-4xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Working</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Quantity</th><th class="py-2 pr-4">Value</th></tr></thead><tbody id="tbl"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Sample z-score table</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="zt" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">#</th><th class="py-2 pr-4">Value</th><th class="py-2 pr-4">Deviation x−x̄</th><th class="py-2 pr-4">z</th><th class="py-2 pr-4">|z| band</th></tr></thead><tbody id="zt"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Notes</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="notes" onclick="cp(this)"></button></div><p class="text-xs leading-relaxed text-white/45">A z-score is how many standard deviations a value sits from the mean. |z| &lt; 2 is roughly 95% of a normal distribution, |z| &gt; 3 is outside what 3σ of 99.7% allows. It is meaningful only against the same population you computed the mean and SD from — a z-score from an all-time-best benchmark is not the same statistic as one from this season. With SD = 0 every value equals the mean and z is undefined, so this page reports an error instead of a number.</p></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  // Pad to the requested decimals. Without this grp(20000,2) returned
+  // '20,000' and a money column rendered as a bare integer.
+  while(parts.length<2) parts.push('');
+  if(d>0 && parts[1].length<d) parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+function stats(list, population){
+  var n = list.length;
+  if(n === 0) return {err:'enter at least one value'};
+  var sum = 0, i;
+  for(i = 0; i < n; i++) sum += list[i];
+  var mean = sum / n;
+  var ss = 0;
+  for(i = 0; i < n; i++) ss += (list[i] - mean) * (list[i] - mean);
+  var den = population ? n : n - 1;
+  var sd = Math.sqrt(ss / den);
+  return {n:n, mean:mean, sd:sd, sum:sum, ss:ss, min:Math.min.apply(null,list),
+          max:Math.max.apply(null,list), population:!!population};
+}
+function band(z){
+  var a = Math.abs(z);
+  if(a < 1) return 'within 1σ';
+  if(a < 2) return '1–2σ';
+  if(a < 3) return '2–3σ';
+  return 'beyond 3σ';
+}
+function zOf(x, mean, sd){
+  if(!(isFinite(x) && isFinite(mean) && isFinite(sd))) return {err:'x, mean and SD must be numbers'};
+  if(sd === 0) return {err:'standard deviation is 0 — every value equals the mean, '
+    + 'so no z-score exists (undefined, not zero)'};
+  if(sd < 0) return {err:'standard deviation cannot be negative'};
+  return {z:(x - mean) / sd};
+}
+function xOf(z, mean, sd){
+  if(!(isFinite(z) && isFinite(mean) && isFinite(sd))) return {err:'z, mean and SD must be numbers'};
+  if(sd < 0) return {err:'standard deviation cannot be negative'};
+  return {x: mean + z * sd};
+}
+function parseList(s){
+  var parts = String(s).split(/[^0-9eE+\-.]+/).filter(function(t){ return t !== ''; });
+  var out = [], bad = [];
+  parts.forEach(function(t){ var v = parseFloat(t);
+    if(isFinite(v)) out.push(v); else bad.push(t); });
+  return {vals:out, bad:bad};
+}
+window.__T = window.__T || {};
+window.__T['z-score'] = {stats:stats, zOf:zOf, xOf:xOf,
+  run:function(o){
+    o=o||{};
+    var mean=o.mean===undefined?100:o.mean, sd=o.sd===undefined?15:o.sd;
+    if((o.mode||'x2z')==='z2x'){
+      var a=xOf(o.z===undefined?2:o.z, mean, sd);
+      if(a.err) return {error:a.err};
+      return {x:a.x, z:o.z};
+    }
+    var x=o.x===undefined?130:o.x;
+    var b=zOf(x, mean, sd);
+    if(b.err) return {error:b.err};
+    var out={z:b.z, percent:r((0.5*(1+erf(b.z/Math.SQRT2)))*100,4)};
+    if(o.data){
+      var L=parseList(o.data);
+      var st=stats(L.vals, !!o.population);
+      if(!st.err){
+        out.mean=r(st.mean,6); out.sd=r(st.sd,6); out.n=st.n;
+        out.min=st.min; out.max=st.max;
+        out.rows=L.vals.map(function(q,i){
+          return {i:i+1, x:q, z:(st.sd===0?0:(q-st.mean)/st.sd)};});
+        out.firstZ=r(out.rows[0].z,6);
+      }
+    }
+    return out;
+  }};
+function erf(x){   // Abramowitz & Stegun 7.1.26 via the exact erf definition
+  var s = x < 0 ? -1 : 1; x = Math.abs(x);
+  var t = 1/(1+0.3275911*x);
+  var y = 1 - (((((1.061405429*t - 1.453152027)*t) + 1.421413741)*t
+            - 0.284496736)*t + 0.254829592)*t*Math.exp(-x*x);
+  return s*y;
+}
+function run(){
+  var x=parseFloat($('x').value), z=parseFloat($('z').value),
+      mean=parseFloat($('mean').value), sd=parseFloat($('sd').value),
+      raw=$('data').value, pop=$('pop').checked;
+  var k = $('mode').value === 'z2x' ? xOf(z, mean, sd) : zOf(x, mean, sd);
+  if(k.err){ seterr('err', k.err); $('big').textContent='—'; $('bigsub').textContent='—';
+            $('tbl').innerHTML=''; $('zt').innerHTML=''; show([]); return; }
+  seterr('err','');
+  var zv = (k.z === undefined) ? (sd === 0 ? NaN : (x - mean)/sd) : k.z;
+  var L = parseList(raw);
+  if(L.bad.length) seterr('err', 'ignored ' + L.bad.length + ' token(s) that are not numbers');
+  var st = stats(L.vals, pop);
+  var mode = $('mode').value === 'z2x';
+  $('big').textContent = mode ? r(k.x,6) : r(k.z,6);
+  $('bigsub').textContent = mode
+    ? 'z = ' + r(z,4) + ' on a mean of ' + r(mean,4) + ' with SD ' + r(sd,4)
+    : 'x = ' + r(x,4) + ' on a mean of ' + r(mean,4) + ' with SD ' + r(sd,4);
+  var tbl = mode
+    ? row(['z score', r(z,6)]) + row(['Mean', r(mean,6)]) +
+      row(['SD', r(sd,6)]) + row(['x = x̄ + z·SD', '<span class="text-accent">' + r(k.x,6) + '</span>']) +
+      row(['Percentile', r((0.5*(1+erf(z/Math.SQRT2)))*100,4) + ' %'])
+    : row(['x', r(x,6)]) + row(['Mean', r(mean,6)]) + row(['SD', r(sd,6)]) +
+      row(['z = (x−x̄)/SD', '<span class="text-accent">' + r(k.z,6) + '</span>']) +
+      row(['Deviation', r(x - mean,6)]) + row(['Percentile', r((0.5*(1+erf(k.z/Math.SQRT2)))*100,4) + ' %']);
+  if(!st.err){
+    tbl += row(['Sample n', String(st.n)]) +
+      row(['Sample mean', r(st.mean,6)]) +
+      row(['Sample SD (' + (pop ? 'n' : 'n−1') + ')', r(st.sd,6)]) +
+      row(['Min / max', r(st.min,6) + ' / ' + r(st.max,6)]);
+  }
+  $('tbl').innerHTML = tbl;
+  if(st.err){ $('zt').innerHTML = '<tr><td class="py-2 text-white/45">' + esc(st.err) + '</td></tr>'; }
+  else if(st.sd === 0){
+    $('zt').innerHTML = '<tr><td class="py-2 text-white/45">every value is the '
+      + 'mean, so SD = 0 and no z-score exists for any row</td></tr>';
+    seterr('err', 'the sample has SD = 0 — z-scores are undefined, not zero');
+  } else {
+    $('zt').innerHTML = L.vals.map(function(q,i){
+      var zz = (q - st.mean) / st.sd;
+      return row([String(i+1), r(q,6), r(q - st.mean,6), r(zz,6), band(zz)]); }).join('');
+  }
+  show(mode
+    ? [['x', r(k.x,6)], ['Percentile', r((0.5*(1+erf(z/Math.SQRT2)))*100,2)+' %'],
+       ['n', st.err?'—':String(st.n)], ['SD', r(sd,6)]]
+    : [['z', r(k.z,6)], ['Percentile', r((0.5*(1+erf(k.z/Math.SQRT2)))*100,2)+' %'],
+       ['n', st.err?'—':String(st.n)], ['|z|', band(k.z)]]);
+}
+bind(['x','z','mean','sd','data','mode'], run);
+$('pop').addEventListener('change', run);
+run();
+</script>
+</body>
+</html>

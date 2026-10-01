@@ -297,10 +297,17 @@
       anc.classList.add('ocurp-shell');
       anc = anc.parentElement;
     }
-    /* the wrapper (canvas wrapper, or the DOM board) must not cap the width in
-       play mode -- and the DOM board needs touch-action off itself, not just its
-       container, because that is what the finger lands on. */
-    if (surface.canvasWrap) {
+    /* The wrapper (canvas wrapper, or the DOM board) must not cap the width in
+       play mode -- and the board needs touch-action off itself, not just the
+       container, because that is what the finger lands on.
+
+       `.ocurp-surface-inner` carries `touch-action: none`, so it must NEVER be
+       put on the surface itself. On canvas games `surface.canvasWrap` resolves
+       to the same node as the surface (the canvas's parent IS the panel), which
+       put the gesture lock back on the whole game panel and made the page
+       unscrollable again -- the exact bug this class was meant to fix. Only tag
+       a wrapper that is genuinely a separate, inner node. */
+    if (surface.canvasWrap && surface.canvasWrap !== h) {
       surface.canvasWrap.classList.add('ocurp-canvas-wrap');
       surface.canvasWrap.classList.add('ocurp-surface-inner');
     }

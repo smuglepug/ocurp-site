@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dilution Calculator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Dilution Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">DILUTION</span><span class="ws-chip">C1V1</span><span class="ws-chip">CONCENTRATION</span><span class="ws-chip">SERIAL DILUTION</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="target">Solve for</label><select id="target" class="ws-input !w-full"><option value="V1" selected>Volume V1 of the stock</option><option value="V2">Total volume V2</option><option value="C2">Concentration C2</option></select></div><div><label class="ws-label mb-2 block" for="u1">C1 unit</label><select id="u1" class="ws-input !w-full"><option value="M" selected>M (mol/L)</option><option value="mM">mM (mmol/L)</option><option value="gL">g/L</option><option value="mgmL">mg/mL</option><option value="pct">% (w/v, g per 100 mL)</option><option value="vv">v/v (mL per 100 mL)</option></select></div><div><label class="ws-label mb-2 block" for="c1">C1 (stock)</label><input id="c1" type="number" class="ws-input" placeholder="1" value="1"></div><div><label class="ws-label mb-2 block" for="v1">V1 (mL)</label><input id="v1" type="number" class="ws-input" placeholder="10" value="10"></div><div><label class="ws-label mb-2 block" for="u2">C2 unit</label><select id="u2" class="ws-input !w-full"><option value="M">M (mol/L)</option><option value="mM" selected>mM (mmol/L)</option><option value="gL">g/L</option><option value="mgmL">mg/mL</option><option value="pct">% (w/v, g per 100 mL)</option><option value="vv">v/v (mL per 100 mL)</option></select></div><div><label class="ws-label mb-2 block" for="c2">C2 (target)</label><input id="c2" type="number" class="ws-input" placeholder="100" value="100"></div><div><label class="ws-label mb-2 block" for="v2">V2 (mL)</label><input id="v2" type="number" class="ws-input" placeholder="100" value="100"></div><div><label class="ws-label mb-2 block" for="mw">Molecular weight (g/mol)</label><input id="mw" type="number" class="ws-input" placeholder="58.44" value="58.44"></div><div><label class="ws-label mb-2 block" for="rho">Density for v/v (g/mL)</label><input id="rho" type="number" class="ws-input" placeholder="1" value="1"></div></div><div class="mt-5 border-t border-white/10 pt-4"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="steps">Ladder steps</label><input id="steps" type="number" class="ws-input" placeholder="5" value="5"></div><div><label class="ws-label mb-2 block" for="fac">Dilution factor each step</label><input id="fac" type="number" class="ws-input" placeholder="10" value="10"></div><div><label class="ws-label mb-2 block" for="lvol">Volume per step (mL)</label><input id="lvol" type="number" class="ws-input" placeholder="1" value="1"></div><div><label class="ws-label mb-2 block" for="lfin">Final volume per step (mL)</label><input id="lfin" type="number" class="ws-input" placeholder="10" value="10"></div></div></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy summary</button></div><div class="rounded-xl border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Answer</div><div id="big" class="mt-2 font-display text-4xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Working</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Quantity</th><th class="py-2 pr-4">Value</th></tr></thead><tbody id="tbl"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Serial dilution ladder</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="ladder" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Step</th><th class="py-2 pr-4">Concentration</th><th class="py-2 pr-4">Transfer</th><th class="py-2 pr-4">Diluent added</th><th class="py-2 pr-4">Final volume</th></tr></thead><tbody id="ladder"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Notes</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="notes" onclick="cp(this)"></button></div><p class="text-xs leading-relaxed text-white/45">C1·V1 = C2·V2 holds only when the units match on both sides. This page converts everything to mol/L first, which needs a molecular weight for the mass-based units and a density for v/v. A v/v figure without a density is a volume ratio, not a concentration, and is only equivalent to mol/L if the density is exactly 1 g/mL. For % w/v, 1% is 1 g per 100 mL, i.e. 10 g/L. A serial ladder compounds the same factor every step and never dilutes to zero.</p></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  // Pad to the requested decimals. Without this grp(20000,2) returned
+  // '20,000' and a money column rendered as a bare integer.
+  while(parts.length<2) parts.push('');
+  if(d>0 && parts[1].length<d) parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+// toM(value, unit, mw, rho) -> mol/L, or {err:...}
+function toM(v, unit, mw, rho){
+  if(!isFinite(v)) return {err:'concentration must be a number'};
+  if(unit === 'M')  return v;
+  if(unit === 'mM') return v / 1000;
+  var needsMW = (unit === 'gL' || unit === 'mgmL' || unit === 'pct');
+  var needsRho = (unit === 'vv');
+  if(needsMW && !(isFinite(mw) && mw > 0))
+    return {err:'this unit needs a molecular weight above zero g/mol'};
+  if(needsRho && !(isFinite(rho) && rho > 0))
+    return {err:'v/v needs a density above zero g/mL'};
+  if(unit === 'gL')  return v / mw;         // g/L -> mol/L
+  if(unit === 'mgmL') return v * 1000 / mw; // mg/mL == g/L
+  if(unit === 'pct')  return v * 10 / mw;   // % w/v -> g/L = *10
+  // v/v: mL per 100 mL -> mL/L = v*10, then g/L using the density, then mol/L.
+  return (v * 10 * rho) / mw;
+}
+function solveDilution(o){
+  var c1=o.C1, u1=o.u1, v1=o.V1, c2=o.C2, u2=o.u2, v2=o.V2, target=o.target;
+  if(!(isFinite(v1) && v1 > 0)) return {err:'V1 must be above zero mL — '
+    + 'a zero or negative volume has no solution'};
+  var m1 = toM(c1, u1, o.mw, o.rho);
+  if(m1.err) return {err:'C1: ' + m1.err};
+  if(!(m1 > 0)) return {err:'C1 must be above zero — you cannot dilute from a '
+    + 'zero or negative concentration'};
+  if(target === 'C2'){
+    var m2 = toM(c2, u2, o.mw, o.rho);
+    if(m2.err) return {err:'C2: ' + m2.err};
+    if(!(m2 > 0)) return {err:'C2 must be above zero'};
+    if(!(m2 < m1)) return {err:'C2 (' + r(c2,6) + ' ' + u2 + ') is not below C1 ('
+      + r(c1,6) + ' ' + u1 + ') — this is not a dilution but a concentration'};
+    var V2 = v1 * m1 / m2;
+    if(!isFinite(V2) || V2 <= 0) return {err:'the resulting volume is not finite'};
+    return {V1:v1, V2:V2, diluent:V2 - v1, C1_M:m1, C2_M:m2,
+            ratio:m1/m2, C1_equiv:m1, C2_equiv:m2};
+  }
+  // Both V1 and C2 known: C2 must be strictly below C1 or V1 is impossible.
+  var m2 = toM(c2, u2, o.mw, o.rho);
+  if(m2.err) return {err:'C2: ' + m2.err};
+  if(!(m2 > 0)) return {err:'C2 must be above zero'};
+  if(!(m2 < m1)) return {err:'C2 is not below C1, so no positive volume of stock '
+    + 'can hit it — V1 would need to be ' + r(v1*m1/m2,4) + ' mL'};
+  if(target === 'V1'){
+    if(!(isFinite(v2) && v2 > 0)) return {err:'V2 must be above zero mL to solve for V1'};
+    var V1 = v2 * m2 / m1;
+    if(!isFinite(V1) || V1 <= 0) return {err:'V1 came out zero or negative — '
+      + 'no positive stock volume reaches that target'};
+    if(V1 > v2) return {err:'V1 (' + r(V1,4) + ' mL) exceeds V2 (' + r(v2,4)
+      + ' mL): you would need more stock than you have'};
+    return {V1:V1, V2:v2, diluent:v2 - V1, C1_M:m1, C2_M:m2, ratio:v2/V1};
+  }
+  return {err:'nothing to solve'};
+}
+function ladder(steps, fac, vol, fin, c0M){
+  var out = [], c = c0M;
+  for(var i = 1; i <= steps; i++){
+    c = c / fac;
+    out.push({i:i, conc:c, transfer:vol, diluent:fin - vol, final:fin});
+  }
+  return out;
+}
+window.__T = window.__T || {};
+window.__T['solution-dilution'] = {toM:toM, solveDilution:solveDilution,
+  ladder:function(o){
+    o=o||{};
+    var st=o.steps===undefined?5:o.steps, fac=o.fac===undefined?10:o.fac,
+        vol=o.vol===undefined?1:o.vol, fin=o.fin===undefined?10:o.fin,
+        c1=o.c1===undefined?1:o.c1, u1=o.u1||'M';
+    var m1=toM(c1,u1,o.mw===undefined?58.44:o.mw,o.rho===undefined?1:o.rho);
+    if(m1.err) return {error:'C1: '+m1.err};
+    if(!(st>=1 && st<=50 && st===Math.round(st))) return {error:'steps must be a whole number from 1 to 50'};
+    if(!(fac>1 && isFinite(fac))) return {error:'dilution factor must be above 1'};
+    if(!(vol>0 && fin>vol)) return {error:'step volume must be above zero and below the final volume'};
+    var L=ladder(st,fac,vol,fin,m1);
+    return {steps:L.length, c0:m1, factor:fac, first:L[0].conc, last:L[L.length-1].conc,
+            overall:m1/L[L.length-1].conc};
+  }};
+function showUnit(u){ var m={M:'M',mM:'mM',gL:'g/L',mgmL:'mg/mL',pct:'%',vv:'v/v'}; return m[u]; }
+function run(){
+  var o = {C1:parseFloat($('c1').value), u1:$('u1').value, V1:parseFloat($('v1').value),
+           C2:parseFloat($('c2').value), u2:$('u2').value,
+           V2:$('v2').value === '' ? NaN : parseFloat($('v2').value),
+           mw:parseFloat($('mw').value), rho:parseFloat($('rho').value),
+           target:$('target').value};
+  var s = solveDilution(o);
+  if(s.err){ seterr('err', s.err); $('big').textContent='—'; $('bigsub').textContent='—';
+            $('tbl').innerHTML=''; $('ladder').innerHTML=''; show([]); return; }
+  seterr('err','');
+  var bigKey = o.target;
+  $('big').textContent = r(s[bigKey], 6) + ' mL';
+  $('bigsub').textContent = bigKey === 'V1'
+    ? 'stock needed for ' + r(o.V2,6) + ' mL at ' + r(o.C2,6) + ' ' + showUnit(o.u2)
+    : (bigKey === 'V2'
+        ? 'total volume for ' + r(o.V1,6) + ' mL of stock at ' + r(o.C1,6) + ' ' + showUnit(o.u1)
+        : 'target concentration');
+  $('tbl').innerHTML =
+    row(['C1', r(o.C1,6) + ' ' + showUnit(o.u1)]) +
+    row(['C1 as mol/L', r(s.C1_M,9) + ' M']) +
+    row(['C2', r(o.C2,6) + ' ' + showUnit(o.u2)]) +
+    row(['C2 as mol/L', r(s.C2_M,9) + ' M']) +
+    row(['V1 (stock)', r(s.V1,6) + ' mL']) +
+    row(['V2 (total)', r(s.V2,6) + ' mL']) +
+    row(['Diluent to add', r(s.diluent,6) + ' mL']) +
+    row(['Dilution ratio', '1 : ' + r(s.ratio,6)]);
+  // Ladder, guarded the same way.
+  var lerr = '';
+  var L = [];
+  var st=parseFloat($('steps').value), fac=parseFloat($('fac').value),
+      vol=parseFloat($('lvol').value), fin=parseFloat($('lfin').value);
+  if(!(st>=1 && st<=50 && st===Math.round(st))) lerr = 'steps must be a whole number from 1 to 50';
+  else if(!(fac>1 && isFinite(fac))) lerr = 'dilution factor must be above 1';
+  else if(!(vol>0 && fin>vol)) lerr = 'step volume must be above zero and below the final volume';
+  else L = ladder(st, fac, vol, fin, s.C1_M);
+  if(lerr) $('ladder').innerHTML = '<tr><td class="py-2 text-white/45">' + esc(lerr) + '</td></tr>';
+  else $('ladder').innerHTML = L.map(function(x){
+    return row([String(x.i), r(x.conc*1000,4) + ' mM', r(x.transfer,4) + ' mL',
+                r(x.diluent,4) + ' mL', r(x.final,4) + ' mL']); }).join('');
+  show([['Dilution', '1 : ' + r(s.ratio,4)],
+        ['Stock', r(s.V1,4) + ' mL'],
+        ['Diluent', r(s.diluent,4) + ' mL'],
+        ['Total', r(s.V2,4) + ' mL']]);
+}
+bind(['c1','v1','c2','v2','u1','u2','mw','rho','target','steps','fac','lvol','lfin'], run);
+run();
+</script>
+</body>
+</html>

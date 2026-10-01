@@ -10,19 +10,29 @@
      2. make play mode look like a normal mobile game: no nav, no page chrome,
         a persistent top-left Exit, and a canvas that fills the screen */
 
-/* ---- the fix: gestures inside the game never reach the scroller ---- */
-.ocurp-surface,
+/* ---- the fix: gestures inside the PLAYFIELD never reach the scroller ----
+
+   This used to sit on `.ocurp-surface`, which is the whole game PANEL. That
+   silently killed scrolling on the game page: a swipe anywhere on screen -- on
+   the text, the padding, the heading -- could not scroll the document, so a
+   player who had not entered fullscreen could not reach anything below the
+   game. The gesture lock belongs on the thing that actually consumes swipes
+   (the canvas, or the DOM board), never on the container around it. */
 .ocurp-canvas,
 .ocurp-surface-inner {
   touch-action: none;
 }
-/* contain the scroll chain so an overscrolling swipe does not pull the
-   whole document (this is what made "the whole screen moves up") */
-html.ocurp-touch,
-html.ocurp-touch body {
-  overscroll-behavior: none;
-}
-html.ocurp-touch .ocurp-surface {
+/* Contain the scroll chain on the BOARD only.
+
+   This used to sit on `html.ocurp-touch, html.ocurp-touch body` as
+   `overscroll-behavior: none`. That is what made a game page unscrollable on a
+   phone: overscroll-behavior on the ROOT element disables the document's own
+   scroll chaining, so a swipe anywhere on the page -- not just on the board --
+   stopped scrolling. Tool pages never get .ocurp-touch, which is exactly why
+   they scrolled fine and the games did not. The root element must stay `auto`;
+   containing the board is sufficient to stop the game pulling the page. */
+html.ocurp-touch .ocurp-canvas,
+html.ocurp-touch .ocurp-surface-inner {
   overscroll-behavior: contain;
 }
 
@@ -94,18 +104,27 @@ html.ocurp-playing .ocurp-canvas-wrap {
 }
 
 /* ---- the bar: top-left Exit, exactly where a normal game puts it ---- */
+/* The bar sits BELOW the page's own chrome (z-index 50 there). At 9500 it
+   painted over the "Games" back link and the site nav, and because a bar is a
+   full-width fixed strip, anything in that strip became untappable. In play
+   mode the chrome is hidden anyway, so dropping the z-index costs nothing and
+   removes the whole class of overlap. */
 .ocurp-playbar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 9500;
+  z-index: 40;
   display: flex;
   gap: 10px;
   align-items: center;
   padding: calc(10px + env(safe-area-inset-top)) 12px 10px 12px;
   pointer-events: none;
 }
+/* Only the buttons take clicks. The bar is a full-width fixed strip, so without
+   this it is a 60px transparent dead zone across the top of every game page. */
+.ocurp-playbar > * { pointer-events: none; }
+.ocurp-playbar button { pointer-events: auto; }
 .ocurp-playbar button {
   pointer-events: auto;
   display: inline-flex;
@@ -124,8 +143,16 @@ html.ocurp-playing .ocurp-canvas-wrap {
   transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
-/* Exit: top-left, hidden until play mode so it never floats over the page */
-.ocurp-exit {
+/* Exit: top-left, hidden until play mode so it never floats over the page.
+
+   ORDERING TRAP: `.ocurp-playbar button` above sets pointer-events:auto and is
+   MORE specific than this single-class rule, so it won every time. The result
+   was a permanently invisible Exit button sitting on top of the page's own
+   "Games" back link -- the tap hit the button, the link never fired, and the
+   player saw nothing happen. Both rules below are >= that specificity so the
+   hidden state genuinely disables it. */
+.ocurp-playbar .ocurp-exit,
+.ocurp-playbar button.ocurp-exit {
   position: absolute;
   top: calc(10px + env(safe-area-inset-top));
   left: 12px;
@@ -135,10 +162,13 @@ html.ocurp-playing .ocurp-canvas-wrap {
   backdrop-filter: blur(8px);
   opacity: 0;
   pointer-events: none;
+  visibility: hidden;
 }
-html.ocurp-playing .ocurp-exit {
+html.ocurp-playing .ocurp-playbar .ocurp-exit,
+html.ocurp-playing .ocurp-playbar button.ocurp-exit {
   opacity: 1;
   pointer-events: auto;
+  visibility: visible;
 }
 .ocurp-exit:active {
   transform: scale(0.96);

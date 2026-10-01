@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSP Analyzer — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Paste a Content-Security-Policy header and get every directive split out with its source list and a verdict. Runs entirely in your browser - nothing is...">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/csp-analyzer/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="CSP Analyzer">
+<meta property="og:description" content="Paste a Content-Security-Policy header and get every directive split out with its source list and a verdict. Runs entirely in your browser - nothing is...">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/csp-analyzer/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="CSP Analyzer on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CSP Analyzer">
+<meta name="twitter:description" content="Paste a Content-Security-Policy header and get every directive split out with its source list and a verdict. Runs entirely in your browser - nothing is...">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="CSP Analyzer on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSP Analyzer","url":"https://ocurp.com/workspace/tools/csp-analyzer/","description":"Paste a Content-Security-Policy header and get every directive split out with its source list and a verdict. Runs entirely in your browser - nothing is...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">CSP Analyzer</h1>
+      <p class="mt-1 text-xs text-white/40">security &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Paste a Content-Security-Policy header and get every directive split out with its source list and a verdict, plus findings for the combinations that actually break a policy: unsafe-inline beside a host allowlist, wildcard sources, a missing default-src, data: in script-src, http: next to https:, and nonces with no strict-dynamic. <span class="ws-chip">DIRECTIVE MAP</span> <span class="ws-chip">FINDINGS</span> <span class="ws-chip">SCORE</span></p>
+  <div class="ws-grid2">
+<div class="md:col-span-2 lg:col-span-3">
+<label class="ws-label mb-2 block" for="ca-h">Content-Security-Policy header value</label>
+<textarea id="ca-h" rows="5" class="ws-input" style="font-family:'IBM Plex Sans',monospace;line-height:1.7;resize:vertical">default-src 'self'; script-src 'self' 'unsafe-inline'</textarea>
+<div class="mt-4 flex flex-wrap items-center gap-3">
+<button id="ca-go" class="ws-btn" style="width:auto">Analyze</button>
+<button id="ca-dl" class="ws-btn-ghost" style="width:auto">Copy report</button>
+<button id="ca-cl" class="ws-btn-ghost" style="width:auto">Load a stricter policy</button>
+</div>
+<div class="mt-3 font-mono text-[11px] text-white/45" id="ca-err"></div>
+<div id="ca-stats" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"></div>
+<div class="mt-5"><div class="ws-label mb-2">Directive breakdown</div>
+<div id="ca-list" class="grid gap-3 md:grid-cols-2"></div></div>
+<div class="mt-5"><div class="ws-label mb-2">Findings</div>
+<pre id="ca-flags" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre></div>
+</div>
+  </div>
+  <div class="mt-8">
+
+<script>
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(!isFinite(n)) return 0;
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function seterr(id,msg){ var e=$(id); if(!e) return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':''; }
+function grab(id){ var el=$(id); if(!el) return '';
+  if(el.tagName==='PRE'||el.tagName==='TABLE') return el.textContent;
+  return el.value!==undefined?el.value:el.textContent; }
+function copyOut(id){ var t=grab(id); if(!t) return;
+  try{navigator.clipboard.writeText(t);}catch(e){} }
+function dlText(id,name,mime){
+  var t=grab(id); if(!t) return;
+  var b=new Blob([t],{type:(mime||'text/plain')+';charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+}
+function put(id,val){ var el=$(id); if(!el) return;
+  el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+var tcard=function(k,v,sub){
+  return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">'
+    +'<div class="ws-label">'+esc(k)+'</div>'
+    +'<div class="mt-1 font-display text-xl font-black text-[#FF5F1F]">'+esc(v)+'</div>'
+    +(sub?'<div class="mt-0.5 text-[10px] text-white/35">'+esc(sub)+'</div>':'')
+    +'</div>';};
+window.__T = window.__T || {};
+
+var CSP_RULES=[
+  {code:'no-default-src', lvl:'high', title:'No default-src',
+   why:'Every fetch directive (script-src, style-src, img-src, connect-src...) falls back to default-src. Without one, an unlisted directive is allowed from anywhere.'},
+  {code:'inline-with-host', lvl:'high', title:'unsafe-inline next to a host source',
+   why:'unsafe-inline lets any injected script tag run, which nullifies the host allowlist sitting beside it. Move inline handlers to a nonce or a hash.'},
+  {code:'inline-and-eval', lvl:'high', title:'unsafe-inline together with unsafe-eval',
+   why:'The worst pair in the spec: string-to-code compilation plus inline execution. Any string that reaches eval() becomes a script.'},
+  {code:'wildcard-source', lvl:'high', title:'Wildcard * source',
+   why:'* allows the resource from any origin. It also silently matches data:, blob: and filesystem: in the browsers that still honour them.'},
+  {code:'data-in-script', lvl:'medium', title:'data: allowed in script-src',
+   why:'data: URIs are a classic script-injection carrier and are only needed for legacy IE-era markup.'},
+  {code:'http-with-https', lvl:'medium', title:'http: alongside https:',
+   why:'An http: source lets a network attacker rewrite the payload in transit. Upgrade every entry to https: or a nonce/hash.'},
+  {code:'nonce-no-strict-dynamic', lvl:'low', title:'Nonces without strict-dynamic',
+   why:"strict-dynamic lets a nonce-trusted script load the scripts it needs. Without it, a nonced bootstrapper still has to list every host."}
+];
+
+function cspParse(raw){
+  // Header lists separate policies with ','. Commas inside a directive only
+  // ever appear in a scheme-source, never between values, so splitting the raw
+  // header on ',' before splitting on ';' is safe.
+  var policies=String(raw||'').split(',').map(function(s){return s.trim();})
+                   .filter(function(s){return s.length;});
+  var out=[];
+  policies.forEach(function(p){
+    p.split(';').forEach(function(chunk){
+      var toks=chunk.trim().split(/\s+/).filter(function(s){return s.length;});
+      if(!toks.length) return;
+      var name=toks[0].toLowerCase();
+      var vals=toks.slice(1).map(function(s){return s.toLowerCase();});
+      out.push({name:name,values:vals,tokens:vals.length});
+    });
+  });
+  return out;
+}
+
+function cspAnalyze(raw){
+  var ds=cspParse(raw);
+  var names=ds.map(function(d){return d.name;});
+  var tokens=ds.reduce(function(a,d){return a+d.tokens;},0);
+  var hit={}; function add(code){hit[code]=true;}
+  var script=null;
+  ds.forEach(function(d){ if(d.name==='script-src'&&!script) script=d; });
+
+  // unsafe-inline / unsafe-eval can legally live in script-src only.
+  var si=-1;
+  if(script) si=script.values.indexOf('unsafe-inline');
+  var se=-1;
+  if(script) se=script.values.indexOf('unsafe-eval');
+  if(si>=0 && se>=0) add('inline-and-eval');
+
+  ds.forEach(function(d){
+    d.values.forEach(function(v,i){
+      if(v==='*') add('wildcard-source');
+      if(v==='data:'&&d.name==='script-src') add('data-in-script');
+      if(v==='unsafe-inline'&&i>0) add('inline-with-host');
+    });
+  });
+  if(names.indexOf('default-src')<0) add('no-default-src');
+
+  var hasHttp=ds.some(function(d){return d.values.indexOf('http:')>=0;});
+  var hasHttps=ds.some(function(d){return d.values.indexOf('https:')>=0;});
+  if(hasHttp&&hasHttps) add('http-with-https');
+
+  var nonces=ds.some(function(d){
+    return d.values.some(function(v){return v.indexOf("'nonce-")===0;});
+  });
+  var strict=ds.some(function(d){
+    return d.values.some(function(v){return v==="'strict-dynamic'";});
+  });
+  if(nonces&&!strict) add('nonce-no-strict-dynamic');
+
+  var flags=CSP_RULES.filter(function(x){return hit[x.code];}).map(function(x){
+    return {code:x.code,level:x.lvl,title:x.title,why:x.why};
+  });
+  var order={high:0,medium:1,low:2};
+  flags.sort(function(a,b){return order[a.level]-order[b.level];});
+
+  var high=flags.filter(function(f){return f.level==='high';}).length;
+  var medium=flags.filter(function(f){return f.level==='medium';}).length;
+  var low=flags.filter(function(f){return f.level==='low';}).length;
+  var verdict=high?'FAIL':(medium?'REVIEW':'PASS');
+  var perDirective=ds.map(function(d){
+    var own=[];
+    if(d.name==='script-src'&&d.values.indexOf('unsafe-inline')>=0) own.push('unsafe-inline');
+    if(d.name==='script-src'&&d.values.indexOf('unsafe-eval')>=0) own.push('unsafe-eval');
+    if(d.values.indexOf('*')>=0) own.push('wildcard *');
+    if(d.values.indexOf('data:')>=0) own.push('data:');
+    var v=own.length?'WEAK':'OK';
+    return {name:d.name,values:d.values,tokens:d.tokens,verdict:v,issues:own};
+  });
+  return {
+    directives:ds.length, tokens:tokens, names:names,
+    hasDefaultSrc:names.indexOf('default-src')>=0,
+    flags:flags, high:high, medium:medium, low:low, verdict:verdict,
+    score:Math.max(0,100-high*25-medium*10-low*4),
+    perDirective:perDirective
+  };
+}
+
+function cspRender(){
+  var raw=$('ca-h').value;
+  if(!raw.trim()){ seterr('ca-err','paste a Content-Security-Policy header'); return null; }
+  var res=cspAnalyze(raw);
+  seterr('ca-err','');
+  $('ca-stats').innerHTML=
+      tcard('Directives',res.directives)
+    + tcard('Source tokens',res.tokens)
+    + tcard('default-src',res.hasDefaultSrc?'present':'MISSING')
+    + tcard('High risk',res.high)
+    + tcard('Medium + low',res.medium+' / '+res.low)
+    + tcard('Verdict',res.verdict,'score '+res.score+'/100');
+
+  $('ca-list').innerHTML=res.perDirective.map(function(d){
+    var chips=d.values.length?d.values.map(function(v){
+      var bad=(v==='*'||v==='unsafe-inline'||v==='unsafe-eval'||v==='data:');
+      return '<span class="ws-chip" style="border-color:'+(bad?'rgba(255,95,31,.55)':'rgba(255,255,255,.12)')
+        +';color:'+(bad?'#FF5F1F':'rgba(255,255,255,.6)')+'">'+esc(v)+'</span>';
+    }).join(' '):'<span class="ws-chip">no source listed</span>';
+    return '<div class="ws-panel p-4">'
+      +'<div class="flex items-center justify-between gap-3">'
+      +'<span class="font-mono text-sm font-bold text-white">'+esc(d.name)+'</span>'
+      +'<span class="ws-chip" style="border-color:'+(d.verdict==='OK'?'rgba(255,255,255,.12)':'rgba(255,95,31,.55)')
+      +';color:'+(d.verdict==='OK'?'rgba(255,255,255,.6)':'#FF5F1F')+'">'+d.verdict+'</span></div>'
+      +'<div class="mt-2 flex flex-wrap gap-1.5">'+chips+'</div>'
+      +'<div class="mt-2 text-[10px] text-white/35">'+d.tokens+' source token'+(d.tokens===1?'':'s')+'</div>'
+      +'</div>';
+  }).join('');
+
+  var out=res.flags.length?res.flags.map(function(f){
+    return '['+f.level.toUpperCase()+'] '+f.title+'\n    '+f.why;
+  }).join('\n\n'):'No dangerous combination found. Every directive passes.';
+  $('ca-flags').textContent=
+    'verdict: '+res.verdict+'  ('+res.high+' high, '+res.medium+' medium, '+res.low+' low)\n'
+    +'directives: '+res.directives+'   source tokens: '+res.tokens+'\n\n'+out;
+  return res;
+}
+$('ca-go').addEventListener('click',cspRender);
+$('ca-dl').addEventListener('click',function(){copyOut('ca-flags');});
+$('ca-cl').addEventListener('click',function(){
+  put('ca-h',"default-src 'self'; script-src 'nonce-r4nd0m' 'strict-dynamic'; "
+    +"object-src 'none'; base-uri 'none'; frame-ancestors 'none'; upgrade-insecure-requests");});
+$('ca-h').addEventListener('input',cspRender);
+window.__T['csp-analyzer']={slug:'csp-analyzer',run:function(i){
+  if(i.csp!==undefined) put('ca-h',i.csp);
+  var res=cspRender();
+  if(!res) return JSON.stringify({error:'empty'});
+  var codes=res.flags.map(function(f){return f.code;});
+  return JSON.stringify({directives:res.directives,tokens:res.tokens,names:res.names,
+    hasDefaultSrc:res.hasDefaultSrc,verdict:res.verdict,high:res.high,medium:res.medium,
+    low:res.low,score:res.score,codes:codes,
+    weak:res.perDirective.filter(function(d){return d.verdict!=='OK';})
+                  .map(function(d){return d.name;})});
+}};
+cspRender();
+</script>
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/cookie-decoder/">
+      <span class="ocurp-related-n">Cookie Decoder</span>
+      <span class="ocurp-related-b">Decode a Set-Cookie or Cookie header into name, value and every attribute, with Max-Age an</span>
+    </a></li>
+    <li><a href="/workspace/tools/cors-explainer/">
+      <span class="ocurp-related-n">CORS Preflight Explainer</span>
+      <span class="ocurp-related-b">Paste the OPTIONS request and the response headers of a CORS preflight and walk every rule</span>
+    </a></li>
+    <li><a href="/workspace/tools/password-generator/">
+      <span class="ocurp-related-n">Password Generator</span>
+      <span class="ocurp-related-b">Strong random passwords from crypto.getRandomValues.</span>
+    </a></li>
+    <li><a href="/workspace/tools/password-strength/">
+      <span class="ocurp-related-n">Password Analyser</span>
+      <span class="ocurp-related-b">Entropy, crack-time estimates and weakness checks.</span>
+    </a></li>
+    <li><a href="/workspace/tools/jwt-token-inspector/">
+      <span class="ocurp-related-n">JWT Token Inspector</span>
+      <span class="ocurp-related-b">Decode a JWT header and payload without verifying the signature, with base64url handled co</span>
+    </a></li>
+    <li><a href="/workspace/tools/password-strength-meter/">
+      <span class="ocurp-related-n">Password Strength Meter</span>
+      <span class="ocurp-related-b">A real entropy estimate in bits from character-class pools with a repetition penalty, an e</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

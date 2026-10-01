@@ -137,7 +137,14 @@ function draw(){$('board').innerHTML=bd.map((row,r)=>row.map((p,c)=>{
  $('board').querySelectorAll('button').forEach(el=>el.onclick=()=>click(+el.dataset.r,+el.dataset.c));
  const n=bd.flat().filter(p=>isRed(p)).length,m=bd.flat().filter(p=>p&&!isRed(p)).length;
  $('cnt').textContent=n+' - '+m;
- if(!allMoves(true).length&&!over){over=true;$('msg').textContent=(m>n?'AI':'You')+' win! No red moves left.'}}
+ // Red is always the player's side and black is always the AI's, so the
+ // terminal condition decides the winner outright. The old message picked a
+ // winner by piece count, which announced 'You win!' at the exact moment the
+ // player was the side with no legal move left - and never reported the
+ // win-by-capture case at all.
+ if(!allMoves(true).length&&!over){over=true;
+   if(!m){over=true;$('msg').textContent='You win! Every black piece is captured.'}
+   else $('msg').textContent='AI wins! You have no legal move left.'}}
 function click(r,c){if(over||turn!=='r')return;
  const p=bd[r][c];
  if(sel&&isRed(p)===false&&p){sel=null;return}
@@ -157,8 +164,7 @@ function ai(){const list=allMoves(false);if(!list.length){over=true;$('msg').tex
  const m=list[0];apply(m.from[0],m.from[1],m);
  turn='r';$('turn').textContent='You';
  const rl=allMoves(true);if(!rl.length){over=true;
-   const n=bd.flat().filter(p=>isRed(p)).length,mm=bd.flat().filter(p=>p&&!isRed(p)).length;
-   $('msg').textContent=(mm>n?'AI':'You')+' win! No red moves left.'}else $('msg').textContent='Your move.';
+   $('msg').textContent='AI wins! You have no legal move left.'}else $('msg').textContent='Your move.';
  draw()}
 $('new').onclick=reset;reset();</script>
 <script>
@@ -210,88 +216,8 @@ $('new').onclick=reset;reset();</script>
 })();
 </script>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<link rel="stylesheet" href="/workspace/play.css?v=20261001a">
-<script src="/workspace/play.js?v=20261001a" defer></script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<link rel="stylesheet" href="/workspace/play.css?v=20261001d">
+<script src="/workspace/play.js?v=20261001d" defer></script>
 
 
 <!--ocurp-related-->

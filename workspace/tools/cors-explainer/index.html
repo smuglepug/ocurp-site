@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CORS Preflight Explainer — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Paste the OPTIONS request and the response headers of a CORS preflight and walk every rule the browser applies. Runs entirely in your browser - nothing is...">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/cors-explainer/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="CORS Preflight Explainer">
+<meta property="og:description" content="Paste the OPTIONS request and the response headers of a CORS preflight and walk every rule the browser applies. Runs entirely in your browser - nothing is...">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/cors-explainer/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="CORS Preflight Explainer on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CORS Preflight Explainer">
+<meta name="twitter:description" content="Paste the OPTIONS request and the response headers of a CORS preflight and walk every rule the browser applies. Runs entirely in your browser - nothing is...">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="CORS Preflight Explainer on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CORS Preflight Explainer","url":"https://ocurp.com/workspace/tools/cors-explainer/","description":"Paste the OPTIONS request and the response headers of a CORS preflight and walk every rule the browser applies. Runs entirely in your browser - nothing is...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">CORS Preflight Explainer</h1>
+      <p class="mt-1 text-xs text-white/40">web &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Paste the OPTIONS request and the response headers of a CORS preflight and get every rule the browser applies, in order, each with a pass or fail and the reason. Covers the wildcard-origin-with-credentials case that is invalid no matter what else the response says, wildcard headers, the explicit credential opt-in, and the private-network preflight. <span class="ws-chip">RULE BY RULE</span> <span class="ws-chip">WILDCARD TRAP</span> <span class="ws-chip">PREFLIGHT</span></p>
+  <div class="ws-grid2">
+<div class="md:col-span-2 lg:col-span-3">
+<div class="grid gap-5 lg:grid-cols-2">
+  <div>
+    <label class="ws-label mb-2 block" for="co-req">Preflight request headers (OPTIONS)</label>
+    <textarea id="co-req" rows="7" class="ws-input" style="font-family:'IBM Plex Sans',monospace;line-height:1.7;resize:vertical">Origin: https://app.example.com
+Access-Control-Request-Method: PUT
+Access-Control-Request-Headers: content-type, x-api-key</textarea>
+    <label class="ws-label mb-2 block mt-4" for="co-res">Preflight response headers</label>
+    <textarea id="co-res" rows="7" class="ws-input" style="font-family:'IBM Plex Sans',monospace;line-height:1.7;resize:vertical">Access-Control-Allow-Origin: https://app.example.com
+Access-Control-Allow-Methods: PUT, GET
+Access-Control-Allow-Headers: content-type
+Access-Control-Max-Age: 600</textarea>
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <label class="flex items-center gap-2 text-xs text-white/70">Credentials
+        <select id="co-cred" class="ws-input" style="width:auto">
+          <option value="omit">omit (default fetch)</option>
+          <option value="same-origin">same-origin</option>
+          <option value="include">include (cookies sent)</option>
+        </select></label>
+      <label class="flex items-center gap-2 text-xs text-white/70">Private network
+        <input id="co-pn" type="checkbox" class="accent-[#FF5F1F]"></label>
+    </div>
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <button id="co-go" class="ws-btn" style="width:auto">Explain</button>
+      <button id="co-dl" class="ws-btn-ghost" style="width:auto">Copy report</button>
+      <button id="co-cl" class="ws-btn-ghost" style="width:auto">Load the wildcard trap</button>
+    </div>
+    <div class="mt-3 font-mono text-[11px] text-white/45" id="co-err"></div>
+  </div>
+  <div>
+    <div id="co-stats" class="grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+    <div class="ws-label mb-2 mt-5">Rules, in the order the browser applies them</div>
+    <div id="co-steps" class="grid gap-2"></div>
+  </div>
+</div>
+</div>
+  </div>
+  <div class="mt-8">
+
+<script>
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(!isFinite(n)) return 0;
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function seterr(id,msg){ var e=$(id); if(!e) return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':''; }
+function grab(id){ var el=$(id); if(!el) return '';
+  if(el.tagName==='PRE'||el.tagName==='TABLE') return el.textContent;
+  return el.value!==undefined?el.value:el.textContent; }
+function copyOut(id){ var t=grab(id); if(!t) return;
+  try{navigator.clipboard.writeText(t);}catch(e){} }
+function dlText(id,name,mime){
+  var t=grab(id); if(!t) return;
+  var b=new Blob([t],{type:(mime||'text/plain')+';charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+}
+function put(id,val){ var el=$(id); if(!el) return;
+  el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+var tcard=function(k,v,sub){
+  return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">'
+    +'<div class="ws-label">'+esc(k)+'</div>'
+    +'<div class="mt-1 font-display text-xl font-black text-[#FF5F1F]">'+esc(v)+'</div>'
+    +(sub?'<div class="mt-0.5 text-[10px] text-white/35">'+esc(sub)+'</div>':'')
+    +'</div>';};
+window.__T = window.__T || {};
+
+function coHeaders(text){
+  var out={}, order=[];
+  String(text||'').split(/\r?\n/).forEach(function(line){
+    var t=line.trim(); if(!t||t.charAt(0)==='#') return;
+    var e=t.indexOf(':');
+    if(e<0) return;
+    var k=t.slice(0,e).trim().toLowerCase(), v=t.slice(e+1).trim();
+    if(!(k in out)) order.push(k);
+    out[k]=v;
+  });
+  return {h:out,order:order};
+}
+function coList(v){
+  if(!v) return [];
+  return String(v).split(',').map(function(s){return s.trim().toLowerCase();})
+    .filter(function(s){return s.length;});
+}
+function corsExplain(reqTxt,resTxt,cred,privateNet){
+  var R=coHeaders(reqTxt).h, S=coHeaders(resTxt).h;
+  var cred=cred||'omit', steps=[];
+
+  var origin=R.origin||null;
+  var acao=S['access-control-allow-origin']||null;
+  var acaoStar=!!(acao&&acao.trim()==='*');
+  var credentials=cred==='include';
+  var reqMethod=(R['access-control-request-method']||'').toLowerCase()||null;
+  var reqHeaders=coList(R['access-control-request-headers']);
+  var allowMethods=coList(S['access-control-allow-methods']);
+  var allowHeaders=coList(S['access-control-allow-headers']);
+  var allowCreds=(S['access-control-allow-credentials']||'').toLowerCase()||null;
+  var maxAge=(S['access-control-max-age']||'').toLowerCase()||null;
+  var acpn=S['access-control-allow-private-network']||null;
+  var rpn=(R['access-control-request-private-network']||'').toLowerCase()||null;
+
+  function step(no,name,ok,detail){
+    steps.push({n:no,rule:name,ok:ok,detail:detail}); return ok;
+  }
+  // 1. Is there an Origin at all?
+  step(1,'The request must carry an Origin header',!!origin,
+       origin?('Origin: '+origin):'No Origin header, so this is not a cross-origin preflight at all.');
+
+  // 2. Does the response grant the origin?
+  var grantOk=false;
+  if(!acao) grantOk=false;
+  else if(acaoStar) grantOk=!credentials;
+  else grantOk=(acao.toLowerCase()===(origin||'').toLowerCase());
+  step(2,'Access-Control-Allow-Origin must name the request origin',grantOk,
+       acao?('Access-Control-Allow-Origin: '+acao):'Access-Control-Allow-Origin is missing.');
+
+  // 3. The wildcard + credentials trap. INVALID regardless of anything else.
+  var starInvalid=acaoStar&&credentials;
+  step(3,'A wildcard origin is illegal when credentials are included',!starInvalid,
+       starInvalid?('INVALID: Access-Control-Allow-Origin is * but the request uses credentials: "include". The Fetch spec treats * as the literal origin string \\"*\\", which never matches a real Origin, so the response is not exposed. Echo the origin instead.')
+                  :(acaoStar?'Wildcard origin is fine here because credentials are not included.':'A specific origin is echoed back, which works with or without credentials.'));
+
+  // 4. Credentialed responses must opt in explicitly.
+  step(4,'Credentialed requests need Access-Control-Allow-Credentials: true',
+       credentials?allowCreds==='true':true,
+       credentials?(allowCreds==='true'
+          ?'Access-Control-Allow-Credentials: true is present, so the browser will expose the response.'
+          :'INVALID: credentials were included but the response does not send Access-Control-Allow-Credentials: true, so the browser blocks the response.')
+         :'Credentials are not included, so this header is not required.');
+
+  // 5. The method must be allowed.
+  var methodOk=reqMethod?(allowMethods.indexOf(reqMethod)>=0):true;
+  var methodDetail;
+  if(!reqMethod){
+    methodDetail='No Access-Control-Request-Method, so this is a simple request with no preflight.';
+  }else if(methodOk){
+    methodDetail='The requested method '+reqMethod.toUpperCase()
+      +' is listed in Access-Control-Allow-Methods: '+allowMethods.join(', ')+'.';
+  }else{
+    methodDetail='INVALID: Access-Control-Request-Method is '+reqMethod
+      +' but Access-Control-Allow-Methods is ['+allowMethods.join(', ')+'].';
+  }
+  step(5,'Access-Control-Allow-Methods must list the requested method',methodOk,methodDetail);
+
+  // 6. Every requested header must be allowed.
+  var missingHeaders=reqHeaders.filter(function(h){return allowHeaders.indexOf(h)<0;});
+  var headerOk=missingHeaders.length===0;
+  var headerStarOk=allowHeaders.indexOf('*')>=0&&!credentials;
+  step(6,'Access-Control-Allow-Headers must cover every requested header',headerOk||headerStarOk,
+       reqHeaders.length?((headerOk?'All requested headers are allowed.':(headerStarOk?'The * wildcard covers them because credentials are not included.':'INVALID: missing from Access-Control-Allow-Headers: '+missingHeaders.join(', '))))
+                         :'No Access-Control-Request-Headers, so there is nothing to allow.');
+
+  // 7. Wildcard in the header list is also neutered by credentials.
+  step(7,'A wildcard header list is ignored when credentials are included',
+       !(allowHeaders.indexOf('*')>=0&&credentials),
+       (allowHeaders.indexOf('*')>=0)
+         ?(credentials?'INVALID: Access-Control-Allow-Headers is * but credentials are included, so the wildcard does not expand.':'Wildcard headers are honoured here because credentials are not included.')
+         :'No wildcard header list, so every requested header is matched literally.');
+
+  // 8. Private Network Access.
+  var pnOk=!(rpn==='true')||String(acpn).toLowerCase()==='true';
+  step(8,'Access-Control-Request-Private-Network needs Access-Control-Allow-Private-Network',pnOk,
+       rpn==='true'?(pnOk?'The server opted in to the private network request.'
+                    :'INVALID: the page asked for private-network access but the response does not send Access-Control-Allow-Private-Network: true.')
+                  :'No Access-Control-Request-Private-Network header, so the PNA check is skipped.');
+
+  var failed=steps.filter(function(s){return !s.ok;});
+  var verdict=failed.length?('BLOCKED'):'PASS';
+  return {steps:steps,failed:failed.length,verdict:verdict,origin:origin,acao:acao,
+    acaoStar:acaoStar,credentials:credentials,reqMethod:reqMethod,
+    reqHeaders:reqHeaders,allowHeaders:allowHeaders,allowMethods:allowMethods,
+    missingHeaders:missingHeaders,allowCreds:allowCreds,maxAge:maxAge,
+    privateNet:rpn==='true',starWithCreds:starInvalid,
+    requestedHeaders:reqHeaders.length};
+}
+function corsRender(){
+  var req=$('co-req').value, res=$('co-res').value;
+  if(!req.trim()&&!res.trim()){
+    seterr('co-err','paste the preflight request and response headers'); return null; }
+  var r=corsExplain(req,res,$('co-cred').value,$('co-pn').checked);
+  seterr('co-err','');
+  $('co-stats').innerHTML=
+      tcard('Verdict',r.verdict,r.failed+' of '+r.steps.length+' rules fail')
+    + tcard('Rules applied',r.steps.length)
+    + tcard('ACAO',r.acao?r.acao:'missing')
+    + tcard('Credentials',r.credentials?'include':'omit');
+  $('co-steps').innerHTML=r.steps.map(function(s){
+    var col=s.ok?'#4ade80':'#f87171';
+    return '<div class="ws-panel p-4">'
+      +'<div class="flex items-start gap-3">'
+      +'<span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black" style="background:'+col+';color:#050505">'+s.n+'</span>'
+      +'<div class="min-w-0"><div class="text-sm font-bold text-white">'
+      +(s.ok?'PASS':'FAIL')+' &middot; '+esc(s.rule)+'</div>'
+      +'<div class="mt-1 text-[11px] leading-relaxed text-white/50">'+esc(s.detail)+'</div></div></div></div>';
+  }).join('');
+  return r;
+}
+$('co-go').addEventListener('click',corsRender);
+$('co-dl').addEventListener('click',function(){
+  var st=corsRender(); if(!st) return;
+  copyOut('co-steps');});
+$('co-cl').addEventListener('click',function(){
+  put('co-req','Origin: https://app.example.com\nAccess-Control-Request-Method: GET\nAccess-Control-Request-Headers: content-type');
+  put('co-res','Access-Control-Allow-Origin: *\nAccess-Control-Allow-Methods: GET\nAccess-Control-Allow-Headers: *');
+  $('co-cred').value='include'; $('co-cred').dispatchEvent(new Event('change',{bubbles:true}));
+  corsRender();});
+['co-req','co-res','co-cred','co-pn'].forEach(function(id){
+  var el=$(id); if(!el) return;
+  el.addEventListener('input',corsRender); el.addEventListener('change',corsRender);});
+window.__T['cors-explainer']={slug:'cors-explainer',run:function(i){
+  if(i.req!==undefined) put('co-req',i.req);
+  if(i.res!==undefined) put('co-res',i.res);
+  if(i.credentials!==undefined){ $('co-cred').value=i.credentials;
+    $('co-cred').dispatchEvent(new Event('change',{bubbles:true})); }
+  if(i.privateNet!==undefined){ $('co-pn').checked=!!i.privateNet;
+    $('co-pn').dispatchEvent(new Event('change',{bubbles:true})); }
+  var r=corsRender();
+  if(!r) return JSON.stringify({error:'empty'});
+  return JSON.stringify({verdict:r.verdict,failed:r.failed,rules:r.steps.length,
+    origin:r.origin,acao:r.acao,acaoStar:r.acaoStar,credentials:r.credentials,
+    starWithCreds:r.starWithCreds,allowCreds:r.allowCreds,
+    reqMethod:r.reqMethod,allowMethods:r.allowMethods,
+    requestedHeaders:r.reqHeaders,allowHeaders:r.allowHeaders,
+    missingHeaders:r.missingHeaders,privateNet:r.privateNet,
+    firstFail:r.steps.filter(function(s){return !s.ok;}).map(function(s){return s.n;})[0]||null});
+}};
+corsRender();
+</script>
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/cookie-decoder/">
+      <span class="ocurp-related-n">Cookie Decoder</span>
+      <span class="ocurp-related-b">Decode a Set-Cookie or Cookie header into name, value and every attribute, with Max-Age an</span>
+    </a></li>
+    <li><a href="/workspace/tools/csp-analyzer/">
+      <span class="ocurp-related-n">CSP Analyzer</span>
+      <span class="ocurp-related-b">Paste a Content-Security-Policy header and get every directive split out with its source l</span>
+    </a></li>
+    <li><a href="/workspace/tools/bandwidth-calculator/">
+      <span class="ocurp-related-n">Bandwidth Calculator</span>
+      <span class="ocurp-related-b">How long a transfer really takes, and what upload speed a video call actually needs.</span>
+    </a></li>
+    <li><a href="/workspace/tools/chmod-calculator/">
+      <span class="ocurp-related-n">chmod Calculator</span>
+      <span class="ocurp-related-b">Turn an octal file mode into the symbolic form, the decimal value and a plain reading of w</span>
+    </a></li>
+    <li><a href="/workspace/tools/cron-parser/">
+      <span class="ocurp-related-n">Cron Expression Parser</span>
+      <span class="ocurp-related-b">Expand a crontab into its fields, plain English and the next real run times.</span>
+    </a></li>
+    <li><a href="/workspace/tools/css-grid-builder/">
+      <span class="ocurp-related-n">CSS Grid Template Builder</span>
+      <span class="ocurp-related-b">Drag out a grid definition and get the CSS with media queries attached.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

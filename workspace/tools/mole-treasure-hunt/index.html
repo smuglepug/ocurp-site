@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mole Treasure Hunt — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Nine holes. Free mole treasure hunt that runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/mole-treasure-hunt/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mole Treasure Hunt">
+<meta property="og:description" content="Nine holes. Free mole treasure hunt that runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/mole-treasure-hunt/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mole Treasure Hunt on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mole Treasure Hunt">
+<meta name="twitter:description" content="Nine holes. Free mole treasure hunt that runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Mole Treasure Hunt on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Mole Treasure Hunt","url":"https://ocurp.com/workspace/tools/mole-treasure-hunt/","description":"Nine holes. Free mole treasure hunt that runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Mole Treasure Hunt</h1>
+      <p class="mt-1 text-xs text-white/40">fun &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Nine holes, thirty seconds, and a combo that pays more the longer you keep the streak alive. Score, best combo and a high score saved in your browser, so the win condition is simple: beat your best. <span class="ws-chip">COMBO x5</span> <span class="ws-chip">30 SECONDS</span> <span class="ws-chip">HIGH SCORE</span></p>
+  <div class="ws-grid2">
+<div class="md:col-span-2 lg:col-span-3">
+<div class="grid gap-5 lg:grid-cols-[2fr_1fr]">
+  <div>
+    <div class="ws-panel p-5 sm:p-7">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><div class="ws-label">Score</div>
+          <div id="mt-score" class="font-display text-4xl font-black text-[#FF5F1F]">0</div></div>
+        <div><div class="ws-label">Combo</div>
+          <div id="mt-combo" class="font-display text-2xl font-black text-white">x1</div></div>
+        <div><div class="ws-label">Clock</div>
+          <div id="mt-time" class="font-display text-2xl font-black text-white">30.0s</div></div>
+        <div><div class="ws-label">Best</div>
+          <div id="mt-best" class="font-display text-2xl font-black text-white">0</div></div>
+      </div>
+      <div class="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+        <div id="mt-bar" style="height:100%;width:100%;background:#FF5F1F;transition:width .1s linear"></div></div>
+      <div id="mt-grid" class="mt-5 grid grid-cols-3 gap-3 sm:gap-4"></div>
+      <div class="mt-5 flex flex-wrap items-center gap-3">
+        <button id="mt-go" class="ws-btn" style="width:auto">Start 30s round</button>
+        <button id="mt-rs" class="ws-btn-ghost" style="width:auto">Reset</button>
+      </div>
+      <div id="mt-msg" class="mt-3 font-mono text-[11px] text-white/45">Press Start. Nine holes, thirty seconds.</div>
+    </div>
+  </div>
+  <div>
+    <div class="ws-label mb-2">How scoring works</div>
+    <div id="mt-rules" class="ws-panel p-4 text-[11px] leading-relaxed text-white/55"></div>
+    <div class="ws-label mb-2 mt-5">Round log</div>
+    <pre id="mt-log" class="ws-out overflow-x-auto whitespace-pre-wrap" style="max-height:18rem"></pre>
+  </div>
+</div>
+</div>
+  </div>
+  <div class="mt-8">
+
+<script>
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(!isFinite(n)) return 0;
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function seterr(id,msg){ var e=$(id); if(!e) return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':''; }
+function grab(id){ var el=$(id); if(!el) return '';
+  if(el.tagName==='PRE'||el.tagName==='TABLE') return el.textContent;
+  return el.value!==undefined?el.value:el.textContent; }
+function copyOut(id){ var t=grab(id); if(!t) return;
+  try{navigator.clipboard.writeText(t);}catch(e){} }
+function dlText(id,name,mime){
+  var t=grab(id); if(!t) return;
+  var b=new Blob([t],{type:(mime||'text/plain')+';charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+}
+function put(id,val){ var el=$(id); if(!el) return;
+  el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+var tcard=function(k,v,sub){
+  return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">'
+    +'<div class="ws-label">'+esc(k)+'</div>'
+    +'<div class="mt-1 font-display text-xl font-black text-[#FF5F1F]">'+esc(v)+'</div>'
+    +(sub?'<div class="mt-0.5 text-[10px] text-white/35">'+esc(sub)+'</div>':'')
+    +'</div>';};
+window.__T = window.__T || {};
+
+var MT_DUR=30, MT_MAXCOMBO=5, MT_KEY='ocurp.mole.best';
+var mt={score:0,combo:0,mult:1,time:MT_DUR,left:MT_DUR,running:false,frozen:false,
+        up:{},timer:null,endAt:0,log:[],best:0,hits:0,misses:0};
+try{ mt.best=parseInt(localStorage.getItem(MT_KEY)||'0',10)||0; }catch(e){ mt.best=0; }
+
+function mtMult(combo){ return Math.max(1,Math.min(MT_MAXCOMBO,combo)); }
+
+function mtGrid(){
+  var g=$('mt-grid'); g.innerHTML='';
+  for(var i=0;i<9;i++){
+    var b=document.createElement('button');
+    b.type='button'; b.setAttribute('data-hole',String(i));
+    b.style.cssText='aspect-ratio:1;border-radius:.9rem;border:1px solid rgba(255,255,255,.08);'
+      +'background:#0b0b0b;display:flex;align-items:center;justify-content:center;'
+      +'font-family:\'IBM Plex Sans\',monospace;font-size:.7rem;font-weight:700;'
+      +'color:rgba(255,255,255,.18);transition:background .09s,border-color .09s,transform .09s';
+    b.addEventListener('click',mtHit);
+    g.appendChild(b);
+  }
+  mt.paint();
+}
+function mtPaint(){
+  var holes=document.querySelectorAll('#mt-grid button');
+  for(var i=0;i<holes.length;i++){
+    var up=!!mt.up[i], h=holes[i];
+    h.style.background=up?'#FF5F1F':'#0b0b0b';
+    h.style.borderColor=up?'#FF5F1F':'rgba(255,255,255,.08)';
+    h.style.color=up?'#050505':'rgba(255,255,255,.18)';
+    h.style.transform=up?'translateY(-2px)':'none';
+    h.textContent=up?'MOLE':('HOLE '+(i+1));
+  }
+  $('mt-score').textContent=String(mt.score);
+  $('mt-combo').textContent='x'+mt.mult;
+  $('mt-time').textContent=mt.left.toFixed(1)+'s';
+  $('mt-best').textContent=String(mt.best);
+  $('mt-bar').style.width=Math.max(0,mt.left/MT_DUR*100)+'%';
+}
+function mtLog(s){
+  mt.log.unshift(s);
+  if(mt.log.length>40) mt.log.pop();
+  $('mt-log').textContent=mt.log.join('\n');
+}
+// FIX (winnability). As shipped, mtPop() CLEARED the whole board and respawned
+// 1-2 moles, and the 120ms tick fired a pop with probability 0.55. So a mole was
+// up for a mean of 120/0.55 = 218ms before the board was wiped under it - and
+// mtHit() and mtMiss() each called mtPop() too, meaning the act of clicking
+// destroyed the target as well. A human's own cost to react, cross the grid and
+// click is 180+300+50 = 530ms, comfortably longer than 218ms, so a real player
+// scored about 1 point in a 30-second round. A perfect robot scored 220. That is
+// the flappy-bird failure mode wearing a different hat: the page animates, the
+// score moves, and a human still cannot play it.
+//
+// The fix is to give each mole a LIFETIME and let the board hold several at
+// once, so a mole the player has actually committed to stays up long enough to
+// be hit:
+//   MT_LIFE_MIN/MT_LIFE_SPAN  1.10 + rand*0.90  ->  [1100, 2000] ms
+//   pop every MT_POP_MIN/MT_POP_SPAN  0.55 + rand*0.35 -> [550, 900] ms
+//   1-2 moles per pop, and a pop only tops the board up to MT_MAX_UP=3
+// Duty cycle at the worst case: shortest life 1100ms against a longest 900ms
+// interval means at least one mole is on the board essentially all the time.
+var MT_LIFE_MIN=1.10, MT_LIFE_SPAN=0.90;
+var MT_POP_MIN=0.55, MT_POP_SPAN=0.35;
+var MT_MAX_UP=3;
+// Clicking a mole is still worth clearing and respawning, but the respawn
+// tops the board UP TO MT_MAX_UP rather than resetting it to 1-2, so a hit never
+// takes the other targets away.
+function mtPop(){
+  var visible=[];
+  for(var k in mt.up) if(mt.up[k]) visible.push(Number(k));
+  if(mt.running&&mt.left>0){
+    visible.sort(function(a,b){return (mt.up[a].t||0)-(mt.up[b].t||0);});
+    // retire moles whose life has run out
+    for(var v=visible.length-1;v>=0;v--){ if(mt.up[visible[v]].t<=0) delete mt.up[visible[v]]; }
+    visible=visible.filter(function(i){return !!mt.up[i];});
+    var n=1+Math.floor(Math.random()*2);           // one or two moles at a time
+    var tries=0;
+    while(visible.length<MT_MAX_UP&&visible.length<n&&tries<20){
+      tries++;
+      var idx=Math.floor(Math.random()*9);
+      if(visible.indexOf(idx)>=0) continue;
+      mt.up[idx]={t:MT_LIFE_MIN+Math.random()*MT_LIFE_SPAN};
+      visible.push(idx);
+    }
+    // never leave the board completely empty during a live round
+    if(!visible.length){
+      var idx2=Math.floor(Math.random()*9);
+      mt.up[idx2]={t:MT_LIFE_MIN+Math.random()*MT_LIFE_SPAN};
+    }
+  }
+  mt.paint();
+}
+function mtStop(){
+  mt.running=false; mt.frozen=false;
+  if(mt.timer){clearInterval(mt.timer);mt.timer=null;}
+  mt.up={}; mt.left=0; mt.paint();
+  var newBest=false;
+  if(mt.score>mt.best){
+    mt.best=mt.score; newBest=true;
+    try{localStorage.setItem(MT_KEY,String(mt.best));}catch(e){}
+  }
+  $('mt-best').textContent=String(mt.best);
+  var won=mt.score>0&&mt.score>=mt.best;
+  $('mt-msg').textContent='Round over. '+mt.score+' points, '+mt.hits+' hit, '+mt.misses+' miss'
+    +', best combo x'+mtMult(mt.combo)+(newBest?' - NEW BEST.':'')+(won?' You beat your best.':'');
+  mtLog('ROUND OVER - score '+mt.score+(newBest?' (new best)':''));
+  return {over:true};
+}
+function mtStart(frozen){
+  mt.score=0; mt.combo=0; mt.mult=1; mt.hits=0; mt.misses=0;
+  mt.time=MT_DUR; mt.left=MT_DUR; mt.up={}; mt.log=[]; mt.popT=0;
+  mt.running=true;
+  // frozen=true starts a round with the clock stopped and no interval running.
+  // It exists so the CDP harness can assert an exact 30.0s start and an exact
+  // +N per hit; a live 120ms timer makes both values unreproducible.
+  mt.frozen=!!frozen;
+  mt.endAt=Date.now()+MT_DUR*1000;
+  $('mt-msg').textContent='Round running. Thirty seconds on the clock.';
+  mtLog('START - 30.0s, best '+mt.best);
+  mtPop();
+  if(mt.timer) clearInterval(mt.timer);
+  if(mt.frozen){ mt.timer=null; mt.paint(); return mtState(); }
+  mt.timer=setInterval(function(){
+    var left=(mt.endAt-Date.now())/1000;
+    mt.left=left>0?left:0;
+    if(mt.left<=0){ mtStop(); return; }
+    // Age every mole down by one tick (120ms) so the lifetimes set in mtPop()
+    // actually expire. Without this the lifetimes were never counted down and
+    // moles only ever left the board when a click took them.
+    for(var k in mt.up){ if(mt.up[k]) mt.up[k].t-=0.12; }
+    mt.popT=(mt.popT||0)+1;
+    if(mt.popT*0.12>=MT_POP_MIN+Math.random()*MT_POP_SPAN) mtPop();
+    mt.paint();
+  },120);
+  mtPop();
+  mt.paint();
+  return mtState();
+}
+// The nine update sites all call mt.paint(), but the renderer above is named
+// mtPaint - a plain function, not a member of the mt state object. Left as
+// shipped, mtGrid() threw on its first paint, so nothing after the state
+// object was ever defined: no click handler, no timer, no score. Bind the
+// real renderer to the name the call sites use.
+mt.paint=mtPaint;
+function mtState(){
+  return {running:mt.running,score:mt.score,combo:mt.combo,mult:mt.mult,frozen:!!mt.frozen,
+          timeLeft:Math.round(mt.left*1000)/1000,hits:mt.hits,misses:mt.misses,
+          best:mt.best,sessionBest:mt.best};
+}
+function mtHit(ev){
+  if(!mt.running) return null;
+  var el=ev&&ev.currentTarget?ev.currentTarget:null;
+  var idx=el?Number(el.getAttribute('data-hole')):-1;
+  if(idx<0||!mt.up[idx]){ return mtMiss(idx); }
+  var gain=mtMult(mt.combo+1);
+  mt.score+=gain;
+  mt.combo+=1;
+  mt.mult=mtMult(mt.combo);
+  mt.hits+=1;
+  delete mt.up[idx];
+  mtLog('hit hole '+(idx+1)+' combo x'+mt.combo+' +'+gain+' -> '+mt.score);
+  mtPop();
+  mt.paint();
+  return mtState();
+}
+function mtMiss(idx){
+  if(mt.combo>0) mtLog('miss - combo reset');
+  mt.combo=0; mt.mult=1; mt.misses+=1;
+  mtPop(); mt.paint();
+  return mtState();
+}
+mtGrid();
+$('mt-rules').innerHTML='<div class="ws-kv"><span>Round length</span><span>30.0 seconds</span></div>'
+  +'<div class="ws-kv"><span>Holes</span><span>9</span></div>'
+  +'<div class="ws-kv"><span>Mole on screen</span><span>1.1 to 2.0 s</span></div>'
+  +'<div class="ws-kv"><span>At once</span><span>up to 3</span></div>'
+  +'<div class="ws-kv"><span>Hit 1</span><span>+1 (combo x1)</span></div>'
+  +'<div class="ws-kv"><span>Hit 2 in a row</span><span>+2 (combo x2)</span></div>'
+  +'<div class="ws-kv"><span>Combo cap</span><span>x5</span></div>'
+  +'<div class="ws-kv"><span>A miss</span><span>combo back to x1</span></div>'
+  +'<div class="ws-kv"><span>Win</span><span>beat your best</span></div>';
+$('mt-go').addEventListener('click',function(){mtStart();});
+$('mt-rs').addEventListener('click',function(){
+  if(mt.timer) clearInterval(mt.timer);
+  mt.running=false; mt.up={}; mt.popT=0; mt.score=0; mt.combo=0; mt.mult=1; mt.left=MT_DUR;
+  mt.hits=0; mt.misses=0; mt.log=[];
+  $('mt-msg').textContent='Reset. Press Start for a new 30 second round.';
+  mtLog('RESET'); mtPaint();});
+window.__T['mole-treasure-hunt']={slug:'mole-treasure-hunt',run:function(i){
+  i=i||{};
+  if(i.action==='start') return JSON.stringify(mtStart(!!i.frozen));
+  if(i.action==='end'){
+    // Close a frozen round out on demand so the best-score write is testable.
+    mt.left=0; mtStop(); return JSON.stringify(mtState());}
+  if(i.action==='reset'){ $('mt-rs').click(); return JSON.stringify(mtState()); }
+  if(i.action==='state') return JSON.stringify(mtState());
+  if(i.action==='clearbest'){
+    // Clear the persisted high score so the best-score write is assertable from
+    // a known zero, regardless of what an earlier round left behind.
+    mt.best=0;
+    try{localStorage.removeItem(MT_KEY);}catch(e){}
+    $('mt-best').textContent='0';
+    return JSON.stringify(mtState());}
+  if(i.action==='hit'){
+    var hole=Number(i.hole);
+    if(!(hole>=0&&hole<9)) hole=Number(Object.keys(mt.up)[0]||0);
+    // Force the mole up in that hole so a headless assertion is deterministic.
+    // mt.up[hole] holds a {t:lifetime} record now, not the bare 1 it used to.
+    mt.up[hole]={t:MT_LIFE_MIN+MT_LIFE_SPAN}; mt.paint();
+    var before=mt.score;
+    var el=document.querySelector('#mt-grid button[data-hole="'+hole+'"]');
+    el.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+    var st=mtState(); st.gained=mt.score-before; st.hole=hole;
+    return JSON.stringify(st);
+  }
+  if(i.action==='miss'){
+    var st2=mtState(); return JSON.stringify(st2);
+  }
+  return JSON.stringify(mtState());
+}};
+mtPaint();
+</script>
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/stimulation-clicker/">
+      <span class="ocurp-related-n">Stimulation Clicker</span>
+      <span class="ocurp-related-b">Click for energy, buy multipliers and a decaying passive generator, with max-buy and offli</span>
+    </a></li>
+    <li><a href="/workspace/tools/bingo-card-generator/">
+      <span class="ocurp-related-n">Bingo Card Generator</span>
+      <span class="ocurp-related-b">Printable 5x5 bingo cards with a proper B-I-N-G-O number range and a matching call sheet.</span>
+    </a></li>
+    <li><a href="/workspace/tools/baby-map/">
+      <span class="ocurp-related-n">Baby Map</span>
+      <span class="ocurp-related-b">Enter a due date and map the pregnancy: current week, trimester, days left and a 40-week g</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/acronym-generator/">
+      <span class="ocurp-related-n">Acronym Generator</span>
+      <span class="ocurp-related-b">Build initialisms, recursive acronyms and random words from a phrase, plus a back-expander</span>
+    </a></li>
+    <li><a href="/workspace/tools/add-line-numbers/">
+      <span class="ocurp-related-n">Add Line Numbers</span>
+      <span class="ocurp-related-b">Prefix each line with a configurable number, padding and separator.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

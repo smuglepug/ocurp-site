@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ideal Gas Law Solver | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Ideal Gas Law Solver</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">IDEAL GAS</span><span class="ws-chip">PV=NRT</span><span class="ws-chip">THERMODYNAMICS</span><span class="ws-chip">UNITS</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="unknown">Solve for</label><select id="unknown" class="ws-input !w-40"><option value="P">Pressure (P)</option><option value="V">Volume (V)</option><option value="n" selected>Moles (n)</option><option value="T">Temperature (T)</option></select></div><div><label class="ws-label mb-2 block" for="P">Pressure</label><input id="P" type="number" class="ws-input" placeholder="101.325" value="101.325"></div><div><label class="ws-label mb-2 block" for="V">Volume (L)</label><input id="V" type="number" class="ws-input" placeholder="1" value="1"></div><div><label class="ws-label mb-2 block" for="n">Moles (mol)</label><input id="n" type="number" class="ws-input" placeholder="0.0406220" value="0.0406220"></div><div><label class="ws-label mb-2 block" for="T">Temperature</label><input id="T" type="number" class="ws-input" placeholder="300" value="300"></div></div><div class="mt-4 grid gap-4 sm:grid-cols-3"><div><label class="ws-label mb-2 block" for="pu">Pressure unit</label><select id="pu" class="ws-input !w-40"><option value="Pa">Pa (pascal)</option><option value="kPa">kPa</option><option value="bar">bar</option><option value="atm" selected>atm</option><option value="mmHg">mmHg</option><option value="psi">psi</option></select></div><div><label class="ws-label mb-2 block" for="vu">Volume unit</label><select id="vu" class="ws-input !w-40"><option value="m3">m³</option><option value="L" selected>L (litre)</option><option value="mL">mL</option><option value="cm3">cm³</option><option value="ft3">ft³</option><option value="gal">US gallon</option></select></div><div><label class="ws-label mb-2 block" for="tu">Temperature unit</label><select id="tu" class="ws-input !w-40"><option value="K" selected>K (kelvin)</option><option value="C">°C (celsius)</option><option value="R">°R (rankine)</option></select></div></div><div class="mt-4 flex flex-wrap gap-2" id="quick"></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy result</button></div><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Answer</div><div id="big" class="mt-2 font-display text-3xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Working</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Item</th><th class="py-2 pr-4">Value</th></tr></thead><tbody id="tbl"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Every unit at once</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="conv" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Quantity</th><th class="py-2 pr-4">Unit</th><th class="py-2 pr-4">In SI</th><th class="py-2 pr-4">Converted</th></tr></thead><tbody id="conv"></tbody></table></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  // Pad to the requested decimals. Without this grp(20000,2) returned
+  // '20,000' and a money column rendered as a bare integer.
+  while(parts.length<2) parts.push('');
+  if(d>0 && parts[1].length<d) parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+var R_SI = 8.314462618;                       // J / (mol K), CODATA 2018 exact
+var P_F = { Pa:1, kPa:1e3, bar:1e5, atm:101325, mmHg:133.322387415, psi:6894.757293168 };
+var V_F = { m3:1, L:1e-3, mL:1e-6, cm3:1e-6, ft3:0.028316846592, gal:0.003785411784 };
+var T_F = { K:1, C:1, R:5/9 };                // to kelvin: K, K+273.15, R*5/9
+var R_LATM = R_SI * 101.325 / 1000;           // 0.08205736608096 L atm / (mol K)
+
+function toK(v,unit){
+  if(unit==='C') return v + 273.15;
+  if(unit==='R') return v * 5/9;
+  return v;
+}
+function fromK(k,unit){
+  if(unit==='C') return k - 273.15;
+  if(unit==='R') return k * 9/5;
+  return k;
+}
+function toPa(v,unit){ return v * (P_F[unit]||1); }
+function fromPa(p,unit){ return p / (P_F[unit]||1); }
+function toM3(v,unit){ return v * (V_F[unit]||1); }
+function fromM3(m,u){ return m / (V_F[u]||1); }
+
+// T is checked before it is used, and the 0 degC case is named explicitly
+// because that is the mistake people actually make.
+function kelvinCheck(v,unit){
+  var k = toK(v,unit);
+  if(!isFinite(k)) return {err:'temperature must be a number'};
+  if(k <= 0){
+    if(unit==='C' && Math.abs(v) < 1e-12)
+      return {err:'0 \u00B0C is 273.15 K, not 0 K - absolute temperature must be above 0 K'};
+    if(unit==='R' && Math.abs(v) < 1e-12)
+      return {err:'0 \u00B0R is 0 K - absolute temperature must be above 0 K'};
+    if(k < 0) return {err:'that is below absolute zero: '+r(k,4)+' K is not a real temperature'};
+  }
+  return {k:k};
+}
+
+function solve(i){
+  i = i||{};
+  var un = i.unknown || 'n';
+  var P = (i.P===undefined?101.325:i.P), pu = i.pu||'atm';
+  var V = (i.V===undefined?1:i.V), vu = i.vu||'L';
+  var n = (i.n===undefined?0.0406220:i.n);
+  var T = (i.T===undefined?300:i.T), tu = i.tu||'K';
+  if(!isFinite(P)||!isFinite(V)||!isFinite(n)||!isFinite(T)) return {mode:'input'};
+
+  var ck = kelvinCheck(T,tu);
+  if(ck.err) return {mode:'temp', err:ck.err};
+  var Tk = ck.k;
+
+  var Pa = toPa(P,pu), M3 = toM3(V,vu);
+  var out = { mode:'ok', unknown:un, P_si:Pa, V_si:M3, n_si:n, T_si:Tk, R:R_SI };
+  // Every branch divides by something, so every branch guards it first.
+  if(un==='P'){
+    if(n===0) return {mode:'div', err:'cannot solve for P: n is zero, so PV = 0 for any P'};
+    if(Tk<=0) return {mode:'div', err:'cannot solve for P: absolute temperature is zero'};
+    out.ans = n*R_SI*Tk/M3; out.ansUnit='Pa'; out.ansShown=fromPa(out.ans,pu);
+    out.formula = 'P = nRT/V = ('+r(n,6)+' \u00D7 '+R_SI+' \u00D7 '+r(Tk,4)+') / '+r(M3,8);
+  } else if(un==='V'){
+    if(n===0) return {mode:'div', err:'cannot solve for V: n is zero'};
+    if(Tk<=0) return {mode:'div', err:'cannot solve for V: absolute temperature is zero'};
+    out.ans = n*R_SI*Tk/Pa; out.ansUnit='m3'; out.ansShown=fromM3(out.ans,vu);
+    out.formula = 'V = nRT/P = ('+r(n,6)+' \u00D7 '+R_SI+' \u00D7 '+r(Tk,4)+') / '+r(Pa,4);
+  } else if(un==='n'){
+    if(Tk<=0) return {mode:'div', err:'cannot solve for n: absolute temperature is zero'};
+    if(M3===0) return {mode:'div', err:'cannot solve for n: the volume is zero'};
+    out.ans = Pa*M3/(R_SI*Tk); out.ansUnit='mol'; out.ansShown=out.ans;
+    out.formula = 'n = PV/(RT) = ('+r(Pa,4)+' \u00D7 '+r(M3,8)+') / ('+R_SI+' \u00D7 '+r(Tk,4)+')';
+  } else {
+    if(n===0) return {mode:'div', err:'cannot solve for T: n is zero'};
+    if(M3===0) return {mode:'div', err:'cannot solve for T: the volume is zero'};
+    if(Pa===0) return {mode:'div', err:'cannot solve for T: the pressure is zero'};
+    out.ans = Pa*M3/(n*R_SI); out.ansUnit='K'; out.ansShown=fromK(out.ans,tu);
+    out.formula = 'T = PV/(nR) = ('+r(Pa,4)+' \u00D7 '+r(M3,8)+') / ('+r(n,6)+' \u00D7 '+R_SI+')';
+  }
+  // Verify: re-substitute the answer into PV = nRT and report the residual.
+  var checkP, checkV, checkN, checkT;
+  if(un==='P') checkP=out.ans; else checkP=Pa;
+  if(un==='V') checkV=out.ans; else checkV=M3;
+  if(un==='n') checkN=out.ans; else checkN=n;
+  if(un==='T') checkT=out.ans; else checkT=Tk;
+  out.pv = checkP*checkV;
+  out.nrt = checkN*R_SI*checkT;
+  out.residual = checkP*checkV - checkN*R_SI*checkT;
+  // Molar volume, a useful cross-check nobody bothers to show.
+  out.molarVol = M3/n;
+  return out;
+}
+
+function run(){
+  var s = solve({
+    unknown:$('unknown').value, P:parseFloat($('P').value), pu:$('pu').value,
+    V:parseFloat($('V').value), vu:$('vu').value, n:parseFloat($('n').value),
+    T:parseFloat($('T').value), tu:$('tu').value});
+  $('tbl').innerHTML=''; $('conv').innerHTML=''; $('big').textContent='-'; $('bigsub').textContent='-';
+  if(s.mode==='input'){ seterr('err','pressure, volume, moles and temperature must all be numbers'); return; }
+  if(s.mode==='temp'||s.mode==='div'){ seterr('err',s.err); return; }
+  seterr('err','');
+  var un = s.unknown, d = 6;
+  var unitLabel = { P: {Pa:'Pa',kPa:'kPa',bar:'bar',atm:'atm',mmHg:'mmHg',psi:'psi'}[$('pu').value],
+                    V: {m3:'m\u00B3',L:'L',mL:'mL',cm3:'cm\u00B3',ft3:'ft\u00B3',gal:'gal'}[$('vu').value],
+                    n: 'mol', T: {K:'K',C:'\u00B0C',R:'\u00B0R'}[$('tu').value] }[un];
+  $('big').textContent = {P:'P = ',V:'V = ',n:'n = ',T:'T = '}[un] + grp(s.ansShown,d) + ' ' + unitLabel;
+  $('bigsub').textContent = s.formula + ' \u2192 ' + r(s.ansShown,d) + ' ' + unitLabel;
+  var rows=[];
+  rows.push(row(['Solved for', un]));
+  rows.push(row(['Worked', '<span class="font-mono text-[11px] text-white/60">'+esc(s.formula)+'</span>']));
+  rows.push(row(['Answer', '<span class="text-accent">' + grp(s.ansShown,d) + ' ' + unitLabel + '</span>']));
+  rows.push(row(['Answer in SI', grp(s.ans,d) + ' ' + s.ansUnit]));
+  rows.push(row(['P (SI)', grp(s.P_si,4) + ' Pa = ' + grp(s.P_si/101325,6) + ' atm']));
+  rows.push(row(['V (SI)', grp(s.V_si,8) + ' m\u00B3 = ' + grp(s.V_si*1000,6) + ' L']));
+  rows.push(row(['T (SI)', grp(s.T_si,4) + ' K = ' + grp(s.T_si-273.15,4) + ' \u00B0C = ' + grp(s.T_si*9/5,4) + ' \u00B0R']));
+  rows.push(row(['Moles', grp(s.n_si,6) + ' mol = ' + grp(s.n_si*6.02214076e23,6) + ' molecules']));
+  rows.push(row(['Molar volume', grp(s.molarVol,8) + ' m\u00B3/mol = ' + grp(s.molarVol*1000,6) + ' L/mol']));
+  rows.push(row(['Check  P\u00B7V vs n\u00B7R\u00B7T', grp(s.pv,6) + ' vs ' + grp(s.nrt,6)]));
+  rows.push(row(['Residual', (Math.abs(s.residual) < 1e-9*Math.max(1,Math.abs(s.pv)) ? '0 (exact)' : r(s.residual,12))]));
+  rows.push(row(['Gas constant used', R_SI + ' J/(mol\u00B7K) = ' + r(R_LATM,11) + ' L\u00B7atm/(mol\u00B7K)']));
+  $('tbl').innerHTML = rows.join('');
+
+  var pu=$('pu').value, vu=$('vu').value, tu=$('tu').value;
+  var c=[];
+  Object.keys(P_F).forEach(function(k){
+    c.push(row([k, grp(s.P_si,4)+' Pa', grp(fromPa(s.P_si,k),4)]));
+  });
+  var c2 = c;
+  var c3 = Object.keys(V_F).map(function(k){ return row([k, grp(s.V_si,8)+' m\u00B3', grp(fromM3(s.V_si,k),6)]); });
+  $('conv').innerHTML =
+    c2.map(function(x){return x;}).join('') + c3.map(function(x){return x;}).join('') +
+    Object.keys(T_F).map(function(k){ return row(['temp '+k, grp(s.T_si,4)+' K', grp(fromK(s.T_si,k),4)]); }).join('') +
+    row(['n', grp(s.n_si,6)+' mol', grp(s.n_si*6.02214076e23,6)+' molecules']);
+  show([['Answer', grp(s.ansShown,4)+' '+unitLabel], ['Moles', grp(s.n_si,6)+' mol'],
+        ['Molar volume', grp(s.molarVol*1000,4)+' L/mol'], ['Residual', Math.abs(s.residual)<1e-9?'exact':r(s.residual,10)]]);
+}
+$('quick').innerHTML = QUICK.map(function(q,i){
+  return '<button class="ws-btn-ghost !px-3 !py-1.5" data-i="'+i+'" onclick="useQuick(this)">'+q[7]+'</button>';}).join('');
+// Each quick row is [unknown, P, pu, V, vu, third-known, its-unit, label].
+// The third known quantity is temperature unless T is the unknown, in which
+// case it is the mole count.
+function useQuick(b){
+  var q=QUICK[Number(b.getAttribute('data-i'))], i=q[0];
+  $('unknown').value=i; $('P').value=q[1]; $('pu').value=q[2];
+  $('V').value=q[3]; $('vu').value=q[4];
+  if(i==='T'){ $('n').value=q[5]; }
+  else if(i==='n'){ $('T').value=q[5]; $('tu').value=q[6]; }
+  else { $('T').value=q[5]; $('tu').value=q[6]; $('n').value='1'; }
+  run();
+}
+['unknown','P','pu','V','vu','n','T','tu'].forEach(function(id){
+  $(id).addEventListener('input',run); $(id).addEventListener('change',run); });
+run();
+
+window.__T = window.__T || {};
+window.__T['gas-law-solver'] = {
+  slug:'gas-law-solver',
+  run:function(i){ return solve(i||{}); }
+};
+</script>
+</body>
+</html>

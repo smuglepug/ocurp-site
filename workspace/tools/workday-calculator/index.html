@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workday & Bank Holiday Calculator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Workday & Bank Holiday Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">DATES</span><span class="ws-chip">WORKDAYS</span><span class="ws-chip">BANK-HOLIDAYS</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="from">From</label><input id="from" type="date" class="ws-input" placeholder="2026-01-01" value="2026-01-01"></div><div><label class="ws-label mb-2 block" for="to">To</label><input id="to" type="date" class="ws-input" placeholder="2026-12-31" value="2026-12-31"></div><div><label class="ws-label mb-2 block" for="hrs">Workday hours / day</label><input id="hrs" type="number" class="ws-input" placeholder="8" value="8"></div><div><label class="ws-label mb-2 block" for="wk">Week starts on</label><select id="wk" class="ws-input !w-40"><option value="1" selected>Monday</option><option value="0">Sunday</option><option value="6">Saturday</option></select></div></div><div class="mt-4 flex flex-wrap gap-5"><label class="flex items-center gap-2 text-sm text-white/70"><input id="hol" type="checkbox" class="accent-[#FF5F1F]" checked> Exclude GB bank holidays</label><label class="flex items-center gap-2 text-sm text-white/70"><input id="inc" type="checkbox" class="accent-[#FF5F1F]"> Count both endpoints</label></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Summary</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)">Copy</button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Item</th><th class="py-2 pr-4">Value</th></tr></thead><tbody id="tbl"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Bank holidays in range</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="hols" onclick="cp(this)">Copy</button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Date</th><th class="py-2 pr-4">Holiday</th></tr></thead><tbody id="hols"></tbody></table></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  // Pad to the requested decimals. Without this grp(20000,2) returned
+  // '20,000' and a money column rendered as a bare integer.
+  while(parts.length<2) parts.push('');
+  if(d>0 && parts[1].length<d) parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+var HOL = {"2024": [["2024-01-01", "New Year's Day"], ["2024-03-29", "Good Friday"], ["2024-04-01", "Easter Monday"], ["2024-05-06", "Early May bank holiday"], ["2024-05-27", "Spring bank holiday (last Monday in May)"], ["2024-08-26", "Summer bank holiday"], ["2024-12-25", "Christmas Day"], ["2024-12-26", "Boxing Day"]], "2025": [["2025-01-01", "New Year's Day"], ["2025-04-18", "Good Friday"], ["2025-04-21", "Easter Monday"], ["2025-05-05", "Early May bank holiday"], ["2025-05-26", "Spring bank holiday (last Monday in May)"], ["2025-08-25", "Summer bank holiday"], ["2025-12-25", "Christmas Day"], ["2025-12-26", "Boxing Day"]], "2026": [["2026-01-01", "New Year's Day"], ["2026-04-03", "Good Friday"], ["2026-04-06", "Easter Monday"], ["2026-05-04", "Early May bank holiday"], ["2026-05-25", "Spring bank holiday (last Monday in May)"], ["2026-08-31", "Summer bank holiday"], ["2026-12-25", "Christmas Day"], ["2026-12-26", "Boxing Day"]], "2027": [["2027-01-01", "New Year's Day"], ["2027-03-26", "Good Friday"], ["2027-03-29", "Easter Monday"], ["2027-05-03", "Early May bank holiday"], ["2027-05-31", "Spring bank holiday (last Monday in May)"], ["2027-08-30", "Summer bank holiday"], ["2027-12-25", "Christmas Day"], ["2027-12-26", "Boxing Day"]], "2028": [["2028-01-01", "New Year's Day"], ["2028-04-14", "Good Friday"], ["2028-04-17", "Easter Monday"], ["2028-05-08", "Early May bank holiday"], ["2028-05-29", "Spring bank holiday (last Monday in May)"], ["2028-08-28", "Summer bank holiday"], ["2028-12-25", "Christmas Day"], ["2028-12-26", "Boxing Day"]], "2029": [["2029-01-01", "New Year's Day"], ["2029-03-30", "Good Friday"], ["2029-04-02", "Easter Monday"], ["2029-05-07", "Early May bank holiday"], ["2029-05-28", "Spring bank holiday (last Monday in May)"], ["2029-08-27", "Summer bank holiday"], ["2029-12-25", "Christmas Day"], ["2029-12-26", "Boxing Day"]], "2030": [["2030-01-01", "New Year's Day"], ["2030-04-19", "Good Friday"], ["2030-04-22", "Easter Monday"], ["2030-05-06", "Early May bank holiday"], ["2030-05-27", "Spring bank holiday (last Monday in May)"], ["2030-08-26", "Summer bank holiday"], ["2030-12-25", "Christmas Day"], ["2030-12-26", "Boxing Day"]], "2031": [["2031-01-01", "New Year's Day"], ["2031-04-11", "Good Friday"], ["2031-04-14", "Easter Monday"], ["2031-05-05", "Early May bank holiday"], ["2031-05-26", "Spring bank holiday (last Monday in May)"], ["2031-08-25", "Summer bank holiday"], ["2031-12-25", "Christmas Day"], ["2031-12-26", "Boxing Day"]], "2032": [["2032-01-01", "New Year's Day"], ["2032-03-26", "Good Friday"], ["2032-03-29", "Easter Monday"], ["2032-05-03", "Early May bank holiday"], ["2032-05-31", "Spring bank holiday (last Monday in May)"], ["2032-08-30", "Summer bank holiday"], ["2032-12-25", "Christmas Day"], ["2032-12-26", "Boxing Day"]], "2033": [["2033-01-01", "New Year's Day"], ["2033-04-15", "Good Friday"], ["2033-04-18", "Easter Monday"], ["2033-05-02", "Early May bank holiday"], ["2033-05-30", "Spring bank holiday (last Monday in May)"], ["2033-08-29", "Summer bank holiday"], ["2033-12-25", "Christmas Day"], ["2033-12-26", "Boxing Day"]], "2034": [["2034-01-01", "New Year's Day"], ["2034-04-07", "Good Friday"], ["2034-04-10", "Easter Monday"], ["2034-05-08", "Early May bank holiday"], ["2034-05-29", "Spring bank holiday (last Monday in May)"], ["2034-08-28", "Summer bank holiday"], ["2034-12-25", "Christmas Day"], ["2034-12-26", "Boxing Day"]], "2035": [["2035-01-01", "New Year's Day"], ["2035-03-23", "Good Friday"], ["2035-03-26", "Easter Monday"], ["2035-05-07", "Early May bank holiday"], ["2035-05-28", "Spring bank holiday (last Monday in May)"], ["2035-08-27", "Summer bank holiday"], ["2035-12-25", "Christmas Day"], ["2035-12-26", "Boxing Day"]], "2036": [["2036-01-01", "New Year's Day"], ["2036-04-11", "Good Friday"], ["2036-04-14", "Easter Monday"], ["2036-05-05", "Early May bank holiday"], ["2036-05-26", "Spring bank holiday (last Monday in May)"], ["2036-08-25", "Summer bank holiday"], ["2036-12-25", "Christmas Day"], ["2036-12-26", "Boxing Day"]], "2037": [["2037-01-01", "New Year's Day"], ["2037-04-03", "Good Friday"], ["2037-04-06", "Easter Monday"], ["2037-05-04", "Early May bank holiday"], ["2037-05-25", "Spring bank holiday (last Monday in May)"], ["2037-08-31", "Summer bank holiday"], ["2037-12-25", "Christmas Day"], ["2037-12-26", "Boxing Day"]], "2038": [["2038-01-01", "New Year's Day"], ["2038-04-23", "Good Friday"], ["2038-04-26", "Easter Monday"], ["2038-05-03", "Early May bank holiday"], ["2038-05-31", "Spring bank holiday (last Monday in May)"], ["2038-08-30", "Summer bank holiday"], ["2038-12-25", "Christmas Day"], ["2038-12-26", "Boxing Day"]], "2039": [["2039-01-01", "New Year's Day"], ["2039-04-08", "Good Friday"], ["2039-04-11", "Easter Monday"], ["2039-05-02", "Early May bank holiday"], ["2039-05-30", "Spring bank holiday (last Monday in May)"], ["2039-08-29", "Summer bank holiday"], ["2039-12-25", "Christmas Day"], ["2039-12-26", "Boxing Day"]], "2040": [["2040-01-01", "New Year's Day"], ["2040-03-30", "Good Friday"], ["2040-04-02", "Easter Monday"], ["2040-05-07", "Early May bank holiday"], ["2040-05-28", "Spring bank holiday (last Monday in May)"], ["2040-08-27", "Summer bank holiday"], ["2040-12-25", "Christmas Day"], ["2040-12-26", "Boxing Day"]], "2041": [["2041-01-01", "New Year's Day"], ["2041-04-19", "Good Friday"], ["2041-04-22", "Easter Monday"], ["2041-05-06", "Early May bank holiday"], ["2041-05-27", "Spring bank holiday (last Monday in May)"], ["2041-08-26", "Summer bank holiday"], ["2041-12-25", "Christmas Day"], ["2041-12-26", "Boxing Day"]], "2042": [["2042-01-01", "New Year's Day"], ["2042-04-04", "Good Friday"], ["2042-04-07", "Easter Monday"], ["2042-05-05", "Early May bank holiday"], ["2042-05-26", "Spring bank holiday (last Monday in May)"], ["2042-08-25", "Summer bank holiday"], ["2042-12-25", "Christmas Day"], ["2042-12-26", "Boxing Day"]], "2043": [["2043-01-01", "New Year's Day"], ["2043-03-27", "Good Friday"], ["2043-03-30", "Easter Monday"], ["2043-05-04", "Early May bank holiday"], ["2043-05-25", "Spring bank holiday (last Monday in May)"], ["2043-08-31", "Summer bank holiday"], ["2043-12-25", "Christmas Day"], ["2043-12-26", "Boxing Day"]], "2044": [["2044-01-01", "New Year's Day"], ["2044-04-15", "Good Friday"], ["2044-04-18", "Easter Monday"], ["2044-05-02", "Early May bank holiday"], ["2044-05-30", "Spring bank holiday (last Monday in May)"], ["2044-08-29", "Summer bank holiday"], ["2044-12-25", "Christmas Day"], ["2044-12-26", "Boxing Day"]], "2045": [["2045-01-01", "New Year's Day"], ["2045-04-07", "Good Friday"], ["2045-04-10", "Easter Monday"], ["2045-05-08", "Early May bank holiday"], ["2045-05-29", "Spring bank holiday (last Monday in May)"], ["2045-08-28", "Summer bank holiday"], ["2045-12-25", "Christmas Day"], ["2045-12-26", "Boxing Day"]], "2046": [["2046-01-01", "New Year's Day"], ["2046-03-23", "Good Friday"], ["2046-03-26", "Easter Monday"], ["2046-05-07", "Early May bank holiday"], ["2046-05-28", "Spring bank holiday (last Monday in May)"], ["2046-08-27", "Summer bank holiday"], ["2046-12-25", "Christmas Day"], ["2046-12-26", "Boxing Day"]], "2047": [["2047-01-01", "New Year's Day"], ["2047-04-12", "Good Friday"], ["2047-04-15", "Easter Monday"], ["2047-05-06", "Early May bank holiday"], ["2047-05-27", "Spring bank holiday (last Monday in May)"], ["2047-08-26", "Summer bank holiday"], ["2047-12-25", "Christmas Day"], ["2047-12-26", "Boxing Day"]], "2048": [["2048-01-01", "New Year's Day"], ["2048-04-03", "Good Friday"], ["2048-04-06", "Easter Monday"], ["2048-05-04", "Early May bank holiday"], ["2048-05-25", "Spring bank holiday (last Monday in May)"], ["2048-08-31", "Summer bank holiday"], ["2048-12-25", "Christmas Day"], ["2048-12-26", "Boxing Day"]], "2049": [["2049-01-01", "New Year's Day"], ["2049-04-16", "Good Friday"], ["2049-04-19", "Easter Monday"], ["2049-05-03", "Early May bank holiday"], ["2049-05-31", "Spring bank holiday (last Monday in May)"], ["2049-08-30", "Summer bank holiday"], ["2049-12-25", "Christmas Day"], ["2049-12-26", "Boxing Day"]], "2050": [["2050-01-01", "New Year's Day"], ["2050-04-08", "Good Friday"], ["2050-04-11", "Easter Monday"], ["2050-05-02", "Early May bank holiday"], ["2050-05-30", "Spring bank holiday (last Monday in May)"], ["2050-08-29", "Summer bank holiday"], ["2050-12-25", "Christmas Day"], ["2050-12-26", "Boxing Day"]]};
+function parseD(s){var p=String(s).split('-');
+  if(p.length!==3) return null;
+  var d=new Date(+p[0], +p[1]-1, +p[2]);
+  // Reject 2026-02-31 and friends: JS rolls those over silently.
+  if(isNaN(d) || d.getFullYear()!==+p[0] || d.getMonth()!==+p[1]-1 || d.getDate()!==+p[2])
+    return null;
+  return d;
+}
+function fmtD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')
+  +'-'+String(d.getDate()).padStart(2,'0');}
+function holidays(y){ return (HOL[y]||[]).map(function(h){return {d:h[0],n:h[1]};}); }
+function isWeekend(d){
+  var start = +$('wk').value, idx = (d.getDay() - start + 7) % 7;
+  return idx >= 5;
+}
+function run(){
+  var a=parseD($('from').value), b=parseD($('to').value);
+  if(!a||!b){ seterr('err','both dates must be real YYYY-MM-DD values'); return; }
+  if(a>b){ seterr('err','the from-date is after the to-date'); return; }
+  if((b-a)/86400000 > 3650){ seterr('err','range is over 10 years - narrow it down'); return; }
+  var hs=parseFloat($('hrs').value);
+  if(!(hs>0)){ seterr('err','hours per day must be above zero'); return; }
+  seterr('err','');
+  var useHol=$('hol').checked, inc=$('inc').checked;
+  var holSet={};
+  if(useHol) for(var y=a.getFullYear(); y<=b.getFullYear(); y++)
+    holidays(y).forEach(function(h){ holSet[h.d]=h.n; });
+  var total=0, work=0, wknd=0, holN=0, holList=[];
+  var span=Math.round((b-a)/86400000);
+  var lo = inc?0:1, last = inc?span:span-1;
+  for(var i=lo;i<=last;i++){
+    var d=new Date(a.getTime()+i*86400000), k=fmtD(d);
+    total++;
+    if(isWeekend(d)) wknd++;
+    else if(holSet[k]){ holN++; holList.push({d:k,n:holSet[k]}); }
+    else work++;
+  }
+  show([['Total days',String(total)],['Working days',String(work)],
+        ['Hours',grp(work*hs,1)],['Weeks (5d)',r(work/5,2)]]);
+  window.__last = {total:total, work:work, weekend:wknd, holidays:holN,
+                   hours:work*hs, weeks:+(work/5).toFixed(4),
+                   holidayList:holList.map(function(h){return h.d+' '+h.n;})};
+  $('tbl').innerHTML =
+      row(['From', esc($('from').value)]) +
+      row(['To', esc($('to').value)]) +
+      row(['Total days in range', String(total)]) +
+      row(['Weekend days', String(wknd)]) +
+      row(['Bank holidays', String(holN) + (useHol?'':' <span class="ws-chip">not excluded</span>')]) +
+      row(['Working days', '<span class="text-accent">'+work+'</span>']) +
+      row(['Hours at '+r(hs,4)+'/day', grp(work*hs,1)]) +
+      row(['Working weeks (5-day)', r(work/5,4)]);
+  $('hols').innerHTML = holList.length
+    ? holList.map(function(h){ return row([h.d, esc(h.n)]); }).join('')
+    : '<tr><td class="py-2 pr-4 text-white/40" colspan="2">no bank holiday in range</td></tr>';
+}
+// Test hook: the shared verifier calls this with a field map, then
+// deep-compares the JSON it returns.
+window.__T = window.__T || {};
+window.__T['workday-calculator'] = function(o){ o=o||{};
+  for(var k in o){ var el=document.getElementById(k); if(el) el.value=o[k]; }
+  run(); return window.__last; };
+bind(['from','to','hrs','wk','hol','inc'], run);
+run();
+</script>
+</body>
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thermal Resistance Network | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Thermal Resistance Network</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">THERMAL</span><span class="ws-chip">CONDUCTION</span><span class="ws-chip">STEFAN-BOLTZMANN</span><span class="ws-chip">R-VALUE</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="net">Network</label><select id="net" class="ws-input !w-64"><option value="series" selected>Series (a wall: conduction + convection + radiation)</option><option value="parallel">Parallel (side by side)</option><option value="single">A single resistance</option></select></div><div><label class="ws-label mb-2 block" for="unknown">Solve for</label><select id="unknown" class="ws-input !w-52"><option value="Q" selected>Heat flow Q (W)</option><option value="L">Thickness L (m)</option><option value="k">Conductivity k</option><option value="h">Convective h</option><option value="eps">Emissivity ε</option><option value="A">Area A (m²)</option></select></div><div><label class="ws-label mb-2 block" for="mat">Material</label><select id="mat" class="ws-input !w-64"><option value="Air (20 C, still)" selected>Air (20 C, still) - k = 0.026 W/(m·K)</option><option value="Air (20 C, forced conv)">Air (20 C, forced conv) - k = 0.026 still the value used; convection is handled by h, not k</option><option value="Mineral wool">Mineral wool - k = 0.04 insulation</option><option value="Fibreglass">Fibreglass - k = 0.043 insulation</option><option value="Polystyrene">Polystyrene - k = 0.033 insulation</option><option value="Plaster">Plaster - k = 0.36 wall</option><option value="Brick">Brick - k = 0.72 wall</option><option value="Concrete">Concrete - k = 1.4 structure</option><option value="Glass">Glass - k = 1 window</option><option value="Wood">Wood - k = 0.15 timber</option><option value="Water">Water - k = 0.6 still liquid</option><option value="Stainless steel">Stainless steel - k = 16 metal</option><option value="Aluminium">Aluminium - k = 237 metal</option><option value="Copper">Copper - k = 401 metal</option></select></div><div><label class="ws-label mb-2 block" for="L">Conduction: thickness L (m)</label><input id="L" type="number" class="ws-input" placeholder="0.01" value="0.01"></div></div><div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="k">Conductivity k (W/m·K)</label><input id="k" type="number" class="ws-input" placeholder="0.026" value="0.026"></div><div><label class="ws-label mb-2 block" for="h">Convective coefficient h (W/m²K)</label><input id="h" type="number" class="ws-input" placeholder="25" value="25"></div><div><label class="ws-label mb-2 block" for="eps">Emissivity ε (0-1)</label><input id="eps" type="number" class="ws-input" placeholder="0.9" value="0.9"></div><div><label class="ws-label mb-2 block" for="A">Area A (m²)</label><input id="A" type="number" class="ws-input" placeholder="1" value="1"></div></div><div class="mt-4 grid gap-4 sm:grid-cols-3"><div><label class="ws-label mb-2 block" for="T1">Hot side T1</label><input id="T1" type="number" class="ws-input" placeholder="40" value="40"></div><div><label class="ws-label mb-2 block" for="t1u">T1 unit</label><select id="t1u" class="ws-input !w-32"><option value="C" selected>°C</option><option value="K">K</option><option value="F">°F</option></select></div><div><label class="ws-label mb-2 block" for="T2">Cold side T2</label><input id="T2" type="number" class="ws-input" placeholder="20" value="20"></div><div><label class="ws-label mb-2 block" for="t2u">T2 unit</label><select id="t2u" class="ws-input !w-32"><option value="C" selected>°C</option><option value="K">K</option><option value="F">°F</option></select></div></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy result</button></div><div class="grid gap-4 sm:grid-cols-2"><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Heat flow</div><div id="big" class="mt-2 font-display text-3xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Total resistance</div><div id="big2" class="mt-2 font-display text-2xl font-black text-accent">-</div><div id="big2sub" class="mt-1 text-xs text-white/45">-</div></div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Where the resistance sits</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Stage</th><th class="py-2 pr-4">R (K/W)</th><th class="py-2 pr-4">% of total</th><th class="py-2 pr-4">Heat through it (W)</th></tr></thead><tbody id="tbl"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Working</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="work" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Item</th><th class="py-2 pr-4">Value</th></tr></thead><tbody id="work"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Conductivity table</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="mats" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Material</th><th class="py-2 pr-4">k (W/m·K)</th><th class="py-2 pr-4">Note</th></tr></thead><tbody id="mats"></tbody></table></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  // Pad to the requested decimals. Without this grp(20000,2) returned
+  // '20,000' and a money column rendered as a bare integer.
+  while(parts.length<2) parts.push('');
+  if(d>0 && parts[1].length<d) parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+var SIGMA = 5.670374419e-8;    // W / (m2 K4), CODATA 2018 exact
+var MATERIALS = [
+  {n:'Air (20 C, still)', k:0.026, note:'still air; convection is handled by h, not k'},
+  {n:'Mineral wool', k:0.040, note:'insulation'},
+  {n:'Fibreglass', k:0.043, note:'insulation'},
+  {n:'Polystyrene', k:0.033, note:'insulation'},
+  {n:'Plaster', k:0.36, note:'wall'},
+  {n:'Brick', k:0.72, note:'wall'},
+  {n:'Glass', k:1.00, note:'window'},
+  {n:'Concrete', k:1.40, note:'structure'},
+  {n:'Wood', k:0.15, note:'timber'},
+  {n:'Water', k:0.60, note:'still liquid'},
+  {n:'Stainless steel', k:16.0, note:'metal'},
+  {n:'Aluminium', k:237.0, note:'metal'},
+  {n:'Copper', k:401.0, note:'metal'}
+];
+function toK(v,u){ return u==='C' ? v+273.15 : (u==='F' ? (v-32)*5/9+273.15 : v); }
+function fromK(k,u){ return u==='C' ? k-273.15 : (u==='F' ? (k-273.15)*9/5+32 : k); }
+
+// Exact radiation resistance between two absolute temperatures.
+// dT -> 0 is the 4/(eps sigma A Tmean^3) limit, not a division by zero.
+function rrad(T1, T2, eps, A){
+  if(!(A>0)) return NaN;
+  if(eps<=0) return Infinity;
+  var d = T1 - T2;
+  if(d===0) return 4/(eps*SIGMA*A*Math.pow(Math.abs(T1),3));
+  return d / (eps*SIGMA*A*(Math.pow(T1,4) - Math.pow(T2,4)));
+}
+
+function cond(L,k,A){ return (k>0 && A>0) ? L/(k*A) : NaN; }
+function conv(h,A){ return (h>0 && A>0) ? 1/(h*A) : NaN; }
+
+function solve(i){
+  i=i||{};
+  var net = i.net||'series';
+  var L = (i.L===undefined?0.01:i.L), k=(i.k===undefined?0.026:i.k);
+  var h = (i.h===undefined?25:i.h), eps=(i.eps===undefined?0.9:i.eps);
+  var A = (i.A===undefined?1:i.A);
+  var T1c=(i.T1===undefined?40:i.T1), t1u=(i.t1u||'C');
+  var T2c=(i.T2===undefined?20:i.T2), t2u=(i.t2u||'C');
+  var un = i.unknown||'Q';
+  if(![L,k,h,eps,A,T1c,T2c].every(isFinite)) return {mode:'input'};
+  if(A<=0) return {mode:'A', err:'the area must be above zero - R = L/kA divides by it'};
+  if(!(eps>0) || eps>1) return {mode:'eps', err:'emissivity must be in (0, 1]'};
+  var T1 = toK(T1c,t1u), T2 = toK(T2c,t2u);
+  if(T1<=0||T2<=0) return {mode:'T', err:'temperatures must be above absolute zero in kelvin'};
+  if(T1===T2) return {mode:'dT', err:'the two sides are the same temperature, so no heat flows and no resistance can be inferred'};
+  if(!(k>0)) return {mode:'k', err:'conductivity must be above zero'};
+  if(!(h>0)) return {mode:'h', err:'the convective coefficient must be above zero'};
+  if(net==='single' && !(L>=0)) return {mode:'L', err:'thickness cannot be negative'};
+
+  var dT = T1 - T2;
+  var out = { mode:'ok', net:net, T1:T1, T2:T2, dT:dT, A:A, k:k, h:h, eps:eps, L:L, unknown:un };
+  out.Rc = cond(L,k,A);
+  out.Rcv = conv(h,A);
+  out.RradExact = rrad(T1,T2,eps,A);
+  out.RradLin = 4/(eps*SIGMA*A*Math.pow((T1+T2)/2,3));
+  out.useRadLin = Math.abs(dT) < 1.0;   // within 1 K the linear form is <0.1 % off
+
+  if(net==='series'){
+    // R_rad depends on the surface temperature, which is unknown, so the
+    // total is solved iteratively rather than summed. Bisection on q is
+    // monotone and cannot diverge.
+    var Rc=out.Rc, Rcv=out.Rcv;
+    // RpOf(q): the convection+radiation pair in parallel, carrying q, which
+    // fixes the surface temperature - so the pair and the surface temperature
+    // are two unknowns and this converges them together.
+    var RpOf = function(q){
+      var R = Rcv;
+      for(var it=0; it<120; it++){
+        var Tc = T2 + q*R;                 // temperature at the conv/rad split
+        var Rr = rrad(Tc, T2, eps, A);
+        if(!isFinite(Rr) || Rr<=0) Rr = out.RradLin;
+        var Rn = 1/(1/Rcv + 1/Rr);
+        if(Math.abs(Rn-R) < 1e-14*Math.max(1,Math.abs(R))) return Rn;
+        R = Rn;
+      }
+      return R;
+    };
+    var lo=0, hi=dT/Rc;
+    // A cold-hot reversal gives dT < 0. Bisection needs lo < hi, so solve on
+    // |dT| and put the sign back at the end rather than silently returning 0.
+    var sgn = dT < 0 ? -1 : 1, dTa = Math.abs(dT);
+    hi = dTa/Rc;
+    for(var it2=0; it2<200; it2++){
+      var mid=(lo+hi)/2, Rpm=RpOf(mid);
+      if(mid*(Rc+Rpm) < dTa) lo=mid; else hi=mid;
+    }
+    out.Q = sgn*(lo+hi)/2;
+    out.Rp = RpOf(Math.abs(out.Q));
+    out.Rtot = Rc + out.Rp;
+    // Ts is the surface at the hot/cold split; for a reversal it sits below T2.
+    out.Ts = T2 + Math.abs(out.Q)*out.Rp;
+    if(sgn < 0) out.Ts = T2 - Math.abs(out.Q)*out.Rp;
+    out.parts = [['Conduction, L/kA', Rc], ['Convection + radiation', out.Rp]];
+    out.RconvOnly = Rcv;
+    out.RradIter = 1/out.Rp - 1/Rcv > 0 ? 1/(1/out.Rp - 1/Rcv) : out.RradLin;
+  } else if(net==='parallel'){
+    // All three span the same delta-T. Radiation is linearised about the mean
+    // absolute temperature; the page says so in the working.
+    var Rr = out.useRadLin ? out.RradLin : out.RradExact;
+    out.Rrad = Rr;
+    var inv = 1/out.Rc + 1/out.Rcv + 1/Rr;
+    out.Rtot = 1/inv;
+    out.Q = dT/out.Rtot;
+    out.parts = [['Conduction, L/kA', out.Rc], ['Convection, 1/hA', out.Rcv],
+                 ['Radiation', Rr]];
+    out.Ts = T2;
+  } else {
+    out.Rtot = out.Rc; out.Q = dT/out.Rc;
+    out.parts = [['Conduction, L/kA', out.Rc]];
+    out.Ts = T2;
+  }
+  // Check: Q * Rtot must reproduce the temperature difference.
+  out.check = out.Q*out.Rtot;
+  out.residual = out.check - dT;
+
+  // Now invert for whichever single quantity the user asked to solve.
+  out.solvedFor = un; out.solvedLabel=''; out.solvedValue=null; out.solvedUnit='';
+  if(un==='Q'){ out.solvedLabel='Q'; out.solvedValue=out.Q; out.solvedUnit='W'; }
+  else if(un==='L'){
+    // Only meaningful for the conduction part: Q = k A dT / L -> L = k A dT / Q.
+    if(!(out.Q>0)) return {mode:'solve', err:'Q is zero, so the thickness is undefined'};
+    out.solvedValue = k*A*dT/out.Q; out.solvedUnit='m'; out.solvedLabel='L';
+  } else if(un==='k'){
+    if(!(out.Q>0)) return {mode:'solve', err:'Q is zero, so the conductivity is undefined'};
+    out.solvedValue = out.Q*L/(A*dT); out.solvedUnit='W/(m\u00B7K)'; out.solvedLabel='k';
+  } else if(un==='h'){
+    if(!(out.Q>0)) return {mode:'solve', err:'Q is zero, so h is undefined'};
+    out.RcvWanted = 1/out.Rc + 1/out.Rp;   // 1/hA from the series decomposition
+    out.solvedValue = 1/(out.RcvWanted*A); out.solvedUnit='W/(m\u00B2\u00B7K)'; out.solvedLabel='h';
+  } else if(un==='eps'){
+    if(!(out.Q>0)) return {mode:'solve', err:'Q is zero, so the emissivity is undefined'};
+    var rTarget = 1/(1/out.Rp - 1/out.Rcv) || out.RradLin;
+    out.solvedValue = (Math.abs(T1-T2)>1e-9) ? (T1-T2)/(rTarget*SIGMA*A*(Math.pow(T1,4)-Math.pow(T2,4))) : out.eps;
+    out.solvedUnit=''; out.solvedLabel='\u03B5';
+  } else if(un==='A'){
+    // Every R scales as 1/A, so Rtot scales as 1/A: A = dT / (Q * Rtot_at_A1).
+    if(!(out.Q>0)) return {mode:'solve', err:'Q is zero, so the area is undefined'};
+    var s2 = solve({net:'series', L:L,k:k,h:h,eps:eps,A:1,T1:T1c,t1u:'K',T2:T2c,t2u:'K',unknown:'Q'});
+    if(s2.mode!=='ok') return s2;
+    out.solvedValue = dT/(s2.Q*s2.Rtot)*1; out.solvedUnit='m\u00B2'; out.solvedLabel='A';
+    out.A1 = s2;
+  }
+  out.U = out.Q/Math.max(1e-12, A*Math.abs(dT));   // overall U-value
+  return out;
+}
+
+function run(){
+  var s = solve({ net:$('net').value, unknown:$('unknown').value,
+    L:parseFloat($('L').value), k:parseFloat($('k').value), h:parseFloat($('h').value),
+    eps:parseFloat($('eps').value), A:parseFloat($('A').value),
+    T1:parseFloat($('T1').value), t1u:$('t1u').value,
+    T2:parseFloat($('T2').value), t2u:$('t2u').value});
+  $('tbl').innerHTML=''; $('work').innerHTML=''; $('big').textContent='-'; $('big2').textContent='-';
+  if(s.mode!=='ok'){ seterr('err', s.err||'every field must be a number'); return; }
+  seterr('err','');
+  $('big').textContent = grp(s.Q,4)+' W';
+  $('bigsub').textContent = 'through '+r(s.A,4)+' m\u00B2 with \u0394T = '+r(s.dT,4)+' K '
+    + '('+r(fromK(s.T1,'C'),4)+' \u00B0C to '+r(fromK(s.T2,'C'),4)+' \u00B0C)';
+  $('big2').textContent = grp(s.Rtot,6)+' K/W';
+  $('big2sub').textContent = (s.net==='series'
+      ? 'series, with radiation solved at the surface temperature of '+r(s.Ts,4)+' K'
+      : s.net==='parallel' ? 'parallel, radiation linearised about the mean K'
+      : 'single conduction resistance');
+
+  $('tbl').innerHTML = s.parts.map(function(p){
+    return row([esc(p[0]), grp(p[1],8), r(p[1]/s.Rtot*100,4)+' %', grp(s.Q*p[1],4)]);
+  }).join('') + row(['<span class="text-accent">Total</span>','<span class="text-accent">'+grp(s.Rtot,8)+'</span>','100 %',
+                     '<span class="text-accent">'+grp(s.Q*s.Rtot,4)+'</span>']);
+
+  var w=[];
+  w.push(row(['T1 absolute', grp(s.T1,4)+' K']));
+  w.push(row(['T2 absolute', grp(s.T2,4)+' K']));
+  w.push(row(['\u0394T', grp(s.dT,4)+' K']));
+  w.push(row(['Conduction R = L/kA', grp(s.Rc,8) + ' K/W  ('+r(s.L,6)+' / ('+r(s.k,4)+' \u00D7 '+r(s.A,4)+'))']));
+  w.push(row(['Convection R = 1/hA', grp(s.RconvOnly,8) + ' K/W  (1 / ('+r(s.h,4)+' \u00D7 '+r(s.A,4)+'))']));
+  w.push(row(['Radiation, exact at surface', grp(s.RradIter,8) + ' K/W <span class="ws-chip">Tsurf = '+r(s.Ts,4)+' K</span>']));
+  w.push(row(['Radiation, exact at T1', grp(s.RradExact,8) + ' K/W']));
+  w.push(row(['Radiation, linear limit', grp(s.RradLin,8) + ' K/W <span class="ws-chip">4/(\u03B5\u03C3A Tmean\u00B3)</span>']));
+  if(s.net==='series'){
+    w.push(row(['Series method', 'radiation iterated on the surface temperature, then bisected on q - '
+      + 'summing L/kA + 1/hA + R_rad would be a physics error, because R_rad is not constant']));
+  } else {
+    w.push(row(['Parallel method', '1/R = 1/Rc + 1/Rcv + 1/Rrad, with Rrad = '
+      + (s.useRadLin ? '4/(\u03B5\u03C3A Tmean\u00B3) (linearised, \u0394T = '+r(s.dT,4)+' K is small)' : 'the exact \u0394T/(\u03B5\u03C3A(T1\u2074-T2\u2074))')]));
+  }
+  w.push(row(['Total R', '<span class="text-accent">'+grp(s.Rtot,8)+' K/W</span>']));
+  w.push(row(['Q = \u0394T / R', '<span class="text-accent">'+grp(s.Q,4)+' W</span>']));
+  w.push(row(['Overall U-value', grp(s.U,6) + ' W/(m\u00B2\u00B7K)']));
+  w.push(row(['Check  Q\u00B7R vs \u0394T', grp(s.check,6)+' vs '+grp(s.dT,6)
+      + (Math.abs(s.residual)<1e-6*Math.max(1,Math.abs(s.dT)) ? ' <span class="ws-chip">exact</span>' : '')]));
+  w.push(row(['Solved for', esc(s.solvedLabel||'-')]));
+  w.push(row(['Solved value', '<span class="text-accent">'+grp(s.solvedValue,8)+' '+(s.solvedUnit||'')+'</span>']));
+  w.push(row(['Stefan-Boltzmann sigma', SIGMA+' W/(m\u00B2\u00B7K\u2074)']));
+  $('work').innerHTML = w.join('');
+
+  $('mats').innerHTML = MATERIALS.map(function(m){
+    return row([esc(m.n), r(m.k,4), esc(m.note)]);
+  }).join('');
+  show([['Heat flow', grp(s.Q,3)+' W'], ['R total', grp(s.Rtot,5)+' K/W'],
+        ['\u0394T', r(s.dT,3)+' K'], ['U-value', grp(s.U,3)+' W/m\u00B2K']]);
+}
+['net','unknown','mat','L','k','h','eps','A','T1','t1u','T2','t2u'].forEach(function(id){
+  $(id).addEventListener('input',run); $(id).addEventListener('change',run); });
+$('mat').addEventListener('change', function(){
+  var m = MATERIALS.filter(function(x){return x.n===$('mat').value;})[0];
+  if(m){ $('k').value=String(m.k); }
+  run();
+});
+run();
+
+window.__T = window.__T || {};
+window.__T['thermal-resistance'] = {
+  slug:'thermal-resistance',
+  run:function(i){ return solve(i||{}); },
+  rrad:rrad
+};
+</script>
+</body>
+</html>

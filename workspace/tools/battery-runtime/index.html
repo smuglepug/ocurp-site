@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Battery Runtime & Pack Sizing | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Battery Runtime & Pack Sizing</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">BATTERY</span><span class="ws-chip">RUNTIME</span><span class="ws-chip">PEUKERT</span><span class="ws-chip">SIZING</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="cu">Capacity unit</label><select id="cu" class="ws-input !w-32"><option value="Ah" selected>Ah</option><option value="mAh">mAh</option></select></div><div><label class="ws-label mb-2 block" for="cap">Capacity</label><input id="cap" type="number" class="ws-input" placeholder="3.7" value="3.7"></div><div><label class="ws-label mb-2 block" for="v">Nominal voltage</label><input id="v" type="number" class="ws-input" placeholder="3.7" value="3.7"></div><div><label class="ws-label mb-2 block" for="load">Load current</label><input id="load" type="number" class="ws-input" placeholder="0.5" value="0.5"></div></div><div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="eff">Efficiency %</label><input id="eff" type="number" class="ws-input" placeholder="90" value="90"></div><div><label class="ws-label mb-2 block" for="cut">Cut-off voltage</label><input id="cut" type="number" class="ws-input" placeholder="3.0" value="3.0"></div><div><label class="ws-label mb-2 block" for="selfd">Self-discharge %/month</label><input id="selfd" type="number" class="ws-input" placeholder="2" value="2"></div><div><label class="ws-label mb-2 block" for="mode">Mode</label><select id="mode" class="ws-input !w-52"><option value="runtime" selected>Runtime & pack sizing</option><option value="pack">Pack sizing only</option><option value="packonly">Series / parallel builder</option></select></div></div><div class="mt-4 grid gap-4 sm:grid-cols-3"><div><label class="ws-label mb-2 block" for="ns">Cells in series</label><input id="ns" type="number" class="ws-input" placeholder="1" value="1"></div><div><label class="ws-label mb-2 block" for="np">Cells in parallel</label><input id="np" type="number" class="ws-input" placeholder="1" value="1"></div><div><label class="ws-label mb-2 block" for="cellcap">Cell capacity (Ah)</label><input id="cellcap" type="number" class="ws-input" placeholder="3.7" value="3.7"></div></div><div class="mt-4 flex flex-wrap items-center gap-5"><div><label class="ws-label mb-2 block" for="pex">Peukert exponent n</label><input id="pex" type="number" class="ws-input" placeholder="1.2" value="1.2"></div><label class="flex items-center gap-2 text-sm text-white/70"><input id="peuk" type="checkbox" class="accent-[#FF5F1F]" checked> Apply Peukert derate</label><label class="flex items-center gap-2 text-sm text-white/70"><input id="sdis" type="checkbox" class="accent-[#FF5F1F]"> Apply self-discharge over the run</label><label class="flex items-center gap-2 text-sm text-white/70"><input id="curve" type="checkbox" class="accent-[#FF5F1F]" checked> Show a discharge curve</label></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy result</button></div><div class="grid gap-4 sm:grid-cols-2"><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Runtime</div><div id="big" class="mt-2 font-display text-3xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Usable energy</div><div id="big2" class="mt-2 font-display text-2xl font-black text-accent">-</div><div id="big2sub" class="mt-1 text-xs text-white/45">-</div></div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Working</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Item</th><th class="py-2 pr-4">Value</th></tr></thead><tbody id="tbl"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Series / parallel packs</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="pk" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Stage</th><th class="py-2 pr-4">Cell V</th><th class="py-2 pr-4">Cell Ah</th><th class="py-2 pr-4">Pack V</th><th class="py-2 pr-4">Pack Ah</th><th class="py-2 pr-4">Pack Wh</th><th class="py-2 pr-4">Runtime</th></tr></thead><tbody id="pk"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Discharge curve</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="curve" onclick="cp(this)">Copy curve</button></div><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div id="curve" class="font-mono text-[11px] leading-relaxed text-white/50"></div></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  // Pad to the requested decimals. Without this grp(20000,2) returned
+  // '20,000' and a money column rendered as a bare integer.
+  while(parts.length<2) parts.push('');
+  if(d>0 && parts[1].length<d) parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+// Peukert: capacity scales as I^b where b = 1 - 1/n. n = 1 is the ideal flat
+// curve, n > 1 means fast drains lose proportionally more than slow ones.
+function peukertExponent(n){ return n>1 ? 1 - 1/n : 0; }
+function peukertCap(capAh, I, usePeuk, n){
+  if(!usePeuk) return capAh;
+  if(!(I>0)) return capAh;                 // no load, full capacity
+  var b = peukertExponent(n);
+  if(b<=0) return capAh;                   // n <= 1: no derate
+  return capAh / Math.pow(I, b);
+}
+function series(n,v){ var o=[]; for(var i=1;i<=n;i++){ o.push([String(i), grp(i*v,3),'-','-','-','-','-']); } return o; }
+
+function solve(i){
+  i=i||{};
+  var cap = (i.cap===undefined?3.7:i.cap), cu=(i.cu||'Ah');
+  var v   = (i.v===undefined?3.7:i.v);
+  var load= (i.load===undefined?0.5:i.load);
+  var eff = (i.eff===undefined?90:i.eff);
+  var cut = (i.cut===undefined?3.0:i.cut);
+  var selfd=(i.selfd===undefined?2:i.selfd);
+  var ns  = (i.ns===undefined?1:i.ns);
+  var np_ = (i.np===undefined?1:i.np);
+  var cellcap=(i.cellcap===undefined?3.7:i.cellcap);
+  var pex = (i.pex===undefined?1.2:i.pex);
+  var usePeuk = i.usePeuk===undefined?true:i.usePeuk;
+  var useSelf = i.useSelf===undefined?false:i.useSelf;
+  if(![cap,v,load,eff,cut,selfd,ns,np_,cellcap,pex].every(isFinite)) return {mode:'input'};
+  if(cu==='mAh') cap = cap/1000;          // everything below is in Ah
+  if(cap<=0) return {mode:'cap', err:'the capacity must be above zero'};
+  if(v<=0) return {mode:'v', err:'the nominal voltage must be above zero'};
+  if(load<=0) return {mode:'load', err:'the load current must be above zero - a zero-current load never runs down a cell'};
+  if(!(eff>0) || eff>100) return {mode:'eff', err:'efficiency must be between 0 and 100 %'};
+  if(!(pex>=1)) return {mode:'pex', err:'the Peukert exponent n must be at least 1 (n < 1 would mean capacity grows with current)'};
+  if(ns<1 || np_<1) return {mode:'n', err:'a pack needs at least one cell in series and one in parallel'};
+
+  var capPack = cap * np_;                 // parallel adds Ah
+  var vPack = v * ns;                      // series adds volts
+  var usable = capPack * (eff/100);
+  var b = peukertExponent(pex);
+  var capDerate = peukertCap(capPack, load, usePeuk, pex);
+  var runtime = capDerate * (eff/100) / load;    // hours
+  var out = { mode:'ok', cap:cap, v:v, load:load, eff:eff, ns:ns, np:np_,
+              capPack:capPack, vPack:vPack, usable:usable, b:b,
+              capDerate:capDerate, runtime:runtime, pex:pex, usePeuk:usePeuk,
+              cRate: load/capPack };
+  out.wh = capPack * vPack;
+  out.whUsable = usable * vPack;
+  out.wLoad = load * vPack;
+  out.peukertPenalty = usePeuk && b>0 ? (1 - capDerate/capPack)*100 : 0;
+  out.idealRuntime = usable/load;          // no Peukert, the naive answer
+  if(cut>0 && v>0) out.vRatio = cut/v;
+  if(useSelf && selfd>0 && runtime>0){
+    // Self-discharge eats the run: a per-month rate applied to a run of
+    // runtime hours, compounded per month.
+    var months = runtime/(24*30.44);
+    out.selfMonths = months;
+    out.selfFraction = 1 - Math.pow(1-selfd/100, months);
+    out.runtimeSelf = runtime * (1 - out.selfFraction);
+  } else {
+    out.selfMonths=0; out.selfFraction=0; out.runtimeSelf=runtime;
+  }
+  out.runtimeFinal = out.runtimeSelf;
+  out.cutMargin = (v>0 && cut>0) ? (v-cut)/v*100 : null;
+  return out;
+}
+
+function run(){
+  var s = solve({
+    cap:parseFloat($('cap').value), cu:$('cu').value, v:parseFloat($('v').value),
+    load:parseFloat($('load').value), eff:parseFloat($('eff').value),
+    cut:parseFloat($('cut').value), selfd:parseFloat($('selfd').value),
+    ns:parseFloat($('ns').value), np:parseFloat($('np').value),
+    cellcap:parseFloat($('cellcap').value), pex:parseFloat($('pex').value),
+    usePeuk:$('peuk').checked, useSelf:$('sdis').checked});
+  $('tbl').innerHTML=''; $('pk').innerHTML=''; $('curve').innerHTML='';
+  $('big').textContent='-'; $('big2').textContent='-';
+  if(s.mode!=='ok'){ seterr('err', s.err||'every field must be a number'); return; }
+  seterr('err','');
+  var d=4;
+  function hms(h){
+    var t=Math.round(h*60), dd=Math.floor(t/1440), mm=Math.floor((t%1440)/60), ss=t%60;
+    if(dd>0) return dd+' d '+mm+' h '+ss+' min';
+    if(mm>0) return mm+' h '+ss+' min';
+    return ss+' min ('+r(h*60,2)+' min)';
+  }
+  $('big').textContent = hms(s.runtimeFinal);
+  $('bigsub').textContent = r(s.runtimeFinal,4)+' h at '+r(s.load,4)+' A from '
+    + grp(s.capPack,4)+' Ah / '+grp(s.vPack,3)+' V, C-rate '+r(s.cRate,3);
+  $('big2').textContent = grp(s.whUsable,4)+' Wh';
+  $('big2sub').textContent = 'nominal '+grp(s.wh,4)+' Wh, '+r(s.eff,2)+' % of it reaches the load';
+
+  var rows=[];
+  rows.push(row(['Cell / pack', 'S'+s.ns+' \u00D7 P'+s.np]));
+  rows.push(row(['Pack voltage', grp(s.vPack,4)+' V <span class="ws-chip">series adds volts</span>']));
+  rows.push(row(['Pack capacity', grp(s.capPack,4)+' Ah <span class="ws-chip">parallel adds Ah</span>']));
+  rows.push(row(['Nominal energy', '<span class="text-accent">'+grp(s.wh,4)+' Wh</span>']));
+  rows.push(row(['Usable energy', grp(s.whUsable,4)+' Wh at '+r(s.eff,2)+' % efficiency']));
+  rows.push(row(['Load power', grp(s.wLoad,4)+' W']));
+  rows.push(row(['C-rate', r(s.cRate,4) + ' <span class="ws-chip">load / capacity</span>']));
+  rows.push(row(['Runtime, no derate', grp(s.idealRuntime,4)+' h']));
+  rows.push(row(['Peukert exponent n', r(s.pex,4) + (s.b>0 ? ' \u2192 b = 1-1/n = '+r(s.b,6) : ' \u2192 no derate (n = 1 is a flat curve)')]));
+  rows.push(row(['Peukert derate factor', s.usePeuk ? r(s.capDerate/s.capPack,6)+' \u00D7 capacity' : 'off']));
+  rows.push(row(['Capacity lost to Peukert', s.usePeuk && s.b>0 ? '<span class="text-accent">'+r(s.peukertPenalty,4)+' %</span>' : '0 %']));
+  rows.push(row(['Effective capacity', grp(s.capDerate,6)+' Ah']));
+  rows.push(row(['Self-discharge over the run', s.useSelf ? r(s.selfFraction*100,4)+' % over '+r(s.selfMonths,4)+' months' : 'off']));
+  rows.push(row(['Final runtime', '<span class="text-accent">'+grp(s.runtimeFinal,4)+' h</span> ('+hms(s.runtimeFinal)+')']));
+  if(s.cutMargin!==null) rows.push(row(['Cut-off headroom', r(s.cutMargin,4)+' % of nominal voltage']));
+  $('tbl').innerHTML = rows.join('');
+
+  // Pack ladder: 1x1 up to 4x4, which covers the layouts people actually build.
+  var pk=[];
+  for(var a=1;a<=4;a++) for(var p=1;p<=4;p++){
+    var vP=a*s.v, cP=p*s.cap, wH=cP*vP, rt=peukertCap(cP,s.load,s.usePeuk,s.pex)*(s.eff/100)/s.load;
+    pk.push(row([a+'s'+p+'p', r(vP,3), r(cP,3), r(vP,3), r(cP,3), r(wH,3), r(rt,3)+' h']));
+  }
+  $('pk').innerHTML = pk.join('');
+
+  if($('curve').checked){
+    var lines=[], N=12;
+    for(var k=0;k<=N;k++){
+      var frac = k/N;
+      var hrs = s.runtimeFinal*frac;
+      var pctLeft;
+      if(hrs===0) pctLeft = s.usePeuk ? r(s.capDerate/s.capPack*100,3) : 100;
+      else pctLeft = Math.max(0, s.capDerate*(1 - hrs/s.runtimeFinal)/s.capPack*100);
+      lines.push(r(hrs,3).padStart(9)+' h  '+r(pctLeft,3).padStart(8)+' %  '
+        + '#'.repeat(Math.round(pctLeft/4)));
+    }
+    $('curve').innerHTML = 'time        left<br>' + lines.join('<br>');
+  }
+  show([['Runtime', r(s.runtimeFinal,3)+' h'], ['Usable', grp(s.whUsable,3)+' Wh'],
+        ['C-rate', r(s.cRate,3)], ['Peukert loss', r(s.peukertPenalty,2)+' %']]);
+}
+['cap','cu','v','load','eff','cut','selfd','mode','ns','np','cellcap','pex'].forEach(function(id){
+  var el=$(id); if(!el) return;
+  el.addEventListener('input',run); el.addEventListener('change',run); });
+['peuk','sdis','curve'].forEach(function(id){
+  $(id).addEventListener('change',run); });
+run();
+
+window.__T = window.__T || {};
+window.__T['battery-runtime'] = {
+  slug:'battery-runtime',
+  run:function(i){ return solve(i||{}); },
+  peukertCap:peukertCap
+};
+</script>
+</body>
+</html>

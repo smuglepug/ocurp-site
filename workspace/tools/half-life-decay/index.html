@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Half-Life & Radioactive Decay | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Half-Life & Radioactive Decay</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">HALF-LIFE</span><span class="ws-chip">DECAY</span><span class="ws-chip">NUCLIDE</span><span class="ws-chip">LAMBDA</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="nu">Nuclide</label><select id="nu" class="ws-input !w-72"><option value="C-14" selected>C-14 - Carbon-14 (5730 y half-life)</option><option value="U-238">U-238 - Uranium-238 (4.468e+09 y half-life)</option><option value="K-40">K-40 - Potassium-40 (1.25e+09 y half-life)</option><option value="I-131">I-131 - Iodine-131 (8.02 d half-life)</option><option value="Tc-99">Tc-99 - Technetium-99 (211100 y half-life)</option><option value="I-129">I-129 - Iodine-129 (1.57e+07 y half-life)</option><option value="Co-60">Co-60 - Cobalt-60 (5.27 y half-life)</option><option value="Sr-90">Sr-90 - Strontium-90 (28.8 y half-life)</option><option value="Po-210">Po-210 - Polonium-210 (138.4 d half-life)</option><option value="Ra-226">Ra-226 - Radium-226 (1600 y half-life)</option><option value="Kr-85">Kr-85 - Krypton-85 (10.76 y half-life)</option><option value="H-3">H-3 - Tritium (H-3) (12.32 y half-life)</option></select></div><div><label class="ws-label mb-2 block" for="hl">Half-life (years)</label><input id="hl" type="number" class="ws-input" placeholder="5730" value="5730"></div><div><label class="ws-label mb-2 block" for="a0">Initial amount A0</label><input id="a0" type="number" class="ws-input" placeholder="100" value="100"></div><div><label class="ws-label mb-2 block" for="t">Time t (years)</label><input id="t" type="number" class="ws-input" placeholder="5730" value="5730"></div></div><div class="mt-4 grid gap-4 sm:grid-cols-2"><div><label class="ws-label mb-2 block" for="hlu">Half-life unit</label><select id="hlu" class="ws-input !w-40"><option value="y" selected>years</option><option value="d">days</option><option value="h">hours</option><option value="min">minutes</option><option value="s">seconds</option></select></div><div><label class="ws-label mb-2 block" for="target">Target remaining amount</label><input id="target" type="number" class="ws-input" placeholder="50" value="50"></div></div><div class="mt-4 flex flex-wrap gap-2" id="quick"></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy result</button></div><div class="grid gap-4 sm:grid-cols-2"><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Amount remaining at t</div><div id="big" class="mt-2 font-display text-3xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div><div class="rounded-lg border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Time to reach the target</div><div id="big2" class="mt-2 font-display text-2xl font-black text-accent">-</div><div id="big2sub" class="mt-1 text-xs text-white/45">-</div></div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Working</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Item</th><th class="py-2 pr-4">Value</th></tr></thead><tbody id="tbl"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Half-life chain</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="chain" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Half-lives</th><th class="py-2 pr-4">Fraction left</th><th class="py-2 pr-4">Amount left</th><th class="py-2 pr-4">Percent left</th></tr></thead><tbody id="chain"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Nuclide table</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="nucl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Nuclide</th><th class="py-2 pr-4">Half-life</th><th class="py-2 pr-4">Decay constant</th><th class="py-2 pr-4">Use</th></tr></thead><tbody id="nucl"></tbody></table></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  // Pad to the requested decimals. Without this grp(20000,2) returned
+  // '20,000' and a money column rendered as a bare integer.
+  while(parts.length<2) parts.push('');
+  if(d>0 && parts[1].length<d) parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+var LN2 = Math.log(2);
+var NUCLIDES = [
+  {s:'C-14', n:'Carbon-14', hl:5730, u:'y', use:'Radiocarbon dating of once-living tissue'},
+  {s:'U-238', n:'Uranium-238', hl:4468000000, u:'y', use:'Natural uranium, the slow clock'},
+  {s:'K-40', n:'Potassium-40', hl:1250000000, u:'y', use:'Potassium in every cell'},
+  {s:'I-131', n:'Iodine-131', hl:8.02, u:'d', use:'Thyroid treatment and fallout tracing'},
+  {s:'Tc-99', n:'Technetium-99', hl:211100, u:'y', use:'The medical and industrial workhorse'},
+  {s:'I-129', n:'Iodine-129', hl:15700000, u:'y', use:'Long-lived fission product'},
+  {s:'Co-60', n:'Cobalt-60', hl:5.27, u:'y', use:'Gamma source in sterilisation and RTGs'},
+  {s:'Sr-90', n:'Strontium-90', hl:28.8, u:'y', use:'Bone-seeking fission product'},
+  {s:'Po-210', n:'Polonium-210', hl:138.4, u:'d', use:'Litvinenko, 2006'},
+  {s:'Ra-226', n:'Radium-226', hl:1600, u:'y', use:'Curie, the original tracer'},
+  {s:'Kr-85', n:'Krypton-85', hl:10.76, u:'y', use:'Lamp and reprocessing tracer'},
+  {s:'H-3', n:'Tritium (H-3)', hl:12.32, u:'y', use:'Self-powered lighting, beta'}
+];
+var U_Y = {y:1, d:1/365.25, h:1/8766, min:1/525960, s:1/31557600};
+var U_LBL = {y:'years', d:'days', h:'hours', min:'minutes', s:'seconds'};
+
+// Pure solver. A0 <= 0 is refused; the half-life must be positive; the inverse
+// solve refuses a target of 0 (infinite time) and a target above A0 (negative).
+function solve(i){
+  i = i||{};
+  var a0 = (i.a0===undefined?100:i.a0);
+  var hl = (i.hl===undefined?5730:i.hl);
+  var hu = (i.hu||'y');
+  var t  = (i.t===undefined?5730:i.t);
+  var tgt= (i.target===undefined?50:i.target);
+  if(!isFinite(a0)||!isFinite(hl)||!isFinite(t)||!isFinite(tgt)) return {mode:'input'};
+  if(a0<0) return {mode:'neg', err:'the initial amount cannot be negative'};
+  if(a0===0) return {mode:'neg', err:'the initial amount is zero, so nothing is left to decay'};
+  if(hl<=0) return {mode:'hl', err:'the half-life must be above zero'};
+  var hlY = hl * U_Y[hu];                 // half-life in years
+  var lam = LN2 / hlY;                    // decay constant, 1/yr
+  var tY = t * U_Y[hu];
+  var out = { mode:'ok', a0:a0, hl:hl, hu:hu, hlYears:hlY, lambda:lam,
+              t:t, tYears:tY, nuclide:i.nu||'C-14' };
+  out.nHalves = tY / hlY;
+  out.amount = a0 * Math.exp(-lam * tY);
+  out.fraction = out.amount / a0;
+  out.decayed = a0 - out.amount;
+  out.ln2to10 = -lam * tY / LN2;          // equivalent decades
+
+  // Inverse: t = -ln(target/A0)/lambda. log(0) is -Inf, and that is an
+  // infinite wait, not a number - refuse rather than print Infinity.
+  if(tgt===0){
+    out.tToTarget = null;
+    out.tErr = 'the target amount is 0, and reaching 0 takes infinitely long';
+  } else if(tgt<0){
+    out.tToTarget = null;
+    out.tErr = 'the target amount cannot be negative';
+  } else if(tgt>a0){
+    out.tToTarget = null;
+    out.tErr = 'the target ' + grp(tgt,4) + ' is above the initial ' + grp(a0,4) + ', so it cannot be reached by decay';
+  } else {
+    out.tToTarget = -Math.log(tgt/a0) / lam;   // years
+    out.tErr = null;
+  }
+  out.halvesToTarget = out.tToTarget===null ? null : out.tToTarget/hlY;
+  return out;
+}
+
+function dur(years){
+  if(years===null||years===undefined) return 'never';
+  var a = Math.abs(years);
+  var h = years;
+  if(a < 1/365.25) return r(h*365.25*24,3)+' hours';
+  if(a < 1) return r(h*365.25,4)+' days';
+  if(a < 1000) return r(h,4)+' years';
+  if(a < 1e7) return r(h,4)+' years';
+  return r(h,0)+' years';
+}
+
+function run(){
+  var s = solve({
+    nu:$('nu').value, a0:parseFloat($('a0').value), hl:parseFloat($('hl').value),
+    hu:$('hlu').value, t:parseFloat($('t').value), target:parseFloat($('target').value)});
+  $('tbl').innerHTML=''; $('chain').innerHTML=''; $('big').textContent='-';
+  $('big2').textContent='-'; $('bigsub').textContent='-'; $('big2sub').textContent='-';
+  if(s.mode==='input'){ seterr('err','half-life, A0, time and target must all be numbers'); return; }
+  if(s.mode==='neg'||s.mode==='hl'){ seterr('err',s.err); return; }
+  seterr('err','');
+  var d=6;
+  $('big').textContent = grp(s.amount,d);
+  $('bigsub').textContent = 'of ' + grp(s.a0,d) + ' after ' + dur(s.tYears) + ' - '
+    + r(s.nHalves,4) + ' half-lives, ' + r(s.fraction*100,4) +' % left';
+  if(s.tErr){ $('big2').textContent='-'; $('big2sub').textContent = s.tErr; }
+  else {
+    $('big2').textContent = dur(s.tToTarget);
+    $('big2sub').textContent = 'to fall from ' + grp(s.a0,d) + ' to ' + grp(parseFloat($('target').value),d)
+      + ' (' + r(s.halvesToTarget,4) + ' half-lives)';
+  }
+  var rows=[];
+  rows.push(row(['Nuclide', s.nuclide]));
+  rows.push(row(['Half-life', grp(s.hl,4) + ' ' + s.hu + ' = ' + grp(s.hlYears,4) + ' years']));
+  rows.push(row(['Decay constant \u03BB = ln2 / T\u00BD', '<span class="text-accent">' + grp(s.lambda,10) + ' yr\u207B\u00B9</span>']));
+  rows.push(row(['Elapsed time', r(s.t,4) + ' ' + s.hu + ' = ' + dur(s.tY) ]));
+  rows.push(row(['Half-lives elapsed', r(s.nHalves,6)]));
+  rows.push(row(['Exponent -t\u03BB', r(-s.lambda*s.tY,6)]));
+  rows.push(row(['Amount remaining A', '<span class="text-accent">' + grp(s.amount,d) + '</span>']));
+  rows.push(row(['Fraction left', r(s.fraction,8)]));
+  rows.push(row(['Percent left', r(s.fraction*100,6) + ' %']));
+  rows.push(row(['Amount decayed', grp(s.decayed,d)]));
+  rows.push(row(['Equivalent power of ten', r(s.ln2to10,4) + ' decades of decay']));
+  if(s.tErr) rows.push(row(['Time to target', '<span class="text-[#f87171]">' + esc(s.tErr) + '</span>']));
+  else rows.push(row(['Time to target', '<span class="text-accent">' + dur(s.tToTarget) + '</span> (' + r(s.halvesToTarget,6) + ' half-lives)']));
+  rows.push(row(['Which nuclide is left', esc(nuclideAt(s))]));
+  $('tbl').innerHTML = rows.join('');
+
+  var ch=[], lim=Math.min(24, Math.max(0, Math.floor(s.nHalves)));
+  for(var k=0;k<=lim;k++){
+    var frac = Math.pow(0.5,k);
+    ch.push(row([ String(k), r(frac,10), grp(s.a0*frac, d), r(frac*100,4)+' %' ]));
+  }
+  if(Math.ceil(s.nHalves) > lim) ch.push(row(['\u2026','\u2026','\u2026','\u2026']));
+  $('chain').innerHTML = ch.join('');
+
+  $('nucl').innerHTML = NUCLIDES.map(function(x){
+    return row([x.s+' ('+x.n+')', grp(x.hl,4)+' '+x.u,
+      grp(LN2/(x.hl*U_Y[x.u]),10)+' yr\u207B\u00B9', esc(x.use)]);
+  }).join('');
+  show([['Amount left', grp(s.amount,4)], ['% left', r(s.fraction*100,3)+' %'],
+        ['Half-lives', r(s.nHalves,3)], ['Decay \u03BB', grp(s.lambda,6)+' /yr']]);
+}
+
+function nuclideAt(s){
+  // A half-life chain is a family of nuclides, so name the member of the chain
+  // a whole number of half-lives away rather than pretending one label lasts.
+  var k = Math.round(s.nHalves);
+  if(k===0) return s.nuclide + ' (undecayed)';
+  if(k===1) return 'the daughter nuclide of ' + s.nuclide;
+  var f = Math.pow(0.5,k);
+  return 'after ' + k + ' half-lives (' + r(f*100,4) + ' % of the parent ' + s.nuclide
+    + ' remains, the rest is daughter nuclides)';
+}
+
+$('quick').innerHTML = QUICK.map(function(q,i){
+  return '<button class="ws-btn-ghost !px-3 !py-1.5" data-i="'+i+'" onclick="useQuick(this)">'+q[3]+'</button>';}).join('');
+function useQuick(b){
+  var q=QUICK[Number(b.getAttribute('data-i'))];
+  $('nu').value=q[0]; $('hl').value=q[1]; $('hlu').value=q[2];
+  $('t').value=q[5]; $('a0').value=q[4];
+  $('target').value=String(Number(q[4])/2);
+  run();
+}
+['nu','hl','hlu','a0','t','target'].forEach(function(id){
+  $(id).addEventListener('input',run); $(id).addEventListener('change',run); });
+$('nu').addEventListener('change', function(){
+  var x = NUCLIDES.filter(function(n){return n.s===$('nu').value;})[0];
+  if(x){ $('hl').value=String(x.hl); $('hlu').value=x.u; $('t').value=String(x.hl); }
+  run();
+});
+run();
+
+window.__T = window.__T || {};
+window.__T['half-life-decay'] = {
+  slug:'half-life-decay',
+  run:function(i){ return solve(i||{}); }
+};
+</script>
+</body>
+</html>

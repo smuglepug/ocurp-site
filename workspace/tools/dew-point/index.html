@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dew Point Calculator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Dew Point Calculator</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Math & Conversion — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">DEW POINT</span><span class="ws-chip">HUMIDITY</span><span class="ws-chip">MAGNUS</span><span class="ws-chip">PSYCHROMETRY</span></div>
+        </div>
+      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div><label class="ws-label mb-2 block" for="mode">Solve for</label><select id="mode" class="ws-input !w-full"><option value="fwd" selected>Dew point from T and RH</option><option value="inv">Relative humidity from T and dew point</option></select></div><div><label class="ws-label mb-2 block" for="T">Dry-bulb temperature (°C)</label><input id="T" type="number" class="ws-input" placeholder="20" value="20"></div><div><label class="ws-label mb-2 block" for="rh">Relative humidity (%)</label><input id="rh" type="number" class="ws-input" placeholder="50" value="50"></div><div><label class="ws-label mb-2 block" for="td">Dew point (°C)</label><input id="td" type="number" class="ws-input" placeholder="9.254" value="9.254"></div><div><label class="ws-label mb-2 block" for="p">Station pressure (hPa, for density)</label><input id="p" type="number" class="ws-input" placeholder="1013.25" value="1013.25"></div></div><div class="mt-4 flex flex-wrap gap-2" id="quick"></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy summary</button></div><div class="rounded-xl border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Dew point</div><div id="big" class="mt-2 font-display text-4xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Working</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Step</th><th class="py-2 pr-4">Quantity</th><th class="py-2 pr-4">Value</th></tr></thead><tbody id="tbl"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Notes</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="notes" onclick="cp(this)"></button></div><p class="text-xs leading-relaxed text-white/45">This is the <span class="text-white/70">Magnus</span> form with constants 17.27 and 237.7 °C. It is an empirical fit to saturation curves, not a derivation from thermodynamics, so it is an <span class="text-white/70">approximation</span>: good to about ±0.4 °C over 0–50 °C and 10–100% RH, and it degrades below 0 °C (supercooled vapour, frost) and above 50 °C. Near 0% RH it diverges. For a psychrometric calculation at low temperature use a reference such as Sonntag or a full equation of state instead.</p></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/tools/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+function cp(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+ +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
+ +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
+function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
+function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
+function r(n,d){
+  if(!isFinite(n)) return String(n);
+  var f=Math.pow(10,d===undefined?6:d);
+  var v=Math.round(n*f)/f;
+  if(Object.is(v,-0)) v=0;
+  return v;
+}
+// Thousands separators for display; grouping is presentation only.
+function grp(n,d){
+  var v=r(n,d===undefined?2:d);
+  var s=String(Math.abs(v));
+  var parts=s.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  // Pad to the requested decimals. Without this grp(20000,2) returned
+  // '20,000' and a money column rendered as a bare integer.
+  while(parts.length<2) parts.push('');
+  if(d>0 && parts[1].length<d) parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
+  return (v<0?'-':'')+parts.join('.');
+}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
+function wire(fn){fn();}
+// Table-row builder. Cells are trusted HTML (values are escaped at the
+// point they are produced), matching the Python row() used server-side.
+function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
+  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+
+var A_C = 17.27, B_C = 237.7, E0 = 6.112;   // hPa
+function es(T){
+  if(!isFinite(T)) return NaN;
+  return E0 * Math.exp(A_C * T / (B_C + T));   // Magnus saturation vapour pressure
+}
+function dewPoint(T, rh){
+  if(!isFinite(T) || !isFinite(rh)) return {err:'temperature and humidity must be numbers'};
+  if(rh <= 0) return {err:'relative humidity must be above 0% — at 0% there is no dew point'};
+  if(rh > 100) return {err:'relative humidity cannot exceed 100%'};
+  if(T <= B_C * -1) return {err:'temperature below the Magnus constant range (−237.7 °C)'};
+  var g = A_C * T / (B_C + T) + Math.log(rh / 100);
+  var den = A_C - g;
+  if(den <= 0) return {err:'degenerate input: the Magnus fit does not converge here'};
+  var td = B_C * g / den;
+  return {td:td, gamma:g, esT:es(T), esTD:es(td), act:es(T) * rh / 100};
+}
+function humidityFromTd(T, td){
+  if(!isFinite(T) || !isFinite(td)) return {err:'temperature and dew point must be numbers'};
+  var a = es(T), b = es(td);
+  if(!isFinite(a) || a <= 0 || !isFinite(b) || b < 0)
+    return {err:'dew point outside the fitted range'};
+  var rh = 100 * b / a;
+  if(rh > 105) return {err:'that dew point is above the dry-bulb temperature, so the '
+    + 'relative humidity would be over 100% — impossible'};
+  return {rh:rh, esT:a, esTD:b, act:b};
+}
+var QUICK = [['20','50'],['25','60'],['15','80'],['30','30'],['5','70'],['28','90']];
+$('quick').innerHTML = QUICK.map(function(q,i){
+  return '<button class="ws-btn-ghost !px-3 !py-1.5" data-i="'+i+'" onclick="useQuick(this)">'
+    + q[0]+'°C '+q[1]+'%</button>';}).join('');
+function useQuick(b){
+  var q=QUICK[Number(b.getAttribute('data-i'))];
+  $('mode').value='fwd'; $('T').value=q[0]; $('rh').value=q[1]; run();
+}
+window.__T = window.__T || {};
+window.__T['dew-point'] = {
+  es: es, dewPoint: dewPoint, humidityFromTd: humidityFromTd,
+  run:function(o){
+    o=o||{};
+    var T=o.T===undefined?20:o.T;
+    if((o.mode||'fwd')==='inv'){
+      var td=o.td===undefined?9.254:o.td;
+      var h=humidityFromTd(T,td);
+      if(h.err) return {error:h.err};
+      return {rh:h.rh, esT:h.esT, esTD:h.esTD};
+    }
+    var rh=o.rh===undefined?50:o.rh;
+    var d=dewPoint(T,rh);
+    if(d.err) return {error:d.err};
+    return {td:d.td, gamma:d.gamma, esT:d.esT, esTD:d.esTD};
+  }};
+function run(){
+  var T=parseFloat($('T').value), rh=parseFloat($('rh').value),
+      td=parseFloat($('td').value), pres=parseFloat($('p').value);
+  var inv = $('mode').value === 'inv';
+  var k = inv ? humidityFromTd(T, td) : dewPoint(T, rh);
+  if(k.err){ seterr('err', k.err); $('big').textContent='—'; $('bigsub').textContent='—';
+            $('tbl').innerHTML=''; show([]); return; }
+  seterr('err','');
+  var esT=k.esT, esTD=inv ? k.esTD : k.esTD, g = inv ? null : k.gamma;
+  // Absolute humidity from the vapour pressure: rho = p_v/(R_v*T), R_v = 461.5 J/(kg K).
+  var pv = inv ? k.esTD : k.esTD;
+  var rho = (isFinite(pv) && T > 0 && pres > 0) ? (pv*100)/(461.5*(T+273.15)) : null;
+  $('big').textContent = inv ? r(k.rh,4) + ' %' : r(k.td,4) + ' °C';
+  $('bigsub').textContent = inv
+    ? 'relative humidity at ' + r(T,4) + ' °C for a dew point of ' + r(td,4) + ' °C'
+    : 'dew point at ' + r(T,4) + ' °C and ' + r(rh,4) + '% RH';
+  var s1 = row(['1. Saturation vapour pressure at T', 'es(T)', r(esT,4) + ' hPa']);
+  var s2 = row(['2. Actual vapour pressure', 'e = es·RH/100', r(esTD,4) + ' hPa']);
+  var s3 = inv
+    ? row(['3. Relative humidity', 'RH = 100·e/es(T)', r(k.rh,4) + ' %'])
+    : row(['3. Magnus coefficient', 'γ = ln(RH/100)+aT/(b+T)', r(g,6)]);
+  var s4 = inv
+    ? row(['4. Check: dew point from it', 'Td', r((function(){
+          var gg=A_C*T/(B_C+T)+Math.log(k.rh/100); return B_C*gg/(A_C-gg);})(),4)+' °C'])
+    : row(['4. Dew point', 'Td = bγ/(a−γ)', r(k.td,4) + ' °C']);
+  $('tbl').innerHTML = s1 + s2 + s3 + s4 +
+    row(['Absolute humidity', 'ρ = e/(R·T)', rho === null ? '—' : r(rho,6) + ' kg/m³']) +
+    row(['Dew-point spread', 'T − Td', inv ? '—' : r(T - k.td,4) + ' °C']) +
+    row(['Model', 'Magnus a=17.27 b=237.7', 'approximation, ±0.4 °C typical']);
+  show(inv ? [['RH', r(k.rh,4)+' %'], ['es(T)', r(esT,4)+' hPa'],
+               ['Vapour pressure', r(k.esTD,4)+' hPa'], ['ρ', rho===null?'—':r(rho,4)+' kg/m³']]
+           : [['Dew point', r(k.td,4)+' °C'], ['es(T)', r(esT,4)+' hPa'],
+              ['Vapour pressure', r(k.esTD,4)+' hPa'], ['Spread', r(T-k.td,4)+' °C']]);
+}
+bind(['T','rh','td','p','mode'], run);
+run();
+</script>
+</body>
+</html>
