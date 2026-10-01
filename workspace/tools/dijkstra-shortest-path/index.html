@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dijkstra Shortest Path — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Type a weighted graph as an edge list and get the single-source shortest distance to every vertex. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/dijkstra-shortest-path/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Dijkstra Shortest Path">
+<meta property="og:description" content="Type a weighted graph as an edge list and get the single-source shortest distance to every vertex. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/dijkstra-shortest-path/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Dijkstra Shortest Path on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dijkstra Shortest Path">
+<meta name="twitter:description" content="Type a weighted graph as an edge list and get the single-source shortest distance to every vertex. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Dijkstra Shortest Path on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Dijkstra Shortest Path","url":"https://ocurp.com/workspace/tools/dijkstra-shortest-path/","description":"Type a weighted graph as an edge list and get the single-source shortest distance to every vertex. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Dijkstra Shortest Path</h1>
+      <p class="mt-1 text-xs text-white/40">math &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Type a weighted graph as an edge list and get the single-source shortest distance to every vertex, the exact path taken to each one, the order vertices settle in, and which ones are out of reach. <span class="ws-chip">SHORTEST PATH</span><span class="ws-chip">GREEDY</span><span class="ws-chip">GRAPH</span></p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <label class="ws-label mb-2 block" for="dj-edges">Edges &mdash; <code>u v weight</code> per line, or <code>u-v-weight</code> comma separated</label>
+  <textarea id="dj-edges" rows="7" class="ws-input" style="font-family:'IBM Plex Sans',monospace;line-height:1.7;resize:vertical">A B 4
+A C 2
+B C 5
+B D 10
+C D 3
+C E 7
+D E 1</textarea>
+  <div class="mt-4 flex flex-wrap items-end gap-4">
+    <div>
+      <label class="ws-label mb-2 block" for="dj-src">Source</label>
+      <input id="dj-src" type="text" class="ws-input" value="A" style="min-width:7rem;text-align:left">
+    </div>
+    <button id="dj-go" class="ws-btn" style="width:auto">Run Dijkstra</button>
+    <button id="dj-cp" class="ws-btn-ghost" style="width:auto">Copy</button>
+  </div>
+  <div class="mt-3 flex flex-wrap gap-2">
+    <span class="ws-chip" data-dj="classic">classic 7-edge graph</span>
+    <span class="ws-chip" data-dj="chain">chain A-B-C-D</span>
+    <span class="ws-chip" data-dj="disconnected">two components</span>
+    <span class="ws-chip" data-dj="tie">two equal paths</span>
+  </div>
+</div>
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="ws-label mb-3">Distances from the source</div>
+  <div id="dj-out" class="ws-out">-</div>
+</div>
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="ws-label mb-3">Shortest-path tree</div>
+  <canvas id="dj-c" width="900" height="420" class="w-full" style="background:rgba(255,255,255,.02);border-radius:.75rem"></canvas>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+  function num(x, d){ if(x === null || x === undefined || !isFinite(x)) return '-';
+    return String(parseFloat(x.toFixed(d === undefined ? 2 : d))); }
+  function raw(s){ var x = parseFloat(String(s).replace(/[^0-9.eE+-]/g,'')); return isFinite(x) ? x : NaN; }
+
+window.__T = window.__T || {};
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+
+  // Standard Dijkstra: pick the unsettled min-distance vertex, relax its edges.
+  // adj[u] = array of {v, w}. Returns dist, prev, order, and the popped sequence.
+  function compute(edges, src){
+    var adj = {}, nodes = [];
+    for(var i=0;i<edges.length;i++){
+      var e = edges[i];
+      if(!(e.u in adj)){ adj[e.u] = []; nodes.push(e.u); }
+      if(!(e.v in adj)){ adj[e.v] = []; nodes.push(e.v); }
+      adj[e.u].push({v:e.v, w:e.w});
+      adj[e.v].push({v:e.u, w:e.w});
+    }
+    nodes.sort();
+    if(!(src in adj)) adj[src] = [];
+    var dist = {}, prev = {}, done = {}, order = [];
+    for(var n=0;n<nodes.length;n++){ dist[nodes[n]] = Infinity; prev[nodes[n]] = null; }
+    dist[src] = 0;
+
+    while(true){
+      var u = null, best = Infinity;
+      for(var k=0;k<nodes.length;k++){
+        var c = nodes[k];
+        if(!done[c] && dist[c] < best){ best = dist[c]; u = c; }
+      }
+      if(u === null) break;
+      done[u] = true; order.push(u);
+      var nb = adj[u] || [];
+      for(var j=0;j<nb.length;j++){
+        var v = nb[j].v, alt = dist[u] + nb[j].w;
+        if(alt < dist[v]){ dist[v] = alt; prev[v] = u; }
+      }
+    }
+
+    var reach = 0, unreach = [];
+    for(var m=0;m<nodes.length;m++){
+      if(isFinite(dist[nodes[m]])) reach++; else unreach.push(nodes[m]);
+    }
+    return { src:src, nodes:nodes, dist:dist, prev:prev, order:order,
+             edges:edges.length, edgeList:edges, reachable:reach, unreachable:unreach };
+  }
+
+  // Walk prev[] back from a node, reversing into source->node order.
+  function path(c, node){
+    var p = [];
+    if(!isFinite(c.dist[node])) return p;
+    var cur = node;
+    while(cur !== null && p.length < 500){ p.push(cur); cur = c.prev[cur]; }
+    return p.reverse();
+  }
+
+  function render(c){
+    var lines = [];
+    for(var i=0;i<c.nodes.length;i++){
+      var n = c.nodes[i];
+      if(isFinite(c.dist[n])){
+        var p = path(c, n);
+        lines.push(pad(n) + '  dist ' + pad(String(c.dist[n])) + '  via  ' + p.join(' -> '));
+      } else {
+        lines.push(pad(n) + '  dist  inf          (unreachable)');
+      }
+    }
+    $('dj-out').textContent = lines.join('\n');
+    window.__T['dijkstra-shortest-path'].last = c;
+  }
+  function pad(s){ s = String(s); while(s.length < 4) s += ' '; return s; }
+
+  function plot(c){
+    var cv = $('dj-c'), ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+    ctx.clearRect(0,0,W,H);
+    var pos = {};
+    var n = c.nodes.length, R = Math.min(W,H)/2 - 60;
+    for(var i=0;i<n;i++){
+      var a = 2*Math.PI*i/n - Math.PI/2;
+      pos[c.nodes[i]] = { x: W/2 + R*Math.cos(a), y: H/2 + R*Math.sin(a) };
+    }
+    // every input edge, faint
+    ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1;
+    for(var e=0;e<c.edgeList.length;e++){
+      var ed = c.edgeList[e];
+      if(!(ed.u in pos) || !(ed.v in pos)) continue;
+      ctx.beginPath();
+      ctx.moveTo(pos[ed.u].x, pos[ed.u].y);
+      ctx.lineTo(pos[ed.v].x, pos[ed.v].y);
+      ctx.stroke();
+    }
+    // tree edges in orange
+    ctx.strokeStyle = '#FF5F1F'; ctx.lineWidth = 2;
+    for(var t=0;t<n;t++){
+      var nd = c.nodes[t], pv = c.prev[nd];
+      if(pv === null) continue;
+      ctx.beginPath();
+      ctx.moveTo(pos[pv].x, pos[pv].y); ctx.lineTo(pos[nd].x, pos[nd].y);
+      ctx.stroke();
+    }
+    for(var p2=0;p2<n;p2++){
+      var id2 = c.nodes[p2], P = pos[id2], isSrc = id2 === c.src;
+      ctx.beginPath();
+      ctx.arc(P.x, P.y, isSrc ? 15 : 11, 0, Math.PI*2);
+      ctx.fillStyle = isSrc ? '#FF5F1F' : 'rgba(255,255,255,.12)';
+      ctx.fill();
+      ctx.strokeStyle = isSrc ? '#FF5F1F' : 'rgba(255,255,255,.35)';
+      ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.font = '600 12px IBM Plex Sans, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(id2, P.x, P.y - 22);
+      if(isFinite(c.dist[id2])){
+        ctx.fillStyle = 'rgba(255,255,255,.55)';
+        ctx.font = '400 11px IBM Plex Sans, monospace';
+        ctx.fillText(String(c.dist[id2]), P.x, P.y + 4);
+      }
+    }
+  }
+
+  function parseEdges(){
+    return $('dj-edges').value.split(/[\n,;]+/)
+      .map(function(s){ return s.trim(); })
+      .filter(function(s){ return s.length; })
+      .map(function(s){
+        var p = s.split(/[\s\-_:|]+/).filter(function(x){ return x.length; });
+        if(p.length < 2) return null;
+        return { u:p[0], v:p[1], w: p.length > 2 ? raw(p[2]) : 1 };
+      })
+      .filter(function(e){ return e && isFinite(e.w); });
+  }
+
+  function go(){
+    var c = compute(parseEdges(), ($('dj-src').value || 'A').trim());
+    render(c); plot(c); return c;
+  }
+
+  $('dj-go').addEventListener('click', go);
+  $('dj-cp').addEventListener('click', function(){
+    var c = compute(parseEdges(), ($('dj-src').value || 'A').trim());
+    navigator.clipboard.writeText($('dj-out').textContent);
+  });
+  ['dj-edges','dj-src'].forEach(function(id){
+    $(id).addEventListener('input', go); $(id).addEventListener('change', go);
+  });
+
+  var PRESETS = {
+    'classic': 'A B 4\nA C 2\nB C 5\nB D 10\nC D 3\nC E 7\nD E 1',
+    'chain': 'A B 1\nB C 1\nC D 1',
+    'disconnected': 'A B 1\nB C 2\nX Y 5\nY Z 1',
+    'tie': 'A B 1\nA C 1\nB D 1\nC D 1'
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('[data-dj]'), function(el){
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', function(){
+      $('dj-edges').value = PRESETS[el.getAttribute('data-dj')]; go();
+    });
+  });
+
+  window.__T['dijkstra-shortest-path'] = { slug:'dijkstra-shortest-path', run: function(i){
+    if(i.edges !== undefined) $('dj-edges').value = i.edges;
+    if(i.src !== undefined) $('dj-src').value = i.src;
+    return JSON.stringify(go());
+  }};
+  go();
+})();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/equation-plotter/">
+      <span class="ocurp-related-n">Equation Plotter</span>
+      <span class="ocurp-related-b">Type y = something and it is drawn on a gridded canvas, with a hand-written parser, domain</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once, with a signed bit-width view, two&#x27;s complement</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

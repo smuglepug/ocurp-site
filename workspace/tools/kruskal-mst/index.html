@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kruskal Minimum Spanning Tree — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Sort a graph&#x27;s edges by weight and take each one that does not close a cycle. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/kruskal-mst/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Kruskal Minimum Spanning Tree">
+<meta property="og:description" content="Sort a graph&#x27;s edges by weight and take each one that does not close a cycle. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/kruskal-mst/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Kruskal Minimum Spanning Tree on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kruskal Minimum Spanning Tree">
+<meta name="twitter:description" content="Sort a graph&#x27;s edges by weight and take each one that does not close a cycle. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Kruskal Minimum Spanning Tree on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Kruskal Minimum Spanning Tree","url":"https://ocurp.com/workspace/tools/kruskal-mst/","description":"Sort a graph's edges by weight and take each one that does not close a cycle. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Kruskal Minimum Spanning Tree</h1>
+      <p class="mt-1 text-xs text-white/40">math &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Sort a graph's edges by weight and take each one that does not close a cycle, with union-find deciding. Reports the total weight, every edge considered in order, and how many components survive. <span class="ws-chip">MST</span><span class="ws-chip">UNION-FIND</span><span class="ws-chip">SPANNING TREE</span></p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <label class="ws-label mb-2 block" for="kr-edges">Edges &mdash; <code>u v weight</code> per line</label>
+  <textarea id="kr-edges" rows="7" class="ws-input" style="font-family:'IBM Plex Sans',monospace;line-height:1.7;resize:vertical">A B 4
+A C 2
+B C 5
+B D 10
+C D 3
+C E 7
+D E 1</textarea>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="kr-go" class="ws-btn" style="width:auto">Run Kruskal</button>
+    <button id="kr-cp" class="ws-btn-ghost" style="width:auto">Copy</button>
+  </div>
+  <div class="mt-3 flex flex-wrap gap-2">
+    <span class="ws-chip" data-kr="classic">classic 7-edge graph</span>
+    <span class="ws-chip" data-kr="triangle">a triangle</span>
+    <span class="ws-chip" data-kr="two-trees">two disjoint trees</span>
+  </div>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">Total weight</div>
+  <div id="kr-tot" class="mt-2 font-display text-4xl font-black text-accent">-</div>
+  <div class="mt-5">
+    <div class="ws-kv"><span>Vertices</span><span id="kr-v">-</span></div>
+    <div class="ws-kv"><span>Input edges</span><span id="kr-e">-</span></div>
+    <div class="ws-kv"><span>Edges taken</span><span id="kr-k">-</span></div>
+    <div class="ws-kv"><span>Edges rejected</span><span id="kr-r">-</span></div>
+    <div class="ws-kv"><span>Components</span><span id="kr-c">-</span></div>
+  </div>
+</div>
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="ws-label mb-3">Kruskal order &mdash; every edge considered, taken or rejected</div>
+  <div id="kr-out" class="ws-out">-</div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+  function num(x, d){ if(x === null || x === undefined || !isFinite(x)) return '-';
+    return String(parseFloat(x.toFixed(d === undefined ? 2 : d))); }
+  function raw(s){ var x = parseFloat(String(s).replace(/[^0-9.eE+-]/g,'')); return isFinite(x) ? x : NaN; }
+
+window.__T = window.__T || {};
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+
+  // Kruskal: sort edges ascending, add an edge unless it closes a cycle.
+  // find() is path-compressed union-find, so the answer is order-independent
+  // among equal weights.
+  function find(p, x){
+    while(p[x] !== x){
+      p[x] = p[p[x]];
+      x = p[x];
+    }
+    return x;
+  }
+
+  function compute(edges){
+    var nodes = [], seen = {};
+    for(var i=0;i<edges.length;i++){
+      [edges[i].u, edges[i].v].forEach(function(n){
+        if(!(n in seen)){ seen[n] = 1; nodes.push(n); }
+      });
+    }
+    nodes.sort();
+
+    var sorted = edges.slice().sort(function(a,b){ return a.w - b.w; });
+    var p = {}, rank = {};
+    for(var n=0;n<nodes.length;n++){ p[nodes[n]] = nodes[n]; rank[nodes[n]] = 0; }
+
+    var log = [], taken = [], total = 0, rejected = 0;
+    for(var k=0;k<sorted.length;k++){
+      var e = sorted[k];
+      var ra = find(p, e.u), rb = find(p, e.v);
+      var take = (ra !== rb);
+      if(take){
+        p[rb] = ra;
+        total += e.w;
+        taken.push({ u:e.u, v:e.v, w:e.w });
+      } else {
+        rejected++;
+      }
+      log.push((take ? 'take  ' : 'skip  ') + e.u + '-' + e.v +
+               '  w=' + e.w + (take ? '' : '   (would close a cycle)'));
+    }
+
+    // components = disjoint-set roots among all vertices
+    var roots = {};
+    for(var m=0;m<nodes.length;m++) roots[find(p, nodes[m])] = 1;
+    var comps = Object.keys(roots).length;
+
+    return { nodes:nodes, sorted:sorted, taken:taken, log:log, total:total,
+             vertices:nodes.length, edges:edges.length, takenCount:taken.length,
+             rejected:rejected, components:comps };
+  }
+
+  function render(c){
+    $('kr-tot').textContent = num(c.total, 4);
+    $('kr-v').textContent = String(c.vertices);
+    $('kr-e').textContent = String(c.edges);
+    $('kr-k').textContent = String(c.takenCount);
+    $('kr-r').textContent = String(c.rejected);
+    $('kr-c').textContent = String(c.components);
+    $('kr-out').textContent = c.log.join('\n') +
+      '\n\ntotal weight = ' + c.total +
+      '\ntaken = ' + c.takenCount + ', rejected = ' + c.rejected +
+      '\ncomponents = ' + c.components +
+      (c.components === 1
+        ? '\nconnected: ' + c.takenCount + ' edges span ' + c.vertices + ' vertices'
+        : '\nforest: the graph splits into ' + c.components + ' components');
+    window.__T['kruskal-mst'].last = c;
+  }
+
+  function parseEdges(){
+    return $('kr-edges').value.split(/[\n,;]+/)
+      .map(function(s){ return s.trim(); })
+      .filter(function(s){ return s.length; })
+      .map(function(s){
+        var p = s.split(/[\s\-_:|]+/).filter(function(x){ return x.length; });
+        if(p.length < 2) return null;
+        return { u:p[0], v:p[1], w: p.length > 2 ? raw(p[2]) : 1 };
+      })
+      .filter(function(e){ return e && isFinite(e.w); });
+  }
+  function go(){ var c = compute(parseEdges()); render(c); return c; }
+
+  $('kr-go').addEventListener('click', go);
+  $('kr-cp').addEventListener('click', function(){
+    navigator.clipboard.writeText($('kr-out').textContent);
+  });
+  $('kr-edges').addEventListener('input', go);
+  $('kr-edges').addEventListener('change', go);
+
+  var PRESETS = {
+    'classic': 'A B 4\nA C 2\nB C 5\nB D 10\nC D 3\nC E 7\nD E 1',
+    'triangle': 'A B 1\nB C 2\nA C 3',
+    'two-trees': 'A B 1\nB C 1\nA C 5\nX Y 2\nY Z 2\nX Z 9'
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('[data-kr]'), function(el){
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', function(){
+      $('kr-edges').value = PRESETS[el.getAttribute('data-kr')]; go();
+    });
+  });
+
+  window.__T['kruskal-mst'] = { slug:'kruskal-mst', run: function(i){
+    if(i.edges !== undefined) $('kr-edges').value = i.edges;
+    return JSON.stringify(go());
+  }};
+  go();
+})();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once, with a signed bit-width view, two&#x27;s complement</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi/">
+      <span class="ocurp-related-n">BMI Calculator</span>
+      <span class="ocurp-related-b">Body mass index with healthy-range context.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
