@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Body Fat Estimator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Body Fat Estimator</h1>
+      <p class="mt-1 text-xs text-white/40">math &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">US Navy circumference method for body fat percent, lean mass, fat mass and the fitness band for your sex. <span class="ws-chip">US NAVY</span><span class="ws-chip">CIRCUMFERENCE</span><span class="ws-chip">LEAN MASS</span><span class="ws-chip">CLIENT-SIDE</span></p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
+    <div>
+      <label class="ws-label mb-2 block" for="f-sex">Sex</label>
+      <select id="f-sex" class="ws-input"><option value="m">Male</option><option value="f">Female</option></select>
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="f-wt">Weight (kg)</label>
+      <input id="f-wt" type="number" step="0.1" class="ws-input" value="80">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="f-ht">Height (cm)</label>
+      <input id="f-ht" type="number" step="0.1" class="ws-input" value="180">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="f-neck">Neck (cm)</label>
+      <input id="f-neck" type="number" step="0.1" class="ws-input" value="38">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="f-waist">Waist (cm)</label>
+      <input id="f-waist" type="number" step="0.1" class="ws-input" value="85">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="f-hip">Hip (cm)</label>
+      <input id="f-hip" type="number" step="0.1" class="ws-input" value="98">
+    </div>
+  </div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="f-go" class="ws-btn">Estimate body fat</button>
+    <button id="f-cp" class="ws-btn-ghost">Copy summary</button>
+  </div>
+  <p class="mt-4 text-[11px] leading-relaxed text-white/35">
+    US Navy circumference method &mdash; measure the tape snug, level and at the
+    end of a normal exhale. Hip is ignored for men and neck is used for both.
+  </p>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">Estimated body fat</div>
+  <div id="f-pct" class="mt-2 font-display text-4xl font-black text-accent">-</div>
+  <div id="f-band" class="mt-2 inline-flex rounded-full border border-white/15 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/70">-</div>
+  <div class="mt-5">
+    <div class="ws-kv"><span>Fat mass</span><span id="f-fat">-</span></div>
+    <div class="ws-kv"><span>Lean mass</span><span id="f-lean">-</span></div>
+    <div class="ws-kv"><span>Weight</span><span id="f-wtv">-</span></div>
+  </div>
+</div>
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="ws-label mb-2">Fitness bands</div>
+  <div id="f-bands" class="ws-out"></div>
+</div>
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="ws-label mb-2">Read-out</div>
+  <pre id="f-out" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre>
+</div>
+  </div>
+  <div class="mt-8">
+
+  function num(x, d){ if(x === null || x === undefined || !isFinite(x)) return '-';
+    return String(parseFloat(x.toFixed(d === undefined ? 2 : d))); }
+  function raw(s){ var x = parseFloat(String(s).replace(/[^0-9.\-eE+]/g,'')); return isFinite(x) ? x : NaN; }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  window.__T = window.__T || {};
+
+  // ACE / US Navy. Both forms are the same shape: a regression on base-10 logs
+  // of the girth sums, inverted, minus 450.
+  var BANDS = {
+    m: [['Essential fat', 2, 5], ['Athletic', 6, 13], ['Fitness', 14, 17],
+        ['Average', 18, 24], ['Obesity', 25, 100]],
+    f: [['Essential fat', 10, 12], ['Athletic', 13, 20], ['Fitness', 21, 24],
+        ['Average', 25, 31], ['Obesity', 32, 100]]
+  };
+
+  function navyMale(waist, neck, height){
+    return 495 / (1.0324 - 0.19077 * Math.log10(waist - neck)
+                        + 0.15456 * Math.log10(height)) - 450;
+  }
+  function navyFemale(waist, hip, neck, height){
+    return 495 / (1.29579 - 0.35004 * Math.log10(waist + hip - neck)
+                         + 0.22100 * Math.log10(height)) - 450;
+  }
+  function band(sex, pct){
+    var list = BANDS[sex], out = list[list.length - 1][0];
+    for (var i = 0; i < list.length; i++){
+      if (pct >= list[i][1] && pct <= list[i][2]) { out = list[i][0]; break; }
+    }
+    return out;
+  }
+
+  function compute(inp){
+    var male = (inp.sex === 'm');
+    var pct = male ? navyMale(inp.waist, inp.neck, inp.height)
+                   : navyFemale(inp.waist, inp.hip, inp.neck, inp.height);
+    var fat = inp.weight * pct / 100;
+    return {
+      sex: inp.sex, weight: inp.weight, height: inp.height,
+      neck: inp.neck, waist: inp.waist, hip: inp.hip,
+      body_fat_pct: pct, fat_mass: fat, lean_mass: inp.weight - fat,
+      band: band(inp.sex, pct)
+    };
+  }
+
+  function text(c){
+    var sum = (c.sex === 'm')
+      ? 'waist - neck = ' + num(c.waist - c.neck, 1) + ' cm'
+      : 'waist + hip - neck = ' + num(c.waist + c.hip - c.neck, 1) + ' cm';
+    return [
+      'BODY FAT - US NAVY',
+      '------------------',
+      'Sex            ' + (c.sex === 'm' ? 'Male' : 'Female'),
+      'Weight         ' + num(c.weight,1) + ' kg',
+      'Height         ' + num(c.height,1) + ' cm',
+      'Neck           ' + num(c.neck,1) + ' cm',
+      'Waist          ' + num(c.waist,1) + ' cm',
+      'Hip            ' + num(c.hip,1) + ' cm',
+      'Girth sum      ' + sum,
+      '',
+      'Body fat       ' + num(c.body_fat_pct,2) + ' %',
+      'Fat mass       ' + num(c.fat_mass,2) + ' kg',
+      'Lean mass      ' + num(c.lean_mass,2) + ' kg',
+      'Fitness band   ' + c.band
+    ].join('\n');
+  }
+
+  function render(c){
+    $('f-pct').textContent = num(c.body_fat_pct, 1) + ' %';
+    $('f-band').textContent = c.band;
+    $('f-fat').textContent  = num(c.fat_mass, 2) + ' kg';
+    $('f-lean').textContent = num(c.lean_mass, 2) + ' kg';
+    $('f-wtv').textContent  = num(c.weight, 1) + ' kg';
+    var rows = BANDS[c.sex].map(function(b){
+      var hit = (b[0] === c.band);
+      return '<div><span style="opacity:' + (hit ? 1 : .45) + '">' + b[0] + '</span>'
+        + ' &nbsp;' + b[1] + '-' + (b[2] === 100 ? '+' : b[2]) + '%'
+        + (hit ? ' &nbsp;&larr; you are here' : '') + '</div>';
+    }).join('');
+    $('f-bands').innerHTML = '<div class="ws-label mb-2">'
+      + (c.sex === 'm' ? 'Male' : 'Female') + ' bands</div>' + rows;
+    $('f-out').textContent = text(c);
+  }
+
+  function read(){
+    return {
+      sex: $('f-sex').value, weight: raw($('f-wt').value), height: raw($('f-ht').value),
+      neck: raw($('f-neck').value), waist: raw($('f-waist').value), hip: raw($('f-hip').value)
+    };
+  }
+  function go(){
+    var c = compute(read());
+    render(c);
+    window.__T['body-fat-estimator'].last = c;
+    return c;
+  }
+
+  ['f-sex','f-wt','f-ht','f-neck','f-waist','f-hip'].forEach(function(id){
+    $(id).addEventListener('input', go);
+    $(id).addEventListener('change', go);
+  });
+  $('f-go').addEventListener('click', go);
+  $('f-cp').addEventListener('click', function(){
+    navigator.clipboard.writeText(text(compute(read())));
+  });
+
+  window.__T['body-fat-estimator'] = { slug:'body-fat-estimator', run: function(i){
+    if(i.weight !== undefined) $('f-wt').value = i.weight;
+    if(i.height !== undefined) $('f-ht').value = i.height;
+    if(i.neck !== undefined) $('f-neck').value = i.neck;
+    if(i.waist !== undefined) $('f-waist').value = i.waist;
+    if(i.hip !== undefined) $('f-hip').value = i.hip;
+    if(i.sex !== undefined) $('f-sex').value = i.sex;
+    return JSON.stringify(go());
+  }};
+  go();
+})();
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

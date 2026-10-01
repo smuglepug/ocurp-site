@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BMR and TDEE Calculator | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">BMR and TDEE Calculator</h1>
+      <p class="mt-1 text-xs text-white/40">math &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Mifflin-St Jeor and Katch-McArdle basal metabolic rates, TDEE across five activity levels, and a macro split in grams and calories. <span class="ws-chip">METABOLISM</span><span class="ws-chip">MACROS</span><span class="ws-chip">MIFFLIN-ST JEOR</span><span class="ws-chip">CLIENT-SIDE</span></p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
+    <div>
+      <label class="ws-label mb-2 block" for="b-sex">Sex</label>
+      <select id="b-sex" class="ws-input"><option value="m">Male</option><option value="f">Female</option></select>
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="b-kg">Weight (kg)</label>
+      <input id="b-kg" type="number" step="0.1" class="ws-input" value="80">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="b-cm">Height (cm)</label>
+      <input id="b-cm" type="number" step="0.1" class="ws-input" value="180">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="b-age">Age (years)</label>
+      <input id="b-age" type="number" step="1" class="ws-input" value="30">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="b-bf">Body fat (%)</label>
+      <input id="b-bf" type="number" step="0.1" class="ws-input" value="20">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="b-act">Activity level</label>
+      <select id="b-act" class="ws-input">
+        <option value="1.2">1.2 &middot; Sedentary</option>
+        <option value="1.375">1.375 &middot; Lightly active</option>
+        <option value="1.55" selected>1.55 &middot; Moderately active</option>
+        <option value="1.725">1.725 &middot; Very active</option>
+        <option value="1.9">1.9 &middot; Extra active</option>
+      </select>
+    </div>
+  </div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="b-go" class="ws-btn">Recalculate</button>
+    <button id="b-cp" class="ws-btn-ghost">Copy summary</button>
+  </div>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">TDEE &mdash; calories to maintain weight</div>
+  <div id="b-tdee" class="mt-2 font-display text-4xl font-black text-accent">-</div>
+  <div id="b-tdeesub" class="mt-1 text-xs text-white/45">-</div>
+  <div class="mt-5">
+    <div class="ws-kv"><span>Mifflin-St Jeor BMR</span><span id="b-bmr1">-</span></div>
+    <div class="ws-kv"><span>Katch-McArdle BMR</span><span id="b-bmr2">-</span></div>
+    <div class="ws-kv"><span>Activity multiplier</span><span id="b-mult">-</span></div>
+    <div class="ws-kv"><span>Lean body mass</span><span id="b-lbm">-</span></div>
+  </div>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">Macro split at TDEE</div>
+  <div id="b-macro" class="ws-out mt-3">-</div>
+  <p class="mt-3 text-[11px] leading-relaxed text-white/35">
+    Protein is fixed at 2 g per kg of bodyweight and fat at 0.8 g per kg; every
+    calorie left over goes to carbohydrate.
+  </p>
+</div>
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="ws-label mb-2">Read-out</div>
+  <pre id="b-out" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre>
+</div>
+  </div>
+  <div class="mt-8">
+
+  function num(x, d){ if(x === null || x === undefined || !isFinite(x)) return '-';
+    return String(parseFloat(x.toFixed(d === undefined ? 2 : d))); }
+  function raw(s){ var x = parseFloat(String(s).replace(/[^0-9.\-eE+]/g,'')); return isFinite(x) ? x : NaN; }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  window.__T = window.__T || {};
+
+  var ACT = {
+    '1.2':    {name:'Sedentary',       note:'desk job, little or no exercise'},
+    '1.375':  {name:'Lightly active',  note:'light exercise 1-3 days a week'},
+    '1.55':   {name:'Moderately active',note:'moderate exercise 3-5 days a week'},
+    '1.725':  {name:'Very active',     note:'hard exercise 6-7 days a week'},
+    '1.9':    {name:'Extra active',    note:'very hard exercise or a physical job, twice a day'}
+  };
+
+  // Mifflin-St Jeor (1990) - the equation dietitians are taught.
+  function mifflin(kg, cm, age, male){
+    return 10 * kg + 6.25 * cm - 5 * age + (male ? 5 : -161);
+  }
+  // Katch-McArdle - needs body fat, not age, so it is often closer when you
+  // actually know your fat percentage.
+  function katch(kg, bf){
+    return 370 + 21.6 * (kg * (1 - bf / 100));
+  }
+
+  function compute(inp){
+    var kg  = inp.kg, cm = inp.cm, age = inp.age, bf = inp.bf;
+    var mult = inp.mult, male = (inp.sex === 'm');
+    var bmr1 = mifflin(kg, cm, age, male);
+    var bmr2 = katch(kg, bf);
+    var lbm  = kg * (1 - bf / 100);
+    var tdee = bmr1 * mult;
+    var protG = 2 * kg, fatG = 0.8 * kg;
+    var protC = protG * 4, fatC = fatG * 9;
+    var carbC = tdee - protC - fatC;
+    var carbG = carbC / 4;
+    return {
+      sex: inp.sex, kg: kg, cm: cm, age: age, bf: bf, mult: mult,
+      activity: ACT[String(mult)].name,
+      bmr_mifflin: bmr1, bmr_katch: bmr2, lbm: lbm, tdee: tdee,
+      protein_g: protG, protein_cal: protC,
+      fat_g: fatG, fat_cal: fatC,
+      carb_g: carbG, carb_cal: carbC
+    };
+  }
+
+  function render(c){
+    $('b-tdee').textContent = num(c.tdee, 0);
+    $('b-tdeesub').textContent = 'kcal/day at ' + c.activity.toLowerCase()
+      + ' activity (x' + num(c.mult, 3) + ' on Mifflin)';
+    $('b-bmr1').textContent  = num(c.bmr_mifflin, 0) + ' kcal';
+    $('b-bmr2').textContent  = num(c.bmr_katch, 0) + ' kcal';
+    $('b-mult').textContent  = num(c.mult, 3) + ' - ' + c.activity;
+    $('b-lbm').textContent   = num(c.lbm, 1) + ' kg';
+    $('b-macro').innerHTML =
+      '<div><b>' + num(c.protein_g,1) + ' g</b> protein  =  ' + num(c.protein_cal,0) + ' kcal</div>' +
+      '<div><b>' + num(c.fat_g,1) + ' g</b> fat       =  ' + num(c.fat_cal,0) + ' kcal</div>' +
+      '<div><b>' + num(c.carb_g,1) + ' g</b> carbs     =  ' + num(c.carb_cal,0) + ' kcal</div>' +
+      '<div class="mt-2 border-t border-white/10 pt-2">Total = '
+        + num(c.protein_cal + c.fat_cal + c.carb_cal, 0) + ' kcal</div>';
+    $('b-out').textContent = text(c);
+  }
+
+  function text(c){
+    return [
+      'BMR AND TDEE',
+      '-----------',
+      'Sex            ' + (c.sex === 'm' ? 'Male' : 'Female'),
+      'Weight         ' + num(c.kg,1) + ' kg',
+      'Height         ' + num(c.cm,1) + ' cm',
+      'Age            ' + num(c.age,0) + ' years',
+      'Body fat       ' + num(c.bf,1) + ' %',
+      'Lean mass      ' + num(c.lbm,1) + ' kg',
+      '',
+      'Activity       ' + c.activity + ' (x' + num(c.mult,3) + ')',
+      'BMR (Mifflin)  ' + num(c.bmr_mifflin,0) + ' kcal/day',
+      'BMR (Katch)    ' + num(c.bmr_katch,0) + ' kcal/day',
+      'TDEE           ' + num(c.tdee,0) + ' kcal/day',
+      '',
+      'MACROS AT TDEE',
+      'Protein        ' + num(c.protein_g,1) + ' g  = ' + num(c.protein_cal,0) + ' kcal',
+      'Fat            ' + num(c.fat_g,1) + ' g  = ' + num(c.fat_cal,0) + ' kcal',
+      'Carbohydrate   ' + num(c.carb_g,1) + ' g  = ' + num(c.carb_cal,0) + ' kcal'
+    ].join('\n');
+  }
+
+  function read(){
+    return {
+      sex: $('b-sex').value, kg: raw($('b-kg').value), cm: raw($('b-cm').value),
+      age: raw($('b-age').value), bf: raw($('b-bf').value), mult: parseFloat($('b-act').value)
+    };
+  }
+
+  function go(){
+    var c = compute(read());
+    render(c);
+    window.__T['bmr-tdee'].last = c;
+    return c;
+  }
+
+  ['b-sex','b-kg','b-cm','b-age','b-bf','b-act'].forEach(function(id){
+    $(id).addEventListener('input', go);
+    $(id).addEventListener('change', go);
+  });
+  $('b-go').addEventListener('click', go);
+  $('b-cp').addEventListener('click', function(){
+    navigator.clipboard.writeText(text(compute(read())));
+  });
+
+  window.__T['bmr-tdee'] = { slug:'bmr-tdee', run: function(i){
+    if(i.kg !== undefined) $('b-kg').value = i.kg;
+    if(i.cm !== undefined) $('b-cm').value = i.cm;
+    if(i.age !== undefined) $('b-age').value = i.age;
+    if(i.bf !== undefined) $('b-bf').value = i.bf;
+    if(i.mult !== undefined) $('b-act').value = String(i.mult);
+    if(i.sex !== undefined) $('b-sex').value = i.sex;
+    return JSON.stringify(go());
+  }};
+  go();
+})();
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

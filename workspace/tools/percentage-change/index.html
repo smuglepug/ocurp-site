@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Percentage Change | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Percentage Change</h1>
+      <p class="mt-1 text-xs text-white/40">math &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Absolute and percent change, the reverse calculation, percent-of, and compound growth - with why percent of percent is not percent more. <span class="ws-chip">PERCENT</span><span class="ws-chip">COMPOUND</span><span class="ws-chip">REVERSE</span><span class="ws-chip">CLIENT-SIDE</span></p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div>
+      <label class="ws-label mb-2 block" for="p-a">From (A)</label>
+      <input id="p-a" type="number" step="any" class="ws-input" value="200">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="p-b">To (B)</label>
+      <input id="p-b" type="number" step="any" class="ws-input" value="230">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="p-x">X percent</label>
+      <input id="p-x" type="number" step="any" class="ws-input" value="15">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="p-y">of Y</label>
+      <input id="p-y" type="number" step="any" class="ws-input" value="230">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="p-n">Repeat (times)</label>
+      <input id="p-n" type="number" step="1" class="ws-input" value="10">
+    </div>
+  </div>
+  <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div>
+      <label class="ws-label mb-2 block" for="p-base">Compound base</label>
+      <input id="p-base" type="number" step="any" class="ws-input" value="200">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="p-rate">Compound rate (%)</label>
+      <input id="p-rate" type="number" step="any" class="ws-input" value="5">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="p-rpct">Reverse percent</label>
+      <input id="p-rpct" type="number" step="any" class="ws-input" value="15">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="p-rnew">Reverse new value</label>
+      <input id="p-rnew" type="number" step="any" class="ws-input" value="230">
+    </div>
+  </div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="p-go" class="ws-btn">Calculate</button>
+    <button id="p-cp" class="ws-btn-ghost">Copy summary</button>
+  </div>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">Percentage change</div>
+  <div id="p-pct" class="mt-2 font-display text-4xl font-black text-accent">-</div>
+  <div id="p-dir" class="mt-2 text-xs text-white/45">-</div>
+  <div class="mt-5">
+    <div class="ws-kv"><span>Absolute change</span><span id="p-abs">-</span></div>
+    <div class="ws-kv"><span>Original A</span><span id="p-ao">-</span></div>
+    <div class="ws-kv"><span>New B</span><span id="p-bo">-</span></div>
+    <div class="ws-kv"><span>Original was X% of B</span><span id="p-as">-</span></div>
+  </div>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">Percent of &mdash; and the reverse</div>
+  <div class="mt-4">
+    <div class="ws-kv"><span>X% of Y</span><span id="p-of">-</span></div>
+    <div class="ws-kv"><span>Y increased by X%</span><span id="p-inc">-</span></div>
+    <div class="ws-kv"><span>Original if B is new</span><span id="p-rev">-</span></div>
+  </div>
+  <div id="p-why" class="ws-out mt-3"></div>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">Repeated <span id="p-nlab">10</span> times</div>
+  <div id="p-comp" class="mt-2 font-display text-3xl font-black text-accent">-</div>
+  <div class="mt-4">
+    <div class="ws-kv"><span>Compound</span><span id="p-compv">-</span></div>
+    <div class="ws-kv"><span>Simple (r x n)</span><span id="p-simplev">-</span></div>
+    <div class="ws-kv"><span>Compounding gap</span><span id="p-gap">-</span></div>
+  </div>
+</div>
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="ws-label mb-2">Read-out</div>
+  <pre id="p-out" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre>
+</div>
+  </div>
+  <div class="mt-8">
+
+  function num(x, d){ if(x === null || x === undefined || !isFinite(x)) return '-';
+    return String(parseFloat(x.toFixed(d === undefined ? 2 : d))); }
+  function raw(s){ var x = parseFloat(String(s).replace(/[^0-9.\-eE+]/g,'')); return isFinite(x) ? x : NaN; }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  window.__T = window.__T || {};
+
+  function compute(inp){
+    var A = inp.a, B = inp.b;
+    var abs = B - A;
+    var pct = (A === 0 ? null : abs / A * 100);
+    // Reverse: what A must have been for B to be A grown by r%.
+    var revNew = inp.rnew, r = inp.rpct / 100;
+    var revOld = revNew / (1 + r);
+    var comp = inp.base * Math.pow(1 + inp.rate / 100, inp.n);
+    var simple = inp.base * (1 + inp.rate / 100 * inp.n);
+    return {
+      a: A, b: B, absolute_change: abs, percent_change: pct,
+      direction: pct === null ? 'n/a' : (pct >= 0 ? 'increase' : 'decrease'),
+      a_as_pct_of_b: (B === 0 ? null : A / B * 100),
+      x: inp.x, y: inp.y, percent_of: inp.x / 100 * inp.y,
+      y_after_increase: inp.y * (1 + inp.x / 100),
+      reverse_percent: inp.rpct, reverse_new: revNew,
+      reverse_original: revOld,
+      compound_base: inp.base, compound_rate: inp.rate, compound_n: inp.n,
+      compound_value: comp, simple_value: simple, compound_gap: comp - simple
+    };
+  }
+
+  function text(c){
+    return [
+      'PERCENTAGE',
+      '----------',
+      'From           ' + num(c.a, 4),
+      'To             ' + num(c.b, 4),
+      'Absolute       ' + num(c.absolute_change, 4),
+      'Percent change ' + num(c.percent_change, 4) + ' %  (' + c.direction + ')',
+      'A as % of B    ' + num(c.a_as_pct_of_b, 4) + ' %',
+      '',
+      'PERCENT OF',
+      'X% of Y       ' + num(c.x, 4) + ' % of ' + num(c.y, 4) + ' = ' + num(c.percent_of, 4),
+      'Y + X%        ' + num(c.y_after_increase, 4),
+      'X% of that    ' + num((c.y_after_increase) * c.x / 100, 4),
+      '',
+      'REVERSE',
+      'New value      ' + num(c.reverse_new, 4),
+      'Percent        ' + num(c.reverse_percent, 4) + ' %',
+      'Original       ' + num(c.reverse_original, 6),
+      '',
+      'REPEATED',
+      'Base           ' + num(c.compound_base, 4),
+      'Rate           ' + num(c.compound_rate, 4) + ' %',
+      'Times          ' + num(c.compound_n, 0),
+      'Compound       ' + num(c.compound_value, 4),
+      'Simple         ' + num(c.simple_value, 4)
+    ].join('\n');
+  }
+
+  function render(c){
+    $('p-pct').textContent = num(c.percent_change, 2) + ' %';
+    $('p-dir').textContent = 'from ' + num(c.a, 2) + ' to ' + num(c.b, 2) + ' - ' + c.direction;
+    $('p-abs').textContent = num(c.absolute_change, 4);
+    $('p-ao').textContent  = num(c.a, 4);
+    $('p-bo').textContent  = num(c.b, 4);
+    $('p-as').textContent  = num(c.a_as_pct_of_b, 2) + ' %';
+    $('p-of').textContent  = num(c.percent_of, 4);
+    $('p-inc').textContent = num(c.y_after_increase, 4);
+    $('p-rev').textContent = num(c.reverse_original, 4);
+    $('p-why').innerHTML =
+      '<div><b>' + num(c.x, 2) + ' % of ' + num(c.y, 2) + ' = ' + num(c.percent_of, 4) + '</b></div>'
+      + '<div class="mt-1 opacity-70">But ' + num(c.y, 2) + ' grown by ' + num(c.x, 2)
+      + ' % is <b>' + num(c.y_after_increase, 4) + '</b>, and ' + num(c.x, 2)
+      + ' % of <i>that</i> is <b>' + num(c.y_after_increase * c.x / 100, 4) + '</b>.</div>'
+      + '<div class="mt-1 opacity-50">The percentage is a share of whatever base you point it at &mdash; change the base, change the answer.</div>';
+    $('p-nlab').textContent = num(c.compound_n, 0);
+    $('p-comp').textContent = num(c.compound_value, 2);
+    $('p-compv').textContent  = num(c.compound_value, 4);
+    $('p-simplev').textContent = num(c.simple_value, 4);
+    $('p-gap').textContent    = num(c.compound_gap, 4);
+    $('p-out').textContent    = text(c);
+  }
+
+  function read(){
+    return {
+      a: raw($('p-a').value), b: raw($('p-b').value),
+      x: raw($('p-x').value), y: raw($('p-y').value),
+      n: raw($('p-n').value), base: raw($('p-base').value),
+      rate: raw($('p-rate').value), rpct: raw($('p-rpct').value),
+      rnew: raw($('p-rnew').value)
+    };
+  }
+  function go(){
+    var c = compute(read());
+    render(c);
+    window.__T['percentage-change'].last = c;
+    return c;
+  }
+
+  ['p-a','p-b','p-x','p-y','p-n','p-base','p-rate','p-rpct','p-rnew'].forEach(function(id){
+    $(id).addEventListener('input', go);
+  });
+  $('p-go').addEventListener('click', go);
+  $('p-cp').addEventListener('click', function(){
+    navigator.clipboard.writeText(text(compute(read())));
+  });
+
+  window.__T['percentage-change'] = { slug:'percentage-change', run: function(i){
+    var map = {a:'p-a', b:'p-b', x:'p-x', y:'p-y', n:'p-n',
+               base:'p-base', rate:'p-rate', rpct:'p-rpct', rnew:'p-rnew'};
+    for (var k in map) if (i[k] !== undefined) $(map[k]).value = i[k];
+    return JSON.stringify(go());
+  }};
+  go();
+})();
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>

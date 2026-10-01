@@ -128,24 +128,102 @@
     return ui;
   }
 
+  /* The consent sheet.
+
+     The user asked for a normal-looking pop-up offering accept or decline when
+     they press Start. Deliberately NOT window.confirm(): a native dialog in the
+     middle of a game reads as a scam, and mobile Chrome suppresses it often
+     enough to make it a dead end. This is an ordinary in-page panel, styled to
+     match the site, and it is keyboard/touch dismissible.
+
+     Declining is not a dead end either -- it drops straight into CSS-only play
+     mode, so the screen still locks and the swipe still controls the game; the
+     user just keeps their browser chrome. */
+  var sheetOpen = false;
+
+  function buildSheet() {
+    if (document.querySelector('[data-ocurp-sheet]')) return;
+    var wrap = el('div', 'ocurp-sheet');
+    wrap.setAttribute('data-ocurp-sheet', '1');
+    wrap.setAttribute('role', 'dialog');
+    wrap.setAttribute('aria-modal', 'true');
+    wrap.setAttribute('aria-labelledby', 'ocurp-sheet-title');
+    wrap.innerHTML =
+      '<div class="ocurp-sheet__card" role="document">' +
+        '<h2 class="ocurp-sheet__title" id="ocurp-sheet-title">Play fullscreen?</h2>' +
+        '<p class="ocurp-sheet__body">The game fills your screen and the page stops scrolling, so swipes control the game instead of the page. You can leave any time with the Exit button in the corner.</p>' +
+        '<div class="ocurp-sheet__row">' +
+          '<button type="button" class="ocurp-sheet__btn ocurp-sheet__btn--ghost" data-ocurp-decline>Not now</button>' +
+          '<button type="button" class="ocurp-sheet__btn ocurp-sheet__btn--go" data-ocurp-accept>Play fullscreen</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(wrap);
+
+    wrap.addEventListener('click', function (e) {
+      var t = e.target;
+      if (t === wrap || t.closest('[data-ocurp-decline]')) { closeSheet(); enter(); return; }
+      if (t.closest('[data-ocurp-accept]')) { closeSheet(); enter(); }
+    });
+
+    wrap.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { closeSheet(); }
+    });
+  }
+
+  function openSheet() {
+    buildSheet();
+    var w = document.querySelector('[data-ocurp-sheet]');
+    if (!w) return;
+    sheetOpen = true;
+    /* lock the page behind the sheet so it cannot scroll under the dialog */
+    document.documentElement.classList.add('ocurp-sheet-open');
+    w.classList.add('is-open');
+    var accept = w.querySelector('[data-ocurp-accept]');
+    if (accept) accept.focus();
+  }
+
+  function closeSheet() {
+    sheetOpen = false;
+    var w = document.querySelector('[data-ocurp-sheet]');
+    if (w) w.classList.remove('is-open');
+    document.documentElement.classList.remove('ocurp-sheet-open');
+  }
+
   function inPlayMode() {
     return document.documentElement.classList.contains('ocurp-playing');
   }
 
+  /* Entering play mode.
+
+     THE ORDER MATTERS. The CSS class goes on FIRST and unconditionally, so the
+     screen locks and the Exit button appears even if the browser then refuses
+     fullscreen. The previous version added the class only on the way to a
+     fullscreen request whose result it never checked, so on any browser that
+     rejected the request (very common on Android Chrome and iOS Safari) the
+     page stayed scrollable and Exit stayed at opacity 0 -- i.e. the user got
+     "a locked screen I cannot get out of" and a Fullscreen button that did
+     nothing.
+
+     requestFullscreen is asked for on the DOCUMENT, never on a nested node:
+     the spec only grants fullscreen to the top-level browsing context, so
+     asking a <section> inside <div> does nothing at all. */
   function enter() {
     var s = ui.surface;
-    var target = s.host || document.documentElement;
     document.documentElement.classList.add('ocurp-playing');
 
-    /* Real fullscreen. Must be called from a user gesture or it is rejected. */
-    var req = target.requestFullscreen || target.webkitRequestFullscreen
-      || document.documentElement.requestFullscreen;
+    var docEl = document.documentElement;
+    var req = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
     try {
       if (req) {
-        var p = req.call(target);
-        if (p && p.catch) p.catch(function () { /* denied -- CSS-only mode still works */ });
+        var p = req.call(docEl);
+        if (p && p.catch) {
+          p.catch(function () {
+            /* Denied. We are already locked into CSS play mode and Exit is
+               visible, so this is a degraded experience, not a broken one. */
+          });
+        }
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) { /* same: CSS-only play mode is still usable */ }
 
     /* Landscape lock only succeeds inside fullscreen, and only on some builds. */
     setTimeout(function () {
@@ -159,6 +237,10 @@
     document.addEventListener('webkitfullscreenchange', onFsChange);
   }
 
+  /* Leaving play mode. Deliberately forgiving: we clear our own state FIRST and
+     then try to hand control back to the browser. Every browser call in here
+     can throw or be rejected, and if any of them did we would be stuck in a
+     locked screen with no way out -- which is the exact failure the user hit. */
   function exit() {
     document.documentElement.classList.remove('ocurp-playing');
     try {
@@ -168,6 +250,12 @@
     try { if (xf && (document.fullscreenElement || document.webkitFullscreenElement)) xf.call(document); } catch (e) {}
     document.removeEventListener('fullscreenchange', onFsChange);
     document.removeEventListener('webkitfullscreenchange', onFsChange);
+    /* Belt and braces: if the browser is still showing fullscreen a moment
+       later we did not get out, so force the class off on the next frame. */
+    requestAnimationFrame(function () {
+      if (document.fullscreenElement || document.webkitFullscreenElement) return;
+      document.documentElement.classList.remove('ocurp-playing');
+    });
   }
 
   function onFsChange() {
@@ -180,12 +268,15 @@
     if (!surface || !surface.host) return;
     buildUI(surface);
 
-    ui.enter.addEventListener('click', function (ev) { ev.preventDefault(); enter(); });
-    ui.exit.addEventListener('click', function (ev) { ev.preventDefault(); exit(); });
-
-    document.addEventListener('keydown', function (ev) {
-      if (ev.key === 'Escape' && inPlayMode()) exit();
+    /* The Fullscreen pill asked for fullscreen straight from the click. On a
+       touch browser that request is routinely rejected, which is why the button
+       read as dead: nothing visibly happened. On touch, ask first; on desktop
+       the pill is unambiguous so go straight in. */
+    ui.enter.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      if (COARSE || isTouch) openSheet(); else enter();
     });
+    ui.exit.addEventListener('click', function (ev) { ev.preventDefault(); exit(); });
 
     /* Android back gesture / browser back while playing should leave play mode. */
     window.addEventListener('popstate', function () { if (inPlayMode()) exit(); });
@@ -196,6 +287,16 @@
     if (surface.side) surface.side.classList.add('ocurp-side');
     var c = surface.canvas;
     if (c) c.classList.add('ocurp-canvas');
+    /* Tag every ancestor up to <body> as .ocurp-shell. In play mode the chrome
+       rule hides body's children EXCEPT these, so the surface's own subtree
+       survives and can be promoted to the whole screen. Without this the
+       wrapper containing the surface gets display:none and the screen goes
+       black. */
+    var anc = h.parentElement;
+    while (anc && anc !== document.body) {
+      anc.classList.add('ocurp-shell');
+      anc = anc.parentElement;
+    }
     /* the wrapper (canvas wrapper, or the DOM board) must not cap the width in
        play mode -- and the DOM board needs touch-action off itself, not just its
        container, because that is what the finger lands on. */
@@ -204,6 +305,51 @@
       surface.canvasWrap.classList.add('ocurp-surface-inner');
     }
   }
+
+  /* Pressing the game's own Start/Play button should pop the play shell --
+     that is the gesture a player expects, and it is a real user gesture, so
+     the browser will honour requestFullscreen from it. Wired by CAPTION so a
+     page's own handler still runs.
+
+     An in-page confirmation sheet, not a browser dialog: a native confirm()
+     mid-game looks like a scam and mobile Chrome may suppress it entirely. */
+  function looksLikeStart(el) {
+    if (!el) return false;
+    var t = (el.textContent || '').trim().toLowerCase();
+    return /^(start|play|begin|new game|new duel|start game|tap to play|launch)\b/.test(t) ||
+           /\b(start|begin|play)\b/.test(el.getAttribute('aria-label') || '');
+  }
+
+  function onDocClick(e) {
+    if (!COARSE && !isTouch) return;
+    if (inPlayMode()) return;
+    /* Never react to our own UI. Without this the sheet's own "Play fullscreen"
+       button matched the Start pattern, so accepting the dialog re-opened the
+       dialog: the sheet flashed back and play mode never latched. Also guard the
+       playbar so Exit/Fullscreen clicks can never feed this hook. */
+    var own = e.target && e.target.closest && e.target.closest('[data-ocurp-sheet],[data-ocurp-playbar]');
+    if (own) return;
+    var b = e.target && e.target.closest && e.target.closest('button,[role=button],.btn');
+    if (!b || !looksLikeStart(b)) return;
+    /* Defer by a tick so the page's own Start handler runs first (many games
+       reset state on click) and we do not steal the gesture. */
+    setTimeout(function () {
+      if (!inPlayMode()) openSheet();
+    }, 0);
+  }
+  document.addEventListener('click', onDocClick, true);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (sheetOpen) { closeSheet(); return; }
+    if (inPlayMode()) exit();
+  });
+
+  /* If the page is put into the background mid-game, drop out of play mode so
+     the user never comes back to a locked screen they cannot explain. */
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden && inPlayMode()) exit();
+  });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
   else install();

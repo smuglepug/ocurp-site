@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Upside-Down Text | Owen's Workspace</title>
+<title>Upside-Down Text — Free Online Tool | Ocurp</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -52,6 +52,23 @@ tailwind.config = { theme: { extend: {
   .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
   .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
 </style>
+<meta name="description" content="Flip text upside down with a character map. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/upside-down-text/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Upside-Down Text">
+<meta property="og:description" content="Flip text upside down with a character map. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/upside-down-text/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Upside-Down Text on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Upside-Down Text">
+<meta name="twitter:description" content="Flip text upside down with a character map. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Upside-Down Text on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Upside-Down Text","url":"https://ocurp.space/workspace/tools/upside-down-text/","description":"Flip text upside down with a character map. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -124,8 +141,11 @@ tailwind.config = { theme: { extend: {
     'k':'ʞ','l':'l','m':'ɯ','n':'u','o':'o','p':'d','q':'b','r':'ɹ','s':'s','t':'ʇ',
     'u':'n','v':'ʌ','w':'ʍ','x':'x','y':'ʎ','z':'z',
     '1':'Ɩ','2':'ᄅ','3':'Ɛ','4':'ㄣ','5':'ϛ','6':'9','7':'ㄥ','8':'8','9':'6','0':'0',
-    '.':'˙',',':"'",'"':'„','`':',','?':'¿','!':'¡','[':']',']':'[','(':')',')':'(',
+    '.':'˙','"':'„','?':'¿','!':'¡','[':']',']':'[','(':')',')':'(',
     '{':'}','}':'{','<':'>','>':'<','&':'⅋','_':'‾',';':';','$':'$'
+  // ',' and '`' are deliberately absent. Mapping them to "'" and ',' created the
+  // cycle backtick -> comma -> apostrophe -> low quote -> apostrophe, which made
+  // a round trip impossible for two of the three. They pass through unchanged.
   };
   var HEAVY = { '1':'l','2':'z','3':'E','4':'h','5':'S','6':'g','7':'L','8':'B','9':'g','0':'O' };
   function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
@@ -134,7 +154,14 @@ tailwind.config = { theme: { extend: {
   // this the page's own "Round trip" button cannot return the original text,
   // which is precisely what its copy promises.
   var INV = {};
-  Object.keys(ROT).forEach(function(k){ if (!(ROT[k] in INV)) INV[ROT[k]] = k; });
+  Object.keys(ROT).forEach(function(k){
+    var v = ROT[k];
+    if (!(v in INV)) INV[v] = k;
+    // Upper-case original 'A' -> U+2C6F, which is NOT a value in ROT (ROT holds
+    // the lower-case rotated glyphs), so without this the round trip stopped.
+    var vu = v.toUpperCase();
+    if (vu !== v && !(vu in INV)) INV[vu] = (k === k.toLowerCase() ? k.toUpperCase() : k);
+  });
   // Unicode has no upper-case form that differs for these six glyphs, so an
   // upper-case original is genuinely indistinguishable from a lower-case one
   // once rotated. The round trip restores every LETTER exactly; case is
@@ -145,13 +172,12 @@ tailwind.config = { theme: { extend: {
     if (v.toUpperCase() === v) CASELESS[k] = true;
   });
   function rotateChar(c, weight){
+    // A rotated glyph is a VALUE, so it must be tested against INV first. ROT is
+    // keyed by original letters and would miss it entirely.
+    if (Object.prototype.hasOwnProperty.call(INV, c)) return INV[c];
     var lo = c.toLowerCase();
     var key = ROT[lo];
-    if (key === undefined){
-      // Already a rotated glyph: send it home.
-      if (Object.prototype.hasOwnProperty.call(INV, c)) return INV[c];
-      return null;
-    }
+    if (key === undefined) return null;
     if (weight === '2' && HEAVY[c]) return HEAVY[c];
     if (c === c.toUpperCase() && c !== c.toLowerCase()){
       var up = key.toUpperCase();
@@ -201,19 +227,31 @@ tailwind.config = { theme: { extend: {
     run: function(input){
       var f = transform(input, 'flip', '1'), m = transform(input, 'mirror', '1'), b = transform(input, 'both', '1');
       var rt = transform(f.out, 'flip', '1').out, src = String(input);
-      var lostCase = [];
+      // Fold every character back to the LETTER it came from, using the reverse
+      // map. Comparing rotated glyphs with toLowerCase() would be meaningless:
+      // '\u2C6F'.toLowerCase() is still '\u2C6F', not 'a'.
+      var fold = function(ch){
+        if (ROT[ch] !== undefined) return ch;               // unmapped char
+        if (Object.prototype.hasOwnProperty.call(INV, ch)) return INV[ch];  // rotated glyph
+        return ch;
+      };
+      var lostCase = [], lettersMatch = rt.length === src.length;
       for (var q = 0; q < src.length; q++){
-        if (src.charAt(q) === rt.charAt(q)) continue;
-        if (src.charAt(q).toLowerCase() === rt.charAt(q).toLowerCase()) lostCase.push(src.charAt(q));
+        var was = src.charAt(q), now = rt.charAt(q);
+        // Already identical: b->q->b and d->p->d are genuine two-cycles, and
+        // folding them would report a failure that does not exist.
+        if (was === now) continue;
+        if (fold(now).toLowerCase() !== was.toLowerCase()){ lettersMatch = false; continue; }
+        lostCase.push(was);
       }
       return { flip: f.out, mirror: m.out, both: b.out,
                unsupported: f.unsupported, unsupportedCount: f.unsupportedCount,
                roundTrip: rt,
                // Every LETTER survives. Only case may differ, and only for the
                // six glyphs Unicode gives no upper-case form.
-               roundTripOK: lostCase.length === 0 && rt.length === src.length,
+               roundTripOK: lostCase.length === 0 && lettersMatch,
                caseOnlyDifference: lostCase.join(''),
-               lettersIntact: rt.toLowerCase() === src.toLowerCase() };
+               lettersIntact: lettersMatch };
     }
   };
 })();

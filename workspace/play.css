@@ -32,8 +32,26 @@ html.ocurp-playing body {
   overflow: hidden;
   height: 100%;
 }
-html.ocurp-playing body > *:not(.ocurp-playbar) {
+/* Hide the page chrome in play mode -- but NEVER the surface itself or any of
+   its ancestors. The previous rule was `body > *:not(.ocurp-playbar)`, and the
+   surface lives at section.ws-panel inside div.relative.z-10 inside body, so it
+   hid that whole wrapper: play mode blanked the page to black and the game
+   vanished instead of filling the screen. Walk up from the surface and hide each
+   ancestor's OTHER children instead, which is precise by construction. */
+html.ocurp-playing body > *:not(.ocurp-playbar):not(.ocurp-shell) {
   display: none !important;
+}
+/* The shell only needs to SURVIVE the chrome-hiding rule above -- it is not
+   itself the fullscreen layer. Giving it position:fixed; inset:0 collapsed the
+   surface to 0x0 in production: the surface is position:fixed with inset:0, so
+   it resolved against a fixed parent that had no content height, and the whole
+   play area vanished. Locally the page was short enough to hide this.
+   Let the shell stay in normal flow and let the surface do the positioning. */
+.ocurp-shell {
+  position: static;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: none !important;
 }
 html.ocurp-playing .ocurp-surface {
   position: fixed;
@@ -195,5 +213,107 @@ html.ocurp-playing .ocurp-enter {
 @media (prefers-reduced-motion: reduce) {
   .ocurp-playbar button {
     transition: none;
+  }
+}
+
+/* ---- the fullscreen consent sheet ----
+
+   Shown when the player presses Start on a touch device. NOT window.confirm():
+   a native dialog mid-game reads as a scam, and mobile Chrome suppresses it
+   often enough to strand the player. Declining still drops into CSS-only play
+   mode, so it is never a dead end. */
+html.ocurp-sheet-open,
+html.ocurp-sheet-open body {
+  overflow: hidden;
+}
+.ocurp-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 9800;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  background: rgba(3, 3, 3, 0.72);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+}
+.ocurp-sheet.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+.ocurp-sheet__card {
+  width: 100%;
+  max-width: 420px;
+  background: #0d0d0d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 20px;
+  font-family: "IBM Plex Sans", ui-monospace, monospace;
+  color: #f5f5f5;
+  transform: translateY(12px);
+  transition: transform 0.2s ease;
+}
+.ocurp-sheet.is-open .ocurp-sheet__card {
+  transform: translateY(0);
+}
+.ocurp-sheet__title {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+.ocurp-sheet__body {
+  margin: 0 0 16px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.66);
+}
+.ocurp-sheet__row {
+  display: flex;
+  gap: 10px;
+}
+.ocurp-sheet__btn {
+  flex: 1 1 0;
+  min-height: 46px;          /* thumb-sized, not a 32px desktop button */
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid transparent;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.ocurp-sheet__btn:active {
+  transform: scale(0.97);
+}
+.ocurp-sheet__btn--ghost {
+  flex: 0 0 auto;
+  min-width: 104px;
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.72);
+}
+.ocurp-sheet__btn--go {
+  background: #ff5f1f;
+  color: #140600;
+}
+.ocurp-sheet__btn--go:focus-visible,
+.ocurp-sheet__btn--ghost:focus-visible {
+  outline: 2px solid #ff5f1f;
+  outline-offset: 2px;
+}
+@media (min-width: 640px) {
+  .ocurp-sheet {
+    align-items: center;
+  }
+  .ocurp-sheet__card {
+    border-radius: 16px;
   }
 }

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ratio Simplifier | Owen's Workspace</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Ratio Simplifier</h1>
+      <p class="mt-1 text-xs text-white/40">math &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Reduce a ratio with GCD, scale it, split a whole into ratio parts, and convert between seven common unit pairs. <span class="ws-chip">GCD</span><span class="ws-chip">SCALING</span><span class="ws-chip">PARTS</span><span class="ws-chip">UNITS</span><span class="ws-chip">CLIENT-SIDE</span></p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div>
+      <label class="ws-label mb-2 block" for="r-a">Ratio A</label>
+      <input id="r-a" type="number" step="1" class="ws-input" value="18">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="r-b">Ratio B</label>
+      <input id="r-b" type="number" step="1" class="ws-input" value="24">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="r-n">Scale by (n)</label>
+      <input id="r-n" type="number" step="1" class="ws-input" value="5">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="r-w">Whole (W)</label>
+      <input id="r-w" type="number" step="0.01" class="ws-input" value="84">
+    </div>
+    <div class="flex items-end">
+      <button id="r-go" class="ws-btn">Simplify</button>
+    </div>
+  </div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="r-cp" class="ws-btn-ghost">Copy summary</button>
+  </div>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">Simplified</div>
+  <div id="r-out1" class="mt-2 font-display text-4xl font-black text-accent">-</div>
+  <div class="mt-5">
+    <div class="ws-kv"><span>GCD</span><span id="r-gcd">-</span></div>
+    <div class="ws-kv"><span>Decimal</span><span id="r-dec">-</span></div>
+    <div class="ws-kv"><span>Percentage</span><span id="r-pct">-</span></div>
+  </div>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">Scaled by <span id="r-nlab">5</span></div>
+  <div id="r-out2" class="mt-2 font-display text-3xl font-black text-accent">-</div>
+  <div class="mt-5">
+    <div class="ws-kv"><span>Part A</span><span id="r-pa">-</span></div>
+    <div class="ws-kv"><span>Part B</span><span id="r-pb">-</span></div>
+    <div class="ws-kv"><span>Sum check</span><span id="r-sum">-</span></div>
+  </div>
+</div>
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-4 lg:grid-cols-3">
+    <div>
+      <label class="ws-label mb-2 block" for="u-from">From</label>
+      <select id="u-from" class="ws-input"></select>
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="u-to">To</label>
+      <select id="u-to" class="ws-input"></select>
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="u-val">Value</label>
+      <input id="u-val" type="number" step="any" class="ws-input" value="1">
+    </div>
+  </div>
+  <div class="mt-4 grid gap-4 lg:grid-cols-2">
+    <div class="ws-out">
+      <div id="u-res">-</div>
+      <div id="u-factor" class="mt-2 border-t border-white/10 pt-2 text-[11px] opacity-60">-</div>
+    </div>
+    <div id="u-table" class="ws-out overflow-x-auto"></div>
+  </div>
+  <div class="mt-4"><button id="u-cp" class="ws-btn-ghost">Copy conversions</button></div>
+</div>
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="ws-label mb-2">Read-out</div>
+  <pre id="r-out" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre>
+</div>
+  </div>
+  <div class="mt-8">
+
+  function num(x, d){ if(x === null || x === undefined || !isFinite(x)) return '-';
+    return String(parseFloat(x.toFixed(d === undefined ? 2 : d))); }
+  function raw(s){ var x = parseFloat(String(s).replace(/[^0-9.\-eE+]/g,'')); return isFinite(x) ? x : NaN; }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  window.__T = window.__T || {};
+
+  // Each row is exact for the "from" side; the reverse uses 1/factor.
+  var UNITS = [
+    {k:'kg-lb',   from:'kilogram',  to:'pound',        f:2.20462},
+    {k:'mi-km',   from:'mile',      to:'kilometre',    f:1.60934},
+    {k:'cup-ml',  from:'cup',       to:'millilitre',   f:236.588},
+    {k:'in-cm',   from:'inch',      to:'centimetre',   f:2.54},
+    {k:'ft-m',    from:'foot',      to:'metre',        f:0.3048},
+    {k:'lb-kg',   from:'pound',     to:'kilogram',     f:0.453592},
+    {k:'ac-m2',   from:'acre',      to:'square metre', f:4046.86}
+  ];
+  var unitByKey = {};
+  UNITS.forEach(function(u){ unitByKey[u.k + '>' + u.to] = u; });
+
+  function gcd(a, b){
+    a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b));
+    while (b){ var t = a % b; a = b; b = t; }
+    return a;
+  }
+
+  function unitResult(fromKey, toKey, value){
+    var fwd = unitByKey[fromKey + '>' + toKey];
+    var rev = unitByKey[toKey + '>' + fromKey];
+    var factor, dir;
+    if (fwd){ factor = fwd.f; dir = 'forward'; }
+    else if (rev){ factor = 1 / rev.f; dir = 'reverse'; }
+    else { return null; }
+    return {
+      from: fromKey, to: toKey, direction: dir,
+      factor: factor, factor_5dp: parseFloat(factor.toFixed(5)),
+      input: value, output: value * factor
+    };
+  }
+
+  function compute(inp){
+    var a = Math.round(inp.a), b = Math.round(inp.b);
+    var g = (a === 0 && b === 0) ? 0 : gcd(a, b);
+    var sa = (g ? a / g : a), sb = (g ? b / g : b);
+    var sum = sa + sb;
+    return {
+      a: a, b: b, gcd: g, simple_a: sa, simple_b: sb,
+      decimal: (sb === 0 ? null : sa / sb),
+      pct_a: (sum === 0 ? 0 : sa / sum * 100),
+      pct_b: (sum === 0 ? 0 : sb / sum * 100),
+      scale_n: inp.n, scaled_a: sa * inp.n, scaled_b: sb * inp.n,
+      whole: inp.w,
+      part_a: (sum === 0 ? null : sa / sum * inp.w),
+      part_b: (sum === 0 ? null : sb / sum * inp.w)
+    };
+  }
+
+  function text(c, u, utext){
+    return [
+      'RATIO',
+      '-----',
+      'Given          ' + c.a + ' : ' + c.b,
+      'GCD            ' + c.gcd,
+      'Simplified     ' + c.simple_a + ' : ' + c.simple_b,
+      'As a decimal   ' + num(c.decimal, 6),
+      'Split          ' + num(c.pct_a, 2) + ' % / ' + num(c.pct_b, 2) + ' %',
+      '',
+      'SCALED BY ' + num(c.scale_n, 0),
+      'Result         ' + num(c.scaled_a, 4) + ' : ' + num(c.scaled_b, 4),
+      '',
+      'PARTS OF A WHOLE OF ' + num(c.whole, 2),
+      'Part A         ' + num(c.part_a, 4),
+      'Part B         ' + num(c.part_b, 4),
+      '',
+      utext
+    ].join('\n');
+  }
+
+  function unitText(u){
+    if (!u) return 'No conversion available for that pair.';
+    return 'CONVERSION\n1 ' + u.from + ' = ' + num(u.factor, 5) + ' ' + u.to
+      + '  (' + u.direction + ')';
+  }
+
+  function render(c){
+    $('r-out1').textContent = c.simple_a + ' : ' + c.simple_b;
+    $('r-gcd').textContent  = String(c.gcd);
+    $('r-dec').textContent  = num(c.decimal, 6);
+    $('r-pct').textContent  = num(c.pct_a, 2) + ' % / ' + num(c.pct_b, 2) + ' %';
+    $('r-nlab').textContent = num(c.scale_n, 0);
+    $('r-out2').textContent = num(c.scaled_a, 4) + ' : ' + num(c.scaled_b, 4);
+    $('r-pa').textContent   = num(c.part_a, 2);
+    $('r-pb').textContent   = num(c.part_b, 2);
+    $('r-sum').textContent  = num(c.part_a + c.part_b, 2) + ' = whole';
+    $('r-out').textContent  = text(c, null, unitText(unitCurrent()));
+  }
+
+  function unitCurrent(){
+    var v = raw($('u-val').value);
+    if (!isFinite(v)) v = 1;
+    return unitResult($('u-from').value, $('u-to').value, v);
+  }
+
+  function renderUnit(){
+    var u = unitCurrent();
+    if (!u){
+      $('u-res').textContent = 'Pick a different pair.';
+      $('u-factor').textContent = '-';
+      return;
+    }
+    $('u-res').innerHTML = '<b>' + num(u.input, 6) + '</b> ' + u.from + ' = <b>'
+      + num(u.output, 6) + '</b> ' + u.to;
+    $('u-factor').textContent = '1 ' + u.from + ' = ' + num(u.factor, 5) + ' ' + u.to
+      + '  (' + u.direction + ', table factor)';
+    $('r-out').textContent = text(window.__T['ratio-simplifier'].last, u, unitText(u));
+  }
+
+  function unitTableText(){
+    return UNITS.map(function(u){
+      return '1 ' + u.from + ' = ' + u.f.toFixed(5) + ' ' + u.to;
+    }).join('\n');
+  }
+
+  function go(){
+    var c = compute({ a: raw($('r-a').value), b: raw($('r-b').value),
+                      n: raw($('r-n').value), w: raw($('r-w').value) });
+    render(c);
+    window.__T['ratio-simplifier'].last = c;
+    renderUnit();
+    return c;
+  }
+
+  // Populate both dropdowns from the same table so a forward and a reverse
+  // pair can never drift apart.
+  var opts = UNITS.map(function(u){ return u.from; });
+  function fill(sel, list, sel0){
+    sel.innerHTML = list.map(function(v){
+      return '<option value="' + v + '">' + v + '</option>';
+    }).join('');
+    sel.value = sel0;
+  }
+  fill($('u-from'), opts, 'kilogram');
+  fill($('u-to'), UNITS.map(function(u){ return u.to; }), 'pound');
+  $('u-table').textContent = 'TABLE\n' + unitTableText();
+
+  ['r-a','r-b','r-n','r-w'].forEach(function(id){
+    $(id).addEventListener('input', go);
+  });
+  ['u-from','u-to','u-val'].forEach(function(id){
+    $(id).addEventListener('input', renderUnit);
+  });
+  $('r-go').addEventListener('click', go);
+  $('r-cp').addEventListener('click', function(){
+    var t = text(window.__T['ratio-simplifier'].last, unitCurrent(), unitText(unitCurrent()));
+    navigator.clipboard.writeText(t + '\n\n' + unitTableText());
+  });
+  $('u-cp').addEventListener('click', function(){ navigator.clipboard.writeText(unitTableText()); });
+
+  window.__T['ratio-simplifier'] = { slug:'ratio-simplifier', run: function(i){
+    if(i.a !== undefined) $('r-a').value = i.a;
+    if(i.b !== undefined) $('r-b').value = i.b;
+    if(i.n !== undefined) $('r-n').value = i.n;
+    if(i.w !== undefined) $('r-w').value = i.w;
+    if(i.from !== undefined) $('u-from').value = i.from;
+    if(i.to !== undefined) $('u-to').value = i.to;
+    if(i.value !== undefined) $('u-val').value = i.value;
+    var c = go();
+    var u = unitCurrent();
+    c.unit_factor = u ? u.factor : null;
+    c.unit_factor_5dp = u ? u.factor_5dp : null;
+    c.unit_output = u ? u.output : null;
+    return JSON.stringify(c);
+  }};
+  go();
+})();
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+</body>
+</html>
