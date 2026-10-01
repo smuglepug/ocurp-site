@@ -110,11 +110,20 @@ html.ocurp-playing .ocurp-canvas-wrap {
 }
 
 /* ---- the bar: top-left Exit, exactly where a normal game puts it ---- */
-/* The bar sits BELOW the page's own chrome (z-index 50 there). At 9500 it
-   painted over the "Games" back link and the site nav, and because a bar is a
-   full-width fixed strip, anything in that strip became untappable. In play
-   mode the chrome is hidden anyway, so dropping the z-index costs nothing and
-   removes the whole class of overlap. */
+/* Two states, two z-indexes. Getting this wrong in EITHER direction is a real
+   user-facing bug, and both were shipped at some point:
+
+   BROWSING  z-index 40, below the page's own chrome (50). At 9500 the bar
+             painted over the "Games" back link and the site nav, and because a
+             bar is a full-width fixed strip, everything in that strip became
+             untappable -- "go back does nothing".
+   PLAYING   z-index 9500, ABOVE the surface (9000). At 40 the surface covered
+             the Exit button outright, so tapping it did nothing and the
+             player was stuck in fullscreen. A/B verified: 40 -> Exit dead,
+             9500 -> Exit works.
+
+   The page chrome is display:none while playing, so lifting the bar above the
+   surface in that state cannot cover anything the user needs. */
 .ocurp-playbar {
   position: fixed;
   top: 0;
@@ -126,6 +135,9 @@ html.ocurp-playing .ocurp-canvas-wrap {
   align-items: center;
   padding: calc(10px + env(safe-area-inset-top)) 12px 10px 12px;
   pointer-events: none;
+}
+html.ocurp-playing .ocurp-playbar {
+  z-index: 9500;
 }
 /* Only the buttons take clicks. The bar is a full-width fixed strip, so without
    this it is a 60px transparent dead zone across the top of every game page. */
@@ -213,9 +225,13 @@ html.ocurp-playing .ocurp-playbar button.ocurp-exit {
 .ocurp-enter:active {
   transform: scale(0.96);
 }
-html.ocurp-playing .ocurp-enter {
+/* The Fullscreen pill is redundant once play mode is on, and it is wide. Hide it
+   properly -- opacity alone leaves a target that still swallows taps aimed at
+   the board underneath. */
+html.ocurp-playing .ocurp-playbar button.ocurp-enter {
   opacity: 0;
   pointer-events: none;
+  visibility: hidden;
 }
 .ocurp-enter__ico {
   width: 12px;

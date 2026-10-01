@@ -186,7 +186,13 @@ $('load').addEventListener('click',()=>{ try{ const s=localStorage.getItem('ws-s
 const idx=(x,y)=>y*GRID+x;
 const inb=(x,y)=>x>=0&&y>=0&&x<GRID&&y<GRIDH;
 const get=(x,y)=>inb(x,y)?g[idx(x,y)]:-1;
-const set=(x,y,v)=>{ if(!inb(x,y))return; g[idx(x,y)]=v; if(v===20) life[idx(x,y)]=70; else if(v===22) life[idx(x,y)]=60; };
+/* life[] is a Uint8Array, so life[i]-- on a zero UNDERFLOWS to 255 and the
+   cell never expires. Every element with a lifetime must seed life[] on write
+   - including STEAM(21), which was missing here: steam started at 0, went to
+   255, and lasted ~256 frames instead of 60, so a doused fire kept steaming
+   forever and the steam turned back into water that re-ignited the bed. */
+const LIFE0={20:70,21:60,22:60};
+const set=(x,y,v)=>{ if(!inb(x,y))return; g[idx(x,y)]=v; if(LIFE0[v]) life[idx(x,y)]=LIFE0[v]; else if(v===0) life[idx(x,y)]=0; };
 let down=false;
 function pos(e){ const r=cv.getBoundingClientRect(); return [Math.floor((e.clientX-r.left)/r.width*GRID), Math.floor((e.clientY-r.top)/r.height*GRIDH)]; }
 function splat(x,y,v){
@@ -195,7 +201,7 @@ function splat(x,y,v){
     const nx=x+dx, ny=y+dy; if(!inb(nx,ny))continue;
     if(v===0){ g[idx(nx,ny)]=0; life[idx(nx,ny)]=0; continue; }
     if(get(nx,ny)===0||BYID[get(nx,ny)]===undefined||BYID[get(nx,ny)].kind!=='solid'||BYID[v].kind==='solid') { g[idx(nx,ny)]=v; }
-    if(v===20) life[idx(nx,ny)]=70; else if(v===22) life[idx(nx,ny)]=60;
+    if(LIFE0[v]) life[idx(nx,ny)]=LIFE0[v]; else if(v===0) life[idx(nx,ny)]=0;
   }
 }
 cv.addEventListener('pointerdown',e=>{down=true; try{cv.setPointerCapture(e.pointerId)}catch(_){}; const p=pos(e); splat(p[0],p[1],cur);});
@@ -395,8 +401,8 @@ requestAnimationFrame(loop);
 })();
 </script>
 
-<link rel="stylesheet" href="/workspace/play.css?v=20261001e">
-<script src="/workspace/play.js?v=20261001e" defer></script>
+<link rel="stylesheet" href="/workspace/play.css?v=20261001f">
+<script src="/workspace/play.js?v=20261001f" defer></script>
 
 
 <!--ocurp-related-->
