@@ -184,7 +184,7 @@
        inside the rounded corners, with a dark scrim so the type stays readable.
        That is what made the hero look deliberate and the listings look like
        thumbnails stacked on a caption -- the difference the screenshots show. */
-    var art = '<div class="pointer-events-none absolute inset-0 overflow-hidden rounded-t-[1.5rem] md:rounded-t-[2.5rem]">'
+    var art = '<div class="pointer-events-none absolute inset-0 overflow-hidden rounded-t-[1.5rem] md:rounded-t-[3rem]">'
       + banner
       + '<div class="absolute inset-0 bg-gradient-to-t from-[#050505]/95 via-[#050505]/80 to-[#050505]/55"></div>'
       + '</div>';
@@ -197,7 +197,7 @@
       + (e.ready ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 17 17 7M9 7h8v8"/></svg>' : '')
       + '</span>';
     var target = isWebsites ? ' target="_blank" rel="noopener"' : '';
-    return '<a href="' + href + '"' + target + ' class="group relative flex min-h-[380px] flex-col justify-end overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 p-8 transition-all duration-700 hover:border-accent/30 md:min-h-[420px] md:rounded-[2.5rem] md:p-10" data-card>'
+    return '<a href="' + href + '"' + target + ' class="group relative flex h-[260px] flex-col justify-end overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.02] p-5 transition-all duration-700 hover:border-accent/30 hover:bg-white/[0.05] md:h-[450px] md:rounded-[3rem] md:p-10" data-card>'
       + art
       + favBtn
       + '<div class="relative flex flex-1 flex-col">'
