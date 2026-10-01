@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life Checklist — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="A 50-item bucket list in eight categories. Tick items. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/life-checklist/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Life Checklist">
+<meta property="og:description" content="A 50-item bucket list in eight categories. Tick items. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/life-checklist/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Life Checklist on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Life Checklist">
+<meta name="twitter:description" content="A 50-item bucket list in eight categories. Tick items. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Life Checklist on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Life Checklist","url":"https://ocurp.space/workspace/tools/life-checklist/","description":"A 50-item bucket list in eight categories. Tick items. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Life Checklist</h1>
+      <p class="mt-1 text-xs text-white/40">study &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">A 50-item bucket list in eight categories. Tick items, watch the percentage move, and keep it across reloads.</p>
+  <div class="ws-grid2">
+
+    <div class="ws-panel p-5 sm:col-span-2 md:col-span-3">
+      <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <div class="ws-label">Progress</div>
+          <div class="mt-1 font-display text-3xl font-extrabold" id="lc-pct">0%</div>
+        </div>
+        <div class="text-right">
+          <div class="ws-label">Ticked</div>
+          <div class="mt-1 font-mono text-lg" id="lc-count">0 of 0 done</div>
+        </div>
+      </div>
+      <div class="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
+        <div id="lc-bar" style="height:100%;width:0%;background:#FF5F1F;transition:width .2s"></div>
+      </div>
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <span class="ws-chip" id="lc-total-chip">0 ITEMS</span>
+        <span class="ws-chip" id="lc-cats">0 CATEGORIES</span>
+        <span class="ws-chip" id="lc-saved">NOT SAVED</span>
+      </div>
+    </div>
+    <div class="ws-panel p-5">
+      <div class="ws-label">Actions</div>
+      <div class="mt-3 grid gap-2">
+        <button class="ws-btn" id="lc-reset">Reset all</button>
+        <button class="ws-btn-ghost" id="lc-copy">Copy summary</button>
+        <button class="ws-btn-ghost" id="lc-dl">Download .txt</button>
+        <button class="ws-btn-ghost" id="lc-none">Untick all</button>
+      </div>
+    </div>
+    <div class="ws-panel p-5">
+      <div class="ws-label">Per category</div>
+      <div id="lc-breakdown" class="mt-2"></div>
+    </div>
+    <div class="ws-panel p-5 sm:col-span-2 md:col-span-3">
+      <div class="ws-label">Checklist</div>
+      <div id="lc-grid" class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"></div>
+    </div>
+    <div class="ws-panel p-5 sm:col-span-2 md:col-span-3">
+      <div class="ws-label">Summary</div>
+      <div id="lc-out" class="ws-out mt-3">Tick an item to begin.</div>
+    </div>
+
+  </div>
+  <div class="mt-8">
+
+<div id="lc-root"></div>
+<script>
+(function(){
+  var KEY = 'ows.lifechecklist.v1';
+  var ITEMS = [
+    ['travel','Visit every continent'],['travel','Sleep on a night train'],
+    ['travel','See the northern lights'],['travel','Take a ferry to an island'],
+    ['travel','Learn to navigate by stars'],['travel','Road-trip across a desert'],
+    ['skills','Cook one dish from scratch'],['skills','Change a car tyre'],
+    ['skills','Sew a button back on'],['skills','Balance on a bike for a year'],
+    ['skills','Give a stranger a proper handshake'],['skills','Write a letter by hand'],
+    ['career','Publish something under your own name'],['career','Give a talk to a room'],
+    ['career','Mentor someone for a month'],['career','Quit a job on purpose'],
+    ['career','Build a thing nobody asked for'],['career','Ask for feedback and take it'],
+    ['relationships','Call a grandparent every week'],['relationships','Reconnect with an old friend'],
+    ['relationships','Host a dinner for eight'],['relationships','Say the hard thing kindly'],
+    ['relationships','Apologise first once'],['relationships','Keep a friendship going for decades'],
+    ['home','Plant something that outlives you'],['home','Fix the thing nobody fixed'],
+    ['home','Have a drawer that actually works'],['home','Move somewhere new once'],
+    ['home','Sit on your own front step for an hour'],['home','Empty the basement'],
+    ['health','Run a 10k without stopping'],['health','Give blood once'],
+    ['health','Do a month of mornings'],['health','Learn to swim properly'],
+    ['health','Get a full night of sleep'],['health','See a doctor about the thing you ignore'],
+    ['learning','Finish a book that changed your mind'],['learning','Learn a language past the basics'],
+    ['learning','Read something technical end to end'],['learning','Take a course that costs nothing'],
+    ['learning','Read 20 books in a year'],['learning','Learn to read music'],
+    ['experiences','Watch a total solar eclipse'],['experiences','See the aurora from a plane'],
+    ['experiences','Spend a night in a train station on purpose'],['experiences','Climb something tall'],
+    ['experiences','See a city you have no reason to be in'],['experiences','Stay up all night for no reason at all'],
+    ['experiences','Take a boat across open water'],['experiences','Sit in silence for an hour']
+  ];
+  var CATS = ['travel','skills','career','relationships','home','health','learning','experiences'];
+  var M = ITEMS.length;
+
+  window.__LC = { M: M, items: ITEMS, state: null, save: function(){ return localStorage.getItem(KEY); } };
+
+  var done = {};
+  var saved = null;
+  try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e) { saved = null; }
+  if (saved && typeof saved === 'object') {
+    for (var i=0;i<ITEMS.length;i++) if (saved[ITEMS[i][1]] === true) done[ITEMS[i][1]] = true;
+  }
+
+  function q(id){ return document.getElementById(id); }
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function count(){ var n=0; for (var i=0;i<ITEMS.length;i++) if (done[ITEMS[i][1]]) n++; return n; }
+
+  // One decimal place, so 1 of 3 reads 33.3 and 1 of 60 reads 1.7 - a rounded
+  // integer here would read "2%" for a single tick and look like a bug.
+  function pct(n){ return M === 0 ? 0 : Math.round(1000 * n / M) / 10; }
+
+  function render(){
+    var n = count(), p = pct(n);
+    q('lc-pct').textContent = p + '%';
+    q('lc-count').textContent = n + ' of ' + M + ' done';
+    q('lc-bar').style.width = p + '%';
+    q('lc-total-chip').textContent = M + ' ITEMS';
+    q('lc-cats').textContent = CATS.length + ' CATEGORIES';
+    q('lc-saved').textContent = Object.keys(done).length ? 'SAVED LOCALLY' : 'NOT SAVED';
+    window.__LC.state = { done: n, total: M, pct: p };
+    window.__LC.text = { pct: q('lc-pct').textContent, count: q('lc-count').textContent };
+
+    var bd = '';
+    for (var c=0;c<CATS.length;c++){
+      var cat = CATS[c], have = 0, tot = 0;
+      for (var i=0;i<ITEMS.length;i++) if (ITEMS[i][0]===cat){ tot++; if (done[ITEMS[i][1]]) have++; }
+      var cp = tot ? Math.round(100*have/tot) : 0;
+      bd += '<div class="ws-kv"><span>' + cat + '</span><span>' + have + '/' + tot + ' &middot; ' + cp + '%</span></div>';
+    }
+    q('lc-breakdown').innerHTML = bd;
+
+    var lines = ['LIFE CHECKLIST - ' + n + ' of ' + M + ' done (' + p + '%)', ''];
+    for (var c2=0;c2<CATS.length;c2++){
+      var cat2 = CATS[c2], any=false;
+      lines.push('[' + cat2.toUpperCase() + ']');
+      for (var j=0;j<ITEMS.length;j++) if (ITEMS[j][0]===cat2){
+        any = true;
+        lines.push('  [' + (done[ITEMS[j][1]] ? 'x' : ' ') + '] ' + ITEMS[j][1]);
+      }
+      if (!any) lines.push('  (none)');
+      lines.push('');
+    }
+    q('lc-out').textContent = lines.join('\n');
+
+    var boxes = document.querySelectorAll('#lc-grid input[type=checkbox]');
+    for (var b=0;b<boxes.length;b++) boxes[b].checked = done[boxes[b].getAttribute('data-t')] === true;
+  }
+
+  var grid = '';
+  for (var c=0;c<CATS.length;c++){
+    var cat = CATS[c];
+    grid += '<div><div class="ws-label mb-2" style="color:#FF5F1F">' + esc(cat) + '</div>';
+    for (var i=0;i<ITEMS.length;i++) if (ITEMS[i][0]===cat){
+      var t = ITEMS[i][1];
+      grid += '<label class="mb-1.5 flex cursor-pointer items-start gap-2 rounded-lg px-1.5 py-1 hover:bg-white/5">' +
+        '<input type="checkbox" data-t="' + esc(t) + '" class="mt-[3px] h-3.5 w-3.5 flex-none" style="accent-color:#FF5F1F">' +
+        '<span class="text-[13px] leading-snug text-white/80">' + esc(t) + '</span></label>';
+    }
+    grid += '</div>';
+  }
+  q('lc-grid').innerHTML = grid;
+
+  q('lc-grid').addEventListener('change', function(e){
+    var el = e.target;
+    if (!el || el.type !== 'checkbox') return;
+    var t = el.getAttribute('data-t');
+    if (el.checked) done[t] = true; else delete done[t];
+    localStorage.setItem(KEY, JSON.stringify(done));
+    render();
+  });
+
+  q('lc-reset').addEventListener('click', function(){
+    done = {}; localStorage.removeItem(KEY); render();
+  });
+  q('lc-none').addEventListener('click', function(){
+    var ks = Object.keys(done); for (var i=0;i<ks.length;i++) delete done[ks[i]];
+    localStorage.removeItem(KEY); render();
+  });
+  q('lc-copy').addEventListener('click', function(){
+    var t = q('lc-out').textContent;
+    if (navigator.clipboard) navigator.clipboard.writeText(t);
+    q('lc-copy').textContent = 'Copied';
+    setTimeout(function(){ q('lc-copy').textContent = 'Copy summary'; }, 1200);
+  });
+  q('lc-dl').addEventListener('click', function(){
+    var b = new Blob([q('lc-out').textContent], {type:'text/plain'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(b); a.download = 'life-checklist.txt'; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  });
+
+  render();
+  window.__LC.ready = true;
+})();
+</script>
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/alarm/">
+      <span class="ocurp-related-n">Alarm Clock</span>
+      <span class="ocurp-related-b">Set an alarm a number of seconds ahead or at a wall-clock time, watch it count down to zer</span>
+    </a></li>
+    <li><a href="/workspace/tools/bingo-card-generator/">
+      <span class="ocurp-related-n">Bingo Card Generator</span>
+      <span class="ocurp-related-b">Printable 5x5 bingo cards with a proper B-I-N-G-O number range and a matching call sheet.</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi-calculator-bmr/">
+      <span class="ocurp-related-n">BMI + BMR Calculator</span>
+      <span class="ocurp-related-b">Body mass index plus basal metabolic rate, with the healthy weight range for your height.</span>
+    </a></li>
+    <li><a href="/workspace/tools/citation-generator/">
+      <span class="ocurp-related-n">Citation Generator</span>
+      <span class="ocurp-related-b">APA, MLA and Harvard references from a source.</span>
+    </a></li>
+    <li><a href="/workspace/tools/countdown/">
+      <span class="ocurp-related-n">Countdown Timer</span>
+      <span class="ocurp-related-b">Count down a number of minutes from now or to a fixed date and time, with a zero-padded se</span>
+    </a></li>
+    <li><a href="/workspace/tools/dark-patterns/">
+      <span class="ocurp-related-n">Dark Patterns</span>
+      <span class="ocurp-related-b">Twelve working mock interfaces that demonstrate real manipulative design patterns, each wi</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

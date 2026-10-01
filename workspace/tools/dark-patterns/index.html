@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dark Patterns — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Twelve working mock interfaces that demonstrate real manipulative design patterns. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/dark-patterns/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Dark Patterns">
+<meta property="og:description" content="Twelve working mock interfaces that demonstrate real manipulative design patterns. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/dark-patterns/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Dark Patterns on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dark Patterns">
+<meta name="twitter:description" content="Twelve working mock interfaces that demonstrate real manipulative design patterns. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Dark Patterns on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Dark Patterns","url":"https://ocurp.space/workspace/tools/dark-patterns/","description":"Twelve working mock interfaces that demonstrate real manipulative design patterns. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Dark Patterns</h1>
+      <p class="mt-1 text-xs text-white/40">study &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Twelve working mock interfaces that demonstrate real manipulative design patterns, each with its ethical counterpoint.</p>
+  <div class="ws-grid2">
+
+    <div class="ws-panel p-5">
+      <div class="ws-label">Gallery</div>
+      <div class="mt-2">
+        <div class="font-display text-3xl font-extrabold" style="color:#FF5F1F" id="dp-count">0 / 12</div>
+        <div class="text-xs text-white/40">explored</div>
+      </div>
+      <div class="mt-3 flex flex-wrap gap-2" id="dp-chips"></div>
+      <div class="mt-3 grid gap-2">
+        <button class="ws-btn" id="dp-all">Open all 12</button>
+        <button class="ws-btn-ghost" id="dp-none">Close all</button>
+      </div>
+    </div>
+    <div class="ws-panel p-5 sm:col-span-2 md:col-span-3">
+      <div class="ws-label">How to read this</div>
+      <p class="mt-2 text-[13px] leading-relaxed text-white/55">
+        Each card below is a working mock interface, not a picture of one. The buttons, timers,
+        counters and checkboxes all do something. Interact with a card and read the
+        <span class="text-white/80">tactic</span>, the
+        <span class="text-white/80">exploit</span>, and the
+        <span class="text-white/80">ethical version</span> it produces. All of the interfaces and
+        copy here are original - no real product is depicted.
+      </p>
+    </div>
+
+  </div>
+  <div class="mt-8">
+
+<style>
+  .dp-card { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; overflow:hidden; }
+  .dp-card.open { border-color:rgba(255,95,31,.35); }
+  .dp-box { border:1px dashed rgba(255,255,255,.18); border-radius:.75rem; background:rgba(255,255,255,.03); padding:1rem; }
+  .dp-title { font-size:14px; font-weight:800; color:#fff; margin-bottom:.5rem; }
+  .dp-row { display:flex; justify-content:space-between; align-items:center; gap:.75rem; margin-bottom:.6rem; }
+  .dp-lbl { font-size:12px; color:rgba(255,255,255,.5); }
+  .dp-in { border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:#fff; font-size:12px; border-radius:.5rem; padding:.4rem .6rem; width:60%; }
+  .dp-btn { border:none; background:#FF5F1F; color:#000; font-weight:800; font-size:12px; border-radius:.6rem; padding:.55rem .8rem; cursor:pointer; }
+  .dp-quiet { background:transparent; color:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.14); font-weight:600; }
+  .dp-tiny { font-size:10.5px; line-height:1.6; color:rgba(255,255,255,.35); margin-top:.5rem; }
+  .dp-ok { font-size:12px; color:rgba(255,255,255,.6); }
+  .dp-check { display:flex; align-items:flex-start; gap:.5rem; font-size:11.5px; color:rgba(255,255,255,.6); margin-bottom:.6rem; cursor:pointer; }
+  .dp-check input { margin-top:2px; accent-color:#FF5F1F; }
+  .dp-price { font-family:'IBM Plex Sans',monospace; font-size:16px; font-weight:700; color:#FF5F1F; }
+  .dp-strike { font-size:12px; color:rgba(255,255,255,.3); text-decoration:line-through; }
+  .dp-bar { height:6px; border-radius:999px; background:rgba(255,255,255,.12); overflow:hidden; }
+  .dp-bar-fill { height:100%; background:#FF5F1F; }
+  .dp-star { background:transparent; border:none; color:#FF5F1F; font-size:22px; cursor:pointer; }
+  .dp-nav { font-size:12px; color:rgba(255,255,255,.55); margin-bottom:.5rem; }
+  .dp-nav span { color:rgba(255,255,255,.55); cursor:pointer; }
+  .dp-adnav { border-bottom:2px solid #FF5F1F; }
+  .dp-explain { display:none; border-top:1px solid rgba(255,255,255,.08); padding:1rem; }
+  .dp-explain h4 { font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#FF5F1F; margin-bottom:.25rem; }
+  .dp-explain p { font-size:12px; line-height:1.75; color:rgba(255,255,255,.6); margin-bottom:.8rem; }
+  .dp-toggle { width:100%; display:flex; justify-content:space-between; align-items:center; gap:.75rem; text-align:left; }
+  .dp-name { font-size:13px; font-weight:800; color:#fff; }
+  .dp-blurb { font-size:11px; color:rgba(255,255,255,.4); font-weight:500; }
+</style>
+<div id="dp-grid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+<div class="ws-panel p-5 mt-6">
+  <div class="ws-label">Findings</div>
+  <div id="dp-out" class="ws-out mt-3">Open a pattern to add it here.</div>
+  <div class="mt-3 grid gap-2 sm:grid-cols-2">
+    <button class="ws-btn-ghost" id="dp-copy">Copy findings</button>
+    <button class="ws-btn-ghost" id="dp-dl">Download .md</button>
+  </div>
+</div>
+<script>
+(function(){
+  var P = [{"id": "confirmshaming", "name": "Confirmshaming", "blurb": "Shames you into the action you wanted anyway.", "demo": "\n        <div class=\"dp-box\">\n          <div class=\"dp-row\"><label class=\"dp-lbl\">Email</label><input class=\"dp-in\" value=\"you@example.com\"></div>\n          <button class=\"dp-btn\" data-act=\"cs-ok\">Sign up</button>\n          <button class=\"dp-btn dp-quiet\" data-act=\"cs-no\">No thanks, I enjoy struggling</button>\n          <div class=\"dp-ok\">Outcome: pending.</div>\n        </div>", "tactic": "The decline button carries the insult and the opt-out button carries the plain label. Both do the same thing, so the interface is not offering a choice - it is applying social pressure.", "exploit": "Shame is a shortcut around deliberation. The moment you read a decline option as an attack on your competence, you stop evaluating the product and start defending yourself. People click the orange button to end the discomfort.", "ethical": "Name both buttons for what they do. 'Create account' and 'Skip for now' are equally weighted, equally plain, and sit side by side. If declining is awkward to write, that is a sign the design is hiding the exit."}, {"id": "roach-motel", "name": "Roach Motel", "blurb": "Easy to enter, deliberately hard to leave.", "demo": "\n        <div class=\"dp-box\">\n          <div class=\"dp-title\">Your trial is active</div>\n          <div class=\"dp-ok\">Welcome aboard. Nothing to do.</div>\n          <button class=\"dp-btn dp-quiet\" data-act=\"rm-find\">Find the cancel button</button>\n          <div class=\"dp-tiny\" id=\"rm-hint\">0 attempts. The Cancel link is currently 4 shades of grey on white.</div>\n        </div>", "tactic": "Sign-up is a single field and a single button. Cancellation is buried, relabelled, and pushed behind a phone call during business hours.", "exploit": "Asymmetry is the whole trick. A user who never read the terms has no idea a monthly charge exists, and by the time they notice, leaving is a chore with a queue. The longer the exit takes, the more likely the subscription is simply kept.", "ethical": "Put cancellation where sign-up was, in the same visual weight, reachable in the same number of clicks. Show the renewal date and price in the confirmation, not in a receipt. Retention should come from the product being worth keeping."}, {"id": "sneak-into-basket", "name": "Sneak into Basket", "blurb": "Adds a second thing while you are already buying.", "demo": "\n        <div class=\"dp-box\">\n          <div class=\"dp-row\"><span class=\"dp-lbl\">Cable tie, pack of 4</span><span class=\"dp-price\">$7.00</span></div>\n          <label class=\"dp-check\"><input type=\"checkbox\" id=\"sn-x\" data-act=\"sn-add\" checked> <b>Add a matching storage crate - $23.00</b></label>\n          <div class=\"dp-tiny\">Preset to ON. It is not highlighted, it is not priced in the total, and it is not mentioned in the button.</div>\n          <button class=\"dp-btn\" data-act=\"sn-go\">Checkout - $7.00</button>\n        </div>", "tactic": "An add-on is ticked by default and rendered in the same weight as the real item. The total on the button covers only what you came for.", "exploit": "A pre-ticked box converts an extra purchase from a decision into an oversight. Because the button says the low price, the checkout screen confirms the add-on at the last possible moment, when you have already invested attention in finishing.", "ethical": "Every add-on starts unticked and states its own price. The checkout button shows the full total including every line item, and the add-on sits on its own line where it can be removed in one click."}, {"id": "forced-continuity", "name": "Forced Continuity", "blurb": "Free trial that quietly becomes a charge.", "demo": "\n        <div class=\"dp-box\">\n          <div class=\"dp-title\">14 days free</div>\n          <div class=\"dp-tiny\" id=\"fc-when\">Billing begins silently at the end of the trial.</div>\n          <div class=\"dp-row\"><span class=\"dp-lbl\">Then</span><span class=\"dp-price\">$18.00 / month</span></div>\n          <label class=\"dp-check\"><input type=\"checkbox\" id=\"fc-ack\"> I understand I will be charged</label>\n          <button class=\"dp-btn\" data-act=\"fc-go\">Start trial</button>\n        </div>", "tactic": "The trial is free, so the screen leans on the word free. The recurring price and the auto-billing consent are set in grey text below the fold, next to a checkbox that does not gate the button.", "exploit": "Free removes the need to check the maths. If consent to a recurring charge is a low-contrast footnote and a box nobody requires, then the outcome depends on whether the user happened to read carefully - which is not a real test of intent.", "ethical": "State the price, the billing date, and the cancellation route in the same size and weight as the trial length. Require the consent checkbox to be ticked, and email a reminder a few days before the first charge."}, {"id": "price-comparison", "name": "Price Comparison", "blurb": "Anchors you against a price that does not exist.", "demo": "\n        <div class=\"dp-box\">\n          <div class=\"dp-strike\">Was $240.00</div>\n          <div class=\"dp-price\" style=\"font-size:26px\">$19.99</div>\n          <div class=\"dp-tiny\" id=\"pc-why\">Click to learn why it is discounted.</div>\n          <button class=\"dp-btn\" data-act=\"pc-buy\">Buy now</button>\n        </div>", "tactic": "A struck-through anchor price sits directly above the real price. The reference figure was never charged to anyone at that list price - it is a number chosen to make the sale look like a loss.", "exploit": "Anchoring works because people judge a price relative to the first number they see, not against what the thing is worth. A 92% saving feels like a gift even when the normal price was invented for the purpose of being struck through.", "ethical": "Show the price and what you get. If there is a genuine list price, say what changed and when. If the price simply always was this, say that instead of inventing a former number to create urgency."}, {"id": "trick-wording", "name": "Trick Wording", "blurb": "A sentence built so the default wins.", "demo": "\n        <div class=\"dp-box\">\n          <div class=\"dp-title\">Where should we send your receipt?</div>\n          <div class=\"dp-tiny\" id=\"tw-note\">A button labelled with an action performs the opposite action.</div>\n          <div class=\"dp-row\">\n            <button class=\"dp-btn dp-quiet\" data-act=\"tw-no\">No thanks, do not email me</button>\n            <button class=\"dp-btn\" data-act=\"tw-yes\">Yes, email it to me</button>\n          </div>\n        </div>", "tactic": "The question is about sending a receipt. The bright button is the confirm. The way to decline is a link that says 'do not' and sits in the position people expect the privacy policy to occupy.", "exploit": "Double negatives cost a second of parsing, and a second is enough for a fast reader to click the confident-looking primary. The interface depends on you not finishing the sentence.", "ethical": "Ask the question, then label each button with the thing that happens when you press it. One question per screen. If an action is reversible, say so next to it; if it is not, that belongs on the button too."}, {"id": "visual-interference", "name": "Visual Interference", "blurb": "Makes the honest option hard to see or hard to hit.", "demo": "\n        <div class=\"dp-box\">\n          <div class=\"dp-title\">Update your preferences</div>\n          <div class=\"dp-tiny\">We and 41 partners would like to share your activity.</div>\n          <label class=\"dp-check\" style=\"opacity:.25\"><input type=\"checkbox\" checked> Share with 41 partners</label>\n          <div class=\"dp-tiny\" id=\"vi-shared\">Outcome: pending. Both buttons are on this screen; only one is easy.</div>\n          <div class=\"dp-row\" style=\"gap:40px;align-items:center\">\n            <button class=\"dp-btn dp-quiet\" style=\"opacity:.22\" data-act=\"vi-reject\">Reject all</button>\n            <button class=\"dp-btn\" data-act=\"vi-accept\">Save</button>\n          </div>\n        </div>", "tactic": "The consent toggle and the reject button are pushed to low opacity and pushed far apart, so the confident click lands on accept. Nothing is hidden - it is just made harder to read and harder to hit.", "exploit": "Friction is a decision aid. If the decline path is visually quieter, further away, and lower contrast, the default takes the click without anybody having to lie to you. This is the same trick as a door handle that only opens one way.", "ethical": "Reject and accept get the same size, contrast, and distance from each other. The default is whatever the user last chose, not whatever the company prefers. Legibility is not a design opinion, it is an accessibility requirement."}, {"id": "urgency", "name": "Urgency", "blurb": "A deadline that is manufactured every time you look.", "demo": "\n        <div class=\"dp-box\">\n          <div class=\"dp-title\" style=\"color:#FF5F1F\">Offer ends in <span id=\"ur-t\">05:00</span></div>\n          <div class=\"dp-tiny\" id=\"ur-note\">This timer resets every time you reload the page.</div>\n          <button class=\"dp-btn\" data-act=\"ur-reload\">Reload the page</button>\n          <button class=\"dp-btn dp-quiet\" data-act=\"ur-buy\">Buy at the sale price</button>\n        </div>", "tactic": "A countdown that restarts on every refresh, attached to a price that never actually changes.", "exploit": "Manufactured time pressure removes the pause in which a rational person compares alternatives. Because the clock visibly resets, the urgency stops feeling like a constraint and starts feeling like a rendering bug - which is exactly the doubt the tactic is built to produce.", "ethical": "If a deadline is real, it is the same deadline for everyone and it does not restart. If there is no deadline, do not draw a clock. Send one calm reminder with a real expiry date instead of a permanent timer."}, {"id": "scarcity", "name": "Scarcity", "blurb": "Tells you the thing is running out, whether or not it is.", "demo": "\n        <div class=\"dp-box\">\n          <div class=\"dp-title\">Reserved for 30 seconds</div>\n          <div class=\"dp-bar\"><div class=\"dp-bar-fill\" id=\"sc-fill\" style=\"width:9%\"></div></div>\n          <div class=\"dp-tiny\" id=\"sc-note\">Reservations in the last hour: <span id=\"sc-n\">1,204</span></div>\n          <button class=\"dp-btn\" data-act=\"sc-hold\">Hold it for me</button>\n        </div>", "tactic": "A stock bar, a reservation counter, and a hold timer - all of them unaffected by whether anyone is actually buying. The bar never moves unless you do something.", "exploit": "Scarcity narrows the frame to a single question - can I still get it - and closes the other ones. The reservation counter is a number with no source, so it costs the reader nothing to believe and nothing to doubt.", "ethical": "If something is genuinely limited, show the real count and the moment it was measured. If it is not limited, remove the bar entirely. A persistent scarcity banner on an unlimited item teaches people to distrust every other claim on the page."}, {"id": "social-proof", "name": "Social Proof", "blurb": "Invents a crowd so you feel behind.", "demo": "\n        <div class=\"dp-box\">\n          <div class=\"dp-title\"><b>4,317 people</b> are viewing this right now</div>\n          <div class=\"dp-tiny\" id=\"sp-note\">Viewers: <span id=\"sp-n\">4,317</span> &middot; your position: <span id=\"sp-pos\">#4,318</span></div>\n          <button class=\"dp-btn\" data-act=\"sp-again\">Check again</button>\n        </div>", "tactic": "A live viewer count, a sales ticker, and rows of faces with no identity behind them. Checking again produces a number that does not change.", "exploit": "Social proof answers a question you did not know you had: am I late? A crowd removes the need to judge the thing on its merits, and an uncheckable number removes the possibility of finding out that the crowd is imaginary.", "ethical": "Quote real customers with something specific to say, and say how many there are. A hundred verifiable reviews beat a four-thousand-number ticker, because the first one can be audited and the second cannot."}, {"id": "disguised-ads", "name": "Disguised Ads", "blurb": "Ads dressed as navigation or as content.", "demo": "\n        <div class=\"dp-box\">\n          <div class=\"dp-nav\">Home &nbsp;|&nbsp; Blog &nbsp;|&nbsp; <span class=\"dp-adnav\" data-act=\"dg-1\">Recipes</span> &nbsp;|&nbsp; Pricing</div>\n          <div class=\"dp-tiny\" id=\"dg-note\">\"Recipes\" is a paid placement. Its link is styled exactly like the site links.</div>\n          <div class=\"dp-tiny\" id=\"dg-extra\" style=\"display:none\">\n            <b>Sponsored</b> - a whole article that is really an advert, opening with a sentence that never arrives at a conclusion.\n          </div>\n        </div>", "tactic": "A paid placement given the same colour, font, and border as the site's own navigation, plus an advertorial that opens like editorial and arrives at a product pitch five paragraphs later.", "exploit": "Disguised ads exploit the reader's filter. Navigation is scanned, not read, so a link that looks native is followed without evaluation. The advertorial is judged by the same trust the publication earned, which the placement then cashes in.", "ethical": "Label every paid placement as paid, in the same visual treatment as the link itself. Put the disclosure at the top of an advertorial, not in a footer below the fold, and keep the advertiser's claims inside something the publication would actually stand behind."}, {"id": "nagware", "name": "Nagware", "blurb": "Asks again, louder, every single time.", "demo": "\n        <div class=\"dp-box\">\n          <div class=\"dp-title\">Rate this app</div>\n          <div class=\"dp-row\" style=\"gap:6px\">\n            <button class=\"dp-star\">*</button><button class=\"dp-star\">*</button><button class=\"dp-star\">*</button>\n            <button class=\"dp-star\">*</button><button class=\"dp-star\">*</button>\n          </div>\n          <div class=\"dp-tiny\" id=\"ng-n\">Asked 41 times. Dismissed 41 times.</div>\n          <button class=\"dp-btn dp-quiet\" data-act=\"ng-dismiss\">Dismiss</button>\n        </div>", "tactic": "A prompt that returns on every single launch, with a dismiss control that is smaller than the rating control and does not remember the answer.", "exploit": "Nagware does not persuade, it exhausts. Each repetition raises the cost of the app and lowers the perceived value of everything else on the screen, until the rating is the path of least resistance. The user's real signal - no, thanks - is never recorded.", "ethical": "Ask once. If the answer is no, remember it permanently and never ask again for that version. Make decline the same size as confirm, and let the rating live in one predictable place inside the app rather than in a modal that owns your morning."}];
+  var opened = {};
+  function q(id){ return document.getElementById(id); }
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  var html = '';
+  for (var i=0;i<P.length;i++){
+    var p = P[i];
+    html += '<div class="dp-card" data-id="' + p.id + '">' +
+      '<button class="dp-toggle px-4 py-3" data-act="toggle" data-id="' + p.id + '">' +
+        '<span><span class="dp-name">' + esc(p.name) + '</span><br><span class="dp-blurb">' + esc(p.blurb) + '</span></span>' +
+        '<span class="ws-chip" data-role="state">SHOW</span>' +
+      '</button>' +
+      '<div class="p-3">' + p.demo + '</div>' +
+      '<div class="dp-explain" data-role="explain">' +
+        '<h4>The tactic</h4><p data-role="tactic">' + esc(p.tactic) + '</p>' +
+        '<h4>How it exploits you</h4><p data-role="exploit">' + esc(p.exploit) + '</p>' +
+        '<h4>The ethical version</h4><p data-role="ethical">' + esc(p.ethical) + '</p>' +
+      '</div>' +
+    '</div>';
+  }
+  q('dp-grid').innerHTML = html;
+
+  var chips = '';
+  for (var j=0;j<P.length;j++) chips += '<span class="ws-chip" data-chip="'+P[j].id+'">'+P[j].name.toUpperCase()+'</span>';
+  q('dp-chips').innerHTML = chips;
+
+  function setOpen(id, on){
+    var card = document.querySelector('.dp-card[data-id="' + id + '"]');
+    if (!card) return;
+    var ex = card.querySelector('[data-role=explain]');
+    var st = card.querySelector('[data-role=state]');
+    ex.style.display = on ? 'block' : 'none';
+    st.textContent = on ? 'HIDE' : 'SHOW';
+    card.classList.toggle('open', on);
+    if (on) opened[id] = true; else delete opened[id];
+    var chip = document.querySelector('[data-chip="' + id + '"]');
+    if (chip) { chip.style.borderColor = on ? '#FF5F1F' : 'rgba(255,255,255,.12)'; chip.style.color = on ? '#FF5F1F' : 'rgba(255,255,255,.6)'; }
+    q('dp-count').textContent = Object.keys(opened).length + ' / ' + P.length;
+    renderOut();
+  }
+  function renderOut(){
+    var ids = Object.keys(opened);
+    if (!ids.length) { q('dp-out').textContent = 'Open a pattern to add it here.'; return; }
+    var lines = ['DARK PATTERNS EXPLORED - ' + ids.length + ' of ' + P.length, ''];
+    for (var i=0;i<P.length;i++){
+      var p = P[i];
+      if (!opened[p.id]) continue;
+      lines.push('## ' + p.name);
+      lines.push('Tactic:  ' + p.tactic);
+      lines.push('Exploit: ' + p.exploit);
+      lines.push('Ethics:  ' + p.ethical);
+      lines.push('');
+    }
+    q('dp-out').textContent = lines.join('\n');
+  }
+  q('dp-grid').addEventListener('click', function(e){
+    var t = e.target.closest('[data-act]');
+    if (!t) return;
+    var act = t.getAttribute('data-act');
+    if (act === 'toggle') {
+      var id0 = t.getAttribute('data-id');
+      var card0 = document.querySelector('.dp-card[data-id="' + id0 + '"]');
+      setOpen(id0, card0.querySelector('[data-role=state]').textContent === 'SHOW');
+      return;
+    }
+    if (act === 'cs-ok' || act === 'cs-no') {
+      t.closest('.dp-box').querySelector('.dp-ok').textContent =
+        'Signed up. The grey button did the same thing; the wording decided which you pressed.';
+      return;
+    }
+    if (act === 'rm-find') {
+      var hint = document.getElementById('rm-hint');
+      var n = (parseInt(hint.getAttribute('data-n') || '0', 10)) + 1;
+      hint.setAttribute('data-n', n);
+      hint.textContent = n + ' attempt' + (n===1?'':'s') + '. There is no Cancel link on this screen. Only a phone number, 09:00 to 17:00.';
+      return;
+    }
+    if (act === 'sn-add') {
+      var on = t.checked;
+      var extra = on ? 23.00 : 0;
+      t.closest('.dp-box').querySelector('[data-act=sn-go]').textContent =
+        'Checkout - $' + (7 + extra).toFixed(2) + ' and ' + (on ? '1 add-on' : 'no add-ons');
+      return;
+    }
+    if (act === 'fc-go') {
+      var ack = document.getElementById('fc-ack');
+      document.getElementById('fc-when').textContent = ack.checked
+        ? 'Consent given. The trial is free for 14 days and then bills $18.00 every month.'
+        : 'You started the trial without ticking consent. $18.00/month begins in 14 days and cancelling takes a phone call.';
+      return;
+    }
+    if (act === 'pc-buy') {
+      document.getElementById('pc-why').textContent =
+        'The $240 figure was the list price on a page that had never charged it. The saving is against a number, not against a value.';
+      return;
+    }
+    if (act === 'tw-no') {
+      document.getElementById('tw-note').textContent =
+        'You just declined an email receipt, which was the question. Read to the end next time - the primary button is not the correct answer.';
+      return;
+    }
+    if (act === 'tw-yes') {
+      document.getElementById('tw-note').textContent = 'Receipt emailed. One sentence, two buttons, both readable.';
+      return;
+    }
+    if (act === 'vi-reject' || act === 'vi-accept') {
+      var shared = document.getElementById('vi-shared');
+      shared.textContent = act === 'vi-reject'
+        ? 'Rejected. You had to aim at a 22%-opacity button sitting 40px from the other one.'
+        : 'Shared with 41 partners. The easy target won.';
+      return;
+    }
+    if (act === 'ur-reload' || act === 'ur-buy') {
+      if (act === 'ur-buy') {
+        document.getElementById('ur-note').textContent = 'Paid. The price never changed and the clock keeps resetting on every reload.';
+      } else {
+        document.getElementById('ur-t').textContent = '05:00';
+        document.getElementById('ur-note').textContent = 'Reloaded. The clock is back at 05:00 - it was never a deadline.';
+      }
+      return;
+    }
+    if (act === 'sc-hold') {
+      document.getElementById('sc-note').textContent = 'Held. The bar did not move, because stock is unlimited and the timer is a CSS animation.';
+      return;
+    }
+    if (act === 'sp-again') {
+      document.getElementById('sp-n').textContent = '4,317';
+      document.getElementById('sp-note').innerHTML = 'Viewers: <span id="sp-n">4,317</span> &middot; checked twice, identical. The crowd is a constant.';
+      return;
+    }
+    if (act === 'dg-1') {
+      var ex = document.getElementById('dg-extra');
+      ex.style.display = ex.style.display === 'none' ? 'block' : 'none';
+      document.getElementById('dg-note').textContent = ex.style.display === 'block'
+        ? 'You followed a link that looked like navigation. It was a paid placement, and it cost the site nothing to look native.'
+        : 'Paid placement, styled exactly like the site navigation around it.';
+      return;
+    }
+    if (act === 'ng-dismiss') {
+      var nn = document.getElementById('ng-n');
+      var c = (parseInt(nn.getAttribute('data-n') || '41', 10)) + 1;
+      nn.setAttribute('data-n', c);
+      nn.textContent = 'Asked ' + c + ' times. Dismissed ' + c + ' times. Nothing was recorded.';
+      return;
+    }
+  });
+
+  q('dp-all').addEventListener('click', function(){ for (var i=0;i<P.length;i++) setOpen(P[i].id, true); });
+  q('dp-none').addEventListener('click', function(){ for (var i=0;i<P.length;i++) setOpen(P[i].id, false); });
+  q('dp-copy').addEventListener('click', function(){
+    if (navigator.clipboard) navigator.clipboard.writeText(q('dp-out').textContent);
+    q('dp-copy').textContent='Copied'; setTimeout(function(){ q('dp-copy').textContent='Copy findings'; },1200);
+  });
+  q('dp-dl').addEventListener('click', function(){
+    var b = new Blob([q('dp-out').textContent], {type:'text/markdown'});
+    var a = document.createElement('a'); a.href = URL.createObjectURL(b);
+    a.download = 'dark-patterns.md'; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  });
+
+  window.__DP = {
+    total: P.length,
+    panels: P.length,
+    ids: P.map(function(p){ return p.id; }),
+    // Every pattern's explanation length, straight from the live DOM.
+    explanations: function(){
+      var out = {};
+      var cards = document.querySelectorAll('.dp-card');
+      for (var i=0;i<cards.length;i++){
+        var id = cards[i].getAttribute('data-id');
+        var ex = cards[i].querySelector('[data-role=explain]');
+        var parts = ex.querySelectorAll('[data-role=tactic],[data-role=exploit],[data-role=ethical]');
+        var all = true;
+        for (var j=0;j<parts.length;j++) if (!parts[j].textContent.trim()) all = false;
+        out[id] = { len: ex.textContent.trim().length, parts: parts.length, allPresent: all };
+      }
+      return out;
+    },
+    open: function(id){ setOpen(id, true); }
+  };
+  window.__DP.ready = true;
+})();
+</script>
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/citation-generator/">
+      <span class="ocurp-related-n">Citation Generator</span>
+      <span class="ocurp-related-b">APA, MLA and Harvard references from a source.</span>
+    </a></li>
+    <li><a href="/workspace/tools/flashcards/">
+      <span class="ocurp-related-n">Flashcards</span>
+      <span class="ocurp-related-b">Spaced-repetition decks that live in your browser.</span>
+    </a></li>
+    <li><a href="/workspace/tools/habit-tracker/">
+      <span class="ocurp-related-n">Habit Tracker</span>
+      <span class="ocurp-related-b">Track habits across the week on a click-to-toggle grid with live streaks and completion pe</span>
+    </a></li>
+    <li><a href="/workspace/tools/notes/">
+      <span class="ocurp-related-n">Quick Notes</span>
+      <span class="ocurp-related-b">A scratchpad that opens with a worked sample note and counts words, lines, sentences and r</span>
+    </a></li>
+    <li><a href="/workspace/tools/quiz-maker/">
+      <span class="ocurp-related-n">Quiz Maker</span>
+      <span class="ocurp-related-b">Write multiple-choice questions, mark the key, then run the quiz shuffled and score it wit</span>
+    </a></li>
+    <li><a href="/workspace/tools/spaced-repetition/">
+      <span class="ocurp-related-n">Spaced Repetition Scheduler</span>
+      <span class="ocurp-related-b">A real SM-2 deck: grade each card Again, Hard, Good or Easy and get true intervals, real d</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

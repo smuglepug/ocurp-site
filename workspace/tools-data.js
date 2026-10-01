@@ -1,5 +1,5 @@
 // TOOLS — one line per entry
-const CATS = {"data": "DATA & CODE", "document": "PDF & DOCS", "audio": "AUDIO & SPEECH", "design": "DESIGN & COLOUR", "math": "MATH & CONVERSION", "web": "NETWORK & WEB", "study": "STUDY & CAREER", "text": "WRITING & TEXT"};
+const CATS = {"data": "DATA & CODE", "document": "PDF & DOCS", "audio": "AUDIO & SPEECH", "design": "DESIGN & COLOUR", "math": "MATH & CONVERSION", "web": "NETWORK & WEB", "study": "STUDY & CAREER", "text": "WRITING & TEXT", "security": "SECURITY & PRIVACY", "fun": "FUN & NOVELTY"};
 const RAW = [
   {slug:"json-formatter",name:"JSON Prettifier",cat:"data",blurb:"Format, minify and validate JSON with a live error pointer.",tags:["JSON","CLIENT-SIDE"],ready:true},
   {slug:"base64",name:"Base64 Encoder",cat:"data",blurb:"Encode and decode Base64 text or files, UTF-8 safe.",tags:["BASE64","CLIENT-SIDE"],ready:true},
@@ -362,9 +362,17 @@ const RAW = [
   {slug:"standard-deviation-calculator",name:"Standard Deviation Calculator",cat:"math",blurb:"Mean, median, both standard deviations and variances from any list of numbers, with the sum of squares shown.",tags:["STATISTICS","MATH","DATA","CLIENT-SIDE"],ready:true},
   {slug:"fraction-decimal-calculator",name:"Fraction & Decimal Calculator",cat:"math",blurb:"Reduce a fraction, expand it as an exact decimal with the repeating cycle, and convert it to a percent or a mixed number.",tags:["MATH","FRACTION","DECIMAL","CLIENT-SIDE"],ready:true},
   {slug:"random-geometry",name:"Geometry Calculator",cat:"math",blurb:"Area, perimeter and volume for the common plane and solid shapes, with pi carried at full double precision.",tags:["MATH","GEOMETRY","AREA","CLIENT-SIDE"],ready:true},
+  {slug:"life-checklist",name:"Life Checklist",cat:"study",blurb:"A 50-item bucket list in eight categories. Tick items, watch the percentage move, and keep it across reloads.",tags:["PRODUCTIVITY","LIFE","GOALS","CLIENT-SIDE"],ready:true},
+  {slug:"days-since-incident",name:"Days Since Incident",cat:"math",blurb:"How long since a date, counted with real calendar arithmetic: years, months, days, weekday and next anniversary.",tags:["MATH","DATES","TIME","CLIENT-SIDE"],ready:true},
+  {slug:"stimulation-clicker",name:"Stimulation Clicker",cat:"fun",blurb:"Click for energy, buy multipliers and a decaying passive generator, with max-buy and offline credit.",tags:["IDLE","CLICKER","GAME","CLIENT-SIDE"],ready:true},
+  {slug:"dark-patterns",name:"Dark Patterns",cat:"study",blurb:"Twelve working mock interfaces that demonstrate real manipulative design patterns, each with its ethical counterpoint.",tags:["DESIGN","UX","STUDY","CLIENT-SIDE"],ready:true},
   {slug:"bmr-tdee",name:"BMR and TDEE Calculator",cat:"math",blurb:"Mifflin-St Jeor and Katch-McArdle BMR, TDEE and a macro split in grams and calories.",tags:["METABOLISM","MACROS","CLIENT-SIDE"],ready:true},
   {slug:"body-fat-estimator",name:"Body Fat Estimator",cat:"math",blurb:"US Navy circumference body fat percent, lean mass, fat mass and fitness band.",tags:["US NAVY","CIRCUMFERENCE","CLIENT-SIDE"],ready:true},
   {slug:"ideal-weight-calculator",name:"Ideal Weight Calculator",cat:"math",blurb:"Devine, Robinson, Miller and Hamwi side by side, plus the healthy BMI band.",tags:["IDEAL WEIGHT","BMI","CLIENT-SIDE"],ready:true},
   {slug:"ratio-simplifier",name:"Ratio Simplifier",cat:"math",blurb:"Reduce a ratio with GCD, scale it, split a whole, and convert seven unit pairs.",tags:["GCD","RATIO","UNITS","CLIENT-SIDE"],ready:true},
   {slug:"percentage-change",name:"Percentage Change",cat:"math",blurb:"Percent change, the reverse, percent-of, and compound growth over N periods.",tags:["PERCENT","COMPOUND","CLIENT-SIDE"],ready:true},
+  {slug:"size-of-space",name:"Size of Space",cat:"math",blurb:"A scale ladder from 1 m to the observable universe: how many of a reference object fit.",tags:["SCALE","ASTRONOMY","LOG SCALE","CLIENT-SIDE"],ready:true},
+  {slug:"who-was-alive",name:"Who Was Alive",cat:"study",blurb:"Enter a year and see which notable people from a curated roster were alive at that moment.",tags:["HISTORY","PEOPLE","TIMELINE","CLIENT-SIDE"],ready:true},
+  {slug:"universe-forecast",name:"Universe Forecast",cat:"study",blurb:"Scrub 2000 to 2100 and read world population, CO2 ppm and the temperature anomaly, plotted.",tags:["CLIMATE","POPULATION","FORECAST","CLIENT-SIDE"],ready:true},
+  {slug:"baby-map",name:"Baby Map",cat:"fun",blurb:"Enter a due date and map the pregnancy: current week, trimester, days left and a 40-week grid.",tags:["PREGNANCY","DATES","TIMELINE","CLIENT-SIDE"],ready:true},
 ];

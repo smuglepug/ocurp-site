@@ -181,6 +181,10 @@ tailwind.config = { theme: { extend: {
     }
     if(!stack.length) return s;
     var tail = stack.length;
+    // 'out' was never declared here: the function collected the unclosed brackets
+    // but then appended them to an undefined variable, so every truncated-JSON
+    // repair threw instead of repairing. Seed it with the input.
+    var out = s;
     while(stack.length) out += stack.pop();
     log('closed ' + tail + ' unclosed bracket' + (tail===1?'':'s') + ' (input was truncated)');
     return out;
@@ -195,8 +199,11 @@ tailwind.config = { theme: { extend: {
     s = stripComments(s);
     s = singleToDouble(s);
     s = quoteKeys(s);
-    s = stripTrailing(s);
+    // closeTail must run BEFORE stripTrailing: it is the step that appends the
+    // closing brackets, so a trailing comma only becomes "before a closing
+    // bracket" afterwards. The other order left `{"a":1,` unrepairable.
     s = closeTail(s);
+    s = stripTrailing(s);
     try {
       var parsed = JSON.parse(s);
       return { ok:true, alreadyValid:false, fixes:fixes.slice(), pretty: JSON.stringify(parsed, null, 2),
@@ -230,6 +237,10 @@ tailwind.config = { theme: { extend: {
 </script>
 </div>
 <script src="/workspace/related.js" defer></script>
+
+
+
+
 
 
 

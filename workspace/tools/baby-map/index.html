@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baby Map — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Enter a due date and map the pregnancy: current week. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/baby-map/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Baby Map">
+<meta property="og:description" content="Enter a due date and map the pregnancy: current week. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/baby-map/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Baby Map on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Baby Map">
+<meta name="twitter:description" content="Enter a due date and map the pregnancy: current week. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Baby Map on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Baby Map","url":"https://ocurp.space/workspace/tools/baby-map/","description":"Enter a due date and map the pregnancy: current week. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Baby Map</h1>
+      <p class="mt-1 text-xs text-white/40">fun &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Enter a due date and get the whole pregnancy mapped: current week, trimester, days left and a 40-week grid with today highlighted.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-6 lg:grid-cols-4">
+    <div>
+      <label class="ws-label mb-2 block" for="bm-due">Due date (LMP + 280 days)</label>
+      <input id="bm-due" type="date" class="ws-input" value="">
+      <div class="mt-2 flex flex-wrap gap-2">
+        <button id="bm-go" class="ws-btn">Map pregnancy</button>
+        <button id="bm-today" class="ws-btn-ghost">Use today + 40 weeks</button>
+      </div>
+      <div class="mt-2 flex flex-wrap gap-2">
+        <button id="bm-cp" class="ws-btn-ghost">Copy map</button>
+        <button id="bm-dl" class="ws-btn-ghost">Download</button>
+      </div>
+
+      <label class="ws-label mb-2 mt-5 block" for="bm-asof">Map as of</label>
+      <input id="bm-asof" type="date" class="ws-input" value="">
+      <p class="mt-2 text-[11px] leading-relaxed text-white/35">
+        A due date is estimated as the first day of the last period plus 280
+        days. Change the as-of date to see how the map reads on any other day.
+      </p>
+    </div>
+
+    <div class="lg:col-span-3">
+      <div class="grid gap-3 sm:grid-cols-4">
+        <div class="ws-panel p-4">
+          <div class="ws-label">Current week</div>
+          <div id="bm-week" class="font-display text-2xl font-extrabold text-[#FF5F1F]">-</div>
+        </div>
+        <div class="ws-panel p-4">
+          <div class="ws-label">Trimester</div>
+          <div id="bm-tri" class="font-display text-2xl font-extrabold text-white">-</div>
+        </div>
+        <div class="ws-panel p-4">
+          <div class="ws-label">Days until birth</div>
+          <div id="bm-days" class="font-display text-2xl font-extrabold text-white">-</div>
+        </div>
+        <div class="ws-panel p-4">
+          <div class="ws-label">Progress</div>
+          <div id="bm-pct" class="font-display text-2xl font-extrabold text-white">-</div>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <div class="mb-1 flex justify-between text-[11px] text-white/40">
+          <span>Week 1</span><span>Week 14</span><span>Week 27</span><span>Week 40</span>
+        </div>
+        <div class="h-3 w-full overflow-hidden rounded-full border border-white/10 bg-white/[0.03]">
+          <div id="bm-bar" class="h-full bg-[#FF5F1F]" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="ws-out mt-4" id="bm-out"></div>
+
+      <div class="mt-5">
+        <div class="ws-label mb-2">All 40 weeks</div>
+        <div id="bm-grid" class="grid grid-cols-8 gap-1.5 sm:grid-cols-10"></div>
+        <div class="mt-3 flex flex-wrap gap-4 text-[11px] text-white/40">
+          <span><span class="mr-1 inline-block h-2 w-2 rounded-full bg-[#FF5F1F]"></span>current week</span>
+          <span><span class="mr-1 inline-block h-2 w-2 rounded-full border border-white/25"></span>trimester 1</span>
+          <span><span class="mr-1 inline-block h-2 w-2 rounded-full border border-white/40"></span>trimester 2</span>
+          <span><span class="mr-1 inline-block h-2 w-2 rounded-full border border-white/60"></span>trimester 3</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  </div>
+  <div class="mt-8">
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+
+  var GEST = 280;   // days, the standard Naegele term
+  var WEEKS = 40;
+
+  // Weeks are dated from the LMP, so week N runs from day (N-1)*7 to N*7-1.
+  // A week label is 1-based, matching how clinicians count.
+  function tri(w){
+    if(w <= 13) return 1;
+    if(w <= 27) return 2;
+    return 3;
+  }
+  function pct(d){
+    return Math.max(0, Math.min(100, d / GEST * 100));
+  }
+
+  function parseD(s){
+    if(!s) return null;
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if(!m) return null;
+    var d = new Date(+m[1], +m[2] - 1, +m[3]);
+    // Reject 2026-02-31 style values that Date silently rolls over.
+    if(d.getFullYear() !== +m[1] || d.getMonth() !== +m[2] - 1 || d.getDate() !== +m[3]) return null;
+    return d;
+  }
+  function iso(d){
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+  function dayDiff(a, b){
+    // Both are local midnight, so this is an exact whole-day count and stays
+    // clear of DST: use the UTC calendar fields, not getTime().
+    return Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) -
+                       Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 86400000);
+  }
+  function addDays(d, n){
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  }
+  function pretty(d){
+    return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+  }
+
+  function today(){
+    var n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  }
+
+  // The single source of truth: due date = LMP + 280 days.
+  function compute(dueStr, asOfStr){
+    var due = parseD(dueStr);
+    var asOf = parseD(asOfStr) || today();
+    if(!due) return { ok:false, error:'Pick a valid due date.' };
+    var lmp = addDays(due, -GEST);
+    var gest = dayDiff(lmp, asOf);          // days elapsed since the LMP
+    var left = dayDiff(asOf, due);          // days remaining
+    var w = Math.floor(gest / 7) + 1;       // 1-based week number
+    var d = gest % 7;                       // 0-based day within the week
+    if(gest < 0) { w = 0; d = 0; }
+    if(gest > GEST) { w = WEEKS + 1; d = 0; }
+    return {
+      ok:true, due:due, asOf:asOf, lmp:lmp,
+      gestDays:gest, daysLeft:left,
+      week:w, dayInWeek:d,
+      dayNumber: w >= 1 && w <= WEEKS ? d + 1 : (gest < 0 ? 0 : WEEKS * 7 + 1),
+      trimester: w >= 1 ? tri(w) : 0,
+      percent: pct(gest)
+    };
+  }
+
+  function text(r){
+    if(!r.ok) return r.error;
+    var out = ['Baby Map', '',
+      'Due date: ' + pretty(r.due) + ' (' + iso(r.due) + ')',
+      'Last menstrual period: ' + pretty(r.lmp) + ' (' + iso(r.lmp) + ')',
+      'As of: ' + pretty(r.asOf) + ' (' + iso(r.asOf) + ')', ''];
+    out.push('Current week: ' + r.week + (r.week >= 1 && r.week <= WEEKS ? ' (day ' + r.dayNumber + ' of 7)' : ''));
+    out.push('Trimester: ' + r.trimester);
+    out.push('Gestational age: ' + r.gestDays + ' days');
+    out.push('Days until birth: ' + r.daysLeft);
+    out.push('Progress: ' + r.percent.toFixed(1) + '%');
+    out.push('');
+    out.push('Week | Trimester | Week runs');
+    for(var w = 1; w <= WEEKS; w++){
+      var s = addDays(r.lmp, (w - 1) * 7), e = addDays(r.lmp, w * 7 - 1);
+      out.push(w + ' | ' + tri(w) + ' | ' + iso(s) + ' to ' + iso(e));
+    }
+    return out.join('\n');
+  }
+
+  function render(){
+    var r = compute($('bm-due').value, $('bm-asof').value);
+    if(!r.ok){
+      $('bm-out').innerHTML = '<span class="text-white/60">' + r.error + '</span>';
+      ['bm-week','bm-tri','bm-days','bm-pct'].forEach(function(id){ $(id).textContent = '-'; });
+      $('bm-bar').style.width = '0%';
+      $('bm-grid').innerHTML = '';
+      return;
+    }
+    var inTerm = r.week >= 1 && r.week <= WEEKS;
+    $('bm-week').textContent = inTerm ? r.week : (r.week === 0 ? 'before' : 'past');
+    $('bm-tri').textContent  = r.trimester ? r.trimester : '-';
+    $('bm-days').textContent = r.daysLeft;
+    $('bm-pct').textContent  = r.percent.toFixed(1) + '%';
+    $('bm-bar').style.width  = r.percent.toFixed(2) + '%';
+
+    $('bm-out').innerHTML =
+      '<div class="text-white"><b class="text-[#FF5F1F]">' + pretty(r.due) + '</b> is the due date</div>' +
+      '<div class="text-white/55">LMP ' + pretty(r.lmp) + ' + 280 days</div>' +
+      '<div class="mt-2 text-white/55">' + (inTerm
+        ? 'Week <b class="text-[#FF5F1F]">' + r.week + '</b>, day <b class="text-[#FF5F1F]">' + r.dayNumber + '</b> of 7, trimester ' + r.trimester
+        : (r.week === 0 ? 'Not started yet \u2014 ' + (-r.gestDays) + ' days to go.'
+                        : 'Past the due date by ' + (-r.daysLeft) + ' days.')) + '</div>' +
+      '<div class="text-white/45 text-[12px]">' + r.gestDays + ' days gestation, ' + r.daysLeft + ' days remaining</div>';
+
+    var cells = [];
+    for(var w = 1; w <= WEEKS; w++){
+      var cur = (w === r.week);
+      var t = tri(w);
+      var op = cur ? 1 : (t === 1 ? 0.25 : t === 2 ? 0.4 : 0.6);
+      cells.push('<div class="flex h-11 items-center justify-center rounded-lg text-[12px] font-bold ' +
+        (cur ? 'bg-[#FF5F1F] text-black' : 'border border-white/10 text-white') + '" ' +
+        'style="opacity:' + op + '" data-week="' + w + '" data-tri="' + t + '"' +
+        (cur ? ' data-current="1"' : '') + '>' + w + '</div>');
+    }
+    $('bm-grid').innerHTML = cells.join('');
+  }
+
+  function defaults(){
+    var t = today();
+    // A due date of today + 280 days means the pregnancy starts today, so
+    // the map opens on week 1 rather than an empty state.
+    $('bm-due').value = iso(addDays(t, GEST));
+    $('bm-asof').value = iso(t);
+  }
+  defaults();
+  render();
+
+  $('bm-go').addEventListener('click', render);
+  $('bm-due').addEventListener('change', render);
+  $('bm-asof').addEventListener('change', render);
+  $('bm-today').addEventListener('click', function(){ defaults(); render(); });
+  $('bm-cp').addEventListener('click', function(){
+    navigator.clipboard.writeText(text(compute($('bm-due').value, $('bm-asof').value)));
+  });
+  $('bm-dl').addEventListener('click', function(){
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text(compute($('bm-due').value, $('bm-asof').value))], { type:'text/plain' }));
+    a.download = 'baby-map.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  // Test hook: pure date arithmetic, driven by explicit ISO strings.
+  window.__T = window.__T || {};
+  window.__T['baby-map'] = {
+    slug:'baby-map',
+    GEST:GEST, WEEKS:WEEKS,
+    run: function(dueStr, asOfStr){ return compute(dueStr, asOfStr); },
+    defaults: function(){
+      var t = today();
+      return { due: iso(addDays(t, GEST)), asOf: iso(t) };
+    },
+    text: text
+  };
+})();</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/date-diff/">
+      <span class="ocurp-related-n">Date Difference (Quick)</span>
+      <span class="ocurp-related-b">Days between any two dates, business days with weekends skipped, whole and exact weeks, an</span>
+    </a></li>
+    <li><a href="/workspace/tools/days-since-incident/">
+      <span class="ocurp-related-n">Days Since Incident</span>
+      <span class="ocurp-related-b">How long since a date, counted with real calendar arithmetic: years, months, days, weekday</span>
+    </a></li>
+    <li><a href="/workspace/tools/who-was-alive/">
+      <span class="ocurp-related-n">Who Was Alive</span>
+      <span class="ocurp-related-b">Enter a year and see which notable people from a curated roster were alive at that moment.</span>
+    </a></li>
+    <li><a href="/workspace/tools/stimulation-clicker/">
+      <span class="ocurp-related-n">Stimulation Clicker</span>
+      <span class="ocurp-related-b">Click for energy, buy multipliers and a decaying passive generator, with max-buy and offli</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/add-line-numbers/">
+      <span class="ocurp-related-n">Add Line Numbers</span>
+      <span class="ocurp-related-b">Prefix each line with a configurable number, padding and separator.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

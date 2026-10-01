@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ratio Simplifier | Owen's Workspace</title>
+<title>Ratio Simplifier — Free Online Tool | Ocurp</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -52,6 +52,23 @@ tailwind.config = { theme: { extend: {
   .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
   .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
 </style>
+<meta name="description" content="Reduce a ratio with GCD. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/ratio-simplifier/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Ratio Simplifier">
+<meta property="og:description" content="Reduce a ratio with GCD. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/ratio-simplifier/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Ratio Simplifier on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Ratio Simplifier">
+<meta name="twitter:description" content="Reduce a ratio with GCD. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Ratio Simplifier on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Ratio Simplifier","url":"https://ocurp.space/workspace/tools/ratio-simplifier/","description":"Reduce a ratio with GCD. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -147,9 +164,13 @@ tailwind.config = { theme: { extend: {
 </div>
   </div>
   <div class="mt-8">
+<script>
 
   function num(x, d){ if(x === null || x === undefined || !isFinite(x)) return '-';
     return String(parseFloat(x.toFixed(d === undefined ? 2 : d))); }
+  // Same as num(), but drops trailing zeros so 385.75 g is not shown as 385.8.
+  function numt(x, d){ var s = num(x, d === undefined ? 2 : d);
+    return s.indexOf('.') < 0 ? s : s.replace(/0+$/,'').replace(/\.$/,''); }
   function raw(s){ var x = parseFloat(String(s).replace(/[^0-9.\-eE+]/g,'')); return isFinite(x) ? x : NaN; }
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
 
@@ -167,8 +188,10 @@ tailwind.config = { theme: { extend: {
     {k:'lb-kg',   from:'pound',     to:'kilogram',     f:0.453592},
     {k:'ac-m2',   from:'acre',      to:'square metre', f:4046.86}
   ];
+  // Keyed by the unit NAMES the selects actually hold - keying by the short
+  // code u.k meant every lookup missed and the panel opened on an error.
   var unitByKey = {};
-  UNITS.forEach(function(u){ unitByKey[u.k + '>' + u.to] = u; });
+  UNITS.forEach(function(u){ unitByKey[u.from + '>' + u.to] = u; });
 
   function gcd(a, b){
     a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b));
@@ -221,8 +244,8 @@ tailwind.config = { theme: { extend: {
       'Result         ' + num(c.scaled_a, 4) + ' : ' + num(c.scaled_b, 4),
       '',
       'PARTS OF A WHOLE OF ' + num(c.whole, 2),
-      'Part A         ' + num(c.part_a, 4),
-      'Part B         ' + num(c.part_b, 4),
+      'Part A         ' + numt(c.part_a, 4),
+      'Part B         ' + numt(c.part_b, 4),
       '',
       utext
     ].join('\n');
@@ -241,9 +264,9 @@ tailwind.config = { theme: { extend: {
     $('r-pct').textContent  = num(c.pct_a, 2) + ' % / ' + num(c.pct_b, 2) + ' %';
     $('r-nlab').textContent = num(c.scale_n, 0);
     $('r-out2').textContent = num(c.scaled_a, 4) + ' : ' + num(c.scaled_b, 4);
-    $('r-pa').textContent   = num(c.part_a, 2);
-    $('r-pb').textContent   = num(c.part_b, 2);
-    $('r-sum').textContent  = num(c.part_a + c.part_b, 2) + ' = whole';
+    $('r-pa').textContent   = numt(c.part_a, 2);
+    $('r-pb').textContent   = numt(c.part_b, 2);
+    $('r-sum').textContent  = numt(c.part_a + c.part_b, 2) + ' = whole';
     $('r-out').textContent  = text(c, null, unitText(unitCurrent()));
   }
 
@@ -326,8 +349,61 @@ tailwind.config = { theme: { extend: {
   go();
 })();
 
+</script>
   </div>
 </div>
 <script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/gcd-lcm-calculator/">
+      <span class="ocurp-related-n">GCD &amp; LCM Calculator</span>
+      <span class="ocurp-related-b">Greatest common divisor and lowest common multiple of two integers, with the Euclidean alg</span>
+    </a></li>
+    <li><a href="/workspace/tools/unit-conversion-matrix/">
+      <span class="ocurp-related-n">Unit Conversion Matrix</span>
+      <span class="ocurp-related-b">Exact conversion factors across length, mass, area, volume, speed, temperature and data, w</span>
+    </a></li>
+    <li><a href="/workspace/tools/unit-converter/">
+      <span class="ocurp-related-n">Unit Converter</span>
+      <span class="ocurp-related-b">Length, mass, temperature, data and more.</span>
+    </a></li>
+    <li><a href="/workspace/tools/unit-converter-categories/">
+      <span class="ocurp-related-n">Unit Converter Complete</span>
+      <span class="ocurp-related-b">Every unit category in one place, with a searchable reference table.</span>
+    </a></li>
+    <li><a href="/workspace/tools/unit-price-compare/">
+      <span class="ocurp-related-n">Unit Price Compare</span>
+      <span class="ocurp-related-b">Sort products by what a single gram, millilitre or item actually costs, normalising g/kg, </span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
 </body>
 </html>

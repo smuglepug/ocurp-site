@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Body Fat Estimator | Owen's Workspace</title>
+<title>Body Fat Estimator — Free Online Tool | Ocurp</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -52,6 +52,23 @@ tailwind.config = { theme: { extend: {
   .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
   .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
 </style>
+<meta name="description" content="US Navy circumference body fat percent. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/body-fat-estimator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Body Fat Estimator">
+<meta property="og:description" content="US Navy circumference body fat percent. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/body-fat-estimator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Body Fat Estimator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Body Fat Estimator">
+<meta name="twitter:description" content="US Navy circumference body fat percent. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Body Fat Estimator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Body Fat Estimator","url":"https://ocurp.space/workspace/tools/body-fat-estimator/","description":"US Navy circumference body fat percent. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -128,9 +145,13 @@ tailwind.config = { theme: { extend: {
 </div>
   </div>
   <div class="mt-8">
+<script>
 
   function num(x, d){ if(x === null || x === undefined || !isFinite(x)) return '-';
     return String(parseFloat(x.toFixed(d === undefined ? 2 : d))); }
+  // Same as num(), but drops trailing zeros so 385.75 g is not shown as 385.8.
+  function numt(x, d){ var s = num(x, d === undefined ? 2 : d);
+    return s.indexOf('.') < 0 ? s : s.replace(/0+$/,'').replace(/\.$/,''); }
   function raw(s){ var x = parseFloat(String(s).replace(/[^0-9.\-eE+]/g,'')); return isFinite(x) ? x : NaN; }
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
 
@@ -141,10 +162,13 @@ tailwind.config = { theme: { extend: {
   // ACE / US Navy. Both forms are the same shape: a regression on base-10 logs
   // of the girth sums, inverted, minus 450.
   var BANDS = {
-    m: [['Essential fat', 2, 5], ['Athletic', 6, 13], ['Fitness', 14, 17],
-        ['Average', 18, 24], ['Obesity', 25, 100]],
-    f: [['Essential fat', 10, 12], ['Athletic', 13, 20], ['Fitness', 21, 24],
-        ['Average', 25, 31], ['Obesity', 32, 100]]
+    // Bands must be contiguous: a value between two rows would otherwise fall
+    // through to the last one and be mislabelled. Lower bounds are inclusive,
+    // the row above ends one below the next row's lower bound.
+    m: [['Essential fat', 0, 5], ['Athletic', 5, 13], ['Fitness', 13, 17],
+        ['Average', 17, 24], ['Obesity', 24, 100]],
+    f: [['Essential fat', 0, 12], ['Athletic', 12, 20], ['Fitness', 20, 24],
+        ['Average', 24, 31], ['Obesity', 31, 100]]
   };
 
   function navyMale(waist, neck, height){
@@ -156,11 +180,11 @@ tailwind.config = { theme: { extend: {
                          + 0.22100 * Math.log10(height)) - 450;
   }
   function band(sex, pct){
-    var list = BANDS[sex], out = list[list.length - 1][0];
+    var list = BANDS[sex];
     for (var i = 0; i < list.length; i++){
-      if (pct >= list[i][1] && pct <= list[i][2]) { out = list[i][0]; break; }
+      if (pct >= list[i][1] && pct <= list[i][2]) return list[i][0];
     }
-    return out;
+    return pct < list[0][1] ? list[0][0] : list[list.length - 1][0];
   }
 
   function compute(inp){
@@ -206,8 +230,9 @@ tailwind.config = { theme: { extend: {
     $('f-wtv').textContent  = num(c.weight, 1) + ' kg';
     var rows = BANDS[c.sex].map(function(b){
       var hit = (b[0] === c.band);
+      var hi = (b[2] === 100 ? '+' : b[2]);
       return '<div><span style="opacity:' + (hit ? 1 : .45) + '">' + b[0] + '</span>'
-        + ' &nbsp;' + b[1] + '-' + (b[2] === 100 ? '+' : b[2]) + '%'
+        + ' &nbsp;' + (b[1] === 0 ? 'under ' : b[1] + '-') + hi + '%'
         + (hit ? ' &nbsp;&larr; you are here' : '') + '</div>';
     }).join('');
     $('f-bands').innerHTML = '<div class="ws-label mb-2">'
@@ -249,8 +274,61 @@ tailwind.config = { theme: { extend: {
   go();
 })();
 
+</script>
   </div>
 </div>
 <script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once, with a signed bit-width view, two&#x27;s complement</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi/">
+      <span class="ocurp-related-n">BMI Calculator</span>
+      <span class="ocurp-related-b">Body mass index with healthy-range context.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
 </body>
 </html>

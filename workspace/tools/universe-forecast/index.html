@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Universe Forecast — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Scrub 2000 to 2100 and read world population. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/universe-forecast/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Universe Forecast">
+<meta property="og:description" content="Scrub 2000 to 2100 and read world population. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/universe-forecast/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Universe Forecast on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Universe Forecast">
+<meta name="twitter:description" content="Scrub 2000 to 2100 and read world population. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Universe Forecast on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Universe Forecast","url":"https://ocurp.space/workspace/tools/universe-forecast/","description":"Scrub 2000 to 2100 and read world population. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Universe Forecast</h1>
+      <p class="mt-1 text-xs text-white/40">study &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Scrub 2000 to 2100 and read world population, CO2 in ppm and the temperature anomaly, each on its own plotted curve.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-6 lg:grid-cols-4">
+    <div>
+      <label class="ws-label mb-2 block" for="uf-year">Year</label>
+      <input id="uf-year" type="number" class="ws-input" value="2025" min="2000" max="2100">
+      <input id="uf-scrub" type="range" min="2000" max="2100" value="2025" step="1"
+             class="mt-3 w-full accent-[#FF5F1F]">
+
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="uf-go" class="ws-btn">Show year</button>
+        <button id="uf-cp" class="ws-btn-ghost">Copy readout</button>
+        <button id="uf-dl" class="ws-btn-ghost">Download series</button>
+      </div>
+
+      <div class="mt-4">
+        <div class="ws-label mb-2">Year readout</div>
+        <div class="ws-kv"><span>World population</span><span id="uf-pop">-</span></div>
+        <div class="ws-kv"><span>CO&#8322; concentration</span><span id="uf-co2">-</span></div>
+        <div class="ws-kv"><span>Temp anomaly vs 1850-1900</span><span id="uf-temp">-</span></div>
+        <div class="ws-kv"><span>Change in population since 2000</span><span id="uf-dpop">-</span></div>
+        <div class="ws-kv"><span>Change in CO&#8322; since 2000</span><span id="uf-dco2">-</span></div>
+        <div class="ws-kv"><span>Change in anomaly since 2000</span><span id="uf-dtemp">-</span></div>
+      </div>
+
+      <div class="ws-out mt-4" id="uf-out"></div>
+
+      <p class="mt-4 text-[11px] leading-relaxed text-white/35">
+        Anchors are UN-style population estimates, the observed Mauna Loa CO&#8322;
+        record, and the 1850-1900 temperature baseline. Values between
+        anchors are straight-line interpolations of those anchors, and
+        anything past the last anchor is a projection, not a measurement.
+      </p>
+    </div>
+
+    <div class="lg:col-span-3">
+      <div class="grid gap-4 sm:grid-cols-3">
+        <div>
+          <div class="ws-label mb-1">World population (billions)</div>
+          <canvas id="uf-c1" width="300" height="180" class="w-full rounded-lg border border-white/10 bg-white/[0.02]"></canvas>
+        </div>
+        <div>
+          <div class="ws-label mb-1">CO&#8322; (ppm)</div>
+          <canvas id="uf-c2" width="300" height="180" class="w-full rounded-lg border border-white/10 bg-white/[0.02]"></canvas>
+        </div>
+        <div>
+          <div class="ws-label mb-1">Temp anomaly (&deg;C vs 1850-1900)</div>
+          <canvas id="uf-c3" width="300" height="180" class="w-full rounded-lg border border-white/10 bg-white/[0.02]"></canvas>
+        </div>
+      </div>
+
+      <div class="mt-5 overflow-x-auto">
+        <table class="w-full text-left text-[12px]">
+          <thead>
+            <tr class="ws-label">
+              <th class="py-2 pr-3">Year</th>
+              <th class="py-2 pr-3">Population (bn)</th>
+              <th class="py-2 pr-3">CO&#8322; (ppm)</th>
+              <th class="py-2 pr-3">Anomaly (&deg;C)</th>
+            </tr>
+          </thead>
+          <tbody id="uf-rows"></tbody>
+        </table>
+      </div>
+      <p class="mt-2 text-[11px] text-white/35">Every 10th year, plus 2025 and the selected year.</p>
+    </div>
+  </div>
+</div>
+  </div>
+  <div class="mt-8">
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+
+  // Anchor points. Anything between two anchors is a linear interpolation;
+  // these are the only numbers the tool treats as given.
+  var POP  = [[2000,6.1],[2025,8.1],[2050,10.3],[2100,10.4]];
+  var CO2  = [[2000,369],[2025,425],[2100,560]];
+  var TEMP = [[2000,0.4],[2025,1.3],[2100,2.9]];
+
+  // Piecewise-linear over the anchor list. Years outside the anchor span
+  // clamp to the nearest endpoint rather than extrapolating further.
+  function at(pts, y){
+    if(y <= pts[0][0]) return pts[0][1];
+    for(var i = 0; i < pts.length - 1; i++){
+      var a = pts[i], b = pts[i + 1];
+      if(y >= a[0] && y <= b[0]){
+        return a[1] + (b[1] - a[1]) * (y - a[0]) / (b[0] - a[0]);
+      }
+    }
+    return pts[pts.length - 1][1];
+  }
+
+  function pop(y){  return at(POP, y); }
+  function co2(y){  return at(CO2, y); }
+  function temp(y){ return at(TEMP, y); }
+
+  function r2(v){ return Math.round(v * 100) / 100; }
+  function r1(v){ return Math.round(v * 10) / 10; }
+  function sign(v, d){ return (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(d); }
+
+  var COL = { pop:'#FF5F1F', co2:'#FF5F1F', temp:'#FF5F1F' };
+
+  function draw(id, fn, y0, y1, title){
+    var c = $(id);
+    var ctx = c.getContext('2d');
+    var W = c.width, H = c.height, L = 34, R = 8, T = 10, B = 22;
+    ctx.clearRect(0, 0, W, H);
+    var y = +$('uf-year').value;
+    var px = function(v){ return L + (v - 2000) / 100 * (W - L - R); };
+    var py = function(v){ return H - B - (v - y0) / (y1 - y0) * (H - T - B); };
+
+    // Grid + axis labels
+    ctx.strokeStyle = 'rgba(255,255,255,.08)';
+    ctx.fillStyle = 'rgba(255,255,255,.35)';
+    ctx.font = '9px "IBM Plex Sans", monospace';
+    ctx.lineWidth = 1;
+    for(var g = 0; g <= 4; g++){
+      var v = y0 + (y1 - y0) * g / 4, yy = Math.round(py(v)) + .5;
+      ctx.beginPath(); ctx.moveTo(L, yy); ctx.lineTo(W - R, yy); ctx.stroke();
+      ctx.textAlign = 'right';
+      ctx.fillText((Math.round(v * 100) / 100).toString(), L - 4, yy + 3);
+    }
+    ctx.textAlign = 'center';
+    [2000, 2050, 2100].forEach(function(v){
+      ctx.fillText(String(v), px(v), H - 7);
+    });
+
+    // The curve itself
+    ctx.strokeStyle = COL[id === 'uf-c1' ? 'pop' : id === 'uf-c2' ? 'co2' : 'temp'];
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for(var yr = 2000; yr <= 2100; yr++){
+      var X = px(yr), Y = py(fn(yr));
+      if(yr === 2000) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+    }
+    ctx.stroke();
+
+    // Selected-year marker, vertical line + dot
+    var mx = Math.round(px(y)) + .5;
+    ctx.strokeStyle = 'rgba(255,255,255,.28)';
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(mx, T); ctx.lineTo(mx, H - B); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#FF5F1F';
+    ctx.beginPath();
+    ctx.arc(px(y), py(fn(y)), 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    ctx.textAlign = 'left';
+    ctx.fillText(title + ' \u2192 ' + (Math.round(fn(y) * 100) / 100), L, T + 2);
+  }
+
+  function drawAll(){
+    draw('uf-c1', pop, 6, 11, 'Population');
+    draw('uf-c2', co2, 360, 570, 'CO2');
+    draw('uf-c3', temp, 0, 3.2, 'Anomaly');
+  }
+
+  function text(){
+    var y = +$('uf-year').value;
+    var out = ['Universe Forecast', 'Selected year: ' + y, ''];
+    out.push('World population: ' + r2(pop(y)) + ' billion');
+    out.push('CO2 concentration: ' + r1(co2(y)) + ' ppm');
+    out.push('Temperature anomaly vs 1850-1900: ' + r2(temp(y)) + ' C');
+    out.push('');
+    out.push('Year | Population (bn) | CO2 (ppm) | Anomaly (C)');
+    for(var yr = 2000; yr <= 2100; yr += 5){
+      out.push([yr, r2(pop(yr)), r1(co2(yr)), r2(temp(yr))].join(' | '));
+    }
+    return out.join('\n');
+  }
+
+  function render(){
+    var y = parseInt($('uf-year').value, 10);
+    if(!isFinite(y)) y = 2025;
+    y = Math.max(2000, Math.min(2100, y));
+    $('uf-year').value = y;
+    $('uf-scrub').value = y;
+
+    var P = pop(y), C = co2(y), T = temp(y);
+    $('uf-pop').textContent  = r2(P) + ' bn';
+    $('uf-co2').textContent  = r1(C) + ' ppm';
+    $('uf-temp').textContent = r2(T) + ' \u00b0C';
+    $('uf-dpop').textContent  = sign(r2(P - pop(2000)), 2) + ' bn';
+    $('uf-dco2').textContent  = sign(r1(C - co2(2000)), 1) + ' ppm';
+    $('uf-dtemp').textContent = sign(r2(T - temp(2000)), 2) + ' \u00b0C';
+
+    $('uf-out').innerHTML =
+      '<div class="text-white text-lg font-bold">' + y + '</div>' +
+      '<div class="text-white/55"><b class="text-[#FF5F1F]">' + r2(P) + ' bn</b> people</div>' +
+      '<div class="text-white/55"><b class="text-[#FF5F1F]">' + r1(C) + ' ppm</b> CO&#8322;</div>' +
+      '<div class="text-white/55"><b class="text-[#FF5F1F]">' + r2(T) + ' \u00b0C</b> above 1850-1900</div>' +
+      (y > 2025 ? '<div class="mt-2 text-white/40 text-[12px]">Projection, not measurement.</div>' : '');
+
+    var years = [];
+    for(var yr = 2000; yr <= 2100; yr += 10) years.push(yr);
+    if(years.indexOf(2025) < 0) years.push(2025);
+    if(years.indexOf(y) < 0) years.push(y);
+    years.sort(function(a, b){ return a - b; });
+
+    $('uf-rows').innerHTML = years.map(function(yr){
+      var sel = yr === y;
+      return '<tr class="border-t border-white/[0.06] ' + (sel ? 'bg-[#FF5F1F]/10' : '') + '">' +
+        '<td class="py-1.5 pr-3 ' + (sel ? 'text-[#FF5F1F]' : 'text-white/70') + '">' + yr + '</td>' +
+        '<td class="py-1.5 pr-3 font-mono text-white">' + r2(pop(yr)) + '</td>' +
+        '<td class="py-1.5 pr-3 font-mono text-white">' + r1(co2(yr)) + '</td>' +
+        '<td class="py-1.5 pr-3 font-mono text-white">' + r2(temp(yr)) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    drawAll();
+  }
+
+  $('uf-go').addEventListener('click', render);
+  $('uf-year').addEventListener('input', render);
+  $('uf-scrub').addEventListener('input', function(){
+    $('uf-year').value = this.value;
+    render();
+  });
+  $('uf-cp').addEventListener('click', function(){
+    navigator.clipboard.writeText(text());
+  });
+  $('uf-dl').addEventListener('click', function(){
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text()], { type:'text/plain' }));
+    a.download = 'universe-forecast.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  render();
+  addEventListener('resize', drawAll);
+
+  // Test hook: the three curves as pure functions of year.
+  window.__T = window.__T || {};
+  window.__T['universe-forecast'] = {
+    slug:'universe-forecast',
+    run: function(y){
+      y = y === undefined ? 2025 : y;
+      return {
+        ok:true, year:y,
+        pop: r2(pop(y)), popRaw: pop(y),
+        co2: r1(co2(y)), co2Raw: co2(y),
+        temp: r2(temp(y)), tempRaw: temp(y),
+        dpop: r2(pop(y) - pop(2000)),
+        dco2: r1(co2(y) - co2(2000)),
+        dtemp: r2(temp(y) - temp(2000))
+      };
+    },
+    pop:pop, co2:co2, temp:temp,
+    anchors: { pop:POP, co2:CO2, temp:TEMP }
+  };
+})();</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/population-growth/">
+      <span class="ocurp-related-n">Population Growth Model</span>
+      <span class="ocurp-related-b">Project a population forward with growth rate, births and deaths, year by year.</span>
+    </a></li>
+    <li><a href="/workspace/tools/alarm/">
+      <span class="ocurp-related-n">Alarm Clock</span>
+      <span class="ocurp-related-b">Set an alarm a number of seconds ahead or at a wall-clock time, watch it count down to zer</span>
+    </a></li>
+    <li><a href="/workspace/tools/bingo-card-generator/">
+      <span class="ocurp-related-n">Bingo Card Generator</span>
+      <span class="ocurp-related-b">Printable 5x5 bingo cards with a proper B-I-N-G-O number range and a matching call sheet.</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi-calculator-bmr/">
+      <span class="ocurp-related-n">BMI + BMR Calculator</span>
+      <span class="ocurp-related-b">Body mass index plus basal metabolic rate, with the healthy weight range for your height.</span>
+    </a></li>
+    <li><a href="/workspace/tools/citation-generator/">
+      <span class="ocurp-related-n">Citation Generator</span>
+      <span class="ocurp-related-b">APA, MLA and Harvard references from a source.</span>
+    </a></li>
+    <li><a href="/workspace/tools/countdown/">
+      <span class="ocurp-related-n">Countdown Timer</span>
+      <span class="ocurp-related-b">Count down a number of minutes from now or to a fixed date and time, with a zero-padded se</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

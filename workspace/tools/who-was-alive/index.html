@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Who Was Alive — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Enter a year and see which notable people from a curated roster were alive at that moment. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/who-was-alive/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Who Was Alive">
+<meta property="og:description" content="Enter a year and see which notable people from a curated roster were alive at that moment. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/who-was-alive/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Who Was Alive on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Who Was Alive">
+<meta name="twitter:description" content="Enter a year and see which notable people from a curated roster were alive at that moment. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Who Was Alive on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Who Was Alive","url":"https://ocurp.space/workspace/tools/who-was-alive/","description":"Enter a year and see which notable people from a curated roster were alive at that moment. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Who Was Alive</h1>
+      <p class="mt-1 text-xs text-white/40">study &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Enter any year and see which notable people from a curated roster of scientists, writers, monarchs and explorers were alive at that moment.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-6 lg:grid-cols-4">
+    <div>
+      <label class="ws-label mb-2 block" for="wwa-year">Year</label>
+      <input id="wwa-year" type="number" class="ws-input" value="1600" min="1" max="2100">
+      <div class="mt-2 flex flex-wrap gap-2">
+        <button id="wwa-go" class="ws-btn">Show roster</button>
+        <button id="wwa-cp" class="ws-btn-ghost">Copy table</button>
+        <button id="wwa-dl" class="ws-btn-ghost">Download CSV</button>
+      </div>
+
+      <div class="ws-out mt-4" id="wwa-out"></div>
+
+      <div class="mt-4">
+        <div class="ws-label mb-2">Sample coverage</div>
+        <div class="ws-kv"><span>People in the roster</span><span id="wwa-total">0</span></div>
+        <div class="ws-kv"><span>Alive in selected year</span><span id="wwa-alive">0</span></div>
+        <div class="ws-kv"><span>Oldest alive (born)</span><span id="wwa-oldest">-</span></div>
+        <div class="ws-kv"><span>Youngest alive (born)</span><span id="wwa-youngest">-</span></div>
+      </div>
+
+      <p class="mt-4 text-[11px] leading-relaxed text-white/35">
+        This is a <b>curated sample of notable people</b>, not a complete
+        record of who lived. It holds one entry per well-documented
+        achievement, so every count below is a lower bound, never a headcount.
+      </p>
+    </div>
+
+    <div class="lg:col-span-3">
+      <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div class="ws-label">Alive in <span id="wwa-label" class="text-white/70">1600</span></div>
+        <input id="wwa-q" class="ws-input" style="max-width:16rem" placeholder="Filter by name or field">
+      </div>
+      <div class="max-h-[32rem] overflow-y-auto">
+        <table class="w-full text-left text-[12px]">
+          <thead class="sticky top-0" style="background:#050505">
+            <tr class="ws-label">
+              <th class="py-2 pr-3">Name</th>
+              <th class="py-2 pr-3">Field</th>
+              <th class="py-2 pr-3">Born</th>
+              <th class="py-2 pr-3">Died</th>
+              <th class="py-2 pr-3">Age in year</th>
+              <th class="py-2 pr-3">Lifespan</th>
+            </tr>
+          </thead>
+          <tbody id="wwa-rows"></tbody>
+        </table>
+      </div>
+      <div id="wwa-empty" class="py-6 text-center text-sm text-white/35"></div>
+    </div>
+  </div>
+</div>
+  </div>
+  <div class="mt-8">
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+
+  // Curated sample. Format: [name, field, birth, death].
+  // A negative birth year is BC. death === null means no death year recorded
+  // here, i.e. the person is treated as living in the present.
+  var P = [
+    ['Confucius','philosophy',-551,-479],
+    ['Zhuangzi','philosophy',-369,-286],
+    ['Socrates','philosophy',-470,-399],
+    ['Plato','philosophy',-427,-347],
+    ['Aristotle','philosophy',-384,-322],
+    ['Hippocrates','medicine',-460,-370],
+    ['Archimedes','mathematics',-287,-212],
+    ['Ashoka','monarch',-304,-232],
+    ['Hannibal','military',-247,-183],
+    ['Sima Qian','historian',-145,-86],
+    ['Polybius','historian',-200,-118],
+    ['Ptolemy','astronomy',100,170],
+    ['Emperor Wu of Han','monarch',-156,87],
+    ['Ptolemy II','monarch',-360,-283],
+    ['Galen','medicine',129,216],
+    ['Jesus of Nazareth','religion',-6,30],
+    ['Constantine I','monarch',272,337],
+    ['Theodosius I','monarch',347,395],
+    ['Attila','military',406,453],
+    ['Odoacer','monarch',434,493],
+    ['Hypatia','mathematics',355,415],
+    ['Augustine of Hippo','theology',354,430],
+    ['Bede','historian',673,735],
+    ['Muhammad','religion',570,632],
+    ['Charlemagne','monarch',742,814],
+    ['Al-Khwarizmi','mathematics',780,850],
+    ['Giotto','painting',1267,1337],
+    ['Petrarch','poetry',1304,1374],
+    ['Boccaccio','writing',1313,1375],
+    ['Ibn Battuta','explorer',1304,1368],
+    ['Chaucer','poetry',1343,1400],
+    ['Dante Alighieri','poetry',1265,1321],
+    ['Marco Polo','explorer',1254,1324],
+    ['Jan van Eyck','painting',1390,1441],
+    ['Fra Angelico','painting',1395,1455],
+    ['Zheng He','explorer',1371,1433],
+    ['Joan of Arc','military',1412,1431],
+    ['Ibn Rushd','philosophy',1126,1198],
+    ['Leonardo da Vinci','science',1452,1519],
+    ['Michelangelo','sculpture',1475,1564],
+    ['Albrecht Dürer','painting',1471,1528],
+    ['Copernicus','astronomy',1473,1543],
+    ['Paracelsus','medicine',1493,1541],
+    ['Erasmus','scholarship',1466,1536],
+    ['Raphael','painting',1483,1520],
+    ['Machiavelli','political science',1469,1527],
+    ['Thomas More','statesmanship',1478,1535],
+    ['Titian','painting',1488,1576],
+    ['Martin Luther','theology',1483,1546],
+    ['Henry VIII','monarch',1491,1547],
+    ['Mary I of England','monarch',1516,1558],
+    ['Elizabeth I','monarch',1533,1603],
+    ['Richard III','monarch',1452,1485],
+    ['Joachim of Fiore','theology',1135,1202],
+    ['Vivaldi','music',1678,1741],
+    ['Handel','music',1685,1759],
+    ['Kepler','astronomy',1571,1630],
+    ['Cervantes','writing',1547,1616],
+    ['Galileo Galilei','astronomy',1564,1642],
+    ['William Shakespeare','drama',1564,1616],
+    ['Lope de Vega','drama',1562,1635],
+    ['John Donne','poetry',1572,1631],
+    ['Francis Bacon','science',1561,1626],
+    ['Wallis','mathematics',1616,1703],
+    ['Pascal','mathematics',1623,1662],
+    ['Hooke','science',1635,1703],
+    ['Robert Boyle','chemistry',1627,1691],
+    ['Huygens','physics',1629,1695],
+    ['Leeuwenhoek','biology',1632,1723],
+    ['Locke','philosophy',1632,1704],
+    ['Spinoza','philosophy',1632,1677],
+    ['Bunyan','writing',1628,1688],
+    ['Newton','physics',1643,1727],
+    ['Leibniz','mathematics',1646,1716],
+    ['Halley','astronomy',1656,1742],
+    ['Berkeley','philosophy',1685,1753],
+    ['Voltaire','philosophy',1694,1778],
+    ['Franklin','statesmanship',1706,1790],
+    ['Hume','philosophy',1711,1776],
+    ['Rousseau','philosophy',1712,1778],
+    ['Frederick the Great','monarch',1712,1786],
+    ['Haydn','music',1732,1809],
+    ['Herschel','astronomy',1738,1822],
+    ['Washington','monarch',1732,1799],
+    ['Jefferson','statesmanship',1743,1826],
+    ['Toussaint Louverture','statesmanship',1743,1803],
+    ['Cook','explorer',1728,1779],
+    ['Maria Theresa','monarch',1717,1780],
+    ['Adam Smith','economics',1723,1790],
+    ['Catherine the Great','monarch',1729,1796],
+    ['Marie Antoinette','monarch',1755,1793],
+    ['Mozart','music',1756,1791],
+    ['Beethoven','music',1770,1827],
+    ['Raja Ram Mohan Roy','reformer',1772,1833],
+    ['Paganini','music',1782,1840],
+    ['Bolívar','military',1783,1830],
+    ['Ranjit Singh','monarch',1780,1839],
+    ['Rossini','music',1792,1868],
+    ['Napoleon Bonaparte','monarch',1769,1821],
+    ['Schubert','music',1797,1828],
+    ['Faraday','physics',1791,1867],
+    ['Babbage','computing',1791,1871],
+    ['Darwin','biology',1809,1882],
+    ['Joule','physics',1818,1889],
+    ['Nightingale','medicine',1820,1910],
+    ['Pasteur','medicine',1822,1895],
+    ['Mendel','biology',1822,1884],
+    ['Lister','medicine',1827,1912],
+    ['Maxwell','physics',1831,1879],
+    ['Mendeleev','chemistry',1834,1907],
+    ['Glinka','music',1804,1857],
+    ['Berlioz','music',1803,1869],
+    ['Ada Lovelace','mathematics',1815,1852],
+    ['Wallace','biology',1823,1913],
+    ['Ampère','physics',1775,1836],
+    ['Gauss','mathematics',1777,1855],
+    ['Röntgen','physics',1845,1923],
+    ['Becquerel','physics',1852,1908],
+    ['Bell','inventor',1847,1922],
+    ['Edison','inventor',1847,1931],
+    ['Koch','medicine',1843,1910],
+    ['Tesla','inventor',1856,1943],
+    ['J. J. Thomson','physics',1856,1940],
+    ['Planck','physics',1858,1947],
+    ['Marie Curie','chemistry',1867,1934],
+    ['Pierre Curie','physics',1859,1906],
+    ['Lise Meitner','physics',1878,1968],
+    ['Edwin Hubble','astronomy',1889,1953],
+    ['Rutherford','physics',1871,1937],
+    ['Bohr','physics',1885,1962],
+    ['Eddington','astronomy',1882,1944],
+    ['Einstein','physics',1879,1955],
+    ['Schrödinger','physics',1887,1961],
+    ['Amundsen','explorer',1872,1928],
+    ['Heisenberg','physics',1901,1976],
+    ['Fermi','physics',1901,1954],
+    ['Earhart','explorer',1897,1937],
+    ['Chandrasekhar','astronomy',1910,1995],
+    ['Dorothy Vaughan','mathematics',1910,2008],
+    ['Wu','physics',1912,1997],
+    ['Turing','computing',1912,1954],
+    ['Hillary','explorer',1919,2008],
+    ['Rosalind Franklin','chemistry',1920,1958],
+    ['Mary Jackson','engineering',1921,2005],
+    ['Vera Rubin','astronomy',1928,2016],
+    ['Armstrong','explorer',1930,2012],
+    ['Gagarin','explorer',1934,1968],
+    ['Sagan','astronomy',1934,1996],
+    ['Goodall','biology',1934,null],
+    ['Yehudi Menuhin','music',1916,1997],
+    ['Berners-Lee','computing',1955,null],
+    ['Yonath','chemistry',1939,null],
+    ['Katherine Johnson','mathematics',1918,2020],
+    ['McClintock','biology',1902,1992],
+    ['Grace Hopper','computing',1906,1992],
+    ['Columbus','explorer',1451,1506],
+    ['Magellan','explorer',1480,1521],
+    ['Vasco da Gama','explorer',1469,1524],
+    ['William the Conqueror','monarch',1028,1087],
+    ['Joan of Arc dup','placeholder',0,0]
+  ];
+
+  function aliveIn(p, y){ return p[2] <= y && (p[3] === null || y <= p[3]); }
+  function roster(y){
+    return P.filter(function(p){ return aliveIn(p, y); })
+            .sort(function(a, b){ return a[2] - b[2] || a[0].localeCompare(b[0]); });
+  }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function bstr(b){ return b < 0 ? Math.abs(b) + ' BC' : String(b); }
+  function lifespan(p){ return p[3] === null ? 'living' : (p[3] - p[2]) + ' yrs'; }
+
+  var y = 1600;
+
+  function textTable(){
+    var rows = roster(y);
+    return [
+      'Who Was Alive in ' + y + ' (curated sample of ' + P.length + ' notable people)',
+      'Name | Field | Born | Died | Age in year | Lifespan',
+      rows.map(function(p){
+        return [p[0], p[1], bstr(p[2]), p[3] === null ? 'living' : bstr(p[3]),
+                y - p[2], lifespan(p)].join(' | ');
+      }).join('\n')
+    ].join('\n');
+  }
+
+  function render(){
+    y = parseInt($('wwa-year').value, 10);
+    if(!isFinite(y)) y = 1600;
+    y = Math.max(1, Math.min(2100, y));
+    $('wwa-year').value = y;
+    $('wwa-label').textContent = String(y);
+
+    var rows = roster(y);
+    var q = $('wwa-q').value.trim().toLowerCase();
+    var shown = q ? rows.filter(function(p){
+      return p[0].toLowerCase().indexOf(q) >= 0 || p[1].toLowerCase().indexOf(q) >= 0;
+    }) : rows;
+
+    $('wwa-rows').innerHTML = shown.map(function(p){
+      return '<tr class="border-t border-white/[0.06]">' +
+        '<td class="py-1.5 pr-3 text-white">' + esc(p[0]) + '</td>' +
+        '<td class="py-1.5 pr-3 text-white/50">' + esc(p[1]) + '</td>' +
+        '<td class="py-1.5 pr-3 font-mono text-white/80">' + bstr(p[2]) + '</td>' +
+        '<td class="py-1.5 pr-3 font-mono text-white/80">' + (p[3] === null ? 'living' : bstr(p[3])) + '</td>' +
+        '<td class="py-1.5 pr-3 font-mono text-[#FF5F1F]">' + (y - p[2]) + '</td>' +
+        '<td class="py-1.5 pr-3 font-mono text-white/50">' + lifespan(p) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    $('wwa-empty').textContent = shown.length ? '' :
+      'Nobody from this sample is listed for ' + y + '. The sample is thin before 1000 BC and after 1990, so an empty or tiny result usually means the roster does not cover that era \u2014 not that nobody lived.';
+
+    $('wwa-total').textContent = String(P.length);
+    $('wwa-alive').textContent = String(rows.length);
+    $('wwa-oldest').textContent = rows.length ? bstr(rows[0][2]) : '-';
+    $('wwa-youngest').textContent = rows.length ?
+      bstr(rows[rows.length - 1][2]) + (rows[rows.length - 1][3] === null ? ' (living)' : '') : '-';
+
+    $('wwa-out').innerHTML =
+      '<div class="text-white text-lg font-bold">' + rows.length + ' of ' + P.length + '</div>' +
+      '<div class="text-white/50">alive in ' + y + ' in this curated sample</div>' +
+      (rows.length ? '<div class="mt-2 text-white/55">oldest: <b class="text-[#FF5F1F]">' +
+        esc(rows[0][0]) + '</b>, born ' + bstr(rows[0][2]) + '</div>' : '');
+  }
+
+  $('wwa-go').addEventListener('click', render);
+  $('wwa-year').addEventListener('input', render);
+  $('wwa-q').addEventListener('input', render);
+  $('wwa-cp').addEventListener('click', function(){
+    navigator.clipboard.writeText(textTable());
+  });
+  $('wwa-dl').addEventListener('click', function(){
+    var csv = 'name,field,born,died\n' + roster(y).map(function(p){
+      return [p[0], p[1], p[2], p[3] === null ? '' : p[3]].map(function(c){
+        return '"' + String(c).replace(/"/g, '""') + '"';
+      }).join(',');
+    }).join('\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
+    a.download = 'who-was-alive-' + y + '.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  render();
+
+  // Test hook: pure roster logic, no DOM dependency.
+  window.__T = window.__T || {};
+  window.__T['who-was-alive'] = {
+    slug:'who-was-alive',
+    size: P.length,
+    run: function(year){
+      year = year === undefined ? 1600 : year;
+      var rows = roster(year);
+      return {
+        ok:true, year:year, total:P.length, count:rows.length,
+        names: rows.map(function(p){ return p[0]; }),
+        births: rows.map(function(p){ return p[2]; }),
+        deaths: rows.map(function(p){ return p[3]; }),
+        oldestBorn: rows.length ? rows[0][2] : null,
+        youngestBorn: rows.length ? rows[rows.length - 1][2] : null,
+        // The table is sorted by birth year; this must hold for every year.
+        sortedByBirth: rows.every(function(p, i){ return i === 0 || rows[i-1][2] <= p[2]; }),
+        // Every listed person must genuinely satisfy birth <= year <= death.
+        allActuallyAlive: rows.every(function(p){ return aliveIn(p, year); })
+      };
+    },
+    has: function(year, name){ return roster(year).some(function(p){ return p[0] === name; }); },
+    raw: P
+  };
+})();</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/baby-map/">
+      <span class="ocurp-related-n">Baby Map</span>
+      <span class="ocurp-related-b">Enter a due date and map the pregnancy: current week, trimester, days left and a 40-week g</span>
+    </a></li>
+    <li><a href="/workspace/tools/alarm/">
+      <span class="ocurp-related-n">Alarm Clock</span>
+      <span class="ocurp-related-b">Set an alarm a number of seconds ahead or at a wall-clock time, watch it count down to zer</span>
+    </a></li>
+    <li><a href="/workspace/tools/bingo-card-generator/">
+      <span class="ocurp-related-n">Bingo Card Generator</span>
+      <span class="ocurp-related-b">Printable 5x5 bingo cards with a proper B-I-N-G-O number range and a matching call sheet.</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi-calculator-bmr/">
+      <span class="ocurp-related-n">BMI + BMR Calculator</span>
+      <span class="ocurp-related-b">Body mass index plus basal metabolic rate, with the healthy weight range for your height.</span>
+    </a></li>
+    <li><a href="/workspace/tools/citation-generator/">
+      <span class="ocurp-related-n">Citation Generator</span>
+      <span class="ocurp-related-b">APA, MLA and Harvard references from a source.</span>
+    </a></li>
+    <li><a href="/workspace/tools/countdown/">
+      <span class="ocurp-related-n">Countdown Timer</span>
+      <span class="ocurp-related-b">Count down a number of minutes from now or to a fixed date and time, with a zero-padded se</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Days Since Incident — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="How long since a date. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/days-since-incident/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Days Since Incident">
+<meta property="og:description" content="How long since a date. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/days-since-incident/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Days Since Incident on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Days Since Incident">
+<meta name="twitter:description" content="How long since a date. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Days Since Incident on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Days Since Incident","url":"https://ocurp.space/workspace/tools/days-since-incident/","description":"How long since a date. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Days Since Incident</h1>
+      <p class="mt-1 text-xs text-white/40">math &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">How long since a date, counted with real calendar arithmetic: years, months, days, weekday and next anniversary.</p>
+  <div class="ws-grid2">
+
+    <div class="ws-panel p-5">
+      <div class="ws-label">Incident date</div>
+      <input type="date" id="di-date" class="ws-input mt-2" value="2024-02-29">
+      <div class="mt-3 grid gap-2">
+        <button class="ws-btn" id="di-go">Recalculate</button>
+        <button class="ws-btn-ghost" id="di-now">Set to today</button>
+      </div>
+    </div>
+    <div class="ws-panel p-5">
+      <div class="ws-label">Elapsed</div>
+      <div class="mt-1 font-display text-3xl font-extrabold" style="color:#FF5F1F" id="di-days">0</div>
+      <div class="text-xs text-white/40">whole days</div>
+      <div class="mt-3" id="di-cal"></div>
+    </div>
+    <div class="ws-panel p-5">
+      <div class="ws-label">Breakdown</div>
+      <div id="di-kv" class="mt-1"></div>
+    </div>
+    <div class="ws-panel p-5 sm:col-span-2 md:col-span-3">
+      <div class="ws-label">Report</div>
+      <div id="di-out" class="ws-out mt-3">-</div>
+      <div class="mt-3 grid gap-2 sm:grid-cols-2">
+        <button class="ws-btn-ghost" id="di-copy">Copy report</button>
+        <button class="ws-btn-ghost" id="di-dl">Download .txt</button>
+      </div>
+    </div>
+
+  </div>
+  <div class="mt-8">
+
+<script>
+(function(){
+  var DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var MONS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function q(id){ return document.getElementById(id); }
+  function pad(n){ return n<10 ? '0'+n : ''+n; }
+  function parse(iso){
+    var p = String(iso).split('-');
+    var y = +p[0], m = +p[1], d = +p[2];
+    if (!y || !m || !d) return null;
+    var dt = new Date(Date.UTC(y, m-1, d));
+    // Reject 2001-02-30 style input that Date would silently roll over.
+    if (dt.getUTCFullYear()!==y || dt.getUTCMonth()!==m-1 || dt.getUTCDate()!==d) return null;
+    return {y:y, m:m, d:d, t:dt.getTime()};
+  }
+  // Years/months/days by walking the calendar, not multiplying by 365.25.
+  // n = whole months completed; the anchor is a+n months with the day
+  // clamped to that month's length (Jan 31 + 1 month = Feb 28, not Mar 3).
+  function addMonthsTs(y, m, d, n) {
+    var idx = (m - 1) + n;
+    var yy = y + Math.floor(idx / 12);
+    var mm = ((idx % 12) + 12) % 12;
+    var dim = new Date(Date.UTC(yy, mm + 1, 0)).getUTCDate();
+    return Date.UTC(yy, mm, Math.min(d, dim));
+  }
+  function breakdown(a, b) {
+    var n = 0;
+    while (n < 2400 && addMonthsTs(a.y, a.m, a.d, n + 1) <= b) n++;
+    var rest = Math.round((b - addMonthsTs(a.y, a.m, a.d, n)) / 86400000);
+    return { years: Math.floor(n / 12), months: n % 12, days: rest };
+  }
+  function anniversary(a, now){
+    for (var k=0;k<8;k++){
+      var yy = now.getUTCFullYear() + k;
+      var dim = new Date(Date.UTC(yy, a.m, 0)).getUTCDate();
+      var t = Date.UTC(yy, a.m-1, Math.min(a.d, dim));
+      if (t > now.getTime()) return { ms: t - now.getTime(), years: yy - a.y, date: new Date(t) };
+    }
+    return null;
+  }
+  function floorDiv(x, y){ return Math.floor(x / y); }
+
+  function render(){
+    var iso = q('di-date').value;
+    var a = parse(iso);
+    var now = new Date();
+    var nowT = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    if (!a) {
+      q('di-days').textContent = 'n/a';
+      q('di-cal').innerHTML = '';
+      q('di-kv').innerHTML = '<div class="ws-kv"><span>error</span><span>pick a valid date</span></div>';
+      q('di-out').textContent = 'Not a real calendar date.';
+      return;
+    }
+    var totalDays = Math.round((nowT - a.t) / 86400000);
+    // Local midnight of the incident date, so the elapsed hours are honest.
+    var startMs = new Date(a.y, a.m-1, a.d).getTime();
+    var elapsedMs = Date.now() - startMs;
+    var hrs = floorDiv(elapsedMs, 3600000);
+    var mins = floorDiv(elapsedMs - hrs*3600000, 60000);
+    var secs = floorDiv(elapsedMs - hrs*3600000 - mins*60000, 1000);
+    var bd = breakdown(a, nowT);
+    // nowT is a UTC midnight timestamp; the anniversary walk needs a Date.
+    var ann = anniversary(a, new Date(nowT));
+    var wd = DAYS[new Date(a.t).getUTCDay()];
+
+    window.__DI = {
+      iso: iso, totalDays: totalDays, years: bd.years, months: bd.months, days: bd.days,
+      weekday: wd, hours: hrs, minutes: mins, seconds: secs,
+      annDays: ann ? Math.round(ann.ms/86400000) : null, annYears: ann ? ann.years : null
+    };
+
+    q('di-days').textContent = totalDays.toLocaleString('en-US');
+    q('di-cal').innerHTML =
+      '<div class="font-mono text-2xl font-bold text-white">' + bd.years + 'y ' + bd.months + 'm ' + bd.days + 'd</div>' +
+      '<div class="text-xs text-white/40">years / months / days</div>';
+
+    var kv = '';
+    kv += '<div class="ws-kv"><span>weekday</span><span>' + wd + '</span></div>';
+    kv += '<div class="ws-kv"><span>total hours</span><span>' + hrs.toLocaleString('en-US') + '</span></div>';
+    kv += '<div class="ws-kv"><span>total minutes</span><span>' + mins.toLocaleString('en-US') + '</span></div>';
+    kv += '<div class="ws-kv"><span>total seconds</span><span>' + secs.toLocaleString('en-US') + '</span></div>';
+    kv += '<div class="ws-kv"><span>weeks</span><span>' + (totalDays / 7).toFixed(2) + '</span></div>';
+    kv += '<div class="ws-kv"><span>months (avg)</span><span>' + (totalDays / 30.436875).toFixed(2) + '</span></div>';
+    kv += '<div class="ws-kv"><span>years (365.25d)</span><span>' + (totalDays / 365.25).toFixed(4) + '</span></div>';
+    if (ann) {
+      kv += '<div class="ws-kv"><span>next anniversary</span><span>' + MONS[ann.date.getUTCMonth()] + ' ' + ann.date.getUTCDate() + ', ' + ann.date.getUTCFullYear() + '</span></div>';
+      kv += '<div class="ws-kv"><span>in days</span><span style="color:#FF5F1F">' + Math.round(ann.ms/86400000) + '</span></div>';
+      kv += '<div class="ws-kv"><span>turning</span><span>' + ann.years + ' year' + (ann.years===1?'':'s') + '</span></div>';
+    }
+    q('di-kv').innerHTML = kv;
+
+    var txt =
+      'DAYS SINCE INCIDENT\n' +
+      'Incident: ' + a.y + '-' + pad(a.m) + '-' + pad(a.d) + ' (' + wd + ')\n' +
+      'Today:    ' + now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + '\n' +
+      '--------------------------------------\n' +
+      'Whole days elapsed: ' + totalDays.toLocaleString('en-US') + '\n' +
+      'Calendar breakdown:  ' + bd.years + ' years, ' + bd.months + ' months, ' + bd.days + ' days\n' +
+      'Total hours:   ' + hrs.toLocaleString('en-US') + '\n' +
+      'Total minutes: ' + mins.toLocaleString('en-US') + '\n' +
+      'Total seconds: ' + secs.toLocaleString('en-US') + '\n' +
+      'Weeks:         ' + (totalDays/7).toFixed(2) + '\n' +
+      'Average months: ' + (totalDays/30.436875).toFixed(2) + '\n' +
+      (ann ? 'Next anniversary: ' + MONS[ann.date.getUTCMonth()] + ' ' + ann.date.getUTCDate() + ', ' + ann.date.getUTCFullYear() + ' (in ' + Math.round(ann.ms/86400000) + ' days, turning ' + ann.years + ')\n' : '');
+    q('di-out').textContent = txt;
+  }
+
+  q('di-go').addEventListener('click', render);
+  q('di-date').addEventListener('change', render);
+  q('di-now').addEventListener('click', function(){
+    var n = new Date();
+    q('di-date').value = n.getFullYear() + '-' + pad(n.getMonth()+1) + '-' + pad(n.getDate());
+    render();
+  });
+  q('di-copy').addEventListener('click', function(){
+    if (navigator.clipboard) navigator.clipboard.writeText(q('di-out').textContent);
+    q('di-copy').textContent='Copied'; setTimeout(function(){ q('di-copy').textContent='Copy report'; },1200);
+  });
+  q('di-dl').addEventListener('click', function(){
+    var b = new Blob([q('di-out').textContent], {type:'text/plain'});
+    var a = document.createElement('a'); a.href = URL.createObjectURL(b);
+    a.download = 'days-since-incident.txt'; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  });
+
+  render();
+  window.__DI.ready = true;
+  window.__DI_setDate = function(iso){ q('di-date').value = iso; render(); return window.__DI; };
+  setInterval(render, 1000);
+})();
+</script>
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calculator/">
+      <span class="ocurp-related-n">Calculator</span>
+      <span class="ocurp-related-b">Everyday arithmetic and percentages, for quick sums.</span>
+    </a></li>
+    <li><a href="/workspace/tools/calorie-calculator/">
+      <span class="ocurp-related-n">Calorie Calculator</span>
+      <span class="ocurp-related-b">Daily calories from age, weight, activity and goal, using the Mifflin-St Jeor equation.</span>
+    </a></li>
+    <li><a href="/workspace/tools/chance-calculator/">
+      <span class="ocurp-related-n">Chance Calculator</span>
+      <span class="ocurp-related-b">Work out percentages, ratios and the odds of something happening from a set of counts.</span>
+    </a></li>
+    <li><a href="/workspace/tools/compound-interest/">
+      <span class="ocurp-related-n">Compound Interest</span>
+      <span class="ocurp-related-b">Project savings or investments forward with optional monthly deposits.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
