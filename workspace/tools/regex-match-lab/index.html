@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regex Match Lab — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Run a pattern live against sample text: every match with its position. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/regex-match-lab/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Regex Match Lab">
+<meta property="og:description" content="Run a pattern live against sample text: every match with its position. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/regex-match-lab/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Regex Match Lab on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Regex Match Lab">
+<meta name="twitter:description" content="Run a pattern live against sample text: every match with its position. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Regex Match Lab on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Regex Match Lab","url":"https://ocurp.com/workspace/tools/regex-match-lab/","description":"Run a pattern live against sample text: every match with its position. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Regex Match Lab</h1>
+      <p class="mt-1 text-xs text-white/40">Developer &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Run a pattern live against sample text: every match with its position, its numbered capture groups and any named groups, a match count, and a replacement preview using $1 and $&lt;name&gt;.</p>
+  <div class="ws-grid2">
+    <div class="ws-panel p-5">
+      <p class="ws-label mb-3">Pattern</p>
+      <div><label class="block text-[11px] text-white/50 mb-1.5" for="re">Regular expression</label>
+      <input id="re" class="ws-input" type="text" value="(\w)(\d+)" placeholder="(\w)(\d+)"></div>
+      <div class="mt-3 flex flex-wrap items-center gap-4">
+      <label class="flex items-center gap-2 text-[12px] text-white/60"><input id="fg" type="checkbox" class="accent-[#FF5F1F]" checked> g</label>
+      <label class="flex items-center gap-2 text-[12px] text-white/60"><input id="fi" type="checkbox" class="accent-[#FF5F1F]"> i</label>
+      <label class="flex items-center gap-2 text-[12px] text-white/60"><input id="fm" type="checkbox" class="accent-[#FF5F1F]"> m</label>
+      <label class="flex items-center gap-2 text-[12px] text-white/60"><input id="fs" type="checkbox" class="accent-[#FF5F1F]"> s</label>
+      <label class="flex items-center gap-2 text-[12px] text-white/60"><input id="fu" type="checkbox" class="accent-[#FF5F1F]"> u</label>
+      <label class="flex items-center gap-2 text-[12px] text-white/60"><input id="fy" type="checkbox" class="accent-[#FF5F1F]"> y</label>
+      </div>
+      <div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div>
+
+    </div>
+    <div class="ws-panel p-5">
+      <p class="ws-label mb-3">Test text and replacement</p>
+      <div><label class="block text-[11px] text-white/50 mb-1.5" for="txt">Subject text</label>
+      <textarea id="txt" rows="5" class="ws-input font-mono !text-[13px]" placeholder="Text to match against...">a1 b22 c333 d4444</textarea></div>
+      <div><label class="block text-[11px] text-white/50 mb-1.5" for="rep">Replacement (supports $1 and $&lt;name&gt;)</label>
+      <input id="rep" class="ws-input" type="text" value="#" placeholder="#"></div>
+      <div id="rgOut" class="ws-out mt-3 min-h-[60px]" aria-live="polite"></div>
+      <div class="mb-3 mt-5 flex items-center justify-between"><span class="ws-label">Match list</span><button class="ws-btn-ghost !px-3 !py-1.5" onclick="cpbtn(this,'rgOut')">Copy summary</button></div>
+      <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">#</th><th class="py-2 pr-4">At</th><th class="py-2 pr-4">Match</th></tr></thead><tbody id="mrows"></tbody></table></div>
+    </div>
+
+  </div>
+  <div class="mt-8">
+
+<script>
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function seterr(id,msg){var e=document.getElementById(id);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function cpbtn(btn,target){
+  var el=$(target)||$(btn.getAttribute('data-t'));
+  var t=el?(el.value!==undefined?el.value:el.textContent):'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  var o=btn.textContent; btn.textContent='Copied'; setTimeout(function(){btn.textContent=o},1100);
+}
+function dl(name,text,mime){
+  var b=new Blob([text],{type:mime||'text/plain;charset=utf-8'});
+  var u=URL.createObjectURL(b), a=document.createElement('a');
+  a.href=u; a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(u);a.remove()},60);
+  return name;
+}
+function nowms(){return Date.now();}
+function num(id,def){var v=parseFloat($(id).value);return isFinite(v)?v:def;}
+
+// Every flag was concatenated onto the RESULT of a ternary. '+' binds
+// tighter than '?:', so this evaluated to ('g' : '') + ... and produced
+// 'g' when global was ticked, 'true'/'false' when it was not, and threw
+// the other five away regardless. Each flag needs its own condition.
+function currentFlags(){ return ($('#fg').checked?'g':'')+($('#fi').checked?'i':'')+($('#fm').checked?'m':'')+($('#fs').checked?'s':'')+($('#fu').checked?'u':'')+($('#fy').checked?'y':''); }
+function currentPattern(){ return $('#re').value; }
+function analyse(pat,src,flagsStr,repl){
+  var f=flagsStr||'';
+  var list=[],m,count=0,first=-1;
+  var loopFlags=f.indexOf('g')===-1?f+'g':f;
+  var searchRe=new RegExp(pat,loopFlags);
+  while((m=searchRe.exec(src))!==null){
+    count++;
+    if(first===-1) first=m.index;
+    var groups=[];
+    for(var i=1;i<m.length;i++){
+      var g=m[i];
+      groups.push({index:i,value:g===undefined?null:g,matched:g!==undefined});
+    }
+    list.push({index:count,at:m.index,text:m[0],length:m[0].length,groups:groups,
+      named:(m.groups?Object.keys(m.groups).map(function(k){return {name:k,value:m.groups[k]}}):[])});
+    if(m[0].length===0){ searchRe.lastIndex++; }
+  }
+  var rep=null,replErr=null;
+  if(repl!==undefined&&repl!==null){
+    try{ rep=src.replace(new RegExp(pat,f.indexOf('g')===-1?f+'g':f),repl); }
+    catch(e){ replErr=e.message||String(e); }
+  }
+  return {pattern:pat,flags:fStr(f),matches:list,count:count,firstIndex:first,replaced:rep,replaceError:replErr};
+}
+function fStr(f){
+  if(!f) return '(none)';
+  return f;
+}
+function run(){
+  var pat=$('re').value, src=$('txt').value, fl=currentFlags();
+  if(pat===''){ $('rgOut').innerHTML=''; seterr('err','Enter a pattern'); return; }
+  var r;
+  try{ r=analyse(pat,src,fl,$('rep').value); }
+  catch(e){ $('rgOut').innerHTML=''; seterr('err','Invalid pattern: '+(e.message||String(e))); return; }
+  var h='<div class="ws-kv"><span>Matches</span><span>'+r.count+'</span></div>'+
+    '<div class="ws-kv"><span>First match at</span><span>'+(r.firstIndex<0?'none':r.firstIndex)+'</span></div>'+
+    '<div class="ws-kv"><span>Capture groups</span><span>'+(r.matches.length?r.matches[0].groups.length:0)+'</span></div>';
+  if(r.replaceError) h+='<div class="ws-kv"><span>Replacement</span><span>error: '+esc(r.replaceError)+'</span></div>';
+  else h+='<div class="ws-kv"><span>Replacement result</span><span>'+esc(r.replaced)+'</span></div>';
+  h+='<div class="ws-kv"><span>Named groups</span><span>'+(r.matches.length&&r.matches[0].named.length?r.matches[0].named.map(function(g){return g.name}).join(', '):'none')+'</div>';
+  $('rgOut').innerHTML=h;
+  var tb=$('mrows');
+  if(tb){
+    tb.innerHTML=r.matches.slice(0,200).map(function(m){
+      return '<tr class="border-t border-white/5"><td class="py-2 pr-4">'+m.index+'</td><td class="py-2 pr-4">'+m.at+'</td><td class="py-2 pr-4 font-mono">'+esc(m.text)+tdGroups(m)+'</td></tr>';
+    }).join('');
+  }
+  window.__rgLast=r;
+}
+function tdGroups(m){
+  if(!m.groups.length&&!m.named.length) return '';
+  return '<div class="mt-1 text-[11px] text-white/50">'+m.groups.map(function(g){return '$'+g.index+'='+esc(g.value===null?'(no match)':g.value)}).join('  ')+
+    (m.named.length?'  '+m.named.map(function(g){return '?'+esc(g.name)+'='+esc(g.value===null?'(no match)':g.value)}).join('  '):'')+'</div>';
+}
+['re','txt','rep','fg','fi','fm','fs','fu','fy'].forEach(function(id){
+  var el=$(id); if(!el) return;
+  el.addEventListener('input',run); el.addEventListener('change',run);
+});
+run();
+window.__regex={analyse:analyse};
+</script>
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/regex-builder/">
+      <span class="ocurp-related-n">Regex Builder</span>
+      <span class="ocurp-related-b">Click tokens to assemble a regular expression and see a live match against your text.</span>
+    </a></li>
+    <li><a href="/workspace/tools/find-replace/">
+      <span class="ocurp-related-n">Find &amp; Replace</span>
+      <span class="ocurp-related-b">Plain or regex find-and-replace with live count.</span>
+    </a></li>
+    <li><a href="/workspace/tools/find-replace-batch/">
+      <span class="ocurp-related-n">Find &amp; Replace Batch</span>
+      <span class="ocurp-related-b">Search and replace across a whole text with regex or literal find, case and whole-word tog</span>
+    </a></li>
+    <li><a href="/workspace/tools/regex-tester/">
+      <span class="ocurp-related-n">Regex Tester</span>
+      <span class="ocurp-related-b">Test patterns with live match highlighting.</span>
+    </a></li>
+    <li><a href="/workspace/tools/number-base-converter/">
+      <span class="ocurp-related-n">Number Base Converter</span>
+      <span class="ocurp-related-b">One integer into binary, octal, decimal and hex, with a two&#x27;s complement view at any bit w</span>
+    </a></li>
+    <li><a href="/workspace/tools/timestamp-converter/">
+      <span class="ocurp-related-n">Timestamp Converter</span>
+      <span class="ocurp-related-b">Epoch seconds or milliseconds, an ISO string, or a phrase like </span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

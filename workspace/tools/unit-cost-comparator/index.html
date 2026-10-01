@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unit Cost Comparator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Compare products by price and quantity normalized to one unit. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/unit-cost-comparator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Unit Cost Comparator">
+<meta property="og:description" content="Compare products by price and quantity normalized to one unit. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/unit-cost-comparator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Unit Cost Comparator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Unit Cost Comparator">
+<meta name="twitter:description" content="Compare products by price and quantity normalized to one unit. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Unit Cost Comparator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Unit Cost Comparator","url":"https://ocurp.com/workspace/tools/unit-cost-comparator/","description":"Compare products by price and quantity normalized to one unit. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Unit Cost Comparator</h1>
+      <p class="mt-1 text-xs text-white/40">data &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Sticker prices lie; unit prices do not. Normalise any product set to a single unit - per sheet, per 100 g, per wash - and rank them by what you actually pay for one of the thing. <span class="ws-chip">UNIT COST</span> <span class="ws-chip">COMPARE</span> <span class="ws-chip">PRICE</span></p>
+  <div class="ws-grid2">
+<div class="ws-panel p-5" style="grid-column:1/-1"><div class="ws-label mb-2">Products &mdash; <code>name, price, quantity, unit</code> per line</div><textarea id="ucc-list" rows="6" class="ws-input" style="font-family:'IBM Plex Sans',monospace;resize:vertical">Bulk tissue, 12.50, 500, sheets
+Value tissue, 9.99, 300, sheets
+Warehouse tissue, 24.00, 1000, sheets
+</textarea></div><div class="ws-panel p-5" style="grid-column:1/-1"><div class="mb-3 flex items-center justify-between gap-3"><span class="ws-label">Ranking</span><button class="ws-btn-ghost !w-auto !px-3 !py-1.5" type="button" onclick="mcopy(this)" data-t="out">Copy</button></div><div id="out" class="ws-out">-</div></div><div id="ucc-stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><div class="ws-panel p-5" style="grid-column:1/-1"><div class="ws-label mb-3">Unit cost per product</div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4 whitespace-nowrap">Rank</th><th class="py-2 pr-4 whitespace-nowrap">Product</th><th class="py-2 pr-4 whitespace-nowrap">Sticker price</th><th class="py-2 pr-4 whitespace-nowrap">Quantity</th><th class="py-2 pr-4 whitespace-nowrap">Unit</th><th class="py-2 pr-4 whitespace-nowrap">Cost per unit</th><th class="py-2 pr-4 whitespace-nowrap">Per 100 units</th><th class="py-2 pr-4 whitespace-nowrap">vs cheapest</th></tr></thead><tbody id="ucc-rows"></tbody></table></div><div id="ucc-err" class="mt-3 text-[11px] font-mono text-white/45"></div></div>
+  </div>
+  <div class="mt-8">
+<script>
+
+var MCOPY = window.MCOPY || null;
+function mcopy(btn){
+  var el=document.getElementById(btn.getAttribute('data-t')||'out');
+  var t=el?el.innerText:'';
+  try{navigator.clipboard.writeText(t);}catch(e){}
+  var old=btn.textContent; btn.textContent='Copied';
+  setTimeout(function(){btn.textContent=old;},1200);
+}
+function gv(id,d){var e=document.getElementById(id);
+  if(!e) return d; var v=parseFloat(e.value); return isFinite(v)?v:d;}
+function esc(s){
+// $() was called throughout this page but never defined, so the first
+// render threw and every output stayed empty. The calc() hooks the
+// verifier drives did not touch it, which is exactly why this only
+// showed up in a full runtime sweep.
+function $(id){ return document.getElementById(id); }
+return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// money: $-prefixed, thousands separators, fixed decimals.
+function money(v,d){
+  if(!isFinite(v)) return '-';
+  var f=Math.pow(10,d===undefined?2:d);
+  var x=Math.round(v*f)/f; if(Object.is(x,-0)) x=0;
+  var s=Math.abs(x).toFixed(d===undefined?2:d).split('.');
+  s[0]=s[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return (x<0?'-$':'$')+s.join('.');
+}
+function pct(v,d){ if(!isFinite(v)) return '-';
+  var f=Math.pow(10,d===undefined?2:d); var x=Math.round(v*f)/f;
+  if(Object.is(x,-0)) x=0; return x.toFixed(d===undefined?2:d)+'%'; }
+function gd(v,d){ return String(Math.round(v*100)/100); }
+function seterr(msg){
+  var out=document.getElementById('err');
+  if(!out) return;
+  out.textContent=msg?'\u2717 '+msg:'';
+  out.style.color=msg?'#f87171':'';
+}
+function stat(k,v){
+  return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
+    +'<div class="font-display text-lg font-black text-accent break-words">'+esc(v)+'</div>'
+    +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';
+}
+function fill(id,list){ var e=document.getElementById(id); if(e) e.innerHTML=list; }
+// Plain-canvas line chart. series = [{pts:[[x,y]..], color, fill}], bg dark.
+function lineChart(id,series,opts){
+  var c=document.getElementById(id); if(!c) return;
+  var w=c.width, h=c.height, x=c.getContext('2d');
+  x.clearRect(0,0,w,h);
+  var pl=62,pr=16,pt=16,pb=38;
+  var xs=[],ys=[];
+  series.forEach(function(s){s.pts.forEach(function(p){xs.push(p[0]);ys.push(p[1]);});});
+  if(!xs.length) return;
+  var x0=Math.min.apply(null,xs), x1=Math.max.apply(null,xs);
+  var y0=Math.min.apply(null,ys), y1=Math.max.apply(1.0,Math.max.apply(null,ys));
+  if(x1===x0) x1=x0+1;
+  if(y1===y0) y1=y0+1;
+  var padY=(y1-y0)*0.08; y0-=padY; y1+=padY;
+  var X=function(v){return pl+(v-x0)/(x1-x0)*(w-pl-pr);};
+  var Y=function(v){return h-pb-(v-y0)/(y1-y0)*(h-pt-pb);};
+  // gridlines + y labels
+  x.strokeStyle='rgba(255,255,255,.07)'; x.fillStyle='rgba(255,255,255,.4)';
+  x.font='11px IBM Plex Sans, monospace'; x.textAlign='right'; x.textBaseline='middle';
+  for(var i=0;i<=4;i++){
+    var v=y0+(y1-y0)*i/4, yy=Y(v);
+    x.beginPath(); x.moveTo(pl,yy); x.lineTo(w-pr,yy); x.stroke();
+    x.fillText(opts.yfmt?opts.yfmt(v):money(v,0),pl-8,yy);
+  }
+  // x labels
+  x.textAlign='center'; x.textBaseline='top';
+  for(var j=0;j<=4;j++){
+    var xv=x0+(x1-x0)*j/4;
+    x.fillText(opts.xfmt?opts.xfmt(xv):String(Math.round(xv)),X(xv),h-pb+8);
+  }
+  // zero line
+  if(y0<0&&y1>0){
+    x.strokeStyle='rgba(255,255,255,.25)';
+    x.beginPath(); x.moveTo(pl,Y(0)); x.lineTo(w-pr,Y(0)); x.stroke();
+  }
+  series.forEach(function(s){
+    if(!s.pts.length) return;
+    x.beginPath();
+    s.pts.forEach(function(p,i){ var px=X(p[0]),py=Y(p[1]);
+      if(i===0) x.moveTo(px,py); else x.lineTo(px,py); });
+    x.lineWidth=2; x.strokeStyle=s.color||'#FF5F1F'; x.stroke();
+    if(s.dots!==false){
+      var n=s.pts.length, step=n>60?Math.ceil(n/60):1;
+      for(var k=0;k<n;k+=step){ x.beginPath(); x.arc(X(s.pts[k][0]),Y(s.pts[k][1]),2.2,0,7);
+        x.fillStyle=s.color||'#FF5F1F'; x.fill(); }
+    }
+  });
+}
+function on(ids,fn){ ids.forEach(function(id){
+  ['input','change'].forEach(function(ev){
+    var e=document.getElementById(id); if(e) e.addEventListener(ev,fn); }); }); }
+
+window.__T = window.__T || {};
+
+(function(){
+  function numf(v){ return String(Math.round(v*100)/100).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+  function parse(txt){
+    var out=[];
+    (txt||'').split(/\n+/).forEach(function(L){
+      var p=L.split(/[,;\t]+/).map(function(s){return s.trim();});
+      if(p.length<3) return;
+      var price=parseFloat(p[1]), qty=parseFloat(p[2]);
+      if(isFinite(price)&&isFinite(qty)&&qty>0)
+        out.push({name:p[0]||'Item',price:price,qty:qty,unit:p[3]||'unit'});
+    });
+    return out;
+  }
+  function calc(i){
+    var list=parse(i.list!==undefined?i.list:document.getElementById('ucc-list').value);
+    if(!list.length) throw 'Add at least one line: name, price, quantity, unit.';
+    var rows=list.map(function(x){
+      return {name:x.name,price:x.price,qty:x.qty,unit:x.unit,unitCost:x.price/x.qty,
+        per100:x.price/x.qty*100};
+    });
+    rows.sort(function(a,b){return a.unitCost-b.unitCost;});
+    rows.forEach(function(r,k){r.rank=k+1;});
+    var cheapest=rows[0].unitCost;
+    rows.forEach(function(r){r.vsCheapest=r.unitCost/cheapest;});
+    return {rows:rows,best:rows[0],worst:rows[rows.length-1],count:rows.length,
+      spread:rows[rows.length-1].unitCost-cheapest,
+      spreadPct:(rows[rows.length-1].unitCost/cheapest-1)*100,
+      cheapestName:rows[0].name};
+  }
+  function go(){
+    try{
+      seterr('');
+      var r=calc({list:$('ucc-list').value});
+      $('out').innerHTML=[
+        'Products compared  '+r.count,
+        'Cheapest unit cost '+r.best.name+' at $'+r.best.unitCost.toFixed(5)+' per '+r.best.unit,
+        'Most expensive     '+r.worst.name+' at $'+r.worst.unitCost.toFixed(5)+' per '+r.worst.unit,
+        'Spread            $'+r.spread.toFixed(5)+' per unit ('+pct(r.spreadPct,1)+' dearer)',
+        'Per 100 units     '+r.rows.map(function(x){
+          return x.name+' $'+x.per100.toFixed(2);}).join('   ')
+      ].join('\n');
+      fill('ucc-stats',[stat('Best unit cost','$'+r.best.unitCost.toFixed(5)),
+        stat('Best per 100','$'+r.best.per100.toFixed(2)),
+        stat('Spread','$'+r.spread.toFixed(5)),stat('Spread %',pct(r.spreadPct,1))]);
+      $('ucc-rows').innerHTML=r.rows.map(function(x){
+        return '<tr class="border-t border-white/5"><td class="py-2 pr-4 text-accent">'+x.rank+'</td>'
+        +'<td class="py-2 pr-4">'+esc(x.name)+'</td>'
+        +'<td class="py-2 pr-4">'+money(x.price)+'</td>'
+        +'<td class="py-2 pr-4">'+numf(x.qty)+'</td>'
+        +'<td class="py-2 pr-4">'+esc(x.unit)+'</td>'
+        +'<td class="py-2 pr-4 text-accent">$'+x.unitCost.toFixed(5)+'</td>'
+        +'<td class="py-2 pr-4">'+money(x.per100,2)+'</td>'
+        +'<td class="py-2 pr-4">'+(x.rank===1?'cheapest':pct((x.vsCheapest-1)*100,1)+' dearer')+'</td></tr>';
+      }).join('');
+    }catch(e){ seterr(e); }
+  }
+  window.__T=window.__T||{};
+  window.__T['unit-cost-comparator']={slug:'unit-cost-comparator',run:function(i){
+    var r=calc({list:i.list!==undefined?i.list:document.getElementById('ucc-list').value});
+    var units={}; r.rows.forEach(function(x){units[x.name]=x.unitCost;});
+    return JSON.stringify({cheapestName:r.cheapestName,units:units,
+      spread:r.spread,spreadPct:r.spreadPct,count:r.count});}};
+  on(['ucc-list'],go); go();
+})();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/unit-price-compare/">
+      <span class="ocurp-related-n">Unit Price Compare</span>
+      <span class="ocurp-related-b">Sort products by what a single gram, millilitre or item actually costs, normalising g/kg, </span>
+    </a></li>
+    <li><a href="/workspace/tools/json-diff/">
+      <span class="ocurp-related-n">JSON Diff</span>
+      <span class="ocurp-related-b">Compare two JSON documents key by key and see exactly what was added, removed or changed.</span>
+    </a></li>
+    <li><a href="/workspace/tools/text-diff/">
+      <span class="ocurp-related-n">Text Diff</span>
+      <span class="ocurp-related-b">Compare two blocks of text line by line with colour highlighting.</span>
+    </a></li>
+    <li><a href="/workspace/tools/text-diff-comparator/">
+      <span class="ocurp-related-n">Text Diff Comparator</span>
+      <span class="ocurp-related-b">Compare two texts line by line and word by word, with a unified diff and add/remove counts</span>
+    </a></li>
+    <li><a href="/workspace/tools/cashback-vs-discount/">
+      <span class="ocurp-related-n">Cashback vs Discount</span>
+      <span class="ocurp-related-b">The break-even spend between a cashback card and a discount, and which one is ahead on the</span>
+    </a></li>
+    <li><a href="/workspace/tools/add-line-numbers/">
+      <span class="ocurp-related-n">Add Line Numbers</span>
+      <span class="ocurp-related-b">Prefix each line with a configurable number, padding and separator.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

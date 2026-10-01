@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON to CSV Converter — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Paste a JSON array of objects and get CSV back. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/json-csv-converter/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JSON to CSV Converter">
+<meta property="og:description" content="Paste a JSON array of objects and get CSV back. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/json-csv-converter/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="JSON to CSV Converter on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JSON to CSV Converter">
+<meta name="twitter:description" content="Paste a JSON array of objects and get CSV back. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="JSON to CSV Converter on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to CSV Converter","url":"https://ocurp.com/workspace/tools/json-csv-converter/","description":"Paste a JSON array of objects and get CSV back. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">JSON to CSV Converter</h1>
+      <p class="mt-1 text-xs text-white/40">Data &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Paste a JSON array of objects and get CSV back, or paste CSV and get JSON. Delimiter, header detection across mismatched keys, a live error line and a .csv download.</p>
+  <div class="ws-grid2">
+    <div class="ws-panel p-5">
+      <p class="ws-label mb-3">Source (paste JSON or CSV)</p>
+      <div><label class="block text-[11px] text-white/50 mb-1.5" for="src">Input</label>
+      <textarea id="src" rows="8" class="ws-input font-mono !text-[13px]" placeholder="Paste a JSON array of objects, or CSV text...">[{"id":1,"name":"Ada","score":9.5},{"id":2,"name":"Grace","score":8},{"id":3,"name":"Alan","score":7.25}]</textarea></div>
+      <div><label class="block text-[11px] text-white/50 mb-1.5" for="dir">Direction</label>
+      <select id="dir" class="ws-input !w-44"><option value="j2c" selected>JSON to CSV</option><option value="c2j">CSV to JSON</option></select></div>
+      <div><label class="block text-[11px] text-white/50 mb-1.5" for="delim">Delimiter</label>
+      <select id="delim" class="ws-input !w-32"><option value="comma" selected>Comma  ,</option><option value="tab">Tab</option><option value="semi">Semicolon ;</option><option value="pipe">Pipe |</option></select></div>
+      <div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div>
+      <div id="out" class="ws-out mt-3 min-h-[60px]" aria-live="polite"></div>
+
+    </div>
+    <div class="ws-panel p-5">
+      <p class="ws-label mb-3">Result</p>
+      <div class="mb-3 flex flex-wrap gap-2"><button id="copy" class="ws-btn-ghost !px-3 !py-1.5" onclick="cpbtn(this,'out')">Copy</button><button id="save" class="ws-btn !px-3 !py-1.5" onclick="saveCsv()">Download .csv</button></div>
+      <textarea id="out" rows="10" class="ws-input font-mono !text-[13px]" readonly></textarea>
+      <div id="meta" class="mt-3 text-[11px] font-mono text-white/45"></div>
+
+    </div>
+
+  </div>
+  <div class="mt-8">
+
+<script>
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function seterr(id,msg){var e=document.getElementById(id);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function cpbtn(btn,target){
+  var el=$(target)||$(btn.getAttribute('data-t'));
+  var t=el?(el.value!==undefined?el.value:el.textContent):'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  var o=btn.textContent; btn.textContent='Copied'; setTimeout(function(){btn.textContent=o},1100);
+}
+function dl(name,text,mime){
+  var b=new Blob([text],{type:mime||'text/plain;charset=utf-8'});
+  var u=URL.createObjectURL(b), a=document.createElement('a');
+  a.href=u; a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(u);a.remove()},60);
+  return name;
+}
+function nowms(){return Date.now();}
+function num(id,def){var v=parseFloat($(id).value);return isFinite(v)?v:def;}
+
+var DELIMS={comma:',',tab:'\t',semi:';',pipe:'|'};
+function cellOf(v){
+  if(v===null||v===undefined) return '';
+  if(typeof v==='boolean') return v?'true':'false';
+  if(typeof v==='object') return Array.isArray(v)?v.map(cellOf).join('|'):JSON.stringify(v);
+  return String(v);
+}
+function toCsv(value,delim){
+  var rows;
+  if(Array.isArray(value)){ rows=value; }
+  else if(value&&typeof value==='object'){ rows=[value]; }
+  else { throw new Error('Top level must be an array or an object, not '+typeof value); }
+  if(rows.length&&!rows.every(function(r){return r&&typeof r==='object'&&!Array.isArray(r)}))
+    throw new Error('Every array element must be an object');
+  // Header = union of keys in first-seen order, so a later row with an extra
+  // key still lands in a column instead of being silently dropped.
+  var cols=[],seen={};
+  rows.forEach(function(r){Object.keys(r).forEach(function(k){if(!seen[k]){seen[k]=1;cols.push(k)}})});
+  var q=function(s){return /["\n\r]|'+delim+'/.test(s)?'"'+String(s).replace(/"/g,'""')+'"':String(s)};
+  var lines=[cols.map(q).join(delim)];
+  rows.forEach(function(r){lines.push(cols.map(function(c){return q(cellOf(r[c]))}).join(delim))});
+  return {csv:lines.join('\n'),cols:cols,rows:rows.length};
+}
+function parseCsv(text,delim){
+  var rows=[],row=[],field='',q=false;
+  for(var i=0;i<text.length;i++){
+    var ch=text[i];
+    if(q){
+      if(ch==='"'){ if(text[i+1]==='"'){field+='"';i++;} else q=false; }
+      else field+=ch;
+    } else if(ch==='"'){ q=true; }
+    else if(ch===delim){ row.push(field); field=''; }
+    else if(ch==='\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+    else if(ch==='\r'){ /* skip */ }
+    else field+=ch;
+  }
+  if(field!==''||row.length){ row.push(field); rows.push(row); }
+  rows=rows.filter(function(r){return !(r.length===1&&r[0].trim()==='')});
+  if(rows.length<2) throw new Error('Need a header row plus at least one data row');
+  var head=rows[0].map(function(h){return h.trim()});
+  return rows.slice(1).map(function(r){
+    var o={}; head.forEach(function(h,i){o[h]=r[i]===undefined?'':r[i]}); return o;
+  });
+}
+function run(){
+  var src=$('src').value, d=DELIMS[$('delim').value]||',';
+  try{
+    if($('dir').value==='j2c'){
+      var t=src.trim();
+      if(!t) throw new Error('Nothing to convert');
+      var r=toCsv(JSON.parse(t),d);
+      $('out').value=r.csv; $('meta').textContent=r.rows+' row(s), '+r.cols.length+' column(s): '+r.cols.join(', ');
+      seterr('err','');
+    } else {
+      if(!src.trim()) throw new Error('Nothing to convert');
+      var rows=parseCsv(src,d);
+      $('out').value=JSON.stringify(rows,null,2);
+      $('meta').textContent=rows.length+' row(s) read back into JSON';
+      seterr('err','');
+    }
+  }catch(e){ $('out').value=''; $('meta').textContent=''; seterr('err',e.message||String(e)); }
+}
+function saveCsv(){
+  var t=$('out').value;
+  if(!t){ seterr('err','Nothing to download yet'); return; }
+  var name=($('dir').value==='j2c'?'converted.csv':'converted.json');
+  dl(name,t);
+}
+['src','dir','delim'].forEach(function(id){$(id).addEventListener('input',run);$(id).addEventListener('change',run)});
+run();
+window.__jsoncsv={toCsv:toCsv,parseCsv:parseCsv,cellOf:cellOf,DELIMS:DELIMS};
+</script>
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/csv-to-json/">
+      <span class="ocurp-related-n">CSV to JSON Pro</span>
+      <span class="ocurp-related-b">Quoted fields, escaped newlines and delimiter sniffing handled correctly.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-to-csv/">
+      <span class="ocurp-related-n">JSON to CSV</span>
+      <span class="ocurp-related-b">Flatten a JSON array into CSV with headers and download.</span>
+    </a></li>
+    <li><a href="/workspace/tools/csv-json/">
+      <span class="ocurp-related-n">CSV to JSON</span>
+      <span class="ocurp-related-b">Convert delimited text and JSON both ways.</span>
+    </a></li>
+    <li><a href="/workspace/tools/json-to-yaml/">
+      <span class="ocurp-related-n">JSON to YAML</span>
+      <span class="ocurp-related-b">Convert JSON objects to clean YAML, client-side.</span>
+    </a></li>
+    <li><a href="/workspace/tools/yaml-to-json/">
+      <span class="ocurp-related-n">YAML to JSON</span>
+      <span class="ocurp-related-b">Parse YAML and export formatted JSON.</span>
+    </a></li>
+    <li><a href="/workspace/tools/csv-cleaner/">
+      <span class="ocurp-related-n">CSV Cleaner</span>
+      <span class="ocurp-related-b">Clean a CSV with exact counts - rows in, rows out, duplicates and blanks dropped - auto-de</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

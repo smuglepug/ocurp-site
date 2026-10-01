@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Palindrome Analyzer — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Check a phrase or number as a palindrome with a character mirror map and the longest palindromic substring. Runs entirely in your browser - nothing is...">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/palindrome-analyzer/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Palindrome Analyzer">
+<meta property="og:description" content="Check a phrase or number as a palindrome with a character mirror map and the longest palindromic substring. Runs entirely in your browser - nothing is...">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/palindrome-analyzer/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Palindrome Analyzer on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Palindrome Analyzer">
+<meta name="twitter:description" content="Check a phrase or number as a palindrome with a character mirror map and the longest palindromic substring. Runs entirely in your browser - nothing is...">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Palindrome Analyzer on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Palindrome Analyzer","url":"https://ocurp.com/workspace/tools/palindrome-analyzer/","description":"Check a phrase or number as a palindrome with a character mirror map and the longest palindromic substring. Runs entirely in your browser - nothing is...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Palindrome Analyzer</h1>
+      <p class="mt-1 text-xs text-white/40">study &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Check a phrase or a number as a palindrome with case, punctuation, spaces and accents optionally ignored. Shows every mirrored character pair, the first mismatch, and the longest palindromic substring. <span class="ws-chip">MIRROR MAP</span> <span class="ws-chip">SUBSTRING</span> <span class="ws-chip">NORMALISE</span></p>
+  <div class="ws-grid2">
+<label class="ws-label mb-2 block" for="pa-t">Text or number</label><textarea id="pa-t" rows="4" class="ws-input" style="font-family:'IBM Plex Sans',monospace;line-height:1.7;resize:vertical" placeholder="paste a phrase or a number">A man, a plan, a canal: Panama!</textarea><div class="mt-4 flex flex-wrap items-center gap-4"><div class="flex flex-wrap gap-4 pb-1"><label class="flex items-center gap-2 pb-2 text-xs text-white/70"><input id="pa-case" type="checkbox" class="accent-[#FF5F1F]" checked> Ignore case</label><label class="flex items-center gap-2 pb-2 text-xs text-white/70"><input id="pa-punct" type="checkbox" class="accent-[#FF5F1F]" checked> Ignore punctuation and spaces</label><label class="flex items-center gap-2 pb-2 text-xs text-white/70"><input id="pa-acc" type="checkbox" class="accent-[#FF5F1F]" checked> Ignore accents</label></div><div class="flex flex-wrap items-center gap-3"><button id="pa-go" class="ws-btn" style="width:auto">Check</button><button id="pa-cp" class="ws-btn-ghost" style="width:auto">Copy report</button><button id="pa-dl" class="ws-btn-ghost" style="width:auto">Download</button></div></div><div class="mt-3 font-mono text-[11px] text-white/45" id="pa-err"></div><div class="mt-4"><div id="pa-stats" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"></div></div><div class="mt-5"><div class="ws-label mb-2">Mirror map (each pair mirrored across the centre)</div><pre id="pa-map" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre></div><div class="mt-5 grid gap-5 lg:grid-cols-2"><div><div><div class="mb-2 flex items-center justify-between"><span class="ws-label">Longest palindromic substring</span><span class="flex gap-2"><button class="ws-btn-ghost !w-auto !px-3 !py-1.5" onclick="copyOut('pa-sub')">Copy</button><button class="ws-btn-ghost !w-auto !px-3 !py-1.5" onclick="dlText('pa-sub','result.txt')">Download</button></span></div><pre id="pa-sub" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre></div></div><div><div><div class="mb-2 flex items-center justify-between"><span class="ws-label">Report</span><span class="flex gap-2"><button class="ws-btn-ghost !w-auto !px-3 !py-1.5" onclick="copyOut('pa-out')">Copy</button><button class="ws-btn-ghost !w-auto !px-3 !py-1.5" onclick="dlText('pa-out','result.txt')">Download</button></span></div><pre id="pa-out" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre></div></div></div>
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(!isFinite(n)) return 0;
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function seterr(id,msg){ var e=$(id); if(!e) return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':''; }
+// Copy the value of any textarea/input/pre/table in the page.
+function grab(id){ var el=$(id); if(!el) return '';
+  if(el.tagName==='PRE'||el.tagName==='TABLE') return el.textContent;
+  return el.value!==undefined?el.value:el.textContent; }
+function copyOut(id){ var t=grab(id); if(!t) return;
+  try{navigator.clipboard.writeText(t);}catch(e){} }
+function dlText(id,name,mime){
+  var t=grab(id); if(!t) return;
+  var b=new Blob([t],{type:(mime||'text/plain')+';charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+}
+// Fill an input or textarea and fire the events a real keystroke would.
+function put(id,val){ var el=$(id); if(!el) return;
+  el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+// Render one statistic tile. Shared by every page so the card grid looks
+// identical across the batch.
+var tcard=function(k,v,sub){
+  return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4">'
+    +'<div class="ws-label">'+esc(k)+'</div>'
+    +'<div class="mt-1 font-display text-xl font-black text-[#FF5F1F]">'+esc(v)+'</div>'
+    +(sub?'<div class="mt-0.5 text-[10px] text-white/35">'+esc(sub)+'</div>':'')
+    +'</div>';};
+window.__T = window.__T || {};
+var CASES_JS=[["title","Title Case"],["sentence","Sentence case"],["upper","UPPERCASE"],["lower","lowercase"],["camel","camelCase"],["pascal","PascalCase"],["kebab","kebab-case"],["snake","snake_case"],["dot","dot.case"],["path","path/case"],["constant","CONSTANT_CASE"],["train","Train-Case"],["alternating","aLtErNaTiNg"],["inverse","sENTENCE cASE"]];
+
+function normalise(t){
+  var s=t;
+  if($('pa-acc').checked) s=s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if($('pa-punct').checked)
+    s=s.replace(/[^\p{L}\p{N}]/gu,'');
+  else s=s.replace(/\s+/g,' ');
+  if($('pa-case').checked) s=s.toLowerCase();
+  return s;
+}
+// Expand around every centre; odd length uses i==j, even uses i==j+1.
+function longestPal(s){
+  var best={start:0,len:1},n=s.length;
+  if(!n) return {start:0,len:0,text:''};
+  function expand(i,j){
+    while(i>=0&&j<n&&s[i]===s[j]){ i--; j++; }
+    var L=j-i-1;
+    if(L>best.len){ best={start:i+1,len:L,text:s.substr(i+1,L)}; }
+  }
+  for(var i=0;i<n;i++){ expand(i,i); expand(i,i+1); }
+  return best;
+}
+function go(){
+  var t=$('pa-t').value;
+  var s=normalise(t);
+  var isPal=s.length>0&&s===s.split('').reverse().join('');
+  var mismatch=-1, pairs=0, mirror='';
+  for(var i=0;i<s.length;i++){
+    var j=s.length-1-i;
+    var mark=(s[i]===s[j])?'match':'DIFFER';
+    if(s[i]===s[j]&&i<j) pairs++;
+    if(s[i]!==s[j]&&mismatch<0) mismatch=i;
+    mirror+=String(i).padStart(2)+'..'+String(j).padStart(2)+' '
+      +s[i]+' / '+s[j]+'  '+mark+'\n';
+  }
+  var L=longestPal(s);
+  var mapBox='normalised: '+(s||'(empty)')+'\n'
+    +'centre at index '+((s.length-1)/2).toFixed(1)+'\n\n'+mirror;
+  $('pa-map').textContent=mapBox;
+  $('pa-sub').textContent=L.len
+    ? 'text    : '+L.text+'\nlength  : '+L.len+'\nstart   : '+L.start
+      +'\nend     : '+(L.start+L.len-1)
+    : '(the normalised text is empty)';
+  var rep='input       : '+t+'\nnormalised  : '+s+'\nlength      : '+s.length
+    +'\npairs       : '+pairs
+    +'\nverdict     : '+(isPal?'PALINDROME':'NOT a palindrome')
+    +'\nfirst mismatch: '+(mismatch<0?'none':('index '+mismatch+" '"+s[mismatch]+"' vs '"+s[s.length-1-mismatch]+"'"))
+    +'\nlongest palindromic substring: '+(L.text||'(none)')+' ('+L.len+')';
+  $('pa-out').textContent=rep;
+  $('pa-stats').innerHTML=[
+    ['Verdict',isPal?'yes':'no'],
+    ['Normalised length',s.length],
+    ['Mirrored pairs',pairs],
+    ['Even-length palindrome',s.length%2===0?'possible':'no'],
+    ['Longest palindrome',L.text?('"'+L.text+'"'):'-'],
+    ['Longest length',L.len]
+  ].map(function(p){return tcard(p[0],p[1]);}).join('');
+  seterr('pa-err',t.trim()?'':'Paste a phrase or a number to check.');
+  return {normalised:s,isPalindrome:isPal,length:s.length,pairs:pairs,
+    firstMismatch:mismatch,longest:L.text,longestLen:L.len};
+}
+$('pa-go').addEventListener('click',go);
+$('pa-cp').addEventListener('click',function(){copyOut('pa-out');});
+$('pa-dl').addEventListener('click',function(){dlText('pa-out','palindrome.txt');});
+['pa-t','pa-case','pa-punct','pa-acc'].forEach(function(id){var el=$(id); if(el){
+  el.addEventListener('input',go); el.addEventListener('change',go);}});
+window.__T['palindrome-analyzer']={slug:'palindrome-analyzer',run:function(i){
+  if(i.text!==undefined) put('pa-t',i.text);
+  if(i.caseOn!==undefined) $('pa-case').checked=!!i.caseOn;
+  if(i.punct!==undefined) $('pa-punct').checked=!!i.punct;
+  if(i.acc!==undefined) $('pa-acc').checked=!!i.acc;
+  return JSON.stringify(go());
+}};
+go();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/palindrome-checker/">
+      <span class="ocurp-related-n">Palindrome Checker</span>
+      <span class="ocurp-related-b">Check any phrase as a palindrome, ignoring case, accents and punctuation, and see the firs</span>
+    </a></li>
+    <li><a href="/workspace/tools/acronym-generator/">
+      <span class="ocurp-related-n">Acronym Generator</span>
+      <span class="ocurp-related-b">Build initialisms, recursive acronyms and random words from a phrase, plus a back-expander</span>
+    </a></li>
+    <li><a href="/workspace/tools/alarm/">
+      <span class="ocurp-related-n">Alarm Clock</span>
+      <span class="ocurp-related-b">Set an alarm a number of seconds ahead or at a wall-clock time, watch it count down to zer</span>
+    </a></li>
+    <li><a href="/workspace/tools/bingo-card-generator/">
+      <span class="ocurp-related-n">Bingo Card Generator</span>
+      <span class="ocurp-related-b">Printable 5x5 bingo cards with a proper B-I-N-G-O number range and a matching call sheet.</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi-calculator-bmr/">
+      <span class="ocurp-related-n">BMI + BMR Calculator</span>
+      <span class="ocurp-related-b">Body mass index plus basal metabolic rate, with the healthy weight range for your height.</span>
+    </a></li>
+    <li><a href="/workspace/tools/character-count-analyzer/">
+      <span class="ocurp-related-n">Character Count Analyzer</span>
+      <span class="ocurp-related-b">Live character counts against the real limits for X, LinkedIn, Instagram, TikTok, meta tit</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

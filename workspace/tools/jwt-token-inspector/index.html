@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JWT Token Inspector — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Decode a JWT header and payload without verifying the signature. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/jwt-token-inspector/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JWT Token Inspector">
+<meta property="og:description" content="Decode a JWT header and payload without verifying the signature. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/jwt-token-inspector/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="JWT Token Inspector on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JWT Token Inspector">
+<meta name="twitter:description" content="Decode a JWT header and payload without verifying the signature. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="JWT Token Inspector on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JWT Token Inspector","url":"https://ocurp.com/workspace/tools/jwt-token-inspector/","description":"Decode a JWT header and payload without verifying the signature. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">JWT Token Inspector</h1>
+      <p class="mt-1 text-xs text-white/40">Security &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Decode a JWT's header and payload without verifying the signature, with base64url handled correctly, the algorithm flagged as claimed-only, and an expiry check. This is a debugger, not an authorisation check.</p>
+  <div class="ws-grid2">
+    <div class="ws-panel p-5">
+      <p class="ws-label mb-3">Token</p>
+      <div><label class="block text-[11px] text-white/50 mb-1.5" for="tok">Paste a JWT</label>
+      <textarea id="tok" rows="4" class="ws-input font-mono !text-[13px]" placeholder="header.payload.signature">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFkYSBMb3ZlbGFjZSIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2MjQyNjIyLCJyb2xlIjoiYWRtaW4ifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</textarea></div>
+      <div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div>
+      <div id="jOut" class="ws-out mt-3 min-h-[60px]" aria-live="polite"></div>
+
+    </div>
+    <div class="ws-panel p-5">
+      <p class="ws-label mb-3">Decoded</p>
+      <p class="mb-3 rounded-lg border border-white/10 bg-white/[0.03] p-3 text-[11px] leading-relaxed text-white/55"><span class="font-bold text-white/80">This does not verify anything.</span> The header and payload are only base64url-decoded - their contents are attacker-controlled. Trust nothing here until a server has checked the signature with a key it holds. Use it for debugging, never for authorisation.</p>
+      <div id="jOut2" class="ws-out mt-3 min-h-[60px]" aria-live="polite"></div>
+
+    </div>
+
+  </div>
+  <div class="mt-8">
+
+<script>
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function seterr(id,msg){var e=document.getElementById(id);if(!e)return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
+var $=function(id){return document.getElementById(id)};
+function cpbtn(btn,target){
+  var el=$(target)||$(btn.getAttribute('data-t'));
+  var t=el?(el.value!==undefined?el.value:el.textContent):'';
+  try{navigator.clipboard.writeText(t)}catch(e){}
+  var o=btn.textContent; btn.textContent='Copied'; setTimeout(function(){btn.textContent=o},1100);
+}
+function dl(name,text,mime){
+  var b=new Blob([text],{type:mime||'text/plain;charset=utf-8'});
+  var u=URL.createObjectURL(b), a=document.createElement('a');
+  a.href=u; a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(u);a.remove()},60);
+  return name;
+}
+function nowms(){return Date.now();}
+function num(id,def){var v=parseFloat($(id).value);return isFinite(v)?v:def;}
+
+function b64urlToText(seg){
+  if(seg===undefined||seg===null) throw new Error('missing segment');
+  var s=String(seg).replace(/-/g,'+').replace(/_/g,'/');
+  while(s.length%4) s+='=';
+  var bin;
+  try{ bin=atob(s); }catch(e){ throw new Error('segment is not valid base64url: '+(e.message||e)); }
+  try{ return decodeURIComponent(Array.prototype.map.call(bin,function(c){
+      return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2); }).join('')); }
+  catch(e){ return bin; }
+}
+function decodeToken(tok){
+  tok=String(tok||'').trim();
+  if(!tok) throw new Error('Paste a token');
+  var parts=tok.split('.');
+  if(parts.length<2) throw new Error('A JWT has at least 2 dot-separated parts; found '+parts.length);
+  var header=JSON.parse(b64urlToText(parts[0]));
+  var payload=JSON.parse(b64urlToText(parts[1]));
+  return {parts:parts.length,parts_:parts,signature:parts[2]||null,
+          header:header,payload:payload,
+          alg:header.alg||'(none)',typ:header.typ||'(none)'};
+}
+function expInfo(d){
+  var now=Math.floor(Date.now()/1000);
+  var out={hasExp:'exp' in d,hasIat:'iat' in d,nowSec:now};
+  if(out.hasExp){
+    var e=Number(d.exp);
+    if(!isFinite(e)) return Object.assign(out,{exp:d.exp,expNum:NaN,expired:null,text:'exp is not a number'});
+    var diff=e-now;
+    out.expNum=e;
+    if(diff>0){ out.expired=false; out.text='expires in '+humanSpan(diff)+' ('+new Date(e*1000).toISOString()+')'; }
+    else { out.expired=true; out.text='EXPIRED '+humanSpan(-diff)+' ago ('+new Date(e*1000).toISOString()+')'; }
+  }
+  return out;
+}
+function humanSpan(sec){
+  var a=Math.abs(sec), out=[];
+  [['year',31536000],['day',86400],['hour',3600],['minute',60]].forEach(function(p){
+    if(a>=p[1]&&out.length<2){ out.push(Math.floor(a/p[1])+' '+p[0]+(Math.floor(a/p[1])===1?'':'s')); a-=Math.floor(a/p[1])*p[1]; }
+  });
+  if(!out.length&&a) out.push(Math.floor(a)+' s');
+  return out.join(' ');
+}
+function pretty(o){
+  try{ return JSON.stringify(o,null,2); }catch(e){ return String(o); }
+}
+function pre(o,label){
+  return '<div class="ws-kv mt-3"><span>'+esc(label)+'</span><span></span></div>'+
+    '<pre class="mt-1 overflow-x-auto whitespace-pre-wrap rounded-lg border border-white/10 bg-black/40 p-3 text-[11px]">'+esc(pretty(o))+'</pre>';
+}
+function run(){
+  var raw=$('tok').value;
+  try{
+    var d=decodeToken(raw);
+    var ex=expInfo(d.payload);
+    var h='<div class="ws-kv"><span>Parts</span><span>'+d.parts+'</span></div>'+
+      '<div class="ws-kv"><span>Algorithm (claimed)</span><span>'+esc(d.alg)+'</span></div>'+
+      '<div class="ws-kv"><span>Type</span><span>'+esc(d.typ)+'</span></div>'+
+      '<div class="ws-kv"><span>Signature present</span><span>'+(d.signature?'yes ('+d.signature.length+' chars)':'no')+'</div>'+
+      '<div class="ws-kv"><span>Expiry</span><span>'+esc(ex.text||'no exp claim')+'</span></div>';
+    $('jOut').innerHTML=h;
+    var hd=pre(d.header,'Header JSON'), pl=pre(d.payload,'Payload JSON');
+    $('jOut2').innerHTML=hd+pl;
+    window.__jwtLast=d;
+  }catch(e){ $('jOut').innerHTML=''; $('jOut2').innerHTML=''; seterr('err',e.message||String(e)); }
+}
+$('tok').addEventListener('input',run);
+run();
+window.__jwt={decodeToken:decodeToken,b64urlToText:b64urlToText,expInfo:expInfo};
+</script>
+
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+
+
+
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/jwt-debugger/">
+      <span class="ocurp-related-n">JWT Debugger</span>
+      <span class="ocurp-related-b">Decode a JWT header and payload, client-side only.</span>
+    </a></li>
+    <li><a href="/workspace/tools/jwt-decoder/">
+      <span class="ocurp-related-n">JWT Decoder</span>
+      <span class="ocurp-related-b">Decode a JWT into its header, payload and claims timeline, and see at a glance whether it </span>
+    </a></li>
+    <li><a href="/workspace/tools/jwt-inspector/">
+      <span class="ocurp-related-n">JWT Inspector</span>
+      <span class="ocurp-related-b">Decode a JSON Web Token, list its claims on a timeline and flag expiry.</span>
+    </a></li>
+    <li><a href="/workspace/tools/password-strength-meter/">
+      <span class="ocurp-related-n">Password Strength Meter</span>
+      <span class="ocurp-related-b">A real entropy estimate in bits from character-class pools with a repetition penalty, an e</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/acronym-generator/">
+      <span class="ocurp-related-n">Acronym Generator</span>
+      <span class="ocurp-related-b">Build initialisms, recursive acronyms and random words from a phrase, plus a back-expander</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
