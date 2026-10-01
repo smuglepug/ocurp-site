@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logistic Map Explorer — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="The logistic map from r 2.7 to 4.0. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/logistic-map/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Logistic Map Explorer">
+<meta property="og:description" content="The logistic map from r 2.7 to 4.0. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/logistic-map/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Logistic Map Explorer on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Logistic Map Explorer">
+<meta name="twitter:description" content="The logistic map from r 2.7 to 4.0. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Logistic Map Explorer on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Logistic Map Explorer","url":"https://ocurp.space/workspace/tools/logistic-map/","description":"The logistic map from r 2.7 to 4.0. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Logistic Map Explorer</h1>
+      <p class="mt-1 text-xs text-white/40">math &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Drag r through the logistic map x' = r x (1-x) and watch the orbit, the unstable fixed point and the Lyapunov exponent move together. Positive lambda means nearby orbits separate; negative means they collapse. <span class="ws-chip">CHAOS</span><span class="ws-chip">LYAPUNOV</span><span class="ws-chip">BIFURCATION</span></p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="flex flex-wrap items-end gap-5">
+    <div class="min-w-[16rem] flex-1">
+      <label class="ws-label mb-2 block" for="lm-r">Growth rate r</label>
+      <input id="lm-r" type="range" min="0" max="4" step="0.001" value="3.6" class="ws-input">
+      <div class="mt-1 flex justify-between text-xs text-white/40">
+        <span>0</span><span id="lm-rv" class="font-mono text-accent">3.600</span><span>4</span>
+      </div>
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="lm-x0">Start x&#8320;</label>
+      <input id="lm-x0" type="number" step="0.01" class="ws-input" value="0.4">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="lm-it">Iterations</label>
+      <input id="lm-it" type="number" step="1000" class="ws-input" value="20000">
+    </div>
+  </div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="lm-go" class="ws-btn">Iterate</button>
+    <button id="lm-cp" class="ws-btn-ghost">Copy readings</button>
+    <button id="lm-bif" class="ws-btn-ghost">Bifurcation map</button>
+  </div>
+</div>
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="ws-label">Orbit &mdash; first 600 iterates</div>
+  <canvas id="lm-c" width="900" height="300" class="mt-3 w-full" style="background:rgba(255,255,255,.02);border-radius:.75rem"></canvas>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">Lyapunov exponent</div>
+  <div id="lm-ly" class="mt-2 font-display text-4xl font-black text-accent">-</div>
+  <div id="lm-reg" class="mt-1 text-xs text-white/45">-</div>
+  <div class="mt-5">
+    <div class="ws-kv"><span>Mean log |f'(x)|</span><span id="lm-k1">-</span></div>
+    <div class="ws-kv"><span>Samples averaged</span><span id="lm-k2">-</span></div>
+    <div class="ws-kv"><span>Attractor min x</span><span id="lm-k3">-</span></div>
+    <div class="ws-kv"><span>Attractor max x</span><span id="lm-k4">-</span></div>
+  </div>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">Unstable fixed point</div>
+  <div class="mt-2 font-display text-3xl font-black text-white" id="lm-fp">-</div>
+  <div class="mt-1 text-xs text-white/45">x* = 1 - 1/r, the branch that loses stability at r = 3.</div>
+  <div class="mt-5">
+    <div class="ws-kv"><span>Residual |f(x*) - x*|</span><span id="lm-fpr">-</span></div>
+    <div class="ws-kv"><span>|f'(x*)| = |2 - r|</span><span id="lm-fpd">-</span></div>
+    <div class="ws-kv"><span>Head of the orbit</span><span id="lm-head">-</span></div>
+  </div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+  function num(x, d){ if(x === null || x === undefined || !isFinite(x)) return '-';
+    return String(parseFloat(x.toFixed(d === undefined ? 2 : d))); }
+  function sci(x){ if(x === null || x === undefined || !isFinite(x)) return '-';
+    if(x === 0) return '0'; return Number(x).toExponential(6).replace('e','E'); }
+  function raw(s){ var x = parseFloat(String(s).replace(/[^0-9.eE+-]/g,'')); return isFinite(x) ? x : NaN; }
+
+window.__T = window.__T || {};
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var BURN = 200;
+
+  // f(x) = r x (1-x), f'(x) = r (1 - 2x), lambda = mean log|f'|
+  function compute(r, x0, iters){
+    var x = x0, s = 0, c = 0, mn = Infinity, mx = -Infinity;
+    var head = [], series = [];
+    for(var k = 0; k < iters; k++){
+      x = r * x * (1 - x);
+      if(k < 5) head.push(x);
+      if(k < 600) series.push(x);
+      if(k >= BURN){
+        var d = Math.abs(r * (1 - 2 * x));
+        if(d > 0 && isFinite(d)){ s += Math.log(d); c++; }
+        if(x < mn) mn = x;
+        if(x > mx) mx = x;
+      }
+    }
+    var ly = c ? s / c : NaN;
+    var fp = r <= 1 ? 0 : 1 - 1 / r;
+    var res = r > 0 ? Math.abs(r * fp * (1 - fp) - fp) : NaN;
+    var der = r > 0 ? Math.abs(2 - r) : NaN;
+    var regime = ly < -1e-9 ? 'stable attractor, orbits contract exponentially'
+      : (Math.abs(ly) <= 1e-9 ? 'neutrally stable: the r = 3 boundary'
+      : 'chaotic, nearby orbits separate');
+    return { r:r, x0:x0, iters:iters, lyapunov:ly, averaged:c, xmin:mn, xmax:mx,
+             fixed:fp, residual:res, fixedDeriv:der, head:head, series:series,
+             regime:regime };
+  }
+
+  function plot(series){
+    var cv = $('lm-c'), ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle = 'rgba(255,255,255,.08)';
+    ctx.beginPath();
+    for(var g = 1; g < 5; g++){ ctx.moveTo(0, H*g/5); ctx.lineTo(W, H*g/5); }
+    ctx.stroke();
+    ctx.strokeStyle = '#FF5F1F';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    var n = series.length, step = n > 1 ? W/(n-1) : W;
+    for(var i = 0; i < n; i++){
+      var px = i*step, py = H - series[i]*H;
+      if(i === 0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+  }
+
+  function render(c){
+    $('lm-rv').textContent = c.r.toFixed(3);
+    $('lm-ly').textContent = isFinite(c.lyapunov) ? c.lyapunov.toFixed(6) : '-';
+    $('lm-reg').textContent = c.regime;
+    $('lm-k1').textContent = sci(c.lyapunov);
+    $('lm-k2').textContent = String(c.averaged);
+    $('lm-k3').textContent = num(c.xmin, 6);
+    $('lm-k4').textContent = num(c.xmax, 6);
+    $('lm-fp').textContent = num(c.fixed, 6);
+    $('lm-fpr').textContent = sci(c.residual);
+    $('lm-fpd').textContent = num(c.fixedDeriv, 6);
+    $('lm-head').textContent = c.head.map(function(v){ return num(v,6); }).join(', ');
+    plot(c.series);
+    window.__T['logistic-map'].last = c;
+  }
+
+  function read(){
+    return { r: parseFloat($('lm-r').value), x0: raw($('lm-x0').value),
+             iters: Math.max(1, Math.round(raw($('lm-it').value) || 20000)) };
+  }
+  function go(){ var i = read(); var c = compute(i.r, i.x0, i.iters); render(c); return c; }
+
+  $('lm-r').addEventListener('input', go);
+  ['lm-x0','lm-it'].forEach(function(id){
+    $(id).addEventListener('input', go); $(id).addEventListener('change', go);
+  });
+  $('lm-go').addEventListener('click', go);
+  $('lm-cp').addEventListener('click', function(){
+    var i = read(), c = compute(i.r, i.x0, i.iters);
+    navigator.clipboard.writeText('r=' + c.r + ' lambda=' + c.lyapunov.toFixed(6));
+  });
+  $('lm-bif').addEventListener('click', function(){
+    var cv = $('lm-c'), ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+    ctx.fillStyle = '#FF5F1F';
+    var R = 700, N = 200;
+    for(var i = 1; i <= R; i++){
+      var r = 4*i/R, x = 0.3, col = W*i/R;
+      for(var k = 0; k < 1400; k++){
+        x = r*x*(1-x);
+        if(k > 300) ctx.fillRect(col, H - x*H, 1, 1);
+      }
+    }
+  });
+
+  window.__T['logistic-map'] = { slug:'logistic-map', run: function(i){
+    if(i.r !== undefined) $('lm-r').value = i.r;
+    if(i.x0 !== undefined) $('lm-x0').value = i.x0;
+    if(i.iters !== undefined) $('lm-it').value = i.iters;
+    return JSON.stringify(go());
+  }};
+  go();
+})();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once, with a signed bit-width view, two&#x27;s complement</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi/">
+      <span class="ocurp-related-n">BMI Calculator</span>
+      <span class="ocurp-related-b">Body mass index with healthy-range context.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

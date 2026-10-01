@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prime Factorizer & SPF Sieve — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Factor any integer. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/prime-factorizer/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Prime Factorizer &amp; SPF Sieve">
+<meta property="og:description" content="Factor any integer. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/prime-factorizer/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Prime Factorizer &amp; SPF Sieve on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Prime Factorizer &amp; SPF Sieve">
+<meta name="twitter:description" content="Factor any integer. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Prime Factorizer &amp; SPF Sieve on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Prime Factorizer & SPF Sieve","url":"https://ocurp.space/workspace/tools/prime-factorizer/","description":"Factor any integer. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Prime Factorizer & SPF Sieve</h1>
+      <p class="mt-1 text-xs text-white/40">math &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Factorise integers with a smallest-prime-factor sieve, and read off the divisor count, divisor sum, Euler totient, whether the number is squarefree, and how many primes live below the sieve bound. <span class="ws-chip">SIEVE</span><span class="ws-chip">FACTORISATION</span><span class="ws-chip">TOTIENT</span></p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div>
+      <label class="ws-label mb-2 block" for="pf-n">Integer</label>
+      <input id="pf-n" type="number" step="1" class="ws-input" value="13195">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="pf-max">Sieve bound N</label>
+      <input id="pf-max" type="number" step="1000000" class="ws-input" value="1000000">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="pf-cnt">Integers to factorise</label>
+      <input id="pf-cnt" type="number" step="1" class="ws-input" value="1">
+    </div>
+  </div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="pf-go" class="ws-btn">Factorise</button>
+    <button id="pf-cp" class="ws-btn-ghost">Copy</button>
+  </div>
+  <div class="mt-3 flex flex-wrap gap-2">
+    <span class="ws-chip" data-pf="223092870">223092870</span>
+    <span class="ws-chip" data-pf="600851475143">600851475143</span>
+    <span class="ws-chip" data-pf="2147483647">2147483647</span>
+    <span class="ws-chip" data-pf="15485863">15485863</span>
+    <span class="ws-chip" data-pf="1000000">1000000</span>
+  </div>
+</div>
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="ws-label mb-3">Prime factorisation</div>
+  <div id="pf-fac" class="font-display text-2xl font-black leading-relaxed text-accent">-</div>
+  <div id="pf-more" class="mt-3 font-mono text-xs leading-relaxed text-white/55">-</div>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">The sieve</div>
+  <div class="mt-3">
+    <div class="ws-kv"><span>&pi;(N) primes below N</span><span id="pf-pi">-</span></div>
+    <div class="ws-kv"><span>Largest prime sieved</span><span id="pf-lp">-</span></div>
+    <div class="ws-kv"><span>Cells reassigned</span><span id="pf-cells">-</span></div>
+    <div class="ws-kv"><span>Build time</span><span id="pf-ms">-</span></div>
+  </div>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">Arithmetic functions of n</div>
+  <div class="mt-3">
+    <div class="ws-kv"><span>Divisor count &tau;(n)</span><span id="pf-tau">-</span></div>
+    <div class="ws-kv"><span>Sum of divisors &sigma;(n)</span><span id="pf-sig">-</span></div>
+    <div class="ws-kv"><span>Euler totient &phi;(n)</span><span id="pf-phi">-</span></div>
+    <div class="ws-kv"><span>Squarefree</span><span id="pf-sf">-</span></div>
+    <div class="ws-kv"><span>Is prime</span><span id="pf-pr">-</span></div>
+  </div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+  function num(x, d){ if(x === null || x === undefined || !isFinite(x)) return '-';
+    return String(parseFloat(x.toFixed(d === undefined ? 2 : d))); }
+  function sci(x){ if(x === null || x === undefined || !isFinite(x)) return '-';
+    if(x === 0) return '0'; return Number(x).toExponential(6).replace('e','E'); }
+  function raw(s){ var x = parseFloat(String(s).replace(/[^0-9.eE+-]/g,'')); return isFinite(x) ? x : NaN; }
+
+window.__T = window.__T || {};
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var cache = { bound:-1, spf:null, pi:0, lastPrime:0, cells:0, ms:0 };
+
+  // smallest-prime-factor sieve: fill with self, then overwrite composites
+  // starting at i*i so each is first hit by its least prime
+  function sieve(N){
+    if(cache.bound === N) return cache;
+    var t0 = (typeof performance !== 'undefined' ? performance.now() : 0);
+    N = Math.max(2, Math.min(N|0, 20000000));
+    var spf = new Int32Array(N+1), cells = 0, pc = 0, lp = 0, i, j;
+    for(i = 2; i <= N; i++) spf[i] = i;
+    for(i = 2; (i|0)*(i|0) <= N; i++){
+      if(spf[i] === i){
+        for(j = i*i; j <= N; j += i){ if(spf[j] === j){ spf[j] = i; cells++; } }
+      }
+    }
+    for(i = 2; i <= N; i++){ if(spf[i] === i){ pc++; lp = i; } }
+    cache = { bound:N, spf:spf, pi:pc, lastPrime:lp, cells:cells,
+              ms:(typeof performance !== 'undefined' ? performance.now() : 0) - t0 };
+    return cache;
+  }
+
+  // sieve path when n fits, trial division above the bound
+  function factor(n, sc){
+    var f = [], d = 2;
+    if(n <= sc.bound){
+      while(n > 1){ f.push(sc.spf[n]); n = n / sc.spf[n]; }
+      return f;
+    }
+    while(d * d <= n){ while(n % d === 0){ f.push(d); n = n / d; } d++; }
+    if(n > 1) f.push(n);
+    return f;
+  }
+
+  function functionsOf(n, f){
+    var primes = [], counts = [], i, p = 0;
+    for(i = 0; i < f.length; i++){
+      if(p === f[i]){ counts[counts.length-1]++; }
+      else { primes.push(f[i]); counts.push(1); p = f[i]; }
+    }
+    var tau = 1, sig = 1, phi = n, sqf = true, m = n;
+    for(i = 0; i < primes.length; i++){
+      p = primes[i];
+      tau *= counts[i] + 1;
+      var pk = 1, s = 1;
+      for(var j = 0; j < counts[i]; j++){ pk *= p; s += pk; }
+      sig *= s;
+      phi = Math.floor(phi / p) * (p - 1);
+      if(counts[i] > 1) sqf = false;
+    }
+    void m;
+    return { primes:primes, counts:counts, tau:tau, sigma:sig, phi:phi,
+             squarefree:sqf, prime:f.length === 1 && counts[0] === 1 && primes[0] === n };
+  }
+
+  function powers(primes, counts){
+    return primes.map(function(p, i){
+      return counts[i] === 1 ? String(p) : p + '^' + counts[i];
+    }).join(' x ');
+  }
+
+  function compute(n, bound){
+    var sc = sieve(bound);
+    var f = factor(n, sc), fn = functionsOf(n, f);
+    return { n:n, bound:sc.bound, factors:f, facText:powers(fn.primes, fn.counts),
+             primes:fn.primes, counts:fn.counts,
+             tau:fn.tau, sigma:fn.sigma, phi:fn.phi,
+             squarefree:fn.squarefree, prime:fn.prime,
+             pi:sc.pi, lastPrime:sc.lastPrime, cells:sc.cells,
+             sieveMs:Math.round(sc.ms*1000)/1000,
+             usedSieve:n <= sc.bound, product:f.reduce(function(a,b){ return a*b; }, 1) };
+  }
+
+  function render(c){
+    $('pf-fac').textContent = c.n + ' = ' + c.facText;
+    var lines = [];
+    for(var i = 0; i < c.numbers.length; i++){
+      lines.push(c.numbers[i].n + ' = ' + c.numbers[i].facText);
+    }
+    $('pf-more').textContent = lines.join('\n');
+    $('pf-mx').textContent = '';
+    $('pf-pi').textContent = c.pi.toLocaleString('en-US');
+    $('pf-lp').textContent = c.lastPrime.toLocaleString('en-US');
+    $('pf-cells').textContent = c.cells.toLocaleString('en-US');
+    $('pf-ms').textContent = c.sieveMs + ' ms';
+    $('pf-tau').textContent = c.tau.toLocaleString('en-US');
+    $('pf-sig').textContent = c.sigma.toLocaleString('en-US');
+    $('pf-phi').textContent = c.phi.toLocaleString('en-US');
+    $('pf-sf').textContent = c.squarefree ? 'yes' : 'no';
+    $('pf-pr').textContent = c.prime ? 'yes' : 'no';
+    window.__T['prime-factorizer'].last = c;
+  }
+
+  function read(){
+    return { n: Math.floor(raw($('pf-n').value)),
+             bound: Math.floor(raw($('pf-max').value)),
+             count: Math.max(1, Math.min(20, Math.floor(raw($('pf-cnt').value) || 1))) };
+  }
+  function go(){
+    var i = read(), out = [], first = null;
+    for(var k = 0; k < i.count; k++){
+      var c = compute(k === 0 ? i.n : i.n + k, i.bound);
+      if(k === 0) first = c;
+      out.push({ n:c.n, facText:c.facText });
+    }
+    first.numbers = out;
+    render(first);
+    return first;
+  }
+
+  $('pf-go').addEventListener('click', go);
+  ['pf-n','pf-max','pf-cnt'].forEach(function(id){
+    $(id).addEventListener('change', go);
+  });
+  $('pf-cp').addEventListener('click', function(){
+    navigator.clipboard.writeText(window.__T['prime-factorizer'].last.facText);
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-pf]'), function(el){
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', function(){
+      $('pf-n').value = el.getAttribute('data-pf'); go();
+    });
+  });
+
+  window.__T['prime-factorizer'] = { slug:'prime-factorizer', run: function(i){
+    if(i.n !== undefined) $('pf-n').value = i.n;
+    if(i.bound !== undefined) $('pf-max').value = i.bound;
+    if(i.count !== undefined) $('pf-cnt').value = i.count;
+    return JSON.stringify(go());
+  }};
+  go();
+})();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/factor-calculator/">
+      <span class="ocurp-related-n">Factor Calculator</span>
+      <span class="ocurp-related-b">Prime factorisation by trial division, every division step, the full divisor list, plus GC</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once, with a signed bit-width view, two&#x27;s complement</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

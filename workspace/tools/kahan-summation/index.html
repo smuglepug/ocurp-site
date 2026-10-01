@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kahan Compensated Summation — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Add a million numbers the naive way and against Kahan compensation. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/kahan-summation/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Kahan Compensated Summation">
+<meta property="og:description" content="Add a million numbers the naive way and against Kahan compensation. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/kahan-summation/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Kahan Compensated Summation on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kahan Compensated Summation">
+<meta name="twitter:description" content="Add a million numbers the naive way and against Kahan compensation. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Kahan Compensated Summation on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Kahan Compensated Summation","url":"https://ocurp.space/workspace/tools/kahan-summation/","description":"Add a million numbers the naive way and against Kahan compensation. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Kahan Compensated Summation</h1>
+      <p class="mt-1 text-xs text-white/40">math &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Paste any float series and get the naive left-to-right sum beside Kahan's compensated sum, with the exact double-precision reference and the relative error each one leaves behind. <span class="ws-chip">FLOAT</span><span class="ws-chip">PRECISION</span><span class="ws-chip">COMPENSATION</span></p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <label class="ws-label mb-2 block" for="ks-seq">Series &mdash; one term per line, or comma / space separated</label>
+  <textarea id="ks-seq" rows="7" class="ws-input" style="font-family:'IBM Plex Sans',monospace;line-height:1.7;resize:vertical">1e16
+1
+1
+-1e16</textarea>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="ks-go" class="ws-btn">Sum both ways</button>
+    <button id="ks-cp" class="ws-btn-ghost">Copy</button>
+  </div>
+  <div class="mt-3 flex flex-wrap gap-2">
+    <span class="ws-chip" data-ks="tenths">0.1 x 1000</span>
+    <span class="ws-chip" data-ks="bigcancel">1e100, -1e100, 1</span>
+    <span class="ws-chip" data-ks="thirds">0.1 + 0.2 + 0.3</span>
+    <span class="ws-chip" data-ks="harmonic">alternating harmonic, 10 terms</span>
+    <span class="ws-chip" data-ks="classic">1e16, 1, 1, -1e16</span>
+  </div>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">Naive left-to-right sum</div>
+  <div id="ks-nv" class="mt-2 font-display text-3xl font-black text-white">-</div>
+  <div id="ks-nr" class="mt-1 text-xs text-white/45">-</div>
+</div>
+
+<div class="ws-panel p-6">
+  <div class="ws-label">Kahan compensated sum</div>
+  <div id="ks-kv" class="mt-2 font-display text-3xl font-black text-accent">-</div>
+  <div id="ks-kr" class="mt-1 text-xs text-white/45">-</div>
+</div>
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div id="ks-out" class="ws-out">-</div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+  function num(x, d){ if(x === null || x === undefined || !isFinite(x)) return '-';
+    return String(parseFloat(x.toFixed(d === undefined ? 2 : d))); }
+  function sci(x){ if(x === null || x === undefined || !isFinite(x)) return '-';
+    if(x === 0) return '0'; return Number(x).toExponential(6).replace('e','E'); }
+  function raw(s){ var x = parseFloat(String(s).replace(/[^0-9.eE+-]/g,'')); return isFinite(x) ? x : NaN; }
+
+window.__T = window.__T || {};
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+
+  function naive(v){ var s = 0; for(var i=0;i<v.length;i++) s += v[i]; return s; }
+  // Kahan: y = x - c;  t = s + y;  c = (t - s) - y;  s = t
+  function kahan(v){
+    var s = 0, c = 0;
+    for(var i=0;i<v.length;i++){
+      var y = v[i] - c, t = s + y;
+      c = (t - s) - y; s = t;
+    }
+    return s;
+  }
+
+  function compute(list){
+    var exact = 0, i;
+    for(i=0;i<list.length;i++) exact += list[i];
+    var nv = naive(list), kv = kahan(list);
+    var den = exact === 0 ? 1 : Math.abs(exact);
+    return { n:list.length, naive:nv, kahan:kv, exact:exact,
+             naiveRel:Math.abs(nv - exact)/den, kahanRel:Math.abs(kv - exact)/den,
+             naiveAbs:Math.abs(nv - exact), kahanAbs:Math.abs(kv - exact),
+             saved: Math.abs(nv - exact) - Math.abs(kv - exact) };
+  }
+
+  function render(c){
+    $('ks-nv').textContent = String(c.naive);
+    $('ks-nr').textContent = 'relative error ' + sci(c.naiveRel);
+    $('ks-kv').textContent = String(c.kahan);
+    $('ks-kr').textContent = 'relative error ' + sci(c.kahanRel);
+    $('ks-out').textContent =
+      'terms             = ' + c.n + '\n' +
+      'naive sum         = ' + c.naive + '\n' +
+      'kahan sum         = ' + c.kahan + '\n' +
+      'same loop summed  = ' + c.exact + '\n' +
+      'naive abs error   = ' + sci(c.naiveAbs) + '   rel ' + sci(c.naiveRel) + '\n' +
+      'kahan abs error   = ' + sci(c.kahanAbs) + '   rel ' + sci(c.kahanRel) + '\n' +
+      'error removed     = ' + sci(c.saved) + '\n' +
+      (c.saved > 0 ? 'the naive loop lost the small terms inside the round-off of the big ones; the compensation term carried them'
+                   : 'both loops already agree to the last bit');
+    window.__T['kahan-summation'].last = c;
+  }
+
+  function parse(){
+    return $('ks-seq').value.split(/[\s,;]+/)
+      .filter(function(s){ return s.length; })
+      .map(parseFloat)
+      .filter(function(v){ return isFinite(v); });
+  }
+  function go(){ var c = compute(parse()); render(c); return c; }
+
+  $('ks-seq').addEventListener('input', go);
+  $('ks-go').addEventListener('click', go);
+  $('ks-cp').addEventListener('click', function(){
+    var c = compute(parse());
+    navigator.clipboard.writeText('naive=' + c.naive + ' kahan=' + c.kahan);
+  });
+
+  var PRESETS = {
+    'classic':   '1e16\n1\n1\n-1e16',
+    'tenths':    Array(1000).fill('0.1').join('\n'),
+    'bigcancel': '1e100\n-1e100\n1',
+    'thirds':    '0.1\n0.2\n0.3',
+    'harmonic':  (function(){
+      var a = [];
+      for(var k = 0; k < 10; k++) a.push((k % 2 === 0 ? '' : '-') + (1/(k+1)));
+      return a.join('\n');
+    })()
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('[data-ks]'), function(el){
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', function(){
+      $('ks-seq').value = PRESETS[el.getAttribute('data-ks')]; go();
+    });
+  });
+
+  window.__T['kahan-summation'] = { slug:'kahan-summation', run: function(i){
+    if(i.series !== undefined) $('ks-seq').value = i.series;
+    return JSON.stringify(go());
+  }};
+  go();
+})();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+    </a></li>
+    <li><a href="/workspace/tools/roman-numerals/">
+      <span class="ocurp-related-n">Roman Numeral Converter</span>
+      <span class="ocurp-related-b">Convert 1-3999 both ways, see how each numeral adds up and catch non-standard forms like I</span>
+    </a></li>
+    <li><a href="/workspace/tools/taylor-error/">
+      <span class="ocurp-related-n">Taylor Truncation Error</span>
+      <span class="ocurp-related-b">How many terms a Taylor series needs to hit a target accuracy, and what the remainder actu</span>
+    </a></li>
+    <li><a href="/workspace/tools/number-to-words/">
+      <span class="ocurp-related-n">Number to Words</span>
+      <span class="ocurp-related-b">Spell any number out in words, and hear it spoken aloud.</span>
+    </a></li>
+    <li><a href="/workspace/tools/pdf-page-numbers/">
+      <span class="ocurp-related-n">Add Page Numbers</span>
+      <span class="ocurp-related-b">Add page numbers in 6 positions with multiple formats including Roman numerals.</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

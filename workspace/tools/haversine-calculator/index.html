@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Great-Circle Distance Calculator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Distance between two points on the globe by the haversine formula. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.space/workspace/tools/haversine-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Great-Circle Distance Calculator">
+<meta property="og:description" content="Distance between two points on the globe by the haversine formula. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.space/workspace/tools/haversine-calculator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Great-Circle Distance Calculator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Great-Circle Distance Calculator">
+<meta name="twitter:description" content="Distance between two points on the globe by the haversine formula. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.space/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Great-Circle Distance Calculator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Great-Circle Distance Calculator","url":"https://ocurp.space/workspace/tools/haversine-calculator/","description":"Distance between two points on the globe by the haversine formula. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Great-Circle Distance Calculator</h1>
+      <p class="mt-1 text-xs text-white/40">math &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Great-circle distance between any two coordinates with the haversine substitution laid out line by line: the half-angle sines, the intermediate a, the central angle in radians and degrees, plus the initial bearing and the midpoint. <span class="ws-chip">HAVERSINE</span><span class="ws-chip">LATITUDE</span><span class="ws-chip">GEODESY</span></p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div class="ws-panel p-4" style="background:rgba(255,255,255,.02)">
+      <div class="ws-label mb-3">Point A</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="ws-label mb-1 block" for="hv-a1">Latitude</label>
+          <input id="hv-a1" type="number" step="0.0001" class="ws-input" value="51.5074"></div>
+        <div><label class="ws-label mb-1 block" for="hv-a2">Longitude</label>
+          <input id="hv-a2" type="number" step="0.0001" class="ws-input" value="-0.1278"></div>
+      </div>
+    </div>
+    <div class="ws-panel p-4" style="background:rgba(255,255,255,.02)">
+      <div class="ws-label mb-3">Point B</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="ws-label mb-1 block" for="hv-b1">Latitude</label>
+          <input id="hv-b1" type="number" step="0.0001" class="ws-input" value="40.7128"></div>
+        <div><label class="ws-label mb-1 block" for="hv-b2">Longitude</label>
+          <input id="hv-b2" type="number" step="0.0001" class="ws-input" value="-74.0060"></div>
+      </div>
+    </div>
+  </div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="hv-go" class="ws-btn">Compute distance</button>
+    <button id="hv-cp" class="ws-btn-ghost">Copy</button>
+  </div>
+  <div class="mt-3 flex flex-wrap gap-2">
+    <span class="ws-chip" data-hv="london-newyork">London &rarr; New York</span>
+    <span class="ws-chip" data-hv="london-paris">London &rarr; Paris</span>
+    <span class="ws-chip" data-hv="equator-meridian">0&deg;,0&deg; &rarr; 0&deg;,90&deg;</span>
+    <span class="ws-chip" data-hv="one-degree-lat">1&deg; of latitude</span>
+    <span class="ws-chip" data-hv="sydney-auckland">Sydney &rarr; Auckland</span>
+    <span class="ws-chip" data-hv="antipodes">Antipodes</span>
+  </div>
+</div>
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="ws-label">Great-circle distance</div>
+  <div class="mt-3 grid gap-4 sm:grid-cols-4">
+    <div><div class="text-[10px] font-bold uppercase tracking-[.14em] text-white/40">Kilometres</div>
+      <div id="hv-km" class="font-display text-3xl font-black text-accent">-</div></div>
+    <div><div class="text-[10px] font-bold uppercase tracking-[.14em] text-white/40">Miles</div>
+      <div id="hv-mi" class="font-display text-3xl font-black text-white">-</div></div>
+    <div><div class="text-[10px] font-bold uppercase tracking-[.14em] text-white/40">Nautical miles</div>
+      <div id="hv-nm" class="font-display text-3xl font-black text-white">-</div></div>
+    <div><div class="text-[10px] font-bold uppercase tracking-[.14em] text-white/40">Metres</div>
+      <div id="hv-m" class="font-display text-3xl font-black text-white">-</div></div>
+  </div>
+</div>
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="ws-label mb-3">Worked substitution &mdash; every quantity needed to check it by hand</div>
+  <div id="hv-work" class="ws-out">-</div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+  function num(x, d){ if(x === null || x === undefined || !isFinite(x)) return '-';
+    return String(parseFloat(x.toFixed(d === undefined ? 2 : d))); }
+  function sci(x){ if(x === null || x === undefined || !isFinite(x)) return '-';
+    if(x === 0) return '0'; return Number(x).toExponential(6).replace('e','E'); }
+  function raw(s){ var x = parseFloat(String(s).replace(/[^0-9.eE+-]/g,'')); return isFinite(x) ? x : NaN; }
+
+window.__T = window.__T || {};
+
+(function(){
+  // R_MILE / R_NM are KM PER UNIT, so compute() divides. Storing the
+  // inverse (miles per km) here made every mile and nautical-mile figure
+  // come out 2.59x and 3.43x too large.
+  var R_EARTH = 6371.0088, R_MILE = 1.609344, R_NM = 1.852;
+  var D2R = Math.PI/180;
+  var $ = function(id){ return document.getElementById(id); };
+
+  // a = sin^2(dphi/2) + cos(phi1)cos(phi2)sin^2(dlam/2);  c = 2 asin(sqrt a)
+  function compute(la1, lo1, la2, lo2){
+    var p1 = la1*D2R, p2 = la2*D2R;
+    var dphi = p2 - p1, dlam = (lo2 - lo1)*D2R;
+    var sdp = Math.sin(dphi/2), sdl = Math.sin(dlam/2);
+    var a = sdp*sdp + Math.cos(p1)*Math.cos(p2)*sdl*sdl;
+    var sq = Math.sqrt(a), c = 2*Math.asin(sq), km = R_EARTH*c;
+    var y = Math.sin(dlam)*Math.cos(p2);
+    var x = Math.cos(p1)*Math.sin(p2) - Math.sin(p1)*Math.cos(p2)*Math.cos(dlam);
+    var brg = (Math.atan2(y,x)/D2R + 360) % 360;
+    return { lat1:la1, lon1:lo1, lat2:la2, lon2:lo2,
+             a:a, sqrtA:sq, c:c, km:km, metres:km*1000,
+             miles:km/R_MILE, nm:km/R_NM, bearing:brg,
+             midLat:(la1+la2)/2, midLon:(lo1+lo2)/2, R:R_EARTH };
+  }
+
+  function render(c){
+    $('hv-km').textContent = c.km.toFixed(3);
+    $('hv-mi').textContent = c.miles.toFixed(3);
+    $('hv-nm').textContent = c.nm.toFixed(3);
+    $('hv-m').textContent  = Math.round(c.metres).toLocaleString('en-US');
+    var r6 = function(v){ return v.toFixed(6); };
+    $('hv-work').textContent =
+      'phi1  = ' + c.lat1 + ' deg = ' + r6(c.lat1*D2R) + ' rad\n' +
+      'phi2  = ' + c.lat2 + ' deg = ' + r6(c.lat2*D2R) + ' rad\n' +
+      'dphi  = ' + r6(c.lat2 - c.lat1) + ' deg = ' + r6((c.lat2-c.lat1)*D2R) + ' rad\n' +
+      'dlam  = ' + r6(c.lon2 - c.lon1) + ' deg = ' + r6((c.lon2-c.lon1)*D2R) + ' rad\n' +
+      'a     = sin^2(dphi/2) + cos(phi1)cos(phi2)sin^2(dlam/2) = ' + r6(c.a) + '\n' +
+      'sqrt a = ' + r6(c.sqrtA) + '\n' +
+      'c     = 2 asin(sqrt a) = ' + r6(c.c) + ' rad = ' + (c.c/D2R).toFixed(6) + ' deg\n' +
+      'd     = ' + c.R + ' x c = ' + c.km.toFixed(3) + ' km\n' +
+      'bearing A->B = ' + c.bearing.toFixed(3) + ' deg\n' +
+      'midpoint = ' + c.midLat.toFixed(4) + ', ' + c.midLon.toFixed(4);
+    window.__T['haversine-calculator'].last = c;
+  }
+
+  function read(){
+    return { lat1: raw($('hv-a1').value), lon1: raw($('hv-a2').value),
+             lat2: raw($('hv-b1').value), lon2: raw($('hv-b2').value) };
+  }
+  function go(){ var i = read(); var c = compute(i.lat1, i.lon1, i.lat2, i.lon2); render(c); return c; }
+
+  ['hv-a1','hv-a2','hv-b1','hv-b2'].forEach(function(id){
+    $(id).addEventListener('input', go); $(id).addEventListener('change', go);
+  });
+  $('hv-go').addEventListener('click', go);
+  $('hv-cp').addEventListener('click', function(){
+    var i = read(), c = compute(i.lat1, i.lon1, i.lat2, i.lon2);
+    navigator.clipboard.writeText(c.km.toFixed(3) + ' km');
+  });
+
+  var PRESETS = {
+    'london-newyork':   { a:[51.5074,-0.1278],  b:[40.7128,-74.0060] },
+    'london-paris':     { a:[51.5074,-0.1278],  b:[48.8566,2.3522] },
+    'equator-meridian': { a:[0,0],              b:[0,90] },
+    'one-degree-lat':   { a:[10,0],             b:[11,0] },
+    'sydney-auckland':  { a:[-33.8688,151.2093],b:[-36.8485,174.7633] },
+    'antipodes':        { a:[10,20],            b:[-10,-160] }
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('[data-hv]'), function(el){
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', function(){
+      var p = PRESETS[el.getAttribute('data-hv')];
+      $('hv-a1').value = p.a[0]; $('hv-a2').value = p.a[1];
+      $('hv-b1').value = p.b[0]; $('hv-b2').value = p.b[1];
+      go();
+    });
+  });
+
+  window.__T['haversine-calculator'] = { slug:'haversine-calculator', run: function(i){
+    if(i.lat1 !== undefined) $('hv-a1').value = i.lat1;
+    if(i.lon1 !== undefined) $('hv-a2').value = i.lon1;
+    if(i.lat2 !== undefined) $('hv-b1').value = i.lat2;
+    if(i.lon2 !== undefined) $('hv-b2').value = i.lon2;
+    return JSON.stringify(go());
+  }};
+  go();
+})();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/lattice-grid/">
+      <span class="ocurp-related-n">Lattice Grid Pair Distances</span>
+      <span class="ocurp-related-b">Distances and coordination sequences on a lattice grid, for crystal and network geometry.</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once, with a signed bit-width view, two&#x27;s complement</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

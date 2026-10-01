@@ -141,15 +141,31 @@ try{const b=JSON.parse(localStorage.getItem(FD.STORE)||'{}');if(typeof b.bestId=
 const cv=$('cv'),ctx=cv.getContext('2d');
 function spawn(n,dist,size){
   fd.n=n;fd.size=size;fd.dist=dist;fd.id=idFor(dist,size);fd.limit=limitFor(fd.id);fd.at=now();
-  const hw=FD.W/2-fd.size/2-FD.MARGIN,hh=FD.H/2-fd.size/2-FD.MARGIN;
   // Place on a circle of radius `dist` from the last click, clamped into the
   // arena, then nudged inward if the clamp moved it off the requested distance.
-  const a=Math.random()*Math.PI*2;
-  let x=fd.lastX+Math.cos(a)*dist,y=fd.lastY+Math.sin(a)*dist;
-  x=Math.max(-hw,Math.min(hw,x));y=Math.max(-hh,Math.min(hh,y));
-  fd.x=x+FD.W/2;fd.y=y+FD.H/2;
-  const d=Math.hypot(fd.x-fd.lastX,fd.y-fd.lastY);
-  if(d<FD.D0){fd.x=fd.lastX;fd.y=fd.lastY}
+  // The clamp is on the ABSOLUTE position (the target must sit fully inside the
+  // arena). Clamping lastX+cos(a)*dist into [-hw,hw] instead is a units bug: it
+  // pins the target to the arena edge, which for most angles left d<FD.D0 and
+  // snapped it back onto the last click. That made ~95% of targets spawn at
+  // distance 0, flattening the whole difficulty ramp.
+  const lox=FD.MARGIN+fd.size/2,loy=FD.MARGIN+fd.size/2;
+  const hix=FD.W-FD.MARGIN-fd.size/2,hiy=FD.H-FD.MARGIN-fd.size/2;
+  let x=fd.lastX,y=fd.lastY,d=0,a=Math.random()*Math.PI*2;
+  for(let k=0;k<12;k++){
+    x=Math.max(lox,Math.min(hix,fd.lastX+Math.cos(a)*dist));
+    y=Math.max(loy,Math.min(hiy,fd.lastY+Math.sin(a)*dist));
+    d=Math.hypot(x-fd.lastX,y-fd.lastY);
+    if(d>=FD.D0)break;
+    a=Math.random()*Math.PI*2;
+  }
+  // Still too close (last click is boxed into a corner): take the farthest
+  // in-arena point from it, so the target is always at least D0 away.
+  if(d<FD.D0){
+    const cx=[lox,hix].reduce((p,q)=>Math.abs(p-fd.lastX)<Math.abs(q-fd.lastX)?p:q);
+    const cy=[loy,hiy].reduce((p,q)=>Math.abs(p-fd.lastY)<Math.abs(q-fd.lastY)?p:q);
+    x=cx;y=cy;d=Math.hypot(x-fd.lastX,y-fd.lastY);
+  }
+  fd.x=x;fd.y=y;
   fd.dist=d;fd.id=idFor(d,fd.size);fd.limit=limitFor(fd.id);fd.at=now();
   fd.phase='live';draw()}
 function nextTarget(){
@@ -173,6 +189,11 @@ function expire(){
   if(fd.phase!=='live')return 'ignored:'+fd.phase;
   fd.phase='over';fd.over=true;draw();render();return 'expired'}
 function draw(){
+  // The per-target budget is a real fail condition, so it has to be enforced
+  // here in the one loop that always runs: expire() was defined and drawn
+  // ("Failed on target N") but never called, so the bar could drain to empty
+  // and the drill sat live forever instead of ending.
+  if(fd.phase==='live'&&now()-fd.at>fd.limit)expire();
   ctx.clearRect(0,0,FD.W,FD.H);
   ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,FD.W,FD.H);
   ctx.strokeStyle='rgba(255,255,255,.05)';
@@ -317,6 +338,8 @@ window.__fd={F:FD,get G(){return {phase:fd.phase,n:fd.n,size:fd.size,dist:fd.dis
 
 <link rel="stylesheet" href="/workspace/play.css?v=20261001a">
 <script src="/workspace/play.js?v=20261001a" defer></script>
+
+
 
 
 
