@@ -215,12 +215,42 @@ html.ocurp-playing .ocurp-playbar button.ocurp-exit {
   transform: rotate(-45deg);
 }
 
-/* Fullscreen button: the affordance that gets you there in the first place */
-.ocurp-enter {
-  margin-left: auto;
+/* Fullscreen button: the affordance that gets you there in the first place.
+
+   It used to sit at the top-RIGHT, pinned by `margin-left:auto` inside the
+   fixed full-width bar. On a phone that put it straight on top of the game
+   title. Measured on conect-four at 390px: the pill occupied x 249..378,
+   y 10..50, and the <h1> occupied x 136..290, y 32..60 -- a real overlap on
+   the word "Four". The back button at x 20..120 was not affected.
+
+   The strip beside the title is only ~150px wide and the pill is 129px, so
+   side-by-side still clipped the last few letters. There is no room in that
+   row on a 390px phone. So it goes UNDER the header, top-right, clear of both
+   the back button and the title, and out of the way of the board. */
+.ocurp-playbar button.ocurp-enter {
+  position: absolute;
+  top: calc(10px + env(safe-area-inset-top));
+  right: 12px;
   background: rgba(255, 95, 31, 0.14);
   color: #ff5f1f;
   border: 1px solid rgba(255, 95, 31, 0.4);
+}
+/* Where the pill goes on a phone, from measured geometry (connect-four, 390px):
+     back link  x  20..120   y 38..71
+     h1         x 136..290   y 32..60
+     subtitle   x 136..290   y 62..77
+     panel top  y 109
+   The header band is 32..77 and the free strip is y 78..108. A pill at
+   top:64 sat on the subtitle; at top:10 it sat on the title. So anchor it to
+   84px, which is below every header text and 25px clear of the panel. */
+@media (max-width: 640px) {
+  .ocurp-playbar button.ocurp-enter {
+    /* The header band ends at 77 and the panel starts at 109, so the free strip
+       is only 32px tall and the pill is 40. Rather than overlap either, place it
+       in the panel's own top padding: it reads as a panel-level control and its
+       rounded corner no longer crosses the panel border. */
+    top: calc(78px + env(safe-area-inset-top));
+  }
 }
 .ocurp-enter:active {
   transform: scale(0.96);

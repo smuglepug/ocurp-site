@@ -179,12 +179,14 @@
        looked like abstract wallpaper. A real image gets the banner to itself;
        the pattern is only for entries with no artwork. */
     var banner = isWebsites && e.cover ? logo : (coverArt(e) + '<div class="relative">' + logo + '</div>');
-    var art = '<div class="relative flex h-40 items-center justify-center overflow-hidden rounded-t-[1.25rem] bg-[#0a0a0a] md:h-48">'
+    /* The hero card is the reference: the artwork is NOT a separate strip above
+       the text, it is an absolutely-positioned layer BEHIND it, edge to edge
+       inside the rounded corners, with a dark scrim so the type stays readable.
+       That is what made the hero look deliberate and the listings look like
+       thumbnails stacked on a caption -- the difference the screenshots show. */
+    var art = '<div class="pointer-events-none absolute inset-0 overflow-hidden rounded-t-[1.5rem] md:rounded-t-[2.5rem]">'
       + banner
-      + '<div class="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-[#0a0a0a]/'
-      + (isWebsites && e.cover ? '45' : '75')
-      + ' via-transparent to-transparent"></div>'
-      + favBtn
+      + '<div class="absolute inset-0 bg-gradient-to-t from-[#050505]/95 via-[#050505]/80 to-[#050505]/55"></div>'
       + '</div>';
     var tags = e.tags.filter(function (t) { return String(t).toUpperCase() !== 'CLIENT-SIDE'; }).slice(0, 3).map(function (t) {
       return '<span class="rounded-full border border-white/15 bg-white/[0.05] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white/65">' + esc(t) + '</span>';
@@ -195,13 +197,14 @@
       + (e.ready ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 17 17 7M9 7h8v8"/></svg>' : '')
       + '</span>';
     var target = isWebsites ? ' target="_blank" rel="noopener"' : '';
-    return '<a href="' + href + '"' + target + ' class="group relative flex flex-col overflow-hidden rounded-[1.25rem] md:rounded-[1.75rem] border border-white/20 bg-white/[0.06] transition-all duration-300 hover:-translate-y-1 hover:border-accent/60 hover:bg-white/[0.09]" data-card>'
+    return '<a href="' + href + '"' + target + ' class="group relative flex min-h-[380px] flex-col justify-end overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 p-8 transition-all duration-700 hover:border-accent/30 md:min-h-[420px] md:rounded-[2.5rem] md:p-10" data-card>'
       + art
-      + '<div class="flex flex-1 flex-col p-5 md:p-7 lg:p-8">'
+      + favBtn
+      + '<div class="relative flex flex-1 flex-col">'
       + '<div class="flex items-center justify-between gap-3"><span class="font-mono text-[9px] font-black uppercase tracking-[0.24em] text-white/55">' + esc(cat) + '</span>' + status + '</div>'
-      + '<h3 class="mt-3 font-display text-2xl font-black leading-tight tracking-tight text-white transition-colors duration-300 group-hover:text-accent">' + esc(e.name) + '</h3>'
-      + '<p class="mt-3 line-clamp-2 text-sm leading-relaxed text-white/60">' + esc(e.blurb || e.desc || '') + '</p>'
-      + '<div class="mt-4 flex flex-wrap gap-1.5">' + tags + '</div>'
+      + '<h3 class="mt-4 font-display text-2xl font-black leading-tight tracking-tight text-white md:text-3xl">' + esc(e.name) + '</h3>'
+      + '<p class="mt-3 line-clamp-3 max-w-[46ch] text-sm leading-relaxed text-white/60">' + esc(e.blurb || e.desc || '') + '</p>'
+      + '<div class="mt-5 flex flex-wrap gap-1.5">' + tags + '</div>'
       + '<div class="mt-6 flex-1"></div>'
       + action
       + '</div></a>';

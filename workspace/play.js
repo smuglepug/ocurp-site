@@ -241,8 +241,24 @@
      then try to hand control back to the browser. Every browser call in here
      can throw or be rejected, and if any of them did we would be stuck in a
      locked screen with no way out -- which is the exact failure the user hit. */
-  function exit() {
+  function exit(opts) {
+    var fromPopstate = !!(opts && opts.fromPopstate);
+
+    /* Clear our own state FIRST and unconditionally. Everything else here is a
+       request to the browser, and every one of those can fail or do something
+       unexpected; none of them may be allowed to strand the user in a locked
+       screen with no way out. */
     document.documentElement.classList.remove('ocurp-playing');
+
+    if (fromPopstate) {
+      /* Do NOT call exitFullscreen here. A popstate means the browser is
+         already navigating, and on Android Chrome unwinding fullscreen during a
+         back navigation sends the tab to about:blank -- which is exactly the
+         dark empty screen the user reported. Drop the state and let the
+         browser restore the page it was going to anyway. */
+      return;
+    }
+
     try {
       if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
     } catch (e) {}
@@ -278,8 +294,24 @@
     });
     ui.exit.addEventListener('click', function (ev) { ev.preventDefault(); exit(); });
 
-    /* Android back gesture / browser back while playing should leave play mode. */
-    window.addEventListener('popstate', function () { if (inPlayMode()) exit(); });
+    /* THE BLANK-SCREEN BACK BUG.
+
+       Going back while playing used to leave the user staring at a dark page.
+       Cause: on a phone, the back gesture fires popstate, we called exit(),
+       exit() called document.exitFullscreen(), and on Android Chrome leaving
+       fullscreen that the page entered itself can navigate the tab to
+       about:blank. Verified: location.pathname === "blank", body had 0
+       children and 0 painted elements.
+
+       Two parts, both needed:
+         1. get OUT of play mode on the way IN to the back navigation, so the
+            browser never has to unwind our fullscreen state;
+         2. never call exitFullscreen from a popstate handler at all -- that is
+            the call that produces about:blank. Leave the state behind and let
+            the browser restore the page. */
+    window.addEventListener('popstate', function () {
+      if (inPlayMode()) exit({ fromPopstate: true });
+    });
 
     /* The single most important line: without this the swipe scrolls the page. */
     var h = surface.host;
