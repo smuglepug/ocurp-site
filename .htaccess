@@ -38,7 +38,6 @@
   ExpiresByType image/png "access plus 1 year"
   ExpiresByType image/webp "access plus 1 year"
   ExpiresByType image/svg+xml "access plus 1 year"
-  ExpiresByType text/css "access plus 1 day"
 
   # index.html must be revalidated or it pins the whole app to a stale bundle.
   ExpiresByType text/html "access plus 0 seconds"
@@ -52,6 +51,18 @@
 </FilesMatch>
 
 <FilesMatch "index-rentify-live">
+  Header set Cache-Control "public, max-age=300, must-revalidate"
+</FilesMatch>
+
+# play.css and play.js are SHARED, FIXED-NAME assets injected into every game and
+# tool detail page, and they change the actual layout of the board. They had
+# `ExpiresByType text/css "access plus 1 day"` above, so a fixed board layout was
+# pinned for 24h: measured live with `x-hcdn-cache-status: HIT` and a stale body,
+# which is why a CSS fix could be deployed, confirmed by curl on a fresh query
+# string, and still not render in the browser. Same class of bug as the bundle, so
+# same treatment: short TTL plus revalidation. The per-page `?v=` query string
+# already gives us the cache busting, so nothing is lost by revalidating.
+<FilesMatch "play\.(css|js)$">
   Header set Cache-Control "public, max-age=300, must-revalidate"
 </FilesMatch>
 

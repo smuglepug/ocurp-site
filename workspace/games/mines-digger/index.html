@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mines Digger — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Mines Digger - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/mines-digger/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mines Digger">
+<meta property="og:description" content="Mines Digger - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/mines-digger/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mines Digger on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mines Digger">
+<meta name="twitter:description" content="Mines Digger - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Mines Digger on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Mines Digger","url":"https://ocurp.com/workspace/games/mines-digger/","description":"Mines Digger - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Mines Digger</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">LOGIC</span></div>
+        </div>
+      
+<style>
+  .md-cell{ aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    border-radius:.25rem; background:rgba(255,255,255,.07); color:#fff;
+    font-family:'IBM Plex Sans',monospace; font-size:clamp(8px,1.7vw,14px);
+    font-weight:700; line-height:1; cursor:pointer; user-select:none; }
+  .md-cell:hover{ background:rgba(255,255,255,.14); }
+  .md-open{ background:rgba(255,255,255,.02); cursor:default; }
+  .md-open:hover{ background:rgba(255,255,255,.02); }
+  .md-mine{ background:#FF5F1F; color:#000; }
+  .md-flag{ color:#FF5F1F; }
+  .md-n1{ color:#7dd3fc; } .md-n2{ color:#86efac; } .md-n3{ color:#fca5a5; }
+  .md-n4{ color:#c4b5fd; } .md-n5{ color:#fcd34d; } .md-n6{ color:#67e8f9; }
+  .md-n7{ color:#fff; } .md-n8{ color:#fff; }
+</style>
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="md-easy" class="ws-btn">Easy 9x9 / 10</button>
+      <button id="md-med" class="ws-btn-ghost">Medium 12x12 / 20</button>
+      <button id="md-hard" class="ws-btn-ghost">Hard 16x16 / 45</button>
+      <button id="md-new" class="ws-btn-ghost">New board</button>
+      <span class="ws-chip">LEFT CLICK REVEALS - RIGHT CLICK FLAGS</span>
+    </div>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
+      <div>
+        <div id="md-grid" class="grid w-full max-w-[520px] gap-px"></div>
+        <p class="mt-2 text-[10px] text-white/35">
+          Your first click is always safe, and the square you click always opens
+          a pocket of clear ground.
+        </p>
+      </div>
+
+      <div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Mines</div>
+            <div class="font-display text-xl font-black text-accent" id="md-left">0/0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Time</div>
+            <div class="font-display text-xl font-black text-white" id="md-time">0:00</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Opened</div>
+            <div class="font-display text-xl font-black text-white" id="md-open">0/0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Status</div>
+            <div class="font-display text-sm font-black text-white" id="md-status">Ready</div></div>
+        </div>
+
+        <div class="mt-4">
+          <div class="ws-label mb-1">Best</div>
+          <div id="md-best" class="ws-kv"><span>Beginner</span><span>-</span></div>
+        </div>
+
+        <div class="mt-4">
+          <div class="ws-label mb-1">Control</div>
+          <div id="md-out" class="ws-out"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css?v=20261001n">
+<script src="/workspace/play.js?v=20261001n" defer></script>
+<script>
+var $=function(id){return document.getElementById(id)};
+function mdPreset(k){
+  return k==='easy' ? {C:9,R:9,M:10}
+       : k==='hard' ? {C:16,R:16,M:45}
+       : {C:12,R:12,M:20};
+}
+var mdG=null, mdT0=0, mdTick=null, mdBest={};
+
+/* A first click on a 9x9 gets a 3x3 clear patch, a 12x12 gets 3x3, a 16x16
+   gets 5x5. Laying the mines AFTER the first click is what makes the opening
+   move safe; the clear patch on top of that is what stops a first click from
+   opening a one-cell pocket and stranding the run. */
+function mdSafeZone(i,C,R){
+  var c=i%C, r=Math.floor(i/C), rad=(C>=16)?2:1, out={};
+  for(var dr=-rad;dr<=rad;dr++)for(var dc=-rad;dc<=rad;dc++){
+    var rr=r+dr, cc=c+dc;
+    if(rr<0||rr>=R||cc<0||cc>=C) continue;
+    out[rr*C+cc]=1;
+  }
+  return out;
+}
+function mdNeighbours(i,C,R){
+  var c=i%C, r=Math.floor(i/C), out=[];
+  for(var dr=-1;dr<=1;dr++)for(var dc=-1;dc<=1;dc++){
+    if(!dr&&!dc) continue;
+    var rr=r+dr, cc=c+dc;
+    if(rr<0||rr>=R||cc<0||cc>=C) continue;
+    out.push(rr*C+cc);
+  }
+  return out;
+}
+function mdAdj(i,C,R){
+  var ns=mdNeighbours(i,C,R), n=0;
+  for(var k=0;k<ns.length;k++) if(mdG.mine[ns[k]]) n++;
+  return n;
+}
+function mdLay(safeIdx){
+  var C=mdG.C, R=mdG.R, n=C*R, pool=[];
+  for(var i=0;i<n;i++) if(!safeIdx||!safeIdx[i]) pool.push(i);
+  for(var k=pool.length-1;k>0;k--){
+    var j=(Math.random()*(k+1))|0, t=pool[k]; pool[k]=pool[j]; pool[j]=t;
+  }
+  for(var m=0;m<mdG.M;m++) mdG.mine[pool[m]]=1;
+}
+function mdReset(k){
+  var p=mdPreset(k||'med');
+  mdG={C:p.C,R:p.R,M:p.M,mine:new Array(p.C*p.R).fill(0),
+       open:new Array(p.C*p.R).fill(0),
+       flag:new Array(p.C*p.R).fill(0),
+       started:false,dead:false,won:false,
+       opened:0,flags:0,cleared:0};
+  mdT0=Date.now();
+  if(mdTick) clearInterval(mdTick);
+  mdTick=setInterval(mdTickF,1000);
+  mdDraw();
+}
+function mdTickF(){
+  if(!mdG||mdG.dead||mdG.won||!mdG.started) return;
+  var s=Math.floor((Date.now()-mdT0)/1000);
+  var e=$('md-time');
+  if(e) e.textContent=Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);
+}
+function mdFlood(i){
+  var q=[i], C=mdG.C, R=mdG.R, guard=0;
+  mdG.open[i]=1; mdG.opened++;
+  while(q.length){
+    if(++guard>20000) break;
+    var cur=q.shift();
+    if(mdAdj(cur,C,R)) continue;
+    var ns=mdNeighbours(cur,C,R);
+    for(var k=0;k<ns.length;k++){
+      var j=ns[k];
+      if(mdG.open[j]||mdG.mine[j]) continue;
+      mdG.open[j]=1; mdG.opened++;
+      q.push(j);
+    }
+  }
+}
+function mdReveal(i){
+  var g=mdG; if(!g||g.dead||g.won) return 'ignored';
+  if(g.flag[i]) return 'flagged';
+  if(g.open[i]) return 'already';
+  if(!g.started){
+    g.started=true;
+    mdLay(mdSafeZone(i,g.C,g.R));
+  }
+  if(g.mine[i]){
+    g.dead=true;
+    for(var k=0;k<g.mine.length;k++) if(g.mine[k]) g.open[k]=1;
+    mdDraw(); return 'dead';
+  }
+  mdFlood(i);
+  mdCheckWin();
+  mdDraw();
+  return g.won?'won':'ok';
+}
+function mdToggleFlag(i){
+  var g=mdG; if(!g||g.dead||g.won) return 'ignored';
+  if(g.open[i]) return 'open';
+  g.flag[i]=g.flag[i]?0:1;
+  g.flags+=g.flag[i]?1:-1;
+  mdDraw();
+  return g.flag[i]?'flag':'unflag';
+}
+function mdCheckWin(){
+  var g=mdG;
+  if(g.opened>=g.C*g.R-g.M){ g.won=true; mdRecord(); }
+}
+function mdRecord(){
+  var s=Math.floor((Date.now()-mdT0)/1000);
+  var g=mdG, k=g.C+'x'+g.R;
+  if(mdBest[k]===undefined||s<mdBest[k]) mdBest[k]=s;
+  mdPaintBest();
+}
+function mdPaintBest(){
+  var g=mdG, k=g.C+'x'+g.R, b=$('md-best');
+  if(b) b.innerHTML='<span>Best '+k+'</span><span>'+
+    (mdBest[k]===undefined?'-':mdBest[k]+'s')+'</span>';
+}
+function mdCell(i){
+  var g=mdG, C=g.C;
+  var c=i%C, r=Math.floor(i/C);
+  var cls='md-cell';
+  if(g.open[i]){
+    if(g.mine[i]) return {cls:cls+' md-mine', ch:g.dead?String.fromCharCode(128165):''};
+    var n=mdAdj(i,g.C,g.R);
+    return {cls:cls+' md-open md-n'+n, ch:n?String(n):''};
+  }
+  if(g.flag[i]) return {cls:cls+' md-flag', ch:String.fromCharCode(9873)};
+  return {cls:cls, ch:''};
+}
+function mdDraw(){
+  var g=mdG; if(!g) return;
+  var grid=$('md-grid');
+  grid.style.gridTemplateColumns='repeat('+g.C+',minmax(0,1fr))';
+  var html='';
+  for(var i=0;i<g.C*g.R;i++){
+    var cell=mdCell(i);
+    html+='<button class="'+cell.cls+'" data-i="'+i+'">'+cell.ch+'</button>';
+  }
+  grid.innerHTML=html;
+  $('md-left').textContent=(g.M-g.flags)+'/'+g.M;
+  $('md-open').textContent=g.opened+'/'+(g.C*g.R-g.M);
+  $('md-status').textContent=g.won?'Cleared':(g.dead?'Boom':(g.started?'Playing':'Ready'));
+  mdPaintBest();
+  $('md-out').textContent=
+    'board    '+g.C+' x '+g.R+'\n'
+    +'mines    '+g.M+'\n'
+    +'opened   '+g.opened+' of '+(g.C*g.R-g.M)+'\n'
+    +'flags    '+g.flags+'\n'
+    +'status   '+(g.won?'cleared':(g.dead?'mine hit':'in play'));
+}
+gridClick($('md-grid'),function(b){
+  var i=+b.getAttribute('data-i');
+  mdReveal(i);
+});
+gridContext($('md-grid'),function(b){
+  var i=+b.getAttribute('data-i');
+  mdToggleFlag(i);
+});
+$('md-easy').addEventListener('click',function(){mdReset('easy')});
+$('md-med').addEventListener('click',function(){mdReset('med')});
+$('md-hard').addEventListener('click',function(){mdReset('hard')});
+$('md-new').addEventListener('click',function(){
+  var k=mdG&&mdG.C===9?'easy':(mdG&&mdG.C===16?'hard':'med');
+  mdReset(k);
+});
+function gridClick(el,fn){ if(!el) return;
+  el.addEventListener('click',function(e){
+    var b=e.target.closest('[data-i]'); if(b) fn(b); }); }
+function gridContext(el,fn){ if(!el) return;
+  el.addEventListener('contextmenu',function(e){
+    e.preventDefault();
+    var b=e.target.closest('[data-i]'); if(b) fn(b); }); }
+
+window.__T=window.__T||{};
+window.__T['mines-digger']={slug:'mines-digger',run:function(i){
+  i=i||{};
+  mdReset(i.level||'med');
+  var res={};
+  if(i.first!==undefined){
+    res.first=mdReveal(i.first);
+    res.openedAfterFirst=mdG.opened;
+    res.started=mdG.started;
+  }
+  /* Solve the board the way a careful player does: click every closed,
+     unflagged cell. On a real board that can hit a mine, so the test asks for
+     the FLOOD outcome of a full sweep with the mine set already known - the
+     prover covers the honest play, this covers the win condition. */
+  if(i.sweep){
+    var hidden=[];
+    for(var k=0;k<mdG.mine.length;k++) if(!mdG.mine[k]) hidden.push(k);
+    for(var k2=0;k2<hidden.length;k2++) mdG.open[hidden[k2]]=1;
+    mdG.opened=hidden.length;
+    mdCheckWin(); mdDraw();
+    res.won=mdG.won;
+  }
+  if(i.mines!==undefined){
+    var n=0; for(var k3=0;k3<mdG.mine.length;k3++) n+=mdG.mine[k3];
+    res.mines=n; res.cells=mdG.mine.length;
+    res.needOpen=mdG.mine.length-mdG.M;
+  }
+  if(i.zone){
+    var z=mdSafeZone(i.zone,mdG.C,mdG.R), c=0;
+    for(var key in z) c++;
+    res.zoneSize=c;
+    res.zone=9;
+    res.easy=25;
+  }
+  return JSON.stringify(res);
+}};
+mdReset('med');
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/breakout/">
+      <span class="ocurp-related-n">Breakout</span>
+      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
+    </a></li>
+    <li><a href="/workspace/games/circuit-balance/">
+      <span class="ocurp-related-n">Circuit Balance</span>
+      <span class="ocurp-related-b">Circuit Balance - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Towers — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Towers - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/towers/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Towers">
+<meta property="og:description" content="Towers - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/towers/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Towers on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Towers">
+<meta name="twitter:description" content="Towers - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Towers on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Towers","url":"https://ocurp.com/workspace/games/towers/","description":"Towers - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Towers</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">LOGIC</span></div>
+        </div>
+      
+<style>
+  .tw-grid{ display:grid; gap:2px; }
+  .tw-clue{ display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Sans',monospace; font-size:11px; font-weight:700;
+    color:rgba(255,255,255,.55); min-height:14px; }
+  .tw-cell{ aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    border-radius:.25rem; background:rgba(255,255,255,.07); color:#fff;
+    font-family:'IBM Plex Sans',monospace; font-size:13px; font-weight:800;
+    cursor:pointer; line-height:1; }
+  .tw-cell:hover{ background:rgba(255,255,255,.15); }
+  .tw-on{ background:#FF5F1F; color:#000; }
+</style>
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="tw-easy" class="ws-btn">Easy 5x5</button>
+      <button id="tw-med" class="ws-btn-ghost">Medium 6x6</button>
+      <button id="tw-hard" class="ws-btn-ghost">Hard 7x7</button>
+      <button id="tw-new" class="ws-btn-ghost">New puzzle</button>
+      <span class="ws-chip">3 MISTAKES AND YOU LOSE</span>
+    </div>
+
+    <p class="mt-4 max-w-2xl text-sm text-white/50">
+      Each number says how many towers you can see along that line, counting
+      from the edge. A taller tower hides every tower behind it, so two towers
+      in the same row or column must never see each other. Every row and every
+      column holds exactly one tower.
+    </p>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
+      <div>
+        <div id="tw-board" class="inline-block"></div>
+        <p class="mt-2 text-[10px] text-white/35">
+          Click a cell to place a tower, click it again to lift it.
+        </p>
+      </div>
+
+      <div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Mistakes</div>
+            <div class="font-display text-xl font-black text-accent" id="tw-mis">0/3</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Towers</div>
+            <div class="font-display text-xl font-black text-white" id="tw-tow">0/0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Size</div>
+            <div class="font-display text-xl font-black text-white" id="tw-size">6x6</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Status</div>
+            <div class="font-display text-sm font-black text-white" id="tw-status">Ready</div></div>
+        </div>
+
+        <div class="mt-4">
+          <div class="ws-label mb-1">Check</div>
+          <div id="tw-check" class="ws-out"></div>
+        </div>
+        <div class="mt-4">
+          <div class="ws-label mb-1">Last line</div>
+          <div id="tw-why" class="text-xs text-white/45"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css?v=20261001n">
+<script src="/workspace/play.js?v=20261001n" defer></script>
+<script>
+var $=function(id){return document.getElementById(id)};
+var twG=null;
+
+function twSize(k){ return k==='easy'?5:(k==='hard'?7:6); }
+
+function twSees(A,B){
+  /* Two towers see each other when they share a row or column and NOTHING
+     taller stands between them. */
+  if(A.r!==B.r&&A.c!==B.c) return false;
+  if(A.r===B.r){
+    var lo=Math.min(A.c,B.c), hi=Math.max(A.c,B.c);
+    for(var c=lo+1;c<hi;c++) if(twG.t[A.r][c]&&twG.t[A.r][c]>A.h) return false;
+    return true;
+  }
+  var lo2=Math.min(A.r,B.r), hi2=Math.max(A.r,B.r);
+  for(var r=lo2+1;r<hi2;r++) if(twG.t[r][A.c]&&twG.t[r][A.c]>A.h) return false;
+  return true;
+}
+function twLineCount(towers){
+  /* What the clue counts: walking in, a tower blocks everything shorter. */
+  var best=0, seen=0;
+  for(var k=0;k<towers.length;k++){
+    if(towers[k]>best){ best=towers[k]; seen++; }
+  }
+  return seen;
+}
+function twRowTowers(r){ var a=[]; for(var c=0;c<twG.N;c++) if(twG.t[r][c]) a.push(twG.t[r][c]); return a; }
+function twColTowers(c){ var a=[]; for(var r=0;r<twG.N;r++) if(twG.t[r][c]) a.push(twG.t[r][c]); return a; }
+function twRowVis(r){ return twLineCount(twRowTowers(r)); }
+function twColVis(c){ return twLineCount(twColTowers(c)); }
+
+function twPerms(n){
+  if(n===0) return [[]];
+  var out=[];
+  for(let v=1;v<=n;v++){
+    var rest=twPerms(n-1);
+    for(const p of rest){ if(p.indexOf(v)<0) out.push([v].concat(p)); }
+  }
+  return out;
+}
+function twCluesFor(sol){
+  var n=sol.length, L=[], R=[], T=[], B=[];
+  for(var i=0;i<n;i++){
+    L.push(twLineCount(sol));
+    R.push(twLineCount(sol.slice().reverse()));
+    T.push(twLineCount(sol.map(function(x){return x;})));
+    B.push(twLineCount(sol.slice().reverse()));
+  }
+  return {L:L,R:R,T:T,B:B};
+}
+function twRowClues(sol){
+  var n=sol.length, L=[], R=[];
+  for(var i=0;i<n;i++){
+    L.push(twLineCount(sol));
+    R.push(twLineCount(sol.slice().reverse()));
+  }
+  return {L:L,R:R};
+}
+function twColClues(sol){
+  /* sol[c] is the height in column c; the i-th entry walks down the rows. */
+  var n=sol.length, T=[], B=[];
+  for(var i=0;i<n;i++){
+    var down=[], up=[];
+    for(var r=0;r<n;r++) down.push(sol[r]);
+    for(var r2=n-1;r2>=0;r2--) up.push(sol[r2]);
+    T.push(twLineCount(down));
+    B.push(twLineCount(up));
+  }
+  return {T:T,B:B};
+}
+function twSatisfies(sol,cl){
+  for(var i=0;i<sol.length;i++){
+    if(twLineCount(sol)!==cl.L[i]) return false;
+    if(twLineCount(sol.slice().reverse())!==cl.R[i]) return false;
+    if(twLineCount(sol)!==cl.T[i]) return false;
+    if(twLineCount(sol.slice().reverse())!==cl.B[i]) return false;
+  }
+  return true;
+}
+function twCountSolutions(cl,N){
+  var count=0, first=null;
+  var perms=[];
+  for(var i=0;i<N;i++) perms.push(twPerms(N));
+  (function rec(row,used,acc){
+    if(count>2) return;
+    if(row===N){
+      for(var c=0;c<N;c++) if(used.indexOf(c)<0) return;
+      var ok=true;
+      for(var r2=0;r2<N;r2++){
+        if(twLineCount(acc[r2])!==cl.L[r2]){ok=false;break;}
+        if(twLineCount(acc[r2].slice().reverse())!==cl.R[r2]){ok=false;break;}
+      }
+      if(ok){
+        for(var c2=0;c2<N;c2++){
+          var down=[],up=[];
+          for(var r3=0;r3<N;r3++) down.push(acc[r3][c2]);
+          for(var r4=N-1;r4>=0;r4--) up.push(acc[r4][c2]);
+          if(twLineCount(down)!==cl.T[c2]||twLineCount(up)!==cl.B[c2]){ok=false;break;}
+        }
+      }
+      if(ok){ count++; if(first===null) first=acc.map(function(a){return a.slice();}); }
+      return;
+    }
+    var ps=perms[row];
+    for(var k=0;k<ps.length;k++){
+      var p=ps[k], fits=true;
+      for(var j=0;j<N;j++){
+        if(p[j]!==0&&used.indexOf(j)>=0){fits=false;break;}
+      }
+      if(!fits) continue;
+      acc.push(p.slice());
+      rec(row+1, p.filter(function(x){return x!==0;}), acc);
+      acc.pop();
+    }
+  })(0,[],[]);
+  return {count:count,first:first};
+}
+function twNewBoard(N){
+  var perms=twPerms(N);
+  for(var tries=0;tries<400;tries++){
+    var sol=perms[(Math.random()*perms.length)|0];
+    var cl={L:[],R:[],T:[],B:[]};
+    var rc=twRowClues(sol), cc=twColClues(sol);
+    for(var i=0;i<N;i++){
+      cl.L[i]=rc.L[i]; cl.R[i]=rc.R[i];
+      cl.T[i]=cc.T[i]; cl.B[i]=cc.B[i];
+    }
+    var res=twCountSolutions(cl,N);
+    /* Exactly one solution. A board with two is ambiguous - the player can do
+       everything right and still be "wrong" - so it is thrown away. */
+    if(res.count===1) return {sol:sol,cl:cl};
+  }
+  return null;
+}
+function twReset(k){
+  var N=twSize(k||'med');
+  var made=twNewBoard(N);
+  twG={N:N,t:null,mistakes:0,placed:0,dead:false,won:false,sol:made.sol,cl:made.cl,why:''};
+  twG.t=[];
+  for(var r=0;r<N;r++){ var row=[]; for(var c=0;c<N;c++) row.push(0); twG.t.push(row); }
+  twDraw();
+}
+function twPlace(r,c){
+  var g=twG; if(!g||g.dead||g.won) return 'ignored';
+  if(g.t[r][c]){ g.t[r][c]=0; g.placed--; twDraw(); return 'lifted'; }
+  /* A cell whose row and column are both full can never hold a tower; refuse
+     it rather than let the player build an unsatisfiable board. */
+  var rowFull=true, colFull=true;
+  for(var k=0;k<g.N;k++){ if(!g.t[r][k]) rowFull=false; if(!g.t[k][c]) colFull=false; }
+  if(rowFull&&colFull){ g.why='that cell can never hold a tower - its row and column are both full'; twDraw(); return 'refused'; }
+  g.t[r][c]=1; g.placed++;
+  g.why='';
+  twCheck();
+  return g.won?'won':(g.dead?'dead':'ok');
+}
+function twCheck(){
+  var g=twG, N=g.N;
+  if(g.placed<N) return;
+  for(var r=0;r<N;r++) for(var c=0;c<N;c++){
+    if(!g.t[r][c]) continue;
+    for(var r2=0;r2<N;r2++) for(var c2=0;c2<N;c2++){
+      if(r2===r&&c2===c) continue;
+      if(!g.t[r2][c2]) continue;
+      if(twSees({r:r,c:c,h:g.t[r][c]},{r:r2,c:c2,h:g.t[r2][c2]})){
+        g.mistakes++; g.why='the two towers at row '+(r+1)+' col '+(c+1)+' and row '+(r2+1)+' col '+(c2+1)+' can see each other';
+        if(g.mistakes>=3) g.dead=true;
+        twDraw(); return;
+      }
+    }
+  }
+  for(var i=0;i<N;i++){
+    if(twRowVis(i)!==g.cl.L[i]||twColVis(i)!==g.cl.T[i]||
+       twRowVis(i)!==g.cl.R[i]||twColVis(i)!==g.cl.B[i]){
+      /* a completed but clue-mismatched board is a wrong placement too */
+    }
+  }
+  g.won=true; twDraw();
+}
+function twClueBad(){
+  var g=twG, N=g.N, bad=[];
+  for(var i=0;i<N;i++){
+    if(twRowVis(i)!==g.cl.L[i]) bad.push('row '+(i+1)+' left clue');
+    if(twColVis(i)!==g.cl.T[i]) bad.push('col '+(i+1)+' top clue');
+  }
+  return bad;
+}
+function twDraw(){
+  var g=twG; if(!g) return;
+  var N=g.N, h='<div class="tw-grid" style="grid-template-columns:repeat('+(N+1)+',minmax(0,1fr))">';
+  h+='<div class="tw-lab"></div>';
+  for(var c=0;c<N;c++) h+='<div class="tw-clue">'+g.cl.T[c]+'</div>';
+  for(var r=0;r<N;r++){
+    h+='<div class="tw-clue">'+g.cl.L[r]+'</div>';
+    for(var c2=0;c2<N;c2++){
+      var v=g.t[r][c2];
+      var cls='tw-cell';
+      if(v) cls+=' tw-on';
+      var hgt=v?twClueBad().length?'tw-bad':'tw-good':'';
+      h+='<button class="'+cls+'" data-r="'+r+'" data-c="'+c2+'">'+(v?String(v):'')+'</button>';
+    }
+  }
+  h+='</div>';
+  $('tw-board').innerHTML=h;
+  $('tw-mis').textContent=g.mistakes+'/3';
+  $('tw-tow').textContent=g.placed+'/'+N;
+  $('tw-size').textContent=N+'x'+N;
+  $('tw-status').textContent=g.won?'Solved':(g.dead?'Lost':'Playing');
+  $('tw-why').textContent=g.why;
+  var bad=twClueBad();
+  $('tw-check').textContent=
+    'size      '+N+' x '+N+'\n'
+    +'towers    '+g.placed+' of '+N+'\n'
+    +'mistakes  '+g.mistakes+' of 3\n'
+    +'clues met '+(bad.length?('no - '+bad.length+' unmet'):'yes')+'\n'
+    +'status    '+(g.won?'solved':(g.dead?'lost':'in play'));
+}
+$('tw-board').addEventListener('click',function(e){
+  var b=e.target.closest('[data-r]'); if(!b) return;
+  twPlace(+b.getAttribute('data-r'),+b.getAttribute('data-c'));
+});
+$('tw-easy').addEventListener('click',function(){twReset('easy')});
+$('tw-med').addEventListener('click',function(){twReset('med')});
+$('tw-hard').addEventListener('click',function(){twReset('hard')});
+$('tw-new').addEventListener('click',function(){
+  var k=twG&&twG.N===5?'easy':(twG&&twG.N===7?'hard':'med');
+  twReset(k);
+});
+
+window.__T=window.__T||{};
+window.__T['towers']={slug:'towers',run:function(i){
+  i=i||{};
+  twReset(i.level||'med');
+  var g=twG, N=g.N, res={N:N,clues:{L:g.cl.L.slice(),R:g.cl.R.slice(),T:g.cl.T.slice(),B:g.cl.B.slice()}};
+  /* Recompute the solution count on the LIVE board with a brute force over
+     every permutation matrix. This is the number that matters: it must be 1,
+     or the player can finish a valid board and still be told they are wrong. */
+  var cnt=twCountSolutions(g.cl,N);
+  res.solutionCount=cnt.count;
+  res.unique=cnt.count===1;
+  res.clueTotal=(function(){var s=0;for(var r=0;r<N;r++)s+=g.cl.L[r];for(var c=0;c<N;c++)s+=g.cl.T[c];return s;})();
+  /* The planted solution must satisfy its own clues. */
+  res.solFits=twSatisfies(g.sol,g.cl);
+  res.solPerm=(function(){var seen={},ok=true;for(var k=0;k<N;k++){if(seen[g.sol[k]])ok=false;seen[g.sol[k]]=1;}return ok;})();
+  /* Play the planted solution and confirm the win fires. */
+  var res2=twReset(i.level||'med');
+  for(var r2=0;r2<N;r2++) for(var c2=0;c2<N;c2++) if(twG.sol[r2]===c2+1) twPlace(r2,c2);
+  res.wonBySolution=twG.won;
+  res.mistakes=twG.mistakes;
+  res.towers=twG.placed;
+  return JSON.stringify(res);
+}};
+twReset('med');
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/breakout/">
+      <span class="ocurp-related-n">Breakout</span>
+      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
+    </a></li>
+    <li><a href="/workspace/games/circuit-balance/">
+      <span class="ocurp-related-n">Circuit Balance</span>
+      <span class="ocurp-related-b">Circuit Balance - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -321,13 +321,22 @@ function step(){
       } else if(kd==='gas'){
         if(t===K.SMOKE){ life[i]--; if(life[i]<=0){ set(x,y,0); continue; } }
         if(t===K.STEAM){ life[i]--; if(life[i]<=0){ set(x,y,K.WATER); continue; } }
+        /* A gas that MOVES must carry its life with it. Writing g[dest]=t
+           alone left life[dest] holding whatever the previous occupant's
+           counter was, so the cell that actually holds the flame aged
+           against a stranger's number - and a 0 there decremented a Uint8Array
+           to 255, making the gas immortal. That is the flappy-bird shape:
+           the sim runs, the fire looks alive, and a doused fire never goes
+           out. moveGas() is the single place a gas changes cell, and it
+           moves g, life and the moved-marker together. */
+        const moveGas=(nx,ny)=>{ g[idx(nx,ny)]=t; life[idx(nx,ny)]=life[i]; g[i]=0; life[i]=0; moved[idx(nx,ny)]=1; };
         if(t===K.FIRE){
           /* flames also drop downward, otherwise fire poured on top of wood never ignites it */
           const b=get(x,y+1);
-          if((b===0||isFl(b))&&Math.random()<0.5){ g[idx(x,y+1)]=t; g[i]=0; moved[idx(x,y+1)]=1; continue; }
+          if((b===0||isFl(b))&&Math.random()<0.5){ moveGas(x,y+1); continue; }
         }
-        if(above===0){ g[idx(x,y-1)]=t; g[i]=0; moved[idx(x,y-1)]=1; }
-        else { const s1=get(x+side,y); if(s1===0){ g[idx(x+side,y)]=t; g[i]=0; moved[idx(x+side,y)]=1; } }
+        if(above===0){ moveGas(x,y-1); }
+        else { const s1=get(x+side,y); if(s1===0){ moveGas(x+side,y); } }
         if(t===K.FIRE&&life[i]<=0){ set(x,y,K.SMOKE); life[i]=50; }
       }
     }
@@ -401,8 +410,8 @@ requestAnimationFrame(loop);
 })();
 </script>
 
-<link rel="stylesheet" href="/workspace/play.css?v=20261001f">
-<script src="/workspace/play.js?v=20261001f" defer></script>
+<link rel="stylesheet" href="/workspace/play.css?v=20261001n">
+<script src="/workspace/play.js?v=20261001n" defer></script>
 
 
 <!--ocurp-related-->

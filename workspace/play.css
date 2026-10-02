@@ -73,9 +73,12 @@ html.ocurp-playing .ocurp-surface {
   position: fixed;
   inset: 0;
   z-index: 9000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  /* DO NOT force `display: flex` here. The play surface is sometimes the game's
+     own laid-out element rather than a wrapper we created: checkers' #board IS
+     the surface, and it is `display:grid grid-cols-8`. Forcing flex on it made
+     every one of its 64 cells compute to 0x0, so the board rendered as a single
+     black square with a stray dot in the middle. Centering comes from the
+     element's own box instead. */
   background: var(--dark, #050505);
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
@@ -99,8 +102,20 @@ html.ocurp-playing .ocurp-canvas {
 html.ocurp-playing .ocurp-side {
   display: none !important;
 }
-/* the canvas wrapper must not keep its width cap in play mode */
-html.ocurp-playing .ocurp-canvas-wrap {
+/* the canvas wrapper must not keep its width cap in play mode.
+
+   This rule used to set `display: flex` too, which is what actually broke the
+   DOM-board games. On canvas games the wrapper is an empty div and flex was
+   harmless — it centred the canvas. But play.js also puts `ocurp-canvas-wrap` on
+   the detected surface, and for a DOM-board game the surface IS the board:
+   checkers' #board is `display:grid grid-cols-8`. Flexing it made all 64 cells
+   compute to 0x0 and the board drew as one black square with a stray dot in the
+   middle. So only flex when a canvas is actually inside. */
+html.ocurp-playing .ocurp-canvas-wrap:not(:has(canvas)) {
+  display: grid !important;
+  place-content: center;
+}
+html.ocurp-playing .ocurp-canvas-wrap:has(canvas) {
   width: 100% !important;
   height: 100% !important;
   max-width: none !important;

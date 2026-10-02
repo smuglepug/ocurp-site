@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doppler Shift Calculator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Acoustic Doppler for a moving source and observer. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/doppler-shift-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Doppler Shift Calculator">
+<meta property="og:description" content="Acoustic Doppler for a moving source and observer. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/doppler-shift-calculator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Doppler Shift Calculator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Doppler Shift Calculator">
+<meta name="twitter:description" content="Acoustic Doppler for a moving source and observer. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Doppler Shift Calculator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Doppler Shift Calculator","url":"https://ocurp.com/workspace/tools/doppler-shift-calculator/","description":"Acoustic Doppler for a moving source and observer. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Doppler Shift Calculator</h1>
+      <p class="mt-1 text-xs text-white/40">science &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Two genuinely different formulas that share a name. Acoustic Doppler handles a moving source and a moving observer in a real medium; the relativistic longitudinal shift handles light, where the whole thing collapses to sqrt((1-b)/(1+b)). The page runs one or the other and shows what the wrong one would have said, because the classic mistake is feeding the speed of light into the acoustic ratio.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">ACOUSTIC</span>
+    <span class="ws-chip">RELATIVISTIC</span>
+  </div>
+  <div class="grid gap-4 md:grid-cols-3">
+    <div><label class="ws-label mb-2 block" for="dp-f">Emitted frequency (Hz)</label>
+      <input id="dp-f" type="number" step="any" class="ws-input" value="440"></div>
+    <div><label class="ws-label mb-2 block" for="dp-mode">Which physics</label>
+      <select id="dp-mode" class="ws-input">
+        <option value="acoustic">Acoustic (sound in a medium)</option>
+        <option value="relativistic">Relativistic (light in vacuum)</option>
+      </select></div>
+    <div><label class="ws-label mb-2 block" for="dp-c">Wave speed (m/s)</label>
+      <input id="dp-c" type="number" step="any" class="ws-input" value="343"></div>
+    <div><label class="ws-label mb-2 block" for="dp-vs">Source speed (m/s)</label>
+      <input id="dp-vs" type="number" step="any" class="ws-input" value="34.3"></div>
+    <div><label class="ws-label mb-2 block" for="dp-vo">Observer speed (m/s)</label>
+      <input id="dp-vo" type="number" step="any" class="ws-input" value="0"></div>
+    <div><label class="ws-label mb-2 block" for="dp-clight">Light speed (m/s)</label>
+      <input id="dp-clight" type="number" step="1" class="ws-input" value="299792458"></div>
+  </div>
+  <div class="mt-3 text-[11px] leading-relaxed text-white/40">
+    Sign convention: <span class="text-white/70">positive source speed = source moving
+    toward the observer</span>, <span class="text-white/70">positive observer speed =
+    observer moving toward the source</span>. Negative values recede.
+  </div>
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <button id="dp-go" class="ws-btn" style="width:auto">Compute</button>
+    <button id="dp-cl" class="ws-btn-ghost" style="width:auto">Load an approaching siren</button>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="dp-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Observed frequency</div>
+  <div class="mt-2 text-4xl font-display font-extrabold" id="dp-big"></div>
+  <div class="mt-1 text-[11px] text-white/45" id="dp-sub"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Shift</div>
+  <div class="mt-2 text-4xl font-display font-extrabold" id="dp-big2"></div>
+  <div class="mt-1 text-[11px] text-white/45" id="dp-sub2"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Working</div>
+  <div id="dp-kv"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Why the two formulas must not be mixed</div>
+  <div id="dp-note"></div>
+  <div class="mt-4 text-[11px] leading-relaxed text-white/35">
+    Acoustic Doppler treats the medium as a physical reference frame: the source
+    physically compresses the wavefronts it leaves behind, so the spacing changes by
+    the source speed while the observer's motion only changes how fast the crests are
+    met. Relativistic Doppler is the same observed effect for light, where there is no
+    medium, and it collapses to a single factor sqrt((1-b)/(1+b)) with b = v/c on the
+    relative speed, b &lt; 1 strictly. Substituting the light speed into the acoustic
+    ratio is not an approximation that gets better at high speed, it is a different
+    quantity that grows without bound as the source passes the observer, which is why
+    the wrong formula would hand back a superluminal frequency.
+  </div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Read-out</div>
+  <pre id="dp-out" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||!isFinite(n)) return 0;
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function sci(n,d){ if(d===undefined) d=3; if(!isFinite(n)) return '-';
+  return Number(n).toExponential(d); }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id,def){ var el=$(id); if(!el) return def;
+  var v=parseFloat(el.value); return isFinite(v)?v:def; }
+function sel(id){ var el=$(id); return el?el.value:''; }
+function err(id,msg){ var e=$(id); if(!e) return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':''; }
+function kvs(list){ return list.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+window.__T=window.__T||{};
+
+function dpAcoustic(f0,c,vo,vs){ return f0*(c+vo)/(c-vs); }
+function dpRelFactor(b){ return Math.sqrt((1-b)/(1+b)); }
+function dpRender(){
+  err('dp-err','');
+  var f0=num('dp-f',NaN), mode=sel('dp-mode');
+  var c=num('dp-c',NaN), vs=num('dp-vs',NaN), vo=num('dp-vo',NaN);
+  var cl=num('dp-clight',NaN);
+  if(!isFinite(f0)||f0<=0){ err('dp-err','emitted frequency must be a positive number of Hz'); return null; }
+  if(!isFinite(c)||c<=0){ err('dp-err','wave speed must be greater than zero'); return null; }
+  if(!isFinite(vs)||!isFinite(vo)){ err('dp-err','source and observer speed must be numbers'); return null; }
+  if(!isFinite(cl)||cl<=0){ err('dp-err','light speed must be greater than zero'); return null; }
+  var obs, factor, b, wave, other, otherLabel;
+  if(mode==='relativistic'){
+    b=vs/cl;
+    if(Math.abs(b)>=1){ err('dp-err','relativistic mode needs |v| < c, and the source speed alone decides it'); return null; }
+    factor=dpRelFactor(b);
+    obs=f0*factor;
+    other=f0*(cl+vo)/(cl-vs); otherLabel='acoustic ratio applied to the same speeds';
+    wave=cl/f0;
+  } else {
+    if(Math.abs(vs)>=c){ err('dp-err','a source cannot move at or past the wave speed in this model'); return null; }
+    obs=dpAcoustic(f0,c,vo,vs);
+    b=vs/cl;
+    factor=(c+vo)/(c-vs);
+    wave=c/f0;
+    other=f0*dpRelFactor(Math.abs(b)<1?b:0); otherLabel='relativistic factor at b = '+r(b,6);
+  }
+  var shift=obs-f0, pct=shift/f0*100;
+  $('dp-big').textContent=r(obs,4)+' Hz';
+  $('dp-sub').textContent='emitted '+f0+' Hz  |  '+(pct>=0?'+':'')+r(pct,4)+'%';
+  $('dp-big2').textContent=(shift>=0?'+':'')+r(shift,4)+' Hz';
+  $('dp-sub2').textContent='factor '+r(factor,6)+'  |  '+(obs>f0?'rising':(obs<f0?'falling':'unchanged'));
+  fill('dp-kv',[['Mode',mode],
+    ['Emitted frequency',f0+' Hz'],
+    ['Source speed',vs+' m/s'],
+    ['Observer speed',vo+' m/s'],
+    ['Wave speed in the medium',c+' m/s'],
+    ['Wavelength at the source',sci(wave,4)+' m'],
+    ['Observed frequency',r(obs,4)+' Hz'],
+    ['Shift',(shift>=0?'+':'')+r(shift,4)+' Hz'],
+    ['Shift fraction',(pct>=0?'+':'')+r(pct,4)+'%'],
+    ['Multiplier applied to f0',r(factor,9)]]);
+  fill('dp-note',[['Formula actually used',mode==='relativistic'
+      ? 'f_obs = f0 sqrt((1-b)/(1+b)), b = v/c'
+      : 'f_obs = f0 (c+v_obs)/(c-v_src)'],
+    ['b = v/c for these speeds',r(b,9)],
+    ['Wrong formula, same numbers',sci(other,6)+' Hz'],
+    ['Where the wrong one comes from',otherLabel],
+    ['Error of the wrong formula',r((other/obs-1)*100,4)+'%'],
+    ['Sense',obs>f0?'approaching, so the pitch is higher':(obs<f0?'receding, so the pitch is lower':'no relative motion, no shift')]]);
+  $('dp-out').textContent=
+    'mode                '+mode+'\n'
+    +'emitted f0          '+f0+' Hz\n'
+    +'source speed        '+vs+' m/s\n'
+    +'observer speed      '+vo+' m/s\n'
+    +'medium speed        '+c+' m/s\n'
+    +'b = v/c             '+r(b,9)+'\n'
+    +'multiplier          '+r(factor,9)+'\n'
+    +'observed frequency  '+r(obs,4)+' Hz\n'
+    +'shift               '+(shift>=0?'+':'')+r(shift,4)+' Hz  ('+(pct>=0?'+':'')+r(pct,4)+'%)';
+  return {mode:mode,f0:f0,vs:vs,vo:vo,c:c,b:b,factor:factor,obs:obs,
+          shift:shift,pct:pct,wave:wave,other:other};
+}
+$('dp-go').addEventListener('click',function(){ dpRender(); });
+$('dp-cl').addEventListener('click',function(){
+  put('dp-mode','acoustic'); put('dp-f',440); put('dp-c',343); put('dp-vs',34.3);
+  put('dp-vo',0); put('dp-clight',299792458); dpRender(); });
+['dp-f','dp-c','dp-vs','dp-vo','dp-clight'].forEach(function(id){
+  $(id).addEventListener('input',dpRender); });
+$('dp-mode').addEventListener('change',dpRender);
+window.__T['doppler-shift-calculator']={slug:'doppler-shift-calculator',run:function(i){
+  if(i.f!==undefined) put('dp-f',i.f);
+  if(i.mode!==undefined) put('dp-mode',i.mode);
+  if(i.c!==undefined) put('dp-c',i.c);
+  if(i.vs!==undefined) put('dp-vs',i.vs);
+  if(i.vo!==undefined) put('dp-vo',i.vo);
+  if(i.clight!==undefined) put('dp-clight',i.clight);
+  var v=dpRender();
+  if(!v) return JSON.stringify({error:'invalid'});
+  return JSON.stringify({mode:v.mode,f0:v.f0,vs:v.vs,vo:v.vo,c:v.c,
+    b:r(v.b,9),factor:r(v.factor,9),obs:r(v.obs,4),shift:r(v.shift,4),
+    pct:r(v.pct,4),other:r(v.other,6)});
+}};
+dpRender();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/decibel-calculator/">
+      <span class="ocurp-related-n">Decibel Calculator</span>
+      <span class="ocurp-related-b">Sound pressure level, intensity addition of independent sources, and inverse-distance fall</span>
+    </a></li>
+    <li><a href="/workspace/tools/wave-calculator/">
+      <span class="ocurp-related-n">Wave &amp; Frequency Calculator</span>
+      <span class="ocurp-related-b">Wavelength, frequency, period and refractive index for light, sound and radio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/barometric-altitude/">
+      <span class="ocurp-related-n">Barometric Altitude &amp; Hypsometric Pressure</span>
+      <span class="ocurp-related-b">The barometric formula reading an altitude straight off a pressure, beside the hypsometric</span>
+    </a></li>
+    <li><a href="/workspace/tools/blackbody-radiation/">
+      <span class="ocurp-related-n">Blackbody Radiation</span>
+      <span class="ocurp-related-b">Wien&#x27;s peak wavelength and the Stefan-Boltzmann flux, with the luminosity of a star at the</span>
+    </a></li>
+    <li><a href="/workspace/tools/buffer-ph/">
+      <span class="ocurp-related-n">Buffer pH</span>
+      <span class="ocurp-related-b">Henderson-Hasselbalch against the useful pKa +- 1 band, and the exact charge-balance pH fo</span>
+    </a></li>
+    <li><a href="/workspace/tools/buoyancy-calculator/">
+      <span class="ocurp-related-n">Buoyancy Calculator</span>
+      <span class="ocurp-related-b">Archimedes for any object in any fluid: buoyant force, apparent weight and a float or sink</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cantilever Deflection — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Euler-Bernoulli tip deflection and bending stress for a rectangular section. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/cantilever-deflection/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Cantilever Deflection">
+<meta property="og:description" content="Euler-Bernoulli tip deflection and bending stress for a rectangular section. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/cantilever-deflection/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Cantilever Deflection on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cantilever Deflection">
+<meta name="twitter:description" content="Euler-Bernoulli tip deflection and bending stress for a rectangular section. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Cantilever Deflection on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Cantilever Deflection","url":"https://ocurp.com/workspace/tools/cantilever-deflection/","description":"Euler-Bernoulli tip deflection and bending stress for a rectangular section. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Cantilever Deflection</h1>
+      <p class="mt-1 text-xs text-white/40">science &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Euler-Bernoulli tip deflection for a rectangular cantilever, with the tip bending stress and a factor of safety against a yield strength you type in. Steel at 200 GPa or aluminium at 70 GPa, I = b h^3/12, and a flag the moment the sag passes L/360 - which is usually the limit that bites before the stress does.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="grid gap-4 md:grid-cols-3">
+    <div><label class="ws-label mb-2 block" for="cd-mat">Material</label>
+      <select id="cd-mat" class="ws-input">
+        <option value="200000">Steel, E = 200 GPa</option>
+        <option value="70000">Aluminium, E = 70 GPa</option>
+      </select></div>
+    <div><label class="ws-label mb-2 block" for="cd-sy">Yield strength (MPa)</label>
+      <input id="cd-sy" type="number" step="1" min="1" max="3000" class="ws-input" value="250"></div>
+    <div><label class="ws-label mb-2 block" for="cd-L">Length L (mm)</label>
+      <input id="cd-L" type="number" step="1" min="1" max="5000" class="ws-input" value="200"></div>
+    <div><label class="ws-label mb-2 block" for="cd-b">Width b (mm)</label>
+      <input id="cd-b" type="number" step="0.1" min="0.1" max="1000" class="ws-input" value="20"></div>
+    <div><label class="ws-label mb-2 block" for="cd-h">Depth h (mm, bending axis)</label>
+      <input id="cd-h" type="number" step="0.1" min="0.1" max="1000" class="ws-input" value="10"></div>
+    <div><label class="ws-label mb-2 block" for="cd-P">Tip load P (N)</label>
+      <input id="cd-P" type="number" step="0.1" min="0.01" max="100000" class="ws-input" value="50"></div>
+  </div>
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <button id="cd-go" class="ws-btn" style="width:auto">Compute</button>
+    <button id="cd-cl" class="ws-btn-ghost" style="width:auto">Load the failing strip</button>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="cd-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Tip deflection</div>
+  <div class="mt-2 text-4xl font-display font-extrabold" id="cd-big"></div>
+  <div class="mt-2" id="cd-band"></div>
+  <div class="mt-2 text-[11px] text-white/45" id="cd-sub"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Tip stress and safety</div>
+  <div class="mt-2 text-4xl font-display font-extrabold" id="cd-big2"></div>
+  <div class="mt-2 text-[11px] text-white/45" id="cd-sub2"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Every quantity in the two formulas</div>
+  <div id="cd-kv"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Read-out</div>
+  <pre id="cd-out" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre>
+  <div class="mt-4 text-[11px] leading-relaxed text-white/35">
+    <span class="text-white/60">What this assumes.</span> Euler-Bernoulli beam
+    theory: small deflections, linear elastic material, a prismatic rectangular
+    section, and a point load at the tip of a cantilever fixed at the other
+    end. Second moment of area I = b h^3 / 12 about the bending axis, tip
+    deflection PL^3/(3EI), and tip bending stress 6PL/(b h^2). The L/360 limit
+    is a serviceability rule of thumb for a member whose sag a person notices;
+    it is a comfort criterion, not a strength criterion, and it is the one that
+    usually bites first. Deflection scales with the cube of the length, so
+    making a cantilever longer is enormously more expensive than making it
+    stiffer, and orientation matters just as much: turning the section so the
+    depth h sits along the bending axis multiplies I by (h/b)^2.
+  </div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||n===undefined) return null;
+  if(!isFinite(n)) return null;
+  var f=Math.pow(10,d), v=Math.round(n*f)/f;
+  /* -0 === 0, so this normalises negative zero away without Object.is,
+     which is an ES6 runtime call the site's ES5 checker rejects. */
+  if(v===0) v=0;
+  return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true})); }
+function setc(id,val){ var el=$(id); if(!el) return; el.checked=!!val;
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id,def){ var el=$(id); if(!el) return def;
+  var v=parseFloat(el.value); return isFinite(v)?v:def; }
+function err(id,msg){ var e=$(id); if(!e) return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':''; }
+function kvs(list){ return list.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function note(id,text,tone){ var e=$(id); if(!e) return;
+  e.innerHTML='<span class="ws-chip" style="'+(tone==='bad'
+    ? 'border-color:rgba(248,113,113,.5);color:#f8a3a3'
+    : 'border-color:rgba(95,241,169,.4);color:#8ef0b0')+'">'+esc(text)+'</span>'; }
+window.__T=window.__T||{};
+
+var CD_DIV=360;
+function cdRender(){
+  err('cd-err','');
+  var E=parseFloat($('cd-mat').value);
+  var Sy=num('cd-sy',NaN), L=num('cd-L',NaN), b=num('cd-b',NaN);
+  var h=num('cd-h',NaN), P=num('cd-P',NaN);
+  if(!isFinite(E)||E<=0){ err('cd-err','pick a material'); return null; }
+  if(!isFinite(Sy)||Sy<=0||Sy>3000){ err('cd-err','yield strength must be 1..3000 MPa'); return null; }
+  if(!isFinite(L)||L<=0||L>5000){ err('cd-err','length must be 0..5000 mm'); return null; }
+  if(!isFinite(b)||b<=0||b>1000){ err('cd-err','width must be 0..1000 mm'); return null; }
+  if(!isFinite(h)||h<=0||h>1000){ err('cd-err','depth must be 0..1000 mm'); return null; }
+  if(!isFinite(P)||P<=0||P>100000){ err('cd-err','tip load must be 0..100000 N'); return null; }
+  var I=b*h*h*h/12;
+  var defl=P*L*L*L/(3*E*I);
+  var sig=6*P*L/(b*h*h);
+  var fos=Sy/sig;
+  var lim=L/CD_DIV;
+  var pass=(defl<=lim);
+  var util=defl/lim;
+  $('cd-big').textContent=r(defl,4)+' mm';
+  note('cd-band',pass?'WITHIN L/360':'EXCEEDS L/360',pass?'good':'bad');
+  $('cd-sub').textContent='limit '+r(lim,4)+' mm  |  '+r(util*100,2)+'% of limit used';
+  $('cd-big2').textContent=r(sig,3)+' MPa';
+  $('cd-sub2').textContent='FoS '+r(fos,3)+' against Sy '+Sy+' MPa';
+  fill('cd-kv',[
+    ['E',E+' MPa  ('+(E/1000).toFixed(0)+' GPa)'],
+    ['L',r(L,4)+' mm'],
+    ['Section b x h',r(b,4)+' x '+r(h,4)+' mm'],
+    ['I = b h^3 / 12',r(I,4)+' mm^4'],
+    ['3 E I',r(3*E*I,4)],
+    ['P L^3',r(P*L*L*L,4)],
+    ['Tip deflection',r(defl,4)+' mm'],
+    ['Limit L/'+CD_DIV,r(lim,4)+' mm'],
+    ['Limit used',r(util*100,3)+' %'],
+    ['Within L/'+CD_DIV+'?',pass?'yes':'NO'],
+    ['Tip stress 6PL/(b h^2)',r(sig,4)+' MPa'],
+    ['Yield strength',r(Sy,4)+' MPa'],
+    ['Factor of safety',r(fos,4)]]);
+  $('cd-out').textContent=
+    'material        '+(E===200000?'steel 200 GPa':'aluminium 70 GPa')+'\n'
+    +'E               '+E+' MPa\n'
+    +'L / b / h       '+L+' / '+b+' / '+h+' mm\n'
+    +'P               '+P+' N\n'
+    +'I               '+r(I,6)+' mm^4\n'
+    +'deflection      '+r(defl,6)+' mm\n'
+    +'limit L/360     '+r(lim,6)+' mm\n'
+    +'limit used      '+r(util*100,4)+' %  -> '+(pass?'passes':'FAILS')+'\n'
+    +'tip stress      '+r(sig,6)+' MPa\n'
+    +'yield Sy        '+Sy+' MPa\n'
+    +'factor of safety '+r(fos,6);
+  return {E:E,Sy:Sy,L:L,b:b,h:h,P:P,I:I,defl_mm:defl,sigma_mpa:sig,
+          fos:fos,limit_mm:lim,util:util,pass:pass};
+}
+$('cd-go').addEventListener('click',function(){cdRender();});
+$('cd-cl').addEventListener('click',function(){
+  $('cd-mat').value='70000';
+  $('cd-mat').dispatchEvent(new Event('change',{bubbles:true}));
+  put('cd-sy',95); put('cd-L',300); put('cd-b',30); put('cd-h',1.5);
+  put('cd-P',2); cdRender(); });
+['cd-mat','cd-sy','cd-L','cd-b','cd-h','cd-P'].forEach(function(id){
+  $(id).addEventListener('input',cdRender);
+  $(id).addEventListener('change',cdRender); });
+window.__T['cantilever-deflection']={slug:'cantilever-deflection',run:function(i){
+  if(i.E!==undefined) $('cd-mat').value=String(i.E);
+  if(i.mat!==undefined) $('cd-mat').value=String(i.mat==='steel'?200000:70000);
+  if(i.sy!==undefined) put('cd-sy',i.sy);
+  if(i.L!==undefined) put('cd-L',i.L);
+  if(i.b!==undefined) put('cd-b',i.b);
+  if(i.h!==undefined) put('cd-h',i.h);
+  if(i.P!==undefined) put('cd-P',i.P);
+  var v=cdRender();
+  if(!v) return JSON.stringify({error:'invalid'});
+  return JSON.stringify({E:v.E,Sy:v.Sy,L:v.L,b:v.b,h:v.h,P:v.P,
+    I:r(v.I,4),defl_mm:r(v.defl_mm,4),sigma_mpa:r(v.sigma_mpa,4),
+    fos:r(v.fos,4),limit_mm:r(v.limit_mm,4),util:r(v.util,4),
+    pass:v.pass});
+}};
+cdRender();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/barometric-altitude/">
+      <span class="ocurp-related-n">Barometric Altitude &amp; Hypsometric Pressure</span>
+      <span class="ocurp-related-b">The barometric formula reading an altitude straight off a pressure, beside the hypsometric</span>
+    </a></li>
+    <li><a href="/workspace/tools/blackbody-radiation/">
+      <span class="ocurp-related-n">Blackbody Radiation</span>
+      <span class="ocurp-related-b">Wien&#x27;s peak wavelength and the Stefan-Boltzmann flux, with the luminosity of a star at the</span>
+    </a></li>
+    <li><a href="/workspace/tools/buffer-ph/">
+      <span class="ocurp-related-n">Buffer pH</span>
+      <span class="ocurp-related-b">Henderson-Hasselbalch against the useful pKa +- 1 band, and the exact charge-balance pH fo</span>
+    </a></li>
+    <li><a href="/workspace/tools/buoyancy-calculator/">
+      <span class="ocurp-related-n">Buoyancy Calculator</span>
+      <span class="ocurp-related-b">Archimedes for any object in any fluid: buoyant force, apparent weight and a float or sink</span>
+    </a></li>
+    <li><a href="/workspace/tools/cistern-sizing/">
+      <span class="ocurp-related-n">Rainwater Cistern Sizer</span>
+      <span class="ocurp-related-b">Size a rain tank from a monthly mass balance of catchment, rainfall, runoff coefficient an</span>
+    </a></li>
+    <li><a href="/workspace/tools/doppler-shift-calculator/">
+      <span class="ocurp-related-n">Doppler Shift Calculator</span>
+      <span class="ocurp-related-b">Acoustic Doppler for a moving source and observer, and the relativistic longitudinal facto</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

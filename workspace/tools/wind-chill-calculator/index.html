@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wind Chill & Heat Index — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="NWS wind chill at 50 F or below with 3 mph or more. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/wind-chill-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Wind Chill &amp; Heat Index">
+<meta property="og:description" content="NWS wind chill at 50 F or below with 3 mph or more. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/wind-chill-calculator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Wind Chill &amp; Heat Index on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Wind Chill &amp; Heat Index">
+<meta name="twitter:description" content="NWS wind chill at 50 F or below with 3 mph or more. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Wind Chill &amp; Heat Index on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Wind Chill & Heat Index","url":"https://ocurp.com/workspace/tools/wind-chill-calculator/","description":"NWS wind chill at 50 F or below with 3 mph or more. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Wind Chill & Heat Index</h1>
+      <p class="mt-1 text-xs text-white/40">health &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">The NWS wind chill and the Rothfusz heat index, with the validity windows enforced instead of ignored. Wind chill fires at 50 F or below with 3 mph or more and is clamped to the air temperature whenever the formula returns something warmer; heat index fires at 80 F or above with 40% RH or more; between those windows the answer is the air temperature.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="grid gap-4 md:grid-cols-3">
+    <div><label class="ws-label mb-2 block" for="wc-t">Air temperature (F)</label>
+      <input id="wc-t" type="number" step="0.1" min="-60" max="130" class="ws-input" value="20"></div>
+    <div><label class="ws-label mb-2 block" for="wc-v">Wind speed (mph)</label>
+      <input id="wc-v" type="number" step="0.1" min="0" max="150" class="ws-input" value="15"></div>
+    <div><label class="ws-label mb-2 block" for="wc-rh">Humidity (%RH)</label>
+      <input id="wc-rh" type="number" step="1" min="0" max="100" class="ws-input" value="50"></div>
+  </div>
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <button id="wc-go" class="ws-btn" style="width:auto">Compute</button>
+    <button id="wc-cl" class="ws-btn-ghost" style="width:auto">Load a mild day</button>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="wc-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Feels like</div>
+  <div class="mt-2 text-4xl font-display font-extrabold" id="wc-big"></div>
+  <div class="mt-1 text-[11px] text-white/45" id="wc-which"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Working</div>
+  <div id="wc-kv"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-3">Which branch fired, and why</div>
+  <div id="wc-branch"></div>
+  <div class="mt-4 text-[11px] leading-relaxed text-white/35">
+    NWS wind chill is valid only at 50 F or below with wind at 3 mph or more, and
+    the official rule is to take whichever is warmer between the formula result
+    and the air temperature. Heat index needs 80 F or above and 40% RH or more.
+    In between the two windows the honest answer is the air temperature itself,
+    so that is what this page reports.
+  </div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Read-out</div>
+  <pre id="wc-out" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(!isFinite(n)) return 0;
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true})); }
+function num(id,def){ var el=$(id); if(!el) return def;
+  var v=parseFloat(el.value); return isFinite(v)?v:def; }
+function err(id,msg){ var e=$(id); if(!e) return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':''; }
+function kvs(list){ return list.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function bars(id,rows){ var e=$(id); if(!e) return;
+  e.innerHTML=rows.map(function(p){
+    var w=Math.max(0,Math.min(100,p[2]));
+    return '<div><div class="flex items-center justify-between text-[11px]">'
+      +'<span class="text-white/55">'+esc(p[0])+'</span>'
+      +'<span class="font-mono text-white/80">'+esc(p[1])+'</span></div>'
+      +'<div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">'
+      +'<div style="width:'+w+'%;background:#FF5F1F"></div></div></div>';
+  }).join(''); }
+function hhmm(h){ if(!isFinite(h)) return '-';
+  var m=Math.round(h*60), hh=Math.floor(((m/60)%24+24)%24), mm=((m%60)+60)%60;
+  return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm; }
+window.__T=window.__T||{};
+
+function wcChill(T,V){ var v=Math.pow(V,0.16);
+  return 35.74+0.6215*T-35.75*v+0.4275*T*v; }
+function wcHeat(T,RH){
+  return -42.379+2.04901523*T+10.14333127*RH-0.22475541*T*RH-0.00683783*T*T
+    -0.05481717*RH*RH+0.00122874*T*T*RH+0.00085282*T*RH*RH
+    -0.00000199*T*T*RH*RH; }
+function wcRender(){
+  err('wc-err','');
+  var T=num('wc-t',NaN), V=num('wc-v',NaN), RH=num('wc-rh',NaN);
+  if(!isFinite(T)||T<-60||T>130){ err('wc-err','temperature must be -60..130 F'); return null; }
+  if(!isFinite(V)||V<0||V>150){ err('wc-err','wind speed must be 0..150 mph'); return null; }
+  if(!isFinite(RH)||RH<0||RH>100){ err('wc-err','humidity must be 0..100%'); return null; }
+  var raw=null, feels=T, which, why;
+  if(T<=50 && V>=3){
+    raw=wcChill(T,V);
+    if(raw>T){ feels=T; which='wind chill clamped';
+      why='formula said '+r(raw,2)+' F, warmer than the air, so the official rule keeps '+T+' F';
+    } else { feels=raw; which='wind chill';
+      why=''+T+' F and '+V+' mph is inside the NWS wind chill window'; }
+  } else if(T>=80 && RH>=40){
+    raw=wcHeat(T,RH);
+    feels=raw; which='heat index';
+    why=''+T+' F and '+RH+'% RH is inside the Rothfusz heat index window';
+  } else {
+    which='air temperature';
+    why=T<=50 ? 'wind '+(V<3?'below 3 mph, so the chill formula does not apply'
+                                 :'is fine but the air is above 50 F')
+               : (RH<40 ? 'humidity below 40%, so the heat index does not apply'
+                        : 'air is between 50 F and 80 F, where neither index is valid');
+  }
+  $('wc-big').textContent=r(feels,2)+' F';
+  $('wc-which').textContent=which+'  |  air '+T+' F';
+  fill('wc-kv',[['Air temperature',T+' F'],
+    ['Wind speed',V+' mph'],
+    ['Relative humidity',RH+'%'],
+    ['Formula result (unclamped)',raw===null?'not applicable':r(raw,4)+' F'],
+    ['Reported feels-like',r(feels,4)+' F'],
+    ['Difference from air',(feels>=T?'+':'')+r(feels-T,2)+' F'],
+    ['Branch',which]]);
+  fill('wc-branch',[['Wind chill valid?','yes - '+T+' F <= 50 F, '+V+' mph >= 3 mph'],
+    ['Wind chill formula result',raw===null?'n/a':r(raw,4)+' F'],
+    ['Clamp to air temperature applied?',(raw!==null&&raw>T)?'yes':'no'],
+    ['Heat index valid?','no - needs 80 F and 40% RH together'],
+    ['Branch taken',which],
+    ['Reason',why]]);
+  $('wc-out').textContent=
+    'air            '+T+' F\n'
+    +'wind           '+V+' mph\n'
+    +'humidity       '+RH+'%\n'
+    +'raw chill      '+(raw===null?'n/a':r(raw,4)+' F')+'\n'
+    +'branch         '+which+'\n'
+    +'feels like     '+r(feels,4)+' F\n'
+    +'reason         '+why;
+  return {air:T,wind:V,rh:RH,raw:raw,feels:feels,which:which,
+          // The clamp is a wind-chill rule only. Testing raw>T on the heat
+          // index branch flagged a 113 F heat index as "clamped to air"
+          // because 113 > 95 - true of the arithmetic, meaningless as a
+          // statement about clamping, since the heat index is never clamped.
+          clamped:which!=='heat index'&&raw!==null&&raw>T,
+          // keep the full-precision diff for the test hook; the visible KV
+          // rows round to 2 dp for display.
+          };
+}
+$('wc-go').addEventListener('click',function(){ wcRender(); });
+$('wc-cl').addEventListener('click',function(){
+  put('wc-t',30); put('wc-v',10); put('wc-rh',50); wcRender(); });
+['wc-t','wc-v','wc-rh'].forEach(function(id){
+  $(id).addEventListener('input',wcRender); });
+window.__T['wind-chill-calculator']={slug:'wind-chill-calculator',run:function(i){
+  if(i.t!==undefined) put('wc-t',i.t);
+  if(i.v!==undefined) put('wc-v',i.v);
+  if(i.rh!==undefined) put('wc-rh',i.rh);
+  var v=wcRender();
+  if(!v) return JSON.stringify({error:'invalid'});
+  return JSON.stringify({air:v.air,wind:v.wind,rh:v.rh,
+    raw:v.raw===null?null:r(v.raw,4),feels:r(v.feels,4),branch:v.which,
+    clamped:v.clamped,diff:r(v.feels-v.air,4)});
+}};
+wcRender();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/calorie-needs-calculator/">
+      <span class="ocurp-related-n">Calorie Needs Calculator</span>
+      <span class="ocurp-related-b">Mifflin-St Jeor BMR for men and women, the six real activity multipliers, TDEE as BMR time</span>
+    </a></li>
+    <li><a href="/workspace/tools/kidney-stone-risk/">
+      <span class="ocurp-related-n">Kidney Stone Risk Estimate</span>
+      <span class="ocurp-related-b">Water intake, urine volume, urinary calcium and urinary oxalate scored 0-100 with each fac</span>
+    </a></li>
+    <li><a href="/workspace/tools/sleep-debt-calculator/">
+      <span class="ocurp-related-n">Sleep Debt Calculator</span>
+      <span class="ocurp-related-b">Bank a week of logged sleep against the hours you actually need, then read the recovery sc</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/acronym-generator/">
+      <span class="ocurp-related-n">Acronym Generator</span>
+      <span class="ocurp-related-b">Build initialisms, recursive acronyms and random words from a phrase, plus a back-expander</span>
+    </a></li>
+    <li><a href="/workspace/tools/add-line-numbers/">
+      <span class="ocurp-related-n">Add Line Numbers</span>
+      <span class="ocurp-related-b">Prefix each line with a configurable number, padding and separator.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

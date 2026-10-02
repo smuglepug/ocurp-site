@@ -369,7 +369,14 @@ function showStats(){
       $('st-a').textContent=el.a.toFixed(4)+' AU';
       $('st-e').textContent=el.e.toFixed(4);
       $('st-p').textContent=el.P.toFixed(3)+' d';
-      $('st-k').textContent=(el.P*365.25/(el.a*Math.sqrt(el.a))).toFixed(4)+' (1.0000 = exact)';
+      // Kepler check: el.P is in DAYS, el.a is in AU, and Kepler's third law in
+      // these units is P_years = a_AU^1.5, so the dimensionless check is
+      // (P_days/365.25)/a_AU^1.5. The old code did P*365.25/a^1.5, reading P as
+      // years when it was already days - a units error of exactly 365.25x that
+      // printed 133392.97 on a textbook 1 AU circle, next to a label claiming
+      // "1.0000 = exact". Dropping the 365.25 alone is not enough either: it
+      // would print 365.21, so the year has to come out, not go in.
+      $('st-k').textContent=((el.P/365.25)/Math.pow(el.a,1.5)).toFixed(4)+' (1.0000 = exact)';
       $('st-r').textContent=el.r.toFixed(4)+' AU';
       $('st-v').textContent=(el.v/1000).toFixed(2)+' km/s';
     } else {
@@ -516,7 +523,7 @@ window.__nb={
   state(){ const k=$('sys').value;
     return {n:b.length, running:running, t:t/DAY, G:G, integ:integ, drift:drift,
       keplerError:  (function(){ if(k==='4'||k==='2'){ const e=elements(1);
-        return e&&isFinite(e.a)&&e.a>0 ? e.P*365.25/Math.pow(e.a,1.5) : null; } return null; })(),
+        return e&&isFinite(e.a)&&e.a>0 ? (e.P/365.25)/Math.pow(e.a,1.5) : null; } return null; })(),
       el: (k==='2')?elements(1):null }; },
   setRunning(v){ running=v; $('play').textContent=v?'Pause':'Start'; },
   build, elements, step, energy, angmom,
@@ -576,8 +583,8 @@ requestAnimationFrame(loop);
 })();
 </script>
 
-<link rel="stylesheet" href="/workspace/play.css?v=20261001f">
-<script src="/workspace/play.js?v=20261001f" defer></script>
+<link rel="stylesheet" href="/workspace/play.css?v=20261001n">
+<script src="/workspace/play.js?v=20261001n" defer></script>
 
 
 <!--ocurp-related-->

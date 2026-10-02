@@ -72,4 +72,6 @@ const RAW = [
   {slug:"snake-battle",name:"Snake Battle",cat:"game",blurb:"One duel point at a time: you move, then the rival answers. A greedy AI that shrinks the larger axis gap toward you, never into itself.",tags:["GAMES","ARCADE","AI"],ready:true},
   {slug:"missile-command",name:"Missile Command",cat:"game",blurb:"Three batteries, six cities and a magazine that never refills. Twelve waves, four cities lost ends it.",tags:["GAMES","ARCADE","DEFENCE"],ready:true},
   {slug:"peg-solitaire",name:"Peg Solitaire",cat:"game",blurb:"Peg Solitaire - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"mines-digger",name:"Mines Digger",cat:"game",blurb:"Mines Digger - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"towers",name:"Towers",cat:"game",blurb:"Towers - playable in the browser.",tags:["GAMES"],ready:true},
 ];

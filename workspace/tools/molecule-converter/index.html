@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Molecule Converter — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Mass to moles to STP volume for any compound. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/molecule-converter/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Molecule Converter">
+<meta property="og:description" content="Mass to moles to STP volume for any compound. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/molecule-converter/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Molecule Converter on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Molecule Converter">
+<meta name="twitter:description" content="Mass to moles to STP volume for any compound. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Molecule Converter on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Molecule Converter","url":"https://ocurp.com/workspace/tools/molecule-converter/","description":"Mass to moles to STP volume for any compound. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Molecule Converter</h1>
+      <p class="mt-1 text-xs text-white/40">CHEMISTRY &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Mass to moles to volume at STP for any compound, plus the concentration family M, mM, mol/L, g/L, mg/mL and ppm. The molar mass table it converts with is printed underneath, so any number here can be checked by hand.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div><label class="ws-label mb-2 block" for="mc-sub">Compound</label>
+      <select id="mc-sub" class="ws-input"></select></div>
+    <div><label class="ws-label mb-2 block" for="mc-molmass">Molar mass (g/mol)</label>
+      <input id="mc-molmass" type="number" class="ws-input" value="18.01528" step="0.00001"></div>
+    <div><label class="ws-label mb-2 block" for="mc-from">Amount given as</label>
+      <select id="mc-from" class="ws-input !w-40">
+        <option value="g" selected>Mass in grams</option>
+        <option value="mg">Mass in milligrams</option>
+        <option value="kg">Mass in kilograms</option>
+        <option value="mol">Amount in moles</option>
+        <option value="mmol">Amount in millimoles</option>
+        <option value="L">Volume at STP in litres</option>
+        <option value="mM">Concentration in mM</option>
+        <option value="M">Concentration in mol/L</option>
+      </select></div>
+    <div><label class="ws-label mb-2 block" for="mc-val">Value</label>
+      <input id="mc-val" type="number" class="ws-input" value="18.01528" step="any"></div>
+  </div>
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-4">
+    <div><label class="ws-label mb-2 block" for="mc-vol">Solution volume (L)</label>
+      <input id="mc-vol" type="number" class="ws-input" value="0.5" min="0" step="any"></div>
+    <div><label class="ws-label mb-2 block" for="mc-temp">Gas temperature (&deg;C)</label>
+      <input id="mc-temp" type="number" class="ws-input" value="0" step="any"></div>
+    <div class="flex items-end"><button id="mc-run" class="ws-btn">Convert</button></div>
+    <div class="flex items-end"><button id="mc-cp" class="ws-btn-ghost">Copy readout</button></div>
+  </div>
+  <div class="mt-3" id="err"></div>
+</div>
+<div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+<section class="ws-panel mt-4 p-5">
+  <div class="ws-label mb-3">The same amount, every way</div>
+  <div id="mc-out"></div>
+</section>
+<section class="ws-panel mt-4 p-5">
+  <div class="ws-label mb-3">Concentration, in the solution volume given</div>
+  <div id="mc-conc"></div>
+</section>
+<section class="ws-panel mt-4 p-5">
+  <div class="ws-label mb-3">Molar mass lookup table</div>
+  <div class="overflow-x-auto"><table class="w-full text-left text-sm">
+    <thead class="ws-label"><tr><th class="py-2 pr-4">Compound</th>
+      <th class="py-2 pr-4">Formula</th><th class="py-2 pr-4">g/mol</th>
+      <th class="py-2 pr-4">g per mmol</th><th class="py-2 pr-4">L at STP per mmol</th></tr></thead>
+    <tbody id="mc-tbl"></tbody></table></div>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function $(id){return document.getElementById(id);}
+function r(n,d){if(!isFinite(n))return String(n);var f=Math.pow(10,d===undefined?6:d);var v=Math.round(n*f)/f;if(Object.is(v,-0))v=0;return v;}
+function grp(n,d){
+  var v=r(n,d===undefined?2:d); if(typeof v!=='number') return String(v);
+  var s=String(Math.abs(v)), parts=s.split('.'), sg=v<0?'-':'';
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  while(parts.length<2)parts.push('');
+  if(d>0&&parts[1].length<d)parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
+  return sg+parts.join('.');
+}
+function row(c){return '<tr class="border-t border-white/5">'+c.map(function(x){return '<td class="py-2 pr-4">'+x+'</td>';}).join('')+'</tr>';}
+function kv(k,v){return '<div class="ws-kv"><span>'+esc(k)+'</span><span>'+esc(v)+'</span></div>';}
+function setErr(m){var e=$('err');if(!e)return;e.textContent=m?'\\u2717 '+m:'';e.style.color=m?'#f87171':'';}
+function card(k,v,span){
+  return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4"'+(span?' style="grid-column:span '+span+'"':'')+'>'
+    +'<div class="ws-label">'+esc(k)+'</div><div class="mt-1 font-display text-lg font-black text-accent">'+esc(v)+'</div></div>';
+}
+function show(list){$('stats').innerHTML=list.map(function(p){return card(p[0],p[1],p[2]);}).join('');}
+function cp(btn){var el=$(btn.getAttribute('data-t'));var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t);}catch(e){}
+  btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy';},1200);}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn);el.addEventListener('change',fn);});}
+
+/* Molar masses in g/mol. Values are the standard atomic weights rounded as
+   published, summed from the same atomic weights an analyst would use. */
+var MM = [
+  ['Water',              'H2O',      18.01528],
+  ['Oxygen',             'O2',       31.998],
+  ['Nitrogen',           'N2',       28.0134],
+  ['Carbon dioxide',     'CO2',      44.0095],
+  ['Carbon monoxide',    'CO',       28.0101],
+  ['Ammonia',            'NH3',      17.0305],
+  ['Methane',            'CH4',      16.0425],
+  ['Ethanol',            'C2H5OH',   46.0684],
+  ['Glucose',            'C6H12O6', 180.156],
+  ['Sodium chloride',    'NaCl',     58.4428],
+  ['Sodium hydroxide',   'NaOH',     39.9968],
+  ['Hydrochloric acid',  'HCl',      36.4609],
+  ['Sulfuric acid',      'H2SO4',    98.0788],
+  ['Calcium carbonate',  'CaCO3',    100.0869],
+  ['Iron',               'Fe',       55.845],
+  ['Copper',             'Cu',       63.546],
+  ['Iron(III) oxide',    'Fe2O3',   159.687],
+  ['Acetic acid',        'C2H4O2',   60.052],
+  ['Benzene',            'C6H6',     78.1118],
+  ['Urea',               'CH4N2O',   60.056]
+];
+/* IUPAC molar gas volume at 0 degC (273.15 K) and 101.325 kPa: 22.413969 L/mol.
+   Corrected for any other temperature with the ideal gas law at 1 atm. */
+var V_STP_L_PER_MOL = 22.413969;
+var R_L = 0.082057366;             // L atm / (mol K)
+var K0 = 273.15;
+
+function mcVolPerMol(T){
+  return V_STP_L_PER_MOL * (T + K0) / K0;
+}
+function mcFrom(sel, val, mm, T){
+  switch (sel){
+    case 'g':   return { mol: val / mm, massG: val };
+    case 'mg':  return { mol: val / 1000 / mm, massG: val / 1000 };
+    case 'kg':  return { mol: val * 1000 / mm, massG: val * 1000 };
+    case 'mol': return { mol: val, massG: val * mm };
+    case 'mmol':return { mol: val / 1000, massG: val / 1000 * mm };
+    /* A gas volume: n = PV/RT with P = 1 atm. */
+    case 'L':   return { mol: val / mcVolPerMol(T), massG: val / mcVolPerMol(T) * mm };
+    case 'M':   return { mol: val, massG: val * mm };
+    case 'mM':  return { mol: val / 1000, massG: val / 1000 * mm };
+    default: throw new Error('unknown input unit ' + sel);
+  }
+}
+
+function solveMc(i){
+  i = i || {};
+  var o = { from: i.from || $('mc-from').value,
+            val:  i.val  !== undefined ? Number(i.val)  : Number($('mc-val').value),
+            mm:   i.mm   !== undefined ? Number(i.mm)   : Number($('mc-molmass').value),
+            volL: i.volL !== undefined ? Number(i.volL) : Number($('mc-vol').value),
+            T:    i.T    !== undefined ? Number(i.T)    : Number($('mc-temp').value),
+            name: i.name || ($('mc-sub').selectedIndex >= 0 ? $('mc-sub').options[$('mc-sub').selectedIndex].text.split(' ')[0] : '') };
+  if (!isFinite(o.val)) throw new Error('value must be a number');
+  if (!isFinite(o.mm) || o.mm <= 0) throw new Error('molar mass must be positive');
+  if (o.T <= -K0) throw new Error('a gas cannot exist at or below absolute zero');
+  var f = mcFrom(o.from, o.val, o.mm, o.T);
+  o.mol = f.mol;
+  o.massG = f.massG;
+  o.volumeL = o.mol * mcVolPerMol(o.T);          // this much gas at 1 atm and T
+  o.molecules = o.mol * 6.02214076e23;
+  o.mm = o.mm;
+  /* Concentration in the chosen solution volume. For an amount given in mol/L
+     or mM the volume is implied by the value itself. */
+  var volL = o.volL;
+  if (o.from === 'M' || o.from === 'mM'){
+    var c = o.from === 'M' ? o.val : o.val / 1000;
+    volL = (volL > 0 && i.volL === undefined && o.volL === Number($('mc-vol').value)) ? volL : volL;
+    o.impliedVolL = o.mol / (c || 1);
+  }
+  var V = (volL > 0) ? volL : null;
+  o.volUsedL = V;
+  if (V){
+    o.molar = o.mol / V;
+    o.mM = o.molar * 1000;
+    o.gPerL = o.massG / V;
+    o.mgPerML = o.gPerL;                           // 1 g/L == 1 mg/mL
+    o.ppm = o.gPerL * 1000;                        // mg/L == ppm for water
+    o.percent = o.gPerL / 10;                      // % w/v
+    o.mmPerL = o.molar * 1000;
+  }
+  return o;
+}
+
+function renderMc(o){
+  setErr('');
+  $('mc-out').innerHTML =
+      kv('Moles', grp(o.mol, 8) + ' mol')
+    + kv('Millimoles', grp(o.mol * 1000, 6) + ' mmol')
+    + kv('Mass', grp(o.massG, 6) + ' g  =  ' + grp(o.massG * 1000, 4) + ' mg')
+    + kv('Gas volume at ' + grp(o.T, 2) + ' \u00B0C, 1 atm', grp(o.volumeL, 6) + ' L')
+    + kv('Gas volume at 0 \u00B0C, 1 atm', grp(o.mol * V_STP_L_PER_MOL, 6) + ' L')
+    + kv('Molecules', grp(o.molecules, 4) + '  (n \u00D7 6.02214076e23)');
+  if (o.volUsedL){
+    $('mc-conc').innerHTML =
+        kv('Solution volume', grp(o.volUsedL, 6) + ' L')
+      + kv('Molarity', grp(o.molar, 6) + ' M  =  ' + grp(o.mM, 4) + ' mM')
+      + kv('Mass concentration', grp(o.gPerL, 6) + ' g/L  =  ' + grp(o.mgPerML, 4) + ' mg/mL')
+      + kv('Parts per million', grp(o.ppm, 4) + ' ppm  (mg/L)')
+      + kv('Percent w/v', grp(o.percent, 6) + ' %')
+      + kv('Millimoles per litre', grp(o.mmPerL, 6) + ' mmol/L');
+  } else {
+    $('mc-conc').innerHTML = '<p class="text-xs text-white/40">Enter a solution volume above zero to '
+      + 'see concentrations.</p>';
+  }
+  $('mc-tbl').innerHTML = MM.map(function(m){
+    var sel = m[0] === (o.name || '') ? ' class="text-accent font-bold"' : '';
+    return '<tr class="border-t border-white/5"><td class="py-2 pr-4"' + sel + '>' + esc(m[0]) + '</td>'
+      + '<td class="py-2 pr-4">' + esc(m[1]) + '</td><td class="py-2 pr-4">' + grp(m[2], 5) + '</td>'
+      + '<td class="py-2 pr-4">' + grp(m[2] / 1000, 8) + '</td>'
+      + '<td class="py-2 pr-4">' + grp(V_STP_L_PER_MOL / 1000, 8) + '</td></tr>';
+  }).join('');
+  show([['Moles', grp(o.mol, 6)],
+        ['Mass', grp(o.massG, 4) + ' g'],
+        ['Volume at STP', grp(o.mol * V_STP_L_PER_MOL, 4) + ' L'],
+        ['Molecules', grp(o.molecules, 3)]]);
+}
+function runMc(){ var o; try { o = solveMc(); renderMc(o); } catch (e){ setErr(e.message); show([]); } return o; }
+$('mc-sub').innerHTML = MM.map(function(m){ return '<option value="' + esc(m[0]) + '">' + esc(m[0]) + '</option>'; }).join('');
+$('mc-sub').addEventListener('change', function(){
+  var i = MM.map(function(m){return m[0];}).indexOf($('mc-sub').value);
+  if (i >= 0) $('mc-molmass').value = MM[i][2];
+  runMc();
+});
+$('mc-run').onclick = runMc;
+$('mc-cp').onclick = function(){ cp({ getAttribute:function(){return 'mc-out';}, textContent:'' }); };
+bind(['mc-molmass','mc-from','mc-val','mc-vol','mc-temp'], runMc);
+runMc();
+
+window.__T = window.__T || {};
+window.__T['molecule-converter'] = {
+  slug: 'molecule-converter',
+  run: function(i){
+    i = i || {};
+    var pairs = [['from','mc-from'],['val','mc-val'],['mm','mc-molmass'],
+                 ['volL','mc-vol'],['T','mc-temp']];
+    pairs.forEach(function(p){ if (i[p[0]] !== undefined) $(p[1]).value = i[p[0]]; });
+    var o = solveMc(i);
+    renderMc(o);
+    return o;
+  }
+};
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/solution-dilution/">
+      <span class="ocurp-related-n">Dilution Calculator</span>
+      <span class="ocurp-related-b">C1V1 = C2V2 with M, mM, g/L, mg/mL, % and v/v all normalised through molecular weight, and</span>
+    </a></li>
+    <li><a href="/workspace/tools/barometric-altitude/">
+      <span class="ocurp-related-n">Barometric Altitude &amp; Hypsometric Pressure</span>
+      <span class="ocurp-related-b">The barometric formula reading an altitude straight off a pressure, beside the hypsometric</span>
+    </a></li>
+    <li><a href="/workspace/tools/blackbody-radiation/">
+      <span class="ocurp-related-n">Blackbody Radiation</span>
+      <span class="ocurp-related-b">Wien&#x27;s peak wavelength and the Stefan-Boltzmann flux, with the luminosity of a star at the</span>
+    </a></li>
+    <li><a href="/workspace/tools/buffer-ph/">
+      <span class="ocurp-related-n">Buffer pH</span>
+      <span class="ocurp-related-b">Henderson-Hasselbalch against the useful pKa +- 1 band, and the exact charge-balance pH fo</span>
+    </a></li>
+    <li><a href="/workspace/tools/buoyancy-calculator/">
+      <span class="ocurp-related-n">Buoyancy Calculator</span>
+      <span class="ocurp-related-b">Archimedes for any object in any fluid: buoyant force, apparent weight and a float or sink</span>
+    </a></li>
+    <li><a href="/workspace/tools/cantilever-deflection/">
+      <span class="ocurp-related-n">Cantilever Deflection</span>
+      <span class="ocurp-related-b">Euler-Bernoulli tip deflection and bending stress for a rectangular section, with a factor</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

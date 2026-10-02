@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buffer pH — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Henderson-Hasselbalch against the useful pKa +- 1 band. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/buffer-ph/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Buffer pH">
+<meta property="og:description" content="Henderson-Hasselbalch against the useful pKa +- 1 band. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/buffer-ph/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Buffer pH on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Buffer pH">
+<meta name="twitter:description" content="Henderson-Hasselbalch against the useful pKa +- 1 band. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Buffer pH on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Buffer pH","url":"https://ocurp.com/workspace/tools/buffer-ph/","description":"Henderson-Hasselbalch against the useful pKa +- 1 band. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Buffer pH</h1>
+      <p class="mt-1 text-xs text-white/40">science &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Two ways to the same pH. Ratio mode applies Henderson-Hasselbalch to a pair you have already measured. Recipe mode takes what you actually weighed into the flask and solves the charge balance for the real pH as an exact quadratic, instead of assuming the two species sit in their analytical ratio. Both flag the ratio when it leaves the 0.1 to 10 window where a buffer actually buffers.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="mb-4 flex flex-wrap items-center gap-3">
+    <span class="ws-label">Mode</span>
+    <button id="bf-m-hh" class="ws-btn" style="width:auto">Ratio mode</button>
+    <button id="bf-m-rc" class="ws-btn-ghost" style="width:auto">Recipe mode</button>
+  </div>
+
+  <div id="bf-sec-hh">
+    <div class="grid gap-4 md:grid-cols-3">
+      <div><label class="ws-label mb-2 block" for="bf-pka">pKa of the pair</label>
+        <input id="bf-pka" type="number" step="0.01" min="-10" max="20" class="ws-input" value="4.76"></div>
+      <div><label class="ws-label mb-2 block" for="bf-ha">[HA] weak acid (mol/L)</label>
+        <input id="bf-ha" type="number" step="0.001" min="0.000001" max="10" class="ws-input" value="0.10"></div>
+      <div><label class="ws-label mb-2 block" for="bf-a">[A-] conjugate base (mol/L)</label>
+        <input id="bf-a" type="number" step="0.001" min="0.000001" max="10" class="ws-input" value="0.30"></div>
+    </div>
+    <div class="mt-3 text-[11px] leading-relaxed text-white/40">
+      Ratio mode takes two concentrations you have already measured or
+      titrated to, and reports the Henderson-Hasselbalch pH directly.
+    </div>
+  </div>
+
+  <div id="bf-sec-rc" style="display:none">
+    <div class="grid gap-4 md:grid-cols-3">
+      <div><label class="ws-label mb-2 block" for="bf-pka2">pKa of the pair</label>
+        <input id="bf-pka2" type="number" step="0.01" min="-10" max="20" class="ws-input" value="4.76"></div>
+      <div><label class="ws-label mb-2 block" for="bf-ca">Acid concentration (mol/L)</label>
+        <input id="bf-ca" type="number" step="0.001" min="0.000001" max="10" class="ws-input" value="0.050"></div>
+      <div><label class="ws-label mb-2 block" for="bf-cs">Salt concentration (mol/L)</label>
+        <input id="bf-cs" type="number" step="0.001" min="0" max="10" class="ws-input" value="0.050"></div>
+    </div>
+    <div class="mt-3 text-[11px] leading-relaxed text-white/40">
+      Recipe mode takes what you weighed out into the flask and solves the
+      charge balance for the real pH instead of assuming the two species are
+      already in their analytical ratio. See the derivation note below.
+    </div>
+  </div>
+
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <button id="bf-go" class="ws-btn" style="width:auto">Compute</button>
+    <button id="bf-cl" class="ws-btn-ghost" style="width:auto">Load acetate</button>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="bf-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">pH</div>
+  <div class="mt-2 text-4xl font-display font-extrabold" id="bf-big"></div>
+  <div class="mt-2" id="bf-band"></div>
+  <div class="mt-2 text-[11px] text-white/45" id="bf-sub"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Working</div>
+  <div class="mt-3" id="bf-kv"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-3">Useful-range window</div>
+  <div id="bf-win"></div>
+  <div class="mt-4 text-[11px] leading-relaxed text-white/35">
+    A conjugate pair only buffers usefully while both members are present in
+    comparable amounts. The usual working window is a ratio between 0.1 and 10,
+    which is pKa -/+ 1. Outside that the buffer capacity on one side of the
+    pH has collapsed, and the pH you read will drift hard with a drop of
+    titrant even though the arithmetic still returns a number.
+  </div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Read-out</div>
+  <pre id="bf-out" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre>
+  <div class="mt-4 text-[11px] leading-relaxed text-white/35">
+    <span class="text-white/60">Where recipe mode's quadratic comes from.</span>
+    For Ca mol/L of HA plus Cs mol/L of NaA the total acetate is Ct = Ca + Cs.
+    Charge balance gives [A-] = h + Cs - Kw/h and mass balance then gives
+    [HA] = Ct - [A-] = Ca - h + Kw/h; notice the salt cancels out of [HA],
+    because the sodium ions are what balance the protons the acid gives up.
+    Substituting into Ka = h[A-]/[HA] and multiplying through by h collects
+    into a cubic in h that carries the water term Kw. Setting only the Kw term
+    to zero - the one approximation here - leaves the exact quadratic
+    h^2 + (Ka + Cs) h - Ka Ca = 0. It is solved in the numerically stable
+    rationalised form h = 2 Ka Ca / ((Ka + Cs) + sqrt((Ka +Cs)^2 + 4 Ka Ca)),
+    never as (-b + sqrt(disc))/2, because that subtraction cancels to zero when
+    Ca is small or comparable to Cs. Kw = 1e-14 at 25 C; the water term shifts
+    the answer by less than 1e-4 pH over the whole useful range, which is why
+    dropping it is safe and why it is dropped.
+  </div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||n===undefined) return null;
+  if(!isFinite(n)) return null;
+  var f=Math.pow(10,d), v=Math.round(n*f)/f;
+  /* -0 === 0, so this normalises negative zero away without Object.is,
+     which is an ES6 runtime call the site's ES5 checker rejects. */
+  if(v===0) v=0;
+  return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true})); }
+function setc(id,val){ var el=$(id); if(!el) return; el.checked=!!val;
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id,def){ var el=$(id); if(!el) return def;
+  var v=parseFloat(el.value); return isFinite(v)?v:def; }
+function err(id,msg){ var e=$(id); if(!e) return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':''; }
+function kvs(list){ return list.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function note(id,text,tone){ var e=$(id); if(!e) return;
+  e.innerHTML='<span class="ws-chip" style="'+(tone==='bad'
+    ? 'border-color:rgba(248,113,113,.5);color:#f8a3a3'
+    : 'border-color:rgba(95,241,169,.4);color:#8ef0b0')+'">'+esc(text)+'</span>'; }
+window.__T=window.__T||{};
+
+var BF_MODE='hh';
+var BF_MIN=0.1, BF_MAX=10;
+/* Comparing 0.010/0.100 against 0.1 fails on binary floating point alone:
+   the quotient is 0.09999999999999999, which is one ulp under the limit. A
+   buffer mixed to exactly 1:10 is inside the window and must not be flagged,
+   so the test carries a relative tolerance well above the representation
+   error but far below any ratio a person would actually mix. */
+function bfInWindow(ratio){
+  var eps=1e-9;
+  return ratio>=BF_MIN*(1-eps)&&ratio<=BF_MAX*(1+eps);
+}
+
+/* Exact quadratic for the recipe mode, in the cancellation-free form. */
+function bfRecipePh(ka,ca,cs){
+  var b=ka+cs;
+  var disc=b*b+4*ka*ca;
+  if(!(disc>0)) return NaN;
+  var h=2*ka*ca/(b+Math.sqrt(disc));
+  if(!(h>0)) return NaN;
+  return -Math.log10(h);
+}
+function bfRender(){
+  err('bf-err','');
+  var mode=BF_MODE, pka,ca,cs,ratio,lg,ph,h=null,ka=null;
+  if(mode==='hh'){
+    pka=num('bf-pka',NaN); ca=num('bf-ha',NaN); cs=num('bf-a',NaN);
+  } else {
+    pka=num('bf-pka2',NaN); ca=num('bf-ca',NaN); cs=num('bf-cs',NaN);
+  }
+  if(!isFinite(pka)||pka<-10||pka>20){ err('bf-err','pKa must be -10..20'); return null; }
+  if(!isFinite(ca)||ca<=0||ca>10){ err('bf-err','acid concentration must be > 0 and <= 10 mol/L'); return null; }
+  if(!isFinite(cs)||cs<0||cs>10){ err('bf-err','base concentration must be 0..10 mol/L'); return null; }
+  ratio=cs/ca;
+  /* ratio 0 is the pure weak acid: perfectly physical, just no longer a
+     buffer. log10(0) is undefined, so report the log as null rather than
+     Infinity (which JSON.stringify would turn into null anyway). */
+  if(!(ratio>0)){
+    if(ratio!==0){ err('bf-err','base concentration must not be negative'); return null; }
+    lg=null;
+  } else {
+    lg=Math.log10(ratio);
+  }
+  var useful=(ratio>0&&bfInWindow(ratio));
+  if(mode==='hh'){
+    ph=pka+lg;
+  } else {
+    ka=Math.pow(10,-pka);
+    ph=bfRecipePh(ka,ca,cs);
+    if(!isFinite(ph)){ err('bf-err','the quadratic produced no physical root'); return null; }
+    h=Math.pow(10,-ph);
+  }
+  $('bf-big').textContent=r(ph,4);
+  var band = useful ? 'INSIDE THE 0.1 - 10 WINDOW'
+                    : (ratio>BF_MAX ? 'OUT OF RANGE - RATIO TOO HIGH' : 'OUT OF RANGE - RATIO TOO LOW');
+  note('bf-band',band,useful?'good':'bad');
+  $('bf-sub').textContent=mode==='hh'
+    ? 'ratio mode, Henderson-Hasselbalch'
+    : 'recipe mode, charge balance solved';
+  fill('bf-kv',[
+    ['Mode',mode==='hh'?'ratio (H-H)':'recipe (quadratic)'],
+    ['pKa',r(pka,4)],
+    (mode==='hh'?['[HA] weak acid',ca+' mol/L']:['[HA] analytical acid',ca+' mol/L']),
+    (mode==='hh'?['[A-] conjugate base',cs+' mol/L']:['[A-] analytical salt',cs+' mol/L']),
+    ['Ratio [A-]/[HA]',r(ratio,6)],
+    ['log10(ratio)',r(lg,6)],
+    ['pH',r(ph,4)],
+    (h===null?['H+','']:['H+ (solved)',r(h,10)+' mol/L']),
+    (ka===null?['Ka','']:['Ka',ka.toExponential(6)])]);
+  fill('bf-win',[
+    ['Your ratio',r(ratio,6)],
+    ['Window','0.1 to 10 inclusive'],
+    ['log10 window','-1 to +1'],
+    ['pH window','pKa - 1 to pKa + 1, i.e. '+r(pka-1,4)+' to '+r(pka+1,4)],
+    ['Inside window?',useful?'yes':'NO'],
+    ['How far outside',useful?'within range':r(Math.max(BF_MIN/ratio,ratio/BF_MAX),4)+'x beyond the limit'],
+    ['Worst-case drift per 1% titrant',useful?'small':'large - one side has no reserve left']]);
+  $('bf-out').textContent=
+    'mode            '+(mode==='hh'?'ratio (H-H)':'recipe (quadratic)')+'\n'
+    +'pKa             '+r(pka,4)+'\n'
+    +'acid            '+ca+' mol/L\n'
+    +'base / salt     '+cs+' mol/L\n'
+    +'ratio           '+r(ratio,6)+'\n'
+    +'log10(ratio)    '+r(lg,6)+'\n'
+    +'pH              '+r(ph,4)+'\n'
+    +(h===null?'':'H+              '+h.toExponential(8)+' mol/L\n')
+    +'window 0.1-10   '+(useful?'inside':'OUTSIDE')+'\n'
+    +'pH band         '+r(pka-1,4)+' to '+r(pka+1,4);
+  return {mode:mode,pka:pka,ca:ca,cs:cs,ratio:ratio,log10:lg,ph:ph,
+          h:h,useful:useful};
+}
+function bfMode(m){
+  BF_MODE=m;
+  $('bf-m-hh').className=(m==='hh'?'ws-btn':'ws-btn-ghost');
+  $('bf-m-rc').className=(m==='rc'?'ws-btn':'ws-btn-ghost');
+  $('bf-sec-hh').style.display=(m==='hh'?'':'none');
+  $('bf-sec-rc').style.display=(m==='rc'?'':'none');
+  bfRender();
+}
+$('bf-m-hh').addEventListener('click',function(){bfMode('hh');});
+$('bf-m-rc').addEventListener('click',function(){bfMode('rc');});
+$('bf-go').addEventListener('click',function(){bfRender();});
+$('bf-cl').addEventListener('click',function(){
+  if(BF_MODE==='hh'){ put('bf-pka',4.76); put('bf-ha',0.10); put('bf-a',0.30); }
+  else { put('bf-pka2',4.76); put('bf-ca',0.050); put('bf-cs',0.050); }
+  bfRender(); });
+['bf-pka','bf-ha','bf-a','bf-pka2','bf-ca','bf-cs'].forEach(function(id){
+  $(id).addEventListener('input',function(){ if(BF_MODE==='hh'&&id.charAt(0)==='b'&&id.indexOf('pka')>0){return;} bfRender(); }); });
+window.__T['buffer-ph']={slug:'buffer-ph',run:function(i){
+  if(i.mode!==undefined) bfMode(i.mode);
+  if(i.pka!==undefined){
+    if(BF_MODE==='hh') put('bf-pka',i.pka); else put('bf-pka2',i.pka); }
+  if(BF_MODE==='hh'){
+    if(i.ha!==undefined) put('bf-ha',i.ha);
+    if(i.a!==undefined) put('bf-a',i.a);
+  } else {
+    if(i.ca!==undefined) put('bf-ca',i.ca);
+    if(i.cs!==undefined) put('bf-cs',i.cs);
+  }
+  var v=bfRender();
+  if(!v) return JSON.stringify({error:'invalid'});
+  return JSON.stringify({mode:v.mode,pka:r(v.pka,4),ratio:r(v.ratio,6),
+    log10:r(v.log10,6),ph:r(v.ph,4),useful:v.useful,
+    in_band:r(v.pka-1,4),out_band:r(v.pka+1,4)});
+}};
+bfMode('hh');
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/barometric-altitude/">
+      <span class="ocurp-related-n">Barometric Altitude &amp; Hypsometric Pressure</span>
+      <span class="ocurp-related-b">The barometric formula reading an altitude straight off a pressure, beside the hypsometric</span>
+    </a></li>
+    <li><a href="/workspace/tools/blackbody-radiation/">
+      <span class="ocurp-related-n">Blackbody Radiation</span>
+      <span class="ocurp-related-b">Wien&#x27;s peak wavelength and the Stefan-Boltzmann flux, with the luminosity of a star at the</span>
+    </a></li>
+    <li><a href="/workspace/tools/buoyancy-calculator/">
+      <span class="ocurp-related-n">Buoyancy Calculator</span>
+      <span class="ocurp-related-b">Archimedes for any object in any fluid: buoyant force, apparent weight and a float or sink</span>
+    </a></li>
+    <li><a href="/workspace/tools/cantilever-deflection/">
+      <span class="ocurp-related-n">Cantilever Deflection</span>
+      <span class="ocurp-related-b">Euler-Bernoulli tip deflection and bending stress for a rectangular section, with a factor</span>
+    </a></li>
+    <li><a href="/workspace/tools/cistern-sizing/">
+      <span class="ocurp-related-n">Rainwater Cistern Sizer</span>
+      <span class="ocurp-related-b">Size a rain tank from a monthly mass balance of catchment, rainfall, runoff coefficient an</span>
+    </a></li>
+    <li><a href="/workspace/tools/doppler-shift-calculator/">
+      <span class="ocurp-related-n">Doppler Shift Calculator</span>
+      <span class="ocurp-related-b">Acoustic Doppler for a moving source and observer, and the relativistic longitudinal facto</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

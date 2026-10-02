@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Barometric Altitude & Hypsometric Pressure — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="The barometric formula reading an altitude straight off a pressure. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/barometric-altitude/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Barometric Altitude &amp; Hypsometric Pressure">
+<meta property="og:description" content="The barometric formula reading an altitude straight off a pressure. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/barometric-altitude/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Barometric Altitude &amp; Hypsometric Pressure on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Barometric Altitude &amp; Hypsometric Pressure">
+<meta name="twitter:description" content="The barometric formula reading an altitude straight off a pressure. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Barometric Altitude &amp; Hypsometric Pressure on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Barometric Altitude & Hypsometric Pressure","url":"https://ocurp.com/workspace/tools/barometric-altitude/","description":"The barometric formula reading an altitude straight off a pressure. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Barometric Altitude & Hypsometric Pressure</h1>
+      <p class="mt-1 text-xs text-white/40">science &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Two pressure-height layers that get confused with each other. The barometric formula reads an altitude straight off a pressure against a 1013.25 hPa standard sea level, and the hypsometric equation turns a known height change and a known temperature into the pressure you should expect to read there. Run them on the same numbers and the gap between them is the real weather.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="grid gap-4 md:grid-cols-3">
+    <div><label class="ws-label mb-2 block" for="ba-p">Pressure (hPa / mbar)</label>
+      <input id="ba-p" type="number" step="0.01" min="300" max="1100" class="ws-input" value="900"></div>
+    <div><label class="ws-label mb-2 block" for="ba-p1">Reference pressure (hPa)</label>
+      <input id="ba-p1" type="number" step="0.01" min="300" max="1100" class="ws-input" value="1013.25"></div>
+    <div><label class="ws-label mb-2 block" for="ba-t">Reference temperature (C)</label>
+      <input id="ba-t" type="number" step="0.1" min="-80" max="60" class="ws-input" value="15"></div>
+    <div><label class="ws-label mb-2 block" for="ba-dh">Height change (m)</label>
+      <input id="ba-dh" type="number" step="0.1" min="-5000" max="5000" class="ws-input" value="1000"></div>
+  </div>
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <button id="ba-go" class="ws-btn" style="width:auto">Compute</button>
+    <button id="ba-cl" class="ws-btn-ghost" style="width:auto">Load sea level</button>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="ba-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Barometric altitude</div>
+  <div class="mt-2 text-4xl font-display font-extrabold" id="ba-big"></div>
+  <div class="mt-1 text-[11px] text-white/45" id="ba-sub"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Hypsometric layer</div>
+  <div class="mt-2 text-4xl font-display font-extrabold" id="ba-big2"></div>
+  <div class="mt-1 text-[11px] text-white/45" id="ba-sub2"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Side by side</div>
+  <div id="ba-kv"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Read-out</div>
+  <pre id="ba-out" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre>
+  <div class="mt-3 text-[11px] leading-relaxed text-white/35">
+    Two different layers, not two answers to the same question. The barometric
+    formula 44330 (1 - (P/1013.25)^0.1903) inverts a standard atmosphere to read a
+    height straight off a pressure. The hypsometric equation walks a known
+    height difference from a known pressure with a fixed 6.5 K/km lapse rate, so it
+    needs the temperature at the reference level. They agree at sea level and drift
+    apart when the real air is not standard.
+  </div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(!isFinite(n)) return 0;
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true})); }
+function num(id,def){ var el=$(id); if(!el) return def;
+  var v=parseFloat(el.value); return isFinite(v)?v:def; }
+function err(id,msg){ var e=$(id); if(!e) return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':''; }
+function kvs(list){ return list.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function bars(id,rows){ var e=$(id); if(!e) return;
+  e.innerHTML=rows.map(function(p){
+    var w=Math.max(0,Math.min(100,p[2]));
+    return '<div><div class="flex items-center justify-between text-[11px]">'
+      +'<span class="text-white/55">'+esc(p[0])+'</span>'
+      +'<span class="font-mono text-white/80">'+esc(p[1])+'</span></div>'
+      +'<div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">'
+      +'<div style="width:'+w+'%;background:#FF5F1F"></div></div></div>';
+  }).join(''); }
+function hhmm(h){ if(!isFinite(h)) return '-';
+  var m=Math.round(h*60), hh=Math.floor(((m/60)%24+24)%24), mm=((m%60)+60)%60;
+  return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm; }
+window.__T=window.__T||{};
+
+function baAlt(P){ return 44330*(1-Math.pow(P/1013.25,0.1903)); }
+function baHyp(P1,T1C,dh){
+  var L=0.0065, g=9.80665, R=8.31447, M=0.0289644;
+  var e=g*M/(R*L);
+  return P1*Math.pow(1-L*dh/(T1C+273.15),e);
+}
+function baRender(){
+  err('ba-err','');
+  var P=num('ba-p',NaN), P1=num('ba-p1',NaN), T1=num('ba-t',NaN), dh=num('ba-dh',NaN);
+  if(!isFinite(P)||P<300||P>1100){ err('ba-err','pressure must be 300..1100 hPa'); return null; }
+  if(!isFinite(P1)||P1<300||P1>1100){ err('ba-err','reference pressure must be 300..1100 hPa'); return null; }
+  if(!isFinite(T1)||T1<-80||T1>60){ err('ba-err','reference temperature must be -80..60 C'); return null; }
+  if(!isFinite(dh)||Math.abs(dh)>5000){ err('ba-err','height change must be within +/-5000 m'); return null; }
+  var alt=baAlt(P), hypP=baHyp(P1,T1,dh), hypA=baAlt(hypP);
+  var ft=alt*3.280839895, ft2=hypA*3.280839895;
+  $('ba-big').textContent=r(alt,2)+' m';
+  $('ba-sub').textContent='from '+P+' hPa  |  '+r(ft,1)+' ft';
+  $('ba-big2').textContent=r(hypP,3)+' hPa';
+  $('ba-sub2').textContent='at '+dh+' m  |  '+r(hypA,2)+' m equivalent';
+  fill('ba-kv',[['Input pressure',P+' hPa'],
+    ['Barometric altitude',r(alt,4)+' m  ('+r(ft,1)+' ft)'],
+    ['Reference pressure',P1+' hPa at '+T1+' C'],
+    ['Height change',dh+' m'],
+    ['Lapse rate used','0.0065 K/m  (6.5 K/km)'],
+    ['Hypsometric pressure',r(hypP,4)+' hPa'],
+    ['Pressure drop',r(P1-hypP,4)+' hPa  ('+r((P1-hypP)/P1*100,3)+'%)'],
+    ['Hypsometric altitude read back',r(hypA,4)+' m  ('+r(ft2,1)+' ft)'],
+    ['Two methods differ by',r(alt-hypA,4)+' m']]);
+  $('ba-out').textContent=
+    'pressure           '+P+' hPa\n'
+    +'barometric alt     '+r(alt,4)+' m  ('+r(alt*3.280839895,1)+' ft)\n'
+    +'reference          '+P1+' hPa, '+T1+' C\n'
+    +'height change      '+dh+' m\n'
+    +'hypsometric press  '+r(hypP,4)+' hPa\n'
+    +'drop               '+r(P1-hypP,4)+' hPa\n'
+    +'read-back alt      '+r(hypA,4)+' m\n'
+    +'method difference  '+r(alt-hypA,4)+' m';
+  return {pressure:P,altitude_m:alt,altitude_ft:alt*3.280839895,
+    ref_pressure:P1,ref_temp:T1,dh_m:dh,hypso_pressure:hypP,
+    drop_hpa:P1-hypP,drop_pct:(P1-hypP)/P1*100,hypso_alt_m:hypA,
+    diff_m:alt-hypA};
+}
+$('ba-go').addEventListener('click',function(){ baRender(); });
+$('ba-cl').addEventListener('click',function(){
+  put('ba-p',1013.25); put('ba-p1',1013.25); put('ba-t',15); put('ba-dh',0); baRender(); });
+['ba-p','ba-p1','ba-t','ba-dh'].forEach(function(id){
+  $(id).addEventListener('input',baRender); });
+window.__T['barometric-altitude']={slug:'barometric-altitude',run:function(i){
+  if(i.p!==undefined) put('ba-p',i.p);
+  if(i.p1!==undefined) put('ba-p1',i.p1);
+  if(i.t!==undefined) put('ba-t',i.t);
+  if(i.dh!==undefined) put('ba-dh',i.dh);
+  var v=baRender();
+  if(!v) return JSON.stringify({error:'invalid'});
+  return JSON.stringify({pressure:v.pressure,altitude_m:r(v.altitude_m,4),
+    altitude_ft:r(v.altitude_ft,1),hypso_pressure:r(v.hypso_pressure,4),
+    drop_hpa:r(v.drop_hpa,4),drop_pct:r(v.drop_pct,3),
+    hypso_alt_m:r(v.hypso_alt_m,4),diff_m:r(v.diff_m,4)});
+}};
+baRender();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/blackbody-radiation/">
+      <span class="ocurp-related-n">Blackbody Radiation</span>
+      <span class="ocurp-related-b">Wien&#x27;s peak wavelength and the Stefan-Boltzmann flux, with the luminosity of a star at the</span>
+    </a></li>
+    <li><a href="/workspace/tools/buffer-ph/">
+      <span class="ocurp-related-n">Buffer pH</span>
+      <span class="ocurp-related-b">Henderson-Hasselbalch against the useful pKa +- 1 band, and the exact charge-balance pH fo</span>
+    </a></li>
+    <li><a href="/workspace/tools/buoyancy-calculator/">
+      <span class="ocurp-related-n">Buoyancy Calculator</span>
+      <span class="ocurp-related-b">Archimedes for any object in any fluid: buoyant force, apparent weight and a float or sink</span>
+    </a></li>
+    <li><a href="/workspace/tools/cantilever-deflection/">
+      <span class="ocurp-related-n">Cantilever Deflection</span>
+      <span class="ocurp-related-b">Euler-Bernoulli tip deflection and bending stress for a rectangular section, with a factor</span>
+    </a></li>
+    <li><a href="/workspace/tools/cistern-sizing/">
+      <span class="ocurp-related-n">Rainwater Cistern Sizer</span>
+      <span class="ocurp-related-b">Size a rain tank from a monthly mass balance of catchment, rainfall, runoff coefficient an</span>
+    </a></li>
+    <li><a href="/workspace/tools/doppler-shift-calculator/">
+      <span class="ocurp-related-n">Doppler Shift Calculator</span>
+      <span class="ocurp-related-b">Acoustic Doppler for a moving source and observer, and the relativistic longitudinal facto</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

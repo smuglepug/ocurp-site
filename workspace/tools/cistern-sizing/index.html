@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rainwater Cistern Sizer — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Size a rain tank from a monthly mass balance of catchment. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/cistern-sizing/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Rainwater Cistern Sizer">
+<meta property="og:description" content="Size a rain tank from a monthly mass balance of catchment. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/cistern-sizing/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Rainwater Cistern Sizer on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Rainwater Cistern Sizer">
+<meta name="twitter:description" content="Size a rain tank from a monthly mass balance of catchment. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Rainwater Cistern Sizer on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Rainwater Cistern Sizer","url":"https://ocurp.com/workspace/tools/cistern-sizing/","description":"Size a rain tank from a monthly mass balance of catchment. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Rainwater Cistern Sizer</h1>
+      <p class="mt-1 text-xs text-white/40">CIVIL & ENVIRONMENTAL &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Size a rain tank from a monthly mass balance: catchment area times rainfall times runoff coefficient against household demand, month by month. The worst cumulative shortfall sets the volume, and that volume over the daily demand gives the days of autonomy.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div><label class="ws-label mb-2 block" for="cs-area">Roof catchment (m&sup2;)</label>
+      <input id="cs-area" type="number" class="ws-input" value="100" min="0"></div>
+    <div><label class="ws-label mb-2 block" for="cs-rain">Annual rainfall (mm)</label>
+      <input id="cs-rain" type="number" class="ws-input" value="400" min="0"></div>
+    <div><label class="ws-label mb-2 block" for="cs-eff">Runoff coefficient</label>
+      <input id="cs-eff" type="number" class="ws-input" value="0.8" min="0" max="1" step="0.01"></div>
+    <div><label class="ws-label mb-2 block" for="cs-people">People served</label>
+      <input id="cs-people" type="number" class="ws-input" value="4" min="0"></div>
+  </div>
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-4">
+    <div><label class="ws-label mb-2 block" for="cs-lpp">Litres per person per day</label>
+      <input id="cs-lpp" type="number" class="ws-input" value="50" min="0"></div>
+    <div><label class="ws-label mb-2 block" for="cs-days">Days in the year modelled</label>
+      <input id="cs-days" type="number" class="ws-input" value="360" min="28" max="366"></div>
+    <div><label class="ws-label mb-2 block" for="cs-store">Existing storage (L)</label>
+      <input id="cs-store" type="number" class="ws-input" value="0" min="0"></div>
+    <div class="flex items-end"><button id="cs-run" class="ws-btn">Size the cistern</button></div>
+  </div>
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-4">
+    <div><label class="ws-label mb-2 block" for="cs-profile">Rainfall spread</label>
+      <select id="cs-profile" class="ws-input !w-44">
+        <option value="even" selected>Even across the year</option>
+        <option value="wet-dry">Wet season / dry season split</option>
+      </select></div>
+    <div><label class="ws-label mb-2 block" for="cs-wet">Wet-season share of rain</label>
+      <input id="cs-wet" type="number" class="ws-input" value="0.8" min="0" max="1" step="0.01"></div>
+    <div><label class="ws-label mb-2 block" for="cs-wetm">Wet months</label>
+      <input id="cs-wetm" type="number" class="ws-input" value="6" min="0" max="12"></div>
+    <div class="flex items-end"><button id="cs-cp" class="ws-btn-ghost">Copy summary</button></div>
+  </div>
+  <div class="mt-3" id="err"></div>
+</div>
+<div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+<section class="ws-panel mt-4 p-5">
+  <div class="ws-label mb-3">Monthly balance &mdash; the tank starts empty</div>
+  <div class="overflow-x-auto"><table class="w-full text-left text-sm">
+    <thead class="ws-label"><tr>
+      <th class="py-2 pr-4">Month</th><th class="py-2 pr-4">Rain (mm)</th>
+      <th class="py-2 pr-4">Harvest (L)</th><th class="py-2 pr-4">Demand (L)</th>
+      <th class="py-2 pr-4">Net (L)</th><th class="py-2 pr-4">Stored (L)</th>
+      <th class="py-2 pr-4">Cumulative shortfall (L)</th></tr></thead>
+    <tbody id="cs-tbl"></tbody></table></div>
+</section>
+<section class="ws-panel mt-4 p-5">
+  <div class="ws-label mb-3">Annual figures</div>
+  <div id="cs-annual"></div>
+</section>
+<section class="ws-panel mt-4 p-5">
+  <div class="ws-label mb-3">Sizing &mdash; one dry season on one full tank</div>
+  <div id="cs-dry"></div>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function $(id){return document.getElementById(id);}
+function r(n,d){if(!isFinite(n))return String(n);var f=Math.pow(10,d===undefined?6:d);var v=Math.round(n*f)/f;if(Object.is(v,-0))v=0;return v;}
+function grp(n,d){
+  var v=r(n,d===undefined?2:d); if(typeof v!=='number') return String(v);
+  var s=String(Math.abs(v)), parts=s.split('.'), sg=v<0?'-':'';
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  while(parts.length<2)parts.push('');
+  if(d>0&&parts[1].length<d)parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
+  return sg+parts.join('.');
+}
+function row(c){return '<tr class="border-t border-white/5">'+c.map(function(x){return '<td class="py-2 pr-4">'+x+'</td>';}).join('')+'</tr>';}
+function kv(k,v){return '<div class="ws-kv"><span>'+esc(k)+'</span><span>'+esc(v)+'</span></div>';}
+function setErr(m){var e=$('err');if(!e)return;e.textContent=m?'\\u2717 '+m:'';e.style.color=m?'#f87171':'';}
+function card(k,v,span){
+  return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4"'+(span?' style="grid-column:span '+span+'"':'')+'>'
+    +'<div class="ws-label">'+esc(k)+'</div><div class="mt-1 font-display text-lg font-black text-accent">'+esc(v)+'</div></div>';
+}
+function show(list){$('stats').innerHTML=list.map(function(p){return card(p[0],p[1],p[2]);}).join('');}
+function cp(btn){var el=$(btn.getAttribute('data-t'));var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t);}catch(e){}
+  btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy';},1200);}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn);el.addEventListener('change',fn);});}
+
+var MONTHS = ['January','February','March','April','May','June',
+              'July','August','September','October','November','December'];
+/* Split `days` evenly over 12 months, giving at least 28 each, so a 360-day
+   year lands on exactly 30-day months and the arithmetic stays hand-checkable. */
+function csDaySplit(days){
+  var base = Math.floor(days / 12), out = [], used = 0;
+  for (var i = 0; i < 12; i++){
+    var d = base + (i < days - base * 12 ? 1 : 0);
+    out.push(d); used += d;
+  }
+  if (used !== days) out[11] += days - used;
+  return out;
+}
+/* Rainfall per month in mm. Even: annual/12. Wet/dry: the wet months share
+   `wet`, spread evenly across them; the rest is spread over the dry months. */
+function csRainProfile(i, monthIndex){
+  if (i.profile === 'wet-dry'){
+    var w = i.wetM, share = i.wet;
+    var isWet = monthIndex < w;
+    var count = isWet ? w : (12 - w);
+    if (count <= 0) return 0;
+    return isWet ? (i.rain * share) / count
+                 : (i.rain * (1 - share)) / count;
+  }
+  return i.rain / 12;
+}
+
+function solveCs(inp){
+  inp = inp || {};
+  var i = {
+    area:    inp.area    !== undefined ? Number(inp.area)    : Number($('cs-area').value),
+    rain:    inp.rain    !== undefined ? Number(inp.rain)    : Number($('cs-rain').value),
+    eff:     inp.eff     !== undefined ? Number(inp.eff)     : Number($('cs-eff').value),
+    people:  inp.people  !== undefined ? Number(inp.people)  : Number($('cs-people').value),
+    lpp:     inp.lpp     !== undefined ? Number(inp.lpp)     : Number($('cs-lpp').value),
+    days:    inp.days    !== undefined ? Number(inp.days)    : Number($('cs-days').value),
+    store:   inp.store   !== undefined ? Number(inp.store)   : Number($('cs-store').value),
+    profile: inp.profile || $('cs-profile').value,
+    wet:     inp.wet     !== undefined ? Number(inp.wet)     : Number($('cs-wet').value),
+    wetM:    inp.wetM    !== undefined ? Number(inp.wetM)    : Number($('cs-wetm').value)
+  };
+  ['area','rain','eff','people','lpp','days','store','wet','wetM'].forEach(function(k){
+    if (!isFinite(i[k])) throw new Error(k + ' must be a number');
+  });
+  if (i.area < 0 || i.rain < 0 || i.store < 0) throw new Error('area, rainfall and storage cannot be negative');
+  if (i.eff < 0 || i.eff > 1) throw new Error('runoff coefficient must be between 0 and 1');
+  if (i.wet < 0 || i.wet > 1) throw new Error('wet-season share must be between 0 and 1');
+  if (i.people < 0 || i.lpp < 0) throw new Error('people and litres per person cannot be negative');
+  if (i.days < 28 || i.days > 366) throw new Error('modelled days must be between 28 and 366');
+  if (i.wetM < 0 || i.wetM > 12) throw new Error('wet months must be between 0 and 12');
+
+  var o = { input: i, months: [] };
+  var daySplit = csDaySplit(i.days);
+  o.daySplit = daySplit;
+  o.dailyDemandL = i.people * i.lpp;
+  var cumShort = 0, stored = 0, maxShort = 0, maxShortMonth = 0;
+  var totalHarvest = 0, totalDemand = 0;
+  for (var m = 0; m < 12; m++){
+    /* 1 mm of rain over 1 m2 of roof delivers exactly 1 litre. */
+    var rainMM = csRainProfile(i, m);
+    var harvestL = rainMM * i.area * i.eff;
+    var demandL  = o.dailyDemandL * daySplit[m];
+    var netL = harvestL - demandL;
+    stored += netL;
+    if (stored < 0) stored = 0;
+    cumShort += demandL - harvestL;
+    if (cumShort < 0) cumShort = 0;
+    if (cumShort > maxShort){ maxShort = cumShort; maxShortMonth = m; }
+    totalHarvest += harvestL; totalDemand += demandL;
+    o.months.push({ name: MONTHS[m], days: daySplit[m], rainMM: rainMM,
+                    harvestL: harvestL, demandL: demandL, netL: netL,
+                    storedL: stored, cumShortL: cumShort });
+  }
+  o.totalHarvestL = totalHarvest;
+  o.totalDemandL  = totalDemand;
+  o.annualBalanceL = totalHarvest - totalDemand;
+  /* A tank must cover the worst cumulative shortfall, and no less than the
+     storage already on site. */
+  o.requiredL = Math.max(maxShort, i.store);
+  o.requiredM3 = o.requiredL / 1000;
+  o.daysAutonomy = o.dailyDemandL > 0 ? o.requiredL / o.dailyDemandL : null;
+  o.worstMonth = MONTHS[maxShortMonth];
+  o.monthsOfAutonomy = o.dailyDemandL > 0
+    ? o.requiredL / (o.dailyDemandL * (i.days / 12)) : null;
+  /* Longest run of consecutive months the tank has to carry the deficit alone. */
+  var run = 0, bestRun = 0;
+  for (var k = 0; k < 12; k++){
+    if (o.months[k].netL < 0){ run++; if (run > bestRun) bestRun = run; } else run = 0;
+  }
+  o.dryStreakMonths = bestRun;
+  return o;
+}
+
+function renderCs(o){
+  setErr('');
+  $('cs-tbl').innerHTML = o.months.map(function(m){
+    return row([esc(m.name), grp(m.rainMM, 2), grp(m.harvestL, 1), grp(m.demandL, 1),
+                (m.netL >= 0 ? '+' : '') + grp(m.netL, 1), grp(m.storedL, 1), grp(m.cumShortL, 1)]);
+  }).join('');
+  $('cs-annual').innerHTML =
+      kv('Annual harvest', grp(o.totalHarvestL, 1) + ' L  (' + grp(o.totalHarvestL / 1000, 3) + ' m\u00B3)')
+    + kv('Annual demand', grp(o.totalDemandL, 1) + ' L  (' + grp(o.totalDemandL / 1000, 3) + ' m\u00B3)')
+    + kv('Annual balance', (o.annualBalanceL >= 0 ? '+' : '') + grp(o.annualBalanceL, 1) + ' L')
+    + kv('Harvest as % of demand', grp(100 * o.totalHarvestL / (o.totalDemandL || 1), 1) + ' %')
+    + kv('Daily demand', grp(o.dailyDemandL, 2) + ' L/day')
+    + kv('Litres per m\u00B2 of roof per year', grp(o.totalHarvestL / (o.input.area || 1), 2) + ' L');
+  $('cs-dry').innerHTML =
+      kv('Worst month for the tank', esc(o.worstMonth))
+    + kv('Peak cumulative shortfall', grp(o.requiredL === o.input.store && o.requiredL === 0 ? 0 : Math.max(o.requiredL, 0), 1) + ' L')
+    + kv('Required cistern volume', grp(o.requiredL, 1) + ' L  =  ' + grp(o.requiredM3, 3) + ' m\u00B3')
+    + kv('Days of autonomy', o.daysAutonomy === null ? 'n/a' : grp(o.daysAutonomy, 1) + ' days')
+    + kv('Months of autonomy', o.monthsOfAutonomy === null ? 'n/a' : grp(o.monthsOfAutonomy, 2) + ' months')
+    + kv('Longest dry run', o.dryStreakMonths + ' months without surplus rain')
+    + kv('Implied cylinder', o.requiredM3 > 0
+        ? grp(2 * Math.pow(o.requiredM3 / Math.PI, 1 / 3), 3) + ' m diameter, ' + grp(o.requiredM3, 3) + ' m tall'
+        : 'not needed');
+  show([['Required volume', grp(o.requiredM3, 2) + ' m\u00B3'],
+        ['Annual harvest', grp(o.totalHarvestL / 1000, 1) + ' m\u00B3'],
+        ['Days of autonomy', o.daysAutonomy === null ? 'n/a' : grp(o.daysAutonomy, 0)],
+        ['Dry streak', o.dryStreakMonths + ' months']]);
+}
+function runCs(){ var o; try { o = solveCs(); renderCs(o); } catch (e){ setErr(e.message); show([]); } return o; }
+$('cs-run').onclick = runCs;
+$('cs-cp').onclick = function(){ cp({ getAttribute:function(){return 'cs-dry';}, textContent:'' }); };
+bind(['cs-area','cs-rain','cs-eff','cs-people','cs-lpp','cs-days','cs-store',
+      'cs-profile','cs-wet','cs-wetm'], runCs);
+runCs();
+
+window.__T = window.__T || {};
+window.__T['cistern-sizing'] = {
+  slug: 'cistern-sizing',
+  run: function(i){
+    i = i || {};
+    var pairs = [['area','cs-area'],['rain','cs-rain'],['eff','cs-eff'],['people','cs-people'],
+                 ['lpp','cs-lpp'],['days','cs-days'],['store','cs-store'],['profile','cs-profile'],
+                 ['wet','cs-wet'],['wetM','cs-wetm']];
+    pairs.forEach(function(p){ if (i[p[0]] !== undefined) $(p[1]).value = i[p[0]]; });
+    var o = solveCs(i);
+    renderCs(o);
+    return o;
+  }
+};
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/barometric-altitude/">
+      <span class="ocurp-related-n">Barometric Altitude &amp; Hypsometric Pressure</span>
+      <span class="ocurp-related-b">The barometric formula reading an altitude straight off a pressure, beside the hypsometric</span>
+    </a></li>
+    <li><a href="/workspace/tools/blackbody-radiation/">
+      <span class="ocurp-related-n">Blackbody Radiation</span>
+      <span class="ocurp-related-b">Wien&#x27;s peak wavelength and the Stefan-Boltzmann flux, with the luminosity of a star at the</span>
+    </a></li>
+    <li><a href="/workspace/tools/buffer-ph/">
+      <span class="ocurp-related-n">Buffer pH</span>
+      <span class="ocurp-related-b">Henderson-Hasselbalch against the useful pKa +- 1 band, and the exact charge-balance pH fo</span>
+    </a></li>
+    <li><a href="/workspace/tools/buoyancy-calculator/">
+      <span class="ocurp-related-n">Buoyancy Calculator</span>
+      <span class="ocurp-related-b">Archimedes for any object in any fluid: buoyant force, apparent weight and a float or sink</span>
+    </a></li>
+    <li><a href="/workspace/tools/cantilever-deflection/">
+      <span class="ocurp-related-n">Cantilever Deflection</span>
+      <span class="ocurp-related-b">Euler-Bernoulli tip deflection and bending stress for a rectangular section, with a factor</span>
+    </a></li>
+    <li><a href="/workspace/tools/doppler-shift-calculator/">
+      <span class="ocurp-related-n">Doppler Shift Calculator</span>
+      <span class="ocurp-related-b">Acoustic Doppler for a moving source and observer, and the relativistic longitudinal facto</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

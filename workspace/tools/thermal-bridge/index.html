@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thermal Bridge — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Layer-by-layer wall transmittance. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/thermal-bridge/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Thermal Bridge">
+<meta property="og:description" content="Layer-by-layer wall transmittance. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/thermal-bridge/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Thermal Bridge on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Thermal Bridge">
+<meta name="twitter:description" content="Layer-by-layer wall transmittance. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Thermal Bridge on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Thermal Bridge","url":"https://ocurp.com/workspace/tools/thermal-bridge/","description":"Layer-by-layer wall transmittance. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Thermal Bridge</h1>
+      <p class="mt-1 text-xs text-white/40">science &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">A wall build-up, layer by layer. Each layer contributes R = d/lambda, the surface films add R_si and R_se, and U is one over the total. The linear transmittance PSI = f R_si U says how much extra heat the bridging element carries, and the page checks whether the internal surface drops below the dew point of the room - which is the part that actually damages the wall.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-3">Build-up, inside face outward</div>
+  <div id="tb-layers"></div>
+  <div class="mt-3 flex flex-wrap items-center gap-3">
+    <button id="tb-add" class="ws-btn-ghost" style="width:auto">Add layer</button>
+    <button id="tb-go" class="ws-btn" style="width:auto">Compute</button>
+    <button id="tb-p1" class="ws-btn-ghost" style="width:auto">Cavity wall</button>
+    <button id="tb-p2" class="ws-btn-ghost" style="width:auto">Bare concrete + steel bridge</button>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="tb-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">U-value</div>
+  <div class="mt-2 text-4xl font-display font-extrabold" id="tb-big"></div>
+  <div class="mt-2 text-[11px] text-white/45" id="tb-sub"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Linear transmittance</div>
+  <div class="mt-2 text-4xl font-display font-extrabold" id="tb-big2"></div>
+  <div class="mt-2" id="tb-band"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="grid gap-4 md:grid-cols-4">
+    <div><label class="ws-label mb-2 block" for="tb-rsi">R_si (m2K/W)</label>
+      <input id="tb-rsi" type="number" step="0.01" min="0" max="0.5" class="ws-input" value="0.13"></div>
+    <div><label class="ws-label mb-2 block" for="tb-rse">R_se (m2K/W)</label>
+      <input id="tb-rse" type="number" step="0.01" min="0" max="0.5" class="ws-input" value="0.04"></div>
+    <div><label class="ws-label mb-2 block" for="tb-f">Bridge fraction f</label>
+      <input id="tb-f" type="number" step="0.01" min="0" max="1" class="ws-input" value="0.03"></div>
+    <div><label class="ws-label mb-2 block" for="tb-ti">Indoor T (C)</label>
+      <input id="tb-ti" type="number" step="0.1" min="-20" max="50" class="ws-input" value="20"></div>
+    <div><label class="ws-label mb-2 block" for="tb-to">Outdoor T (C)</label>
+      <input id="tb-to" type="number" step="0.1" min="-40" max="50" class="ws-input" value="0"></div>
+    <div><label class="ws-label mb-2 block" for="tb-rh">Indoor RH (%)</label>
+      <input id="tb-rh" type="number" step="1" min="1" max="100" class="ws-input" value="65"></div>
+  </div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Resistance, layer by layer</div>
+  <div id="tb-kv"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Surface temperature and condensation</div>
+  <div id="tb-cond"></div>
+  <div class="mt-4 text-[11px] leading-relaxed text-white/35">
+    A surface sweats when its temperature drops below the dew point of the
+    room air. Dew point here comes from the Magnus formula
+    g = ln(RH/100) + a T/(b + T), Td = b g/(a - g), with a = 17.62 and
+    b = 243.12, valid over water between about -45 and 60 C. The surface drop
+    is f R_si U (Ti - Te), and f is what decides everything: with the usual
+    0.03 for scattered fasteners a well-built wall loses a couple of hundredths
+    of a kelvin and cannot possibly reach dew point. Push f towards 1, as it
+    goes for an uninsulated steel or stainless element crossing the envelope,
+    and the same wall goes cold enough to drip. That is what a thermal bridge
+    is, and why the flag is worth having.
+  </div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Read-out</div>
+  <pre id="tb-out" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||n===undefined) return null;
+  if(!isFinite(n)) return null;
+  var f=Math.pow(10,d), v=Math.round(n*f)/f;
+  /* -0 === 0, so this normalises negative zero away without Object.is,
+     which is an ES6 runtime call the site's ES5 checker rejects. */
+  if(v===0) v=0;
+  return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true})); }
+function setc(id,val){ var el=$(id); if(!el) return; el.checked=!!val;
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id,def){ var el=$(id); if(!el) return def;
+  var v=parseFloat(el.value); return isFinite(v)?v:def; }
+function err(id,msg){ var e=$(id); if(!e) return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':''; }
+function kvs(list){ return list.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function note(id,text,tone){ var e=$(id); if(!e) return;
+  e.innerHTML='<span class="ws-chip" style="'+(tone==='bad'
+    ? 'border-color:rgba(248,113,113,.5);color:#f8a3a3'
+    : 'border-color:rgba(95,241,169,.4);color:#8ef0b0')+'">'+esc(text)+'</span>'; }
+window.__T=window.__T||{};
+
+var TB_ROWS=[];
+/* Magnus dew point over water. */
+function tbDew(T,RH){
+  var A=17.62, B=243.12;
+  var g=Math.log(RH/100)+A*T/(B+T);
+  return B*g/(A-g);
+}
+/* Render one row. Deliberately does NOT touch TB_ROWS: it is called from
+   inside a map() over TB_ROWS, and a push here would mutate the array being
+   iterated, doubling it every repaint until the inputs stop existing. */
+function tbLayerRow(i,d_mm,k,on,label){
+  return '<div class="mb-3 rounded-xl border border-white/8 bg-white/[0.02] p-3">'
+    +'<div class="mb-2 flex items-center justify-between">'
+    +'<span class="text-[11px] font-semibold text-white/70">'
+    +esc(TB_ROWS[i].label)+'</span>'
+    +'<button data-rm="'+i+'" class="text-[10px] uppercase tracking-widest text-white/35 hover:text-white">remove</button>'
+    +'</div>'
+    +'<div class="grid gap-3 md:grid-cols-3">'
+    +'<div><label class="ws-label mb-1 block" for="tb-d'+i+'">Thickness (mm)</label>'
+    +'<input id="tb-d'+i+'" type="number" step="0.1" min="0" max="5000" class="ws-input" value="'+d_mm+'"></div>'
+    +'<div><label class="ws-label mb-1 block" for="tb-k'+i+'">Lambda (W/mK)</label>'
+    +'<input id="tb-k'+i+'" type="number" step="0.001" min="0.0001" max="500" class="ws-input" value="'+k+'"></div>'
+    +'<div class="flex items-end pb-1"><label class="flex items-center gap-2 text-[11px] text-white/60">'
+    +'<input id="tb-o'+i+'" type="checkbox" '+(on?'checked':'')+' class="h-4 w-4">'
+    +'<span>include in the build-up</span></label></div>'
+    +'</div></div>';
+}
+function tbPaint(){
+  var e=$('tb-layers'); if(!e) return;
+  e.innerHTML=TB_ROWS.map(function(row,i){
+    return tbLayerRow(i,row.d_mm,row.k,row.on,row.label); }).join('');
+  for(var i=0;i<TB_ROWS.length;i++){
+    (function(i){
+      var onChange=function(){
+        TB_ROWS[i].d_mm=parseFloat($('tb-d'+i).value);
+        TB_ROWS[i].k=parseFloat($('tb-k'+i).value);
+        var o=$('tb-o'+i); TB_ROWS[i].on=!!(o&&o.checked);
+        tbRender();
+      };
+      $('tb-d'+i).addEventListener('input',onChange);
+      $('tb-k'+i).addEventListener('input',onChange);
+      $('tb-o'+i).addEventListener('change',onChange);
+    })(i);
+  }
+  var rm=e.querySelectorAll('[data-rm]');
+  for(var j=0;j<rm.length;j++){
+    (function(j){
+      rm[j].addEventListener('click',function(){
+        TB_ROWS.splice(parseInt(rm[j].getAttribute('data-rm'),10),1);
+        tbPaint(); tbRender();
+      });
+    })(j);
+  }
+}
+function tbPreset(rows,f,ti,to,rh){
+  TB_ROWS=[];
+  rows.forEach(function(p){ TB_ROWS.push({d_mm:p[0],k:p[1],on:true,label:p[2]}); });
+  put('tb-f',f); put('tb-ti',ti); put('tb-to',to); put('tb-rh',rh);
+  tbPaint(); tbRender();
+}
+function tbRender(){
+  err('tb-err','');
+  var rsi=num('tb-rsi',NaN), rse=num('tb-rse',NaN), f=num('tb-f',NaN);
+  var ti=num('tb-ti',NaN), to=num('tb-to',NaN), rh=num('tb-rh',NaN);
+  if(!isFinite(rsi)||rsi<0||rsi>0.5){ err('tb-err','R_si must be 0..0.5 m2K/W'); return null; }
+  if(!isFinite(rse)||rse<0||rse>0.5){ err('tb-err','R_se must be 0..0.5 m2K/W'); return null; }
+  if(!isFinite(f)||f<0||f>1){ err('tb-err','bridge fraction must be 0..1'); return null; }
+  if(!isFinite(ti)||ti<-20||ti>50){ err('tb-err','indoor temperature must be -20..50 C'); return null; }
+  if(!isFinite(to)||to<-40||to>50){ err('tb-err','outdoor temperature must be -40..50 C'); return null; }
+  if(!isFinite(rh)||rh<1||rh>100){ err('tb-err','indoor humidity must be 1..100 %'); return null; }
+  var use=[], i;
+  for(i=0;i<TB_ROWS.length;i++){
+    var row=TB_ROWS[i];
+    var d=parseFloat(($('tb-d'+i)||{}).value), k=parseFloat(($('tb-k'+i)||{}).value);
+    var on=($('tb-o'+i)||{}).checked;
+    if(!on) continue;
+    if(!isFinite(d)||d<0||d>5000){ err('tb-err','layer '+(i+1)+' thickness must be 0..5000 mm'); return null; }
+    if(!isFinite(k)||k<=0||k>500){ err('tb-err','layer '+(i+1)+' lambda must be > 0 and <= 500 W/mK'); return null; }
+    use.push({name:row.label,d:d/1000,k:k,R:(d/1000)/k});
+  }
+  var Rs=0;
+  for(i=0;i<use.length;i++) Rs+=use[i].R;
+  var Rt=rsi+rse+Rs;
+  if(!(Rt>0)){ err('tb-err','total resistance is zero - no layers and no surface films'); return null; }
+  var U=1/Rt;
+  var psi=f*rsi*U;
+  var dew=tbDew(ti,rh);
+  var dtf=f*rsi*U*(ti-to);
+  var tsi=ti-dtf;
+  var risk=tsi<dew;
+  $('tb-big').textContent=r(U,4)+' W/m2K';
+  $('tb-sub').textContent='R_total '+r(Rt,4)+' m2K/W over '+use.length+' layer'+(use.length===1?'':'s');
+  $('tb-big2').textContent=r(psi,6)+' W/m2K';
+  note('tb-band',risk?'CONDENSATION RISK':'NO CONDENSATION RISK',risk?'bad':'good');
+  var rows=[['R_si (surface, inside)',r(rsi,4)+' m2K/W'],
+            ['R_se (surface, outside)',r(rse,4)+' m2K/W']];
+  for(i=0;i<use.length;i++){
+    rows.push([use[i].name+'  '+r(use[i].d*1000,3)+' mm @ '+use[i].k+' W/mK','R = '+r(use[i].R,6)+' m2K/W']);
+  }
+  rows.push(['Sum of layer resistances',r(Rs,6)+' m2K/W']);
+  rows.push(['R_total',r(Rt,6)+' m2K/W']);
+  rows.push(['U = 1 / R_total',r(U,6)+' W/m2K']);
+  rows.push(['f (bridge fraction)',r(f,4)]);
+  rows.push(['PSI = f R_si U',r(psi,6)+' W/m2K']);
+  fill('tb-kv',rows);
+  fill('tb-cond',[
+    ['Indoor air',ti+' C at '+rh+' % RH'],
+    ['Outdoor air',to+' C'],
+    ['Dew point of room air',r(dew,4)+' C'],
+    ['Surface temperature drop',r(dtf,4)+' K'],
+    ['Internal surface temperature',r(tsi,4)+' C'],
+    ['Margin above dew point',r(tsi-dew,4)+' K'],
+    ['Condensation risk',risk?'YES - surface is below dew point':'no - surface is above dew point']]);
+  var txt='R_si            '+r(rsi,4)+'\n'
+    +'R_se            '+r(rse,4)+'\n';
+  for(i=0;i<use.length;i++){
+    txt+=use[i].name+'\n'
+      +'   '+r(use[i].d*1000,4)+' mm / '+use[i].k+' W/mK = '+r(use[i].R,6)+' m2K/W\n';
+  }
+  txt+='R_total         '+r(Rt,6)+' m2K/W\n'
+    +'U               '+r(U,6)+' W/m2K\n'
+    +'f               '+r(f,4)+'\n'
+    +'PSI             '+r(psi,6)+' W/m2K\n'
+    +'Ti / To         '+ti+' / '+to+' C\n'
+    +'dew point       '+r(dew,6)+' C\n'
+    +'surface drop    '+r(dtf,6)+' K\n'
+    +'T_si            '+r(tsi,6)+' C\n'
+    +'condensation    '+(risk?'RISK':'none');
+  $('tb-out').textContent=txt;
+  return {n_layers:use.length,R_total:Rt,U:U,psi:psi,f:f,rsi:rsi,rse:rse,
+          Ti:ti,To:to,rh:rh,dew:dew,drop:dtf,Tsi:tsi,risk:risk,
+          R_first:use.length?use[0].R:null};
+}
+$('tb-add').addEventListener('click',function(){
+  TB_ROWS.push({d_mm:100,k:0.15,on:true,label:'Layer '+(TB_ROWS.length+1)});
+  tbPaint(); tbRender(); });
+$('tb-go').addEventListener('click',function(){tbRender();});
+$('tb-p1').addEventListener('click',function(){
+  tbPreset([[12.5,0.57,'Plasterboard 12.5 mm'],
+            [100,0.040,'Mineral wool 100 mm'],
+            [100,0.15,'Blockwork 100 mm']],0.03,20,0,65); });
+$('tb-p2').addEventListener('click',function(){
+  tbPreset([[100,1.0,'Concrete 100 mm']],1.0,20,0,65); });
+['tb-rsi','tb-rse','tb-f','tb-ti','tb-to','tb-rh'].forEach(function(id){
+  $(id).addEventListener('input',tbRender); });
+window.__T['thermal-bridge']={slug:'thermal-bridge',run:function(i){
+  if(i.rsi!==undefined) put('tb-rsi',i.rsi);
+  if(i.rse!==undefined) put('tb-rse',i.rse);
+  if(i.f!==undefined) put('tb-f',i.f);
+  if(i.ti!==undefined) put('tb-ti',i.ti);
+  if(i.to!==undefined) put('tb-to',i.to);
+  if(i.rh!==undefined) put('tb-rh',i.rh);
+  if(i.layers!==undefined){
+    TB_ROWS=[];
+    i.layers.forEach(function(p){
+      TB_ROWS.push({d_mm:p[0],k:p[1],on:(p.length<3?true:!!p[2]),label:'Layer '+(TB_ROWS.length+1)});
+    });
+    tbPaint();
+  }
+  var v=tbRender();
+  if(!v) return JSON.stringify({error:'invalid'});
+  return JSON.stringify({n_layers:v.n_layers,R_total:r(v.R_total,6),U:r(v.U,6),
+    psi:r(v.psi,6),f:r(v.f,4),dew:r(v.dew,4),Tsi:r(v.Tsi,4),
+    margin:r(v.Tsi-v.dew,4),risk:v.risk});
+}};
+TB_ROWS=[{d_mm:12.5,k:0.57,on:true,label:'Plasterboard 12.5 mm'},
+         {d_mm:100,k:0.040,on:true,label:'Mineral wool 100 mm'},
+         {d_mm:100,k:0.15,on:true,label:'Blockwork 100 mm'}];
+tbPaint(); tbRender();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/thermal-expansion-calculator/">
+      <span class="ocurp-related-n">Thermal Expansion Calculator</span>
+      <span class="ocurp-related-b">Length, area and volume change with temperature for any material, plus the fixed-length ga</span>
+    </a></li>
+    <li><a href="/workspace/tools/thermal-resistance/">
+      <span class="ocurp-related-n">Thermal Resistance Network</span>
+      <span class="ocurp-related-b">Conduction, convection and Stefan-Boltzmann radiation in series and in parallel, solving f</span>
+    </a></li>
+    <li><a href="/workspace/tools/barometric-altitude/">
+      <span class="ocurp-related-n">Barometric Altitude &amp; Hypsometric Pressure</span>
+      <span class="ocurp-related-b">The barometric formula reading an altitude straight off a pressure, beside the hypsometric</span>
+    </a></li>
+    <li><a href="/workspace/tools/blackbody-radiation/">
+      <span class="ocurp-related-n">Blackbody Radiation</span>
+      <span class="ocurp-related-b">Wien&#x27;s peak wavelength and the Stefan-Boltzmann flux, with the luminosity of a star at the</span>
+    </a></li>
+    <li><a href="/workspace/tools/buffer-ph/">
+      <span class="ocurp-related-n">Buffer pH</span>
+      <span class="ocurp-related-b">Henderson-Hasselbalch against the useful pKa +- 1 band, and the exact charge-balance pH fo</span>
+    </a></li>
+    <li><a href="/workspace/tools/buoyancy-calculator/">
+      <span class="ocurp-related-n">Buoyancy Calculator</span>
+      <span class="ocurp-related-b">Archimedes for any object in any fluid: buoyant force, apparent weight and a float or sink</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gear Ratio Designer — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Compound gear train from teeth counts: output rpm. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/gear-ratio-designer/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Gear Ratio Designer">
+<meta property="og:description" content="Compound gear train from teeth counts: output rpm. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/gear-ratio-designer/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Gear Ratio Designer on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Gear Ratio Designer">
+<meta name="twitter:description" content="Compound gear train from teeth counts: output rpm. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Gear Ratio Designer on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Gear Ratio Designer","url":"https://ocurp.com/workspace/tools/gear-ratio-designer/","description":"Compound gear train from teeth counts: output rpm. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Gear Ratio Designer</h1>
+      <p class="mt-1 text-xs text-white/40">MECHANICAL &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Build a compound gear train from teeth counts and read the output speed, overall ratio, torque after a stated efficiency, and the input torque a service factor demands. Idlers flip the direction of the output and never change the ratio.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div><label class="ws-label mb-2 block" for="gr-rpm">Input speed (RPM)</label>
+      <input id="gr-rpm" type="number" class="ws-input" value="90" step="any"></div>
+    <div><label class="ws-label mb-2 block" for="gr-tin">Input torque (N&middot;m)</label>
+      <input id="gr-tin" type="number" class="ws-input" value="10" step="any"></div>
+    <div><label class="ws-label mb-2 block" for="gr-eff">Efficiency (%)</label>
+      <input id="gr-eff" type="number" class="ws-input" value="90" min="0" max="100" step="0.1"></div>
+    <div><label class="ws-label mb-2 block" for="gr-dir">Input rotation</label>
+      <select id="gr-dir" class="ws-input !w-40">
+        <option value="CW" selected>Clockwise</option>
+        <option value="CCW">Counter-clockwise</option>
+      </select></div>
+  </div>
+  <div class="mt-5">
+    <div class="ws-label mb-2">Gear stages</div>
+    <div id="gr-stages" class="space-y-2"></div>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <button id="gr-add" class="ws-btn-ghost !w-auto !px-3 !py-2">Add a stage</button>
+      <button id="gr-preset" class="ws-btn-ghost !w-auto !px-3 !py-2">Load a preset train</button>
+      <button id="gr-run" class="ws-btn !w-auto !px-6">Design it</button>
+      <button id="gr-cp" class="ws-btn-ghost !w-auto !px-3 !py-2">Copy result</button>
+    </div>
+  </div>
+  <div class="mt-3" id="err"></div>
+</div>
+<div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+<section class="ws-panel mt-4 p-5">
+  <div class="ws-label mb-3">Stage by stage</div>
+  <div class="overflow-x-auto"><table class="w-full text-left text-sm">
+    <thead class="ws-label"><tr>
+      <th class="py-2 pr-4">Stage</th><th class="py-2 pr-4">Driver</th>
+      <th class="py-2 pr-4">Driven</th><th class="py-2 pr-4">Idler</th>
+      <th class="py-2 pr-4">Stage ratio</th><th class="py-2 pr-4">Speed in</th>
+      <th class="py-2 pr-4">Speed out</th><th class="py-2 pr-4">Rotation</th></tr></thead>
+    <tbody id="gr-tbl"></tbody></table></div>
+</section>
+<section class="ws-panel mt-4 p-5">
+  <div class="ws-label mb-3">Train result</div>
+  <div id="gr-out"></div>
+</section>
+<section class="ws-panel mt-4 p-5">
+  <div class="ws-label mb-3">Load and service factor</div>
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div><label class="ws-label mb-2 block" for="gr-load">Working load at output (N&middot;m)</label>
+      <input id="gr-load" type="number" class="ws-input" value="45" step="any"></div>
+    <div><label class="ws-label mb-2 block" for="gr-sf">Service factor</label>
+      <input id="gr-sf" type="number" class="ws-input" value="1.6" step="0.05" min="1"></div>
+    <div><label class="ws-label mb-2 block" for="gr-ratio">Target overall ratio (blank = as built)</label>
+      <input id="gr-ratio" type="number" class="ws-input" step="any" placeholder="auto"></div>
+  </div>
+  <div class="mt-4" id="gr-load-out"></div>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function $(id){return document.getElementById(id);}
+function r(n,d){if(!isFinite(n))return String(n);var f=Math.pow(10,d===undefined?6:d);var v=Math.round(n*f)/f;if(Object.is(v,-0))v=0;return v;}
+function grp(n,d){
+  var v=r(n,d===undefined?2:d); if(typeof v!=='number') return String(v);
+  var s=String(Math.abs(v)), parts=s.split('.'), sg=v<0?'-':'';
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  while(parts.length<2)parts.push('');
+  if(d>0&&parts[1].length<d)parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
+  return sg+parts.join('.');
+}
+function row(c){return '<tr class="border-t border-white/5">'+c.map(function(x){return '<td class="py-2 pr-4">'+x+'</td>';}).join('')+'</tr>';}
+function kv(k,v){return '<div class="ws-kv"><span>'+esc(k)+'</span><span>'+esc(v)+'</span></div>';}
+function setErr(m){var e=$('err');if(!e)return;e.textContent=m?'\\u2717 '+m:'';e.style.color=m?'#f87171':'';}
+function card(k,v,span){
+  return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4"'+(span?' style="grid-column:span '+span+'"':'')+'>'
+    +'<div class="ws-label">'+esc(k)+'</div><div class="mt-1 font-display text-lg font-black text-accent">'+esc(v)+'</div></div>';
+}
+function show(list){$('stats').innerHTML=list.map(function(p){return card(p[0],p[1],p[2]);}).join('');}
+function cp(btn){var el=$(btn.getAttribute('data-t'));var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t);}catch(e){}
+  btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy';},1200);}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn);el.addEventListener('change',fn);});}
+
+var GR_PRESETS = [
+  [[20,50,0],[20,80,0]],
+  [[16,64,0],[20,60,24],[18,54,0]],
+  [[12,60,18],[15,45,0]],
+  [[30,75,20],[20,60,0],[24,48,0]]
+];
+function grStages(i){
+  /* Normalise the compact array form the test hook uses: a stage may arrive as
+     [driver, driven, idlerFlag] instead of {driver, driven, idler}. Without
+     this the array form reached solveGr() with s.driver undefined and every
+     stage threw "needs teeth counts above zero" -- the page rendered its own
+     stage rows from the arrays, so the input looked accepted right up until
+     the solve, which is the flappy-bird shape of defect: it loads, it draws,
+     and it cannot compute. */
+  function norm(s){
+    if (!s) return s;
+    if (Array.isArray(s)) return { driver: s[0], driven: s[1], idler: !!s[2] };
+    return { driver: s.driver, driven: s.driven, idler: !!s.idler };
+  }
+  if (i && i.stages) return i.stages.map(norm);
+  if (i && i.preset !== undefined) return GR_PRESETS[i.preset];
+  /* Read whatever is in the DOM right now. */
+  var out = [], boxes = document.querySelectorAll('#gr-stages .gr-stage');
+  for (var k = 0; k < boxes.length; k++){
+    var b = boxes[k];
+    out.push({
+      driver: Number(b.querySelector('.gr-driver').value),
+      driven: Number(b.querySelector('.gr-driven').value),
+      idler:  b.querySelector('.gr-idler').checked
+    });
+  }
+  return out;
+}
+function solveGr(i){
+  i = i || {};
+  var o = { rpm:  i.rpm  !== undefined ? Number(i.rpm)  : Number($('gr-rpm').value),
+            tIn:  i.tIn  !== undefined ? Number(i.tIn)  : Number($('gr-tin').value),
+            eff:  i.eff  !== undefined ? Number(i.eff)  : Number($('gr-eff').value),
+            dir:  i.dir  || $('gr-dir').value,
+            load: i.load !== undefined ? Number(i.load) : Number($('gr-load').value),
+            sf:   i.sf   !== undefined ? Number(i.sf)   : Number($('gr-sf').value),
+            target: (i.target !== undefined && i.target !== '' && isFinite(Number(i.target)))
+                    ? Number(i.target) : null };
+  if (o.eff > 100) o.eff = o.eff / 100;            // accept either 90 or 0.9
+  var effFrac = (o.eff > 1) ? o.eff / 100 : o.eff;
+  if (!isFinite(o.rpm)) throw new Error('input speed must be a number');
+  if (!isFinite(o.tIn)) throw new Error('input torque must be a number');
+  if (effFrac <= 0 || effFrac > 1) throw new Error('efficiency must be above 0% and at most 100%');
+  var stages = grStages(i);
+  if (!stages.length) throw new Error('a gear train needs at least one stage');
+  o.stages = stages;
+  o.effFrac = effFrac;
+
+  /* The overall ratio is the PRODUCT of driven/driver across the stages. An
+     idler sits between driver and driven and reverses the driven gear, so it
+     multiplies by (driven/idler) then (idler/driver) - the idler teeth cancel
+     exactly. It changes the direction of the output, never the ratio. */
+  var ratio = 1, flips = 0, speed = o.rpm, dir = o.dir, rows = [];
+  stages.forEach(function(s, n){
+    if (!(s.driver > 0) || !(s.driven > 0)) throw new Error('stage ' + (n + 1) + ' needs teeth counts above zero');
+    var sr = s.driven / s.driver;
+    var inSpeed = speed, inDir = dir;
+    /* one mesh reverses, the optional idler mesh reverses again */
+    dir = (s.idler ? 2 : 1) % 2 === 0 ? inDir : (inDir === 'CW' ? 'CCW' : 'CW');
+    if (s.idler) flips += 1;
+    speed = inSpeed / sr;
+    ratio *= sr;
+    rows.push({ n: n + 1, driver: s.driver, driven: s.driven, idler: !!s.idler,
+                ratio: sr, inSpeed: inSpeed, outSpeed: speed,
+                inDir: inDir, outDir: dir });
+  });
+  o.ratio = ratio;
+  o.outRpm = speed;
+  o.outDir = dir;
+  o.idlerFlips = flips;
+  o.idlers = stages.filter(function(s){ return s.idler; }).length;
+  o.torqueOut = o.tIn * ratio * effFrac;          /* power in = power out x eff */
+  o.powerInW  = o.tIn * o.rpm * (2 * Math.PI / 60);
+  o.powerOutW = o.torqueOut * o.outRpm * (2 * Math.PI / 60);
+  o.torqueLoss = o.tIn * ratio - o.torqueOut;
+  o.rows = rows;
+
+  /* Working load and service factor. A service factor multiplies the working
+     load to cover shock, starts/stops and wear, so the shaft has to carry
+     load x SF at the output, which the (lossy) train turns back into an
+     input torque. */
+  if (isFinite(o.load) && o.load >= 0){
+    o.designLoad = o.load * (isFinite(o.sf) && o.sf > 0 ? o.sf : 1);
+    o.inTorqueNeeded = o.designLoad / (ratio * effFrac);
+    /* Where the as-built ratio sits against the ratio the caller asked for. */
+    if (o.target && o.target > 0) o.ratioErrorPct = 100 * (ratio - o.target) / o.target;
+    o.spread = (isFinite(o.sf) && o.sf > 0) ? o.designLoad / o.load : null;
+  }
+  return o;
+}
+
+function grRenderStages(){
+  var boxes = document.querySelectorAll('#gr-stages .gr-stage');
+  boxes.forEach(function(b, i){
+    b.querySelector('.gr-name').textContent = 'Stage ' + (i + 1);
+    b.querySelector('.gr-del').style.display = boxes.length > 1 ? '' : 'none';
+  });
+}
+function grDrawStage(s){
+  s = s || { driver: 20, driven: 40, idler: false };
+  return '<div class="gr-stage ws-panel p-3">'
+    + '<div class="flex flex-wrap items-end gap-3">'
+    + '<span class="ws-label gr-name w-20">Stage</span>'
+    + '<div><label class="ws-label mb-1 block">Driver teeth</label>'
+    + '<input class="ws-input gr-driver" type="number" min="3" step="1" value="' + s.driver + '"></div>'
+    + '<div><label class="ws-label mb-1 block">Driven teeth</label>'
+    + '<input class="ws-input gr-driven" type="number" min="3" step="1" value="' + s.driven + '"></div>'
+    + '<label class="flex items-center gap-2 pb-3 text-sm text-white/70">'
+    + '<input class="gr-idler accent-[#FF5F1F]" type="checkbox"' + (s.idler ? ' checked' : '') + '> Idler in between</label>'
+    + '<button class="ws-btn-ghost gr-del !w-auto !px-3 !py-2" onclick="grDel(this)">Remove</button>'
+    + '</div></div>';
+}
+function grAdd(s){ $('gr-stages').insertAdjacentHTML('beforeend', grDrawStage(s)); grRenderStages(); bindStages(); }
+function grDel(b){ b.closest('.gr-stage').remove(); grRenderStages(); runGr(); }
+function bindStages(){
+  document.querySelectorAll('#gr-stages input').forEach(function(el){
+    el.removeEventListener('input', runGr);
+    el.addEventListener('input', runGr);
+  });
+}
+function renderGr(o){
+  setErr('');
+  $('gr-tbl').innerHTML = o.rows.map(function(s){
+    return row(['Stage ' + s.n, String(s.driver), String(s.driven), s.idler ? 'yes' : 'no',
+                grp(s.ratio, 4) + ' : 1', grp(s.inSpeed, 4) + ' rpm',
+                grp(s.outSpeed, 4) + ' rpm', s.inDir + ' \u2192 ' + s.outDir]);
+  }).join('');
+  $('gr-out').innerHTML =
+      kv('Overall ratio', grp(o.ratio, 6) + ' : 1  (output turns per input turn)')
+    + kv('Output speed', grp(o.outRpm, 6) + ' rpm')
+    + kv('Input rotation', o.dir)
+    + kv('Output rotation', o.outDir)
+    + kv('Idlers in the train', o.idlers + '  (each reverses direction, none changes the ratio)')
+    + kv('Overall reduction', o.ratio >= 1 ? grp(o.ratio, 4) + 'x slower' : grp(1 / o.ratio, 4) + 'x faster')
+    + kv('Input power', grp(o.powerInW, 3) + ' W')
+    + kv('Output torque (after ' + grp((1 - o.effFrac) * 100, 2) + ' % loss)', grp(o.torqueOut, 4) + ' N\u00B7m')
+    + kv('Torque lost in the train', grp(o.torqueLoss, 4) + ' N\u00B7m')
+    + kv('Output power', grp(o.powerOutW, 3) + ' W')
+    + kv('Power check', Math.abs(o.powerOutW - o.powerInW * o.effFrac) < 1e-6
+        ? 'output = input \u00D7 efficiency, exactly' : 'MISMATCH');
+  var lo = '';
+  if (o.designLoad !== undefined){
+    lo = kv('Working load at the output', grp(o.load, 4) + ' N\u00B7m')
+       + kv('Service factor applied', grp(o.sf, 3) + ' \u00D7')
+       + kv('Design load', grp(o.designLoad, 4) + ' N\u00B7m')
+       + kv('Input torque needed to hold it', grp(o.inTorqueNeeded, 4) + ' N\u00B7m')
+       + kv('Headroom on the input shaft', grp(o.tIn - o.inTorqueNeeded, 4) + ' N\u00B7m')
+       + (o.ratioErrorPct === undefined ? ''
+          : kv('Against the target ratio of ' + grp(o.target, 4), (o.ratioErrorPct >= 0 ? '+' : '') + grp(o.ratioErrorPct, 3) + ' %'));
+  }
+  $('gr-load-out').innerHTML = lo || '<p class="text-xs text-white/40">Enter a working load above.</p>';
+  show([['Overall ratio', grp(o.ratio, 3) + ':1'],
+        ['Output speed', grp(o.outRpm, 3) + ' rpm'],
+        ['Output torque', grp(o.torqueOut, 3) + ' N\u00B7m'],
+        ['Output rotation', o.outDir]]);
+}
+function runGr(){ var o; try { o = solveGr(); renderGr(o); } catch (e){ setErr(e.message); show([]); } return o; }
+$('gr-stages').innerHTML = grDrawStage({ driver: 20, driven: 50, idler: false })
+                        + grDrawStage({ driver: 20, driven: 80, idler: false });
+$('gr-add').onclick = function(){ grAdd({ driver: 16, driven: 64, idler: false }); runGr(); };
+$('gr-preset').onclick = function(){
+  var n = (grPresetN = ((grPresetN === undefined ? -1 : grPresetN) + 1) % GR_PRESETS.length);
+  $('gr-stages').innerHTML = GR_PRESETS[n].map(function(s){
+    return grDrawStage({ driver: s[0], driven: s[1], idler: !!s[2] }); }).join('');
+  grRenderStages(); bindStages(); runGr();
+};
+$('gr-run').onclick = runGr;
+$('gr-cp').onclick = function(){ cp({ getAttribute:function(){return 'gr-out';}, textContent:'' }); };
+bind(['gr-rpm','gr-tin','gr-eff','gr-dir','gr-load','gr-sf','gr-ratio'], runGr);
+grRenderStages(); bindStages(); runGr();
+
+window.__T = window.__T || {};
+window.__T['gear-ratio-designer'] = {
+  slug: 'gear-ratio-designer',
+  run: function(i){
+    i = i || {};
+    var pairs = [['rpm','gr-rpm'],['tIn','gr-tin'],['eff','gr-eff'],['dir','gr-dir'],
+                 ['load','gr-load'],['sf','gr-sf'],['target','gr-ratio']];
+    pairs.forEach(function(p){ if (i[p[0]] !== undefined) $(p[1]).value = i[p[0]]; });
+    if (i.stages){
+      $('gr-stages').innerHTML = i.stages.map(function(s){
+        return grDrawStage({ driver: s[0] !== undefined ? s[0] : s.driver,
+                             driven: s[1] !== undefined ? s[1] : s.driven,
+                             idler: !!(s[2] !== undefined ? s[2] : s.idler) }); }).join('');
+      bindStages();
+    }
+    /* Stages were just written into the DOM as [driver, driven, idler] triples,
+       which is a DIFFERENT shape from the {driver, driven, idler} objects
+       solveGr reads. Hand it the DOM copy so it reads the rendered inputs
+       instead of the raw triples, whose .driver is undefined. */
+    var arg = {};
+    Object.keys(i).forEach(function(k){ if (k !== 'stages') arg[k] = i[k]; });
+    var o = solveGr(arg);
+    renderGr(o);
+    return o;
+  }
+};
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/ratio-simplifier/">
+      <span class="ocurp-related-n">Ratio Simplifier</span>
+      <span class="ocurp-related-b">Reduce a ratio with GCD, scale it, split a whole, and convert seven unit pairs.</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+    </a></li>
+    <li><a href="/workspace/tools/apy-vs-apr-calculator/">
+      <span class="ocurp-related-n">APY vs APR Calculator</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns, and exactly ho</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

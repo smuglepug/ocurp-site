@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decibel Calculator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Sound pressure level. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/decibel-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Decibel Calculator">
+<meta property="og:description" content="Sound pressure level. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/decibel-calculator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Decibel Calculator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Decibel Calculator">
+<meta name="twitter:description" content="Sound pressure level. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Decibel Calculator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Decibel Calculator","url":"https://ocurp.com/workspace/tools/decibel-calculator/","description":"Sound pressure level. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Decibel Calculator</h1>
+      <p class="mt-1 text-xs text-white/40">audio &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Convert a sound pressure to SPL against the 20 microPascal threshold of hearing, add independent sources by intensity rather than by adding decibels, and propagate a level with the inverse-distance law. Click a reference level to load it. Every line of the read-out shows the arithmetic so you can redo it on paper.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="grid gap-4 md:grid-cols-3">
+    <div><label class="ws-label mb-2 block" for="db-p">Sound pressure (Pa)</label>
+      <input id="db-p" type="number" step="any" class="ws-input" value="0.2"></div>
+    <div><label class="ws-label mb-2 block" for="db-l1">Level 1 (dB)</label>
+      <input id="db-l1" type="number" step="any" class="ws-input" value="85"></div>
+    <div><label class="ws-label mb-2 block" for="db-l2">Level 2 (dB)</label>
+      <input id="db-l2" type="number" step="any" class="ws-input" value="88"></div>
+    <div><label class="ws-label mb-2 block" for="db-n">N identical sources at Level 1</label>
+      <input id="db-n" type="number" step="1" min="1" class="ws-input" value="8"></div>
+    <div><label class="ws-label mb-2 block" for="db-d1">Reference distance d1 (m)</label>
+      <input id="db-d1" type="number" step="any" min="0.0001" class="ws-input" value="1"></div>
+    <div><label class="ws-label mb-2 block" for="db-d2">New distance d2 (m)</label>
+      <input id="db-d2" type="number" step="any" min="0.0001" class="ws-input" value="4"></div>
+  </div>
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <button id="db-go" class="ws-btn" style="width:auto">Compute</button>
+    <button id="db-cl" class="ws-btn-ghost" style="width:auto">Reset</button>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="db-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Reference levels - click one to load it</div>
+  <div id="db-chips" class="flex flex-wrap gap-2"></div>
+  <div class="mt-4 text-[11px] leading-relaxed text-white/35">
+    Threshold of hearing p0 = 20 &micro;Pa = 20&times;10<sup>-6</sup> Pa in air at
+    20&nbsp;&deg;C. Levels are referenced to that pressure, not to 1&nbsp;&micro;Pa,
+    and the 20log form is the pressure-ratio definition; the 10log form is the
+    matching intensity definition.
+  </div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Headline</div>
+  <div class="mt-3 text-4xl font-display font-extrabold text-accent" id="db-big"></div>
+  <div class="mt-1 text-[11px] text-white/45" id="db-sub"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Results</div>
+  <div id="db-kv"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Read-out</div>
+  <pre id="db-out" class="ws-out overflow-x-auto whitespace-pre-wrap"></pre>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(!isFinite(n)) return 0;
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true})); }
+function kvs(list){ return list.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function bad(id,msg){ var e=$(id); if(!e) return;
+  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':''; }
+window.__T=window.__T||{};
+
+var DB_REF=[
+  {l:20, n:'audible threshold, 10 m'},
+  {l:40, n:'library, quiet room'},
+  {l:60, n:'normal conversation'},
+  {l:70, n:'vacuum cleaner'},
+  {l:85, n:'hearing-damage risk, 8 h'},
+  {l:100, n:'hand drill / nightclub'},
+  {l:120, n:'jet engine at 100 m'},
+  {l:140, n:'pain threshold'}
+];
+(function(){
+  var box=$('db-chips');
+  box.innerHTML=DB_REF.map(function(c){
+    return '<button class="ws-chip" data-l="'+c.l+'" title="'+esc(c.n)+'">'
+      +c.l+' dB</button>'; }).join('');
+  box.addEventListener('click',function(ev){
+    var b=ev.target.closest?ev.target.closest('button[data-l]'):null;
+    if(!b) return;
+    put('db-l1',parseFloat(b.getAttribute('data-l'))); dbRender();
+  });
+})();
+function dbSPL(p){ return 20*Math.log(p/(20e-6))/Math.LN10; }
+function dbAdd(a,b){ return 10*Math.log10(Math.pow(10,a/10)+Math.pow(10,b/10)); }
+function dbN(L,n){ return 10*Math.log10(n*Math.pow(10,L/10)); }
+function dbDist(L1,d1,d2){ return L1+20*Math.log10(d2/d1); }
+function dbNum(id,def){ var e=$(id); if(!e) return def;
+  var v=parseFloat(e.value); return isFinite(v)?v:def; }
+function dbRender(){
+  bad('db-err','');
+  var p=dbNum('db-p',NaN), L1=dbNum('db-l1',NaN), L2=dbNum('db-l2',NaN);
+  var n=Math.round(dbNum('db-n',1)), d1=dbNum('db-d1',NaN), d2=dbNum('db-d2',NaN);
+  if(!(p>0)){ bad('db-err','Sound pressure must be greater than 0 Pa.'); return null; }
+  if(!isFinite(L1)){ bad('db-err','Level 1 must be a number.'); return null; }
+  if(n<1) n=1;
+  var spl=dbSPL(p);
+  var two=dbAdd(L1,L2);
+  var nn=dbN(L1,n);
+  var drop=dbDist(L1,d1,d2);
+  var delta=20*Math.log10(d2/d1);
+  $('db-big').textContent=r(two,2)+' dB';
+  $('db-sub').textContent=n+' identical '+L1+' dB sources = '+r(nn,2)+' dB';
+  fill('db-kv',[
+    ['SPL of '+p+' Pa', r(spl,2)+' dB  (20log10('+p+'/20e-6))'],
+    ['Two sources '+L1+' + '+L2+' dB', r(two,4)+' dB  (+'+r(two-L1,2)+' dB)'],
+    [n+' sources at '+L1+' dB', r(nn,4)+' dB  (+'+r(10*Math.log10(n),2)+' dB)'],
+    [r(d1,4)+' m -> '+r(d2,4)+' m', r(drop,4)+' dB  ('+(delta>=0?'+':'')+r(delta,4)+' dB)'],
+    ['Loudest of the inputs', r(Math.max(L1,L2),2)+' dB'],
+    ['Quietest of the inputs', r(Math.min(L1,L2),2)+' dB']
+  ]);
+  $('db-out').textContent=
+      'SPL      20*log10('+p+' / 20e-6) = '+r(spl,4)+' dB\n\n'
+    + 'pair     10*log10(10^('+L1+'/10) + 10^('+L2+'/10)) = '+r(two,4)+' dB\n'
+    + '         gain over the louder source = '+r(two-L1,4)+' dB\n\n'
+    + n+'x      10*log10('+n+' * 10^('+L1+'/10)) = '+r(nn,4)+' dB\n'
+    + '         gain over one source = 10*log10('+n+') = '+r(10*Math.log10(n),4)+' dB\n\n'
+    + 'distance L1 + 20*log10('+d2+' / '+d1+') = '+r(drop,4)+' dB  ('+(delta>=0?'+':'')+r(delta,4)+' dB)\n'
+    + '         inverse-square: doubling the distance costs 6.0206 dB';
+  return {spl:spl,pair:two,n:nn,drop:drop,delta:delta};
+}
+$('db-go').addEventListener('click',dbRender);
+$('db-cl').addEventListener('click',function(){
+  put('db-p',0.2); put('db-l1',85); put('db-l2',88); put('db-n',8);
+  put('db-d1',1); put('db-d2',4); dbRender(); });
+['db-p','db-l1','db-l2','db-n','db-d1','db-d2'].forEach(function(id){
+  $(id).addEventListener('input',dbRender); });
+window.__T['decibel-calculator']={slug:'decibel-calculator',run:function(i){
+  if(i.p!==undefined) put('db-p',i.p);
+  if(i.l1!==undefined) put('db-l1',i.l1);
+  if(i.l2!==undefined) put('db-l2',i.l2);
+  if(i.n!==undefined) put('db-n',i.n);
+  if(i.d1!==undefined) put('db-d1',i.d1);
+  if(i.d2!==undefined) put('db-d2',i.d2);
+  var v=dbRender();
+  if(!v) return JSON.stringify({error:'invalid'});
+  return JSON.stringify({spl:r(v.spl,4),pair:r(v.pair,4),nIdentical:r(v.n,4),
+    atDistance:r(v.drop,4),delta:r(v.delta,4)});
+}};
+dbRender();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/doppler-shift-calculator/">
+      <span class="ocurp-related-n">Doppler Shift Calculator</span>
+      <span class="ocurp-related-b">Acoustic Doppler for a moving source and observer, and the relativistic longitudinal facto</span>
+    </a></li>
+    <li><a href="/workspace/tools/audio-bitrate-calculator/">
+      <span class="ocurp-related-n">Audio Bitrate Calculator</span>
+      <span class="ocurp-related-b">Work out the real file size of an audio file at any bitrate, sample rate or channel count.</span>
+    </a></li>
+    <li><a href="/workspace/tools/audio-spectrum-analyzer/">
+      <span class="ocurp-related-n">Audio Spectrum Analyzer</span>
+      <span class="ocurp-related-b">Radix-2 FFT of any audio file with band energies, spectral centroid and a peak-hold readou</span>
+    </a></li>
+    <li><a href="/workspace/tools/audio-trim-cut/">
+      <span class="ocurp-related-n">Audio Trim &amp; Cut</span>
+      <span class="ocurp-related-b">Trim to exact times with fades, resample, fold to mono or stereo, and export a real WAV fi</span>
+    </a></li>
+    <li><a href="/workspace/tools/frequency-generator/">
+      <span class="ocurp-related-n">Frequency Generator</span>
+      <span class="ocurp-related-b">Play any frequency from 1 Hz to 22 kHz, pick a waveform, run a sweep and see the wave live</span>
+    </a></li>
+    <li><a href="/workspace/tools/morse-code-check/">
+      <span class="ocurp-related-n">Morse Code Checker</span>
+      <span class="ocurp-related-b">Translate text to Morse and back, then play the symbols as real tones through Web Audio.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

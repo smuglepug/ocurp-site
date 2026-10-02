@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Earthquake Magnitude Converter — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Convert between Mw. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/earthquake-magnitude/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Earthquake Magnitude Converter">
+<meta property="og:description" content="Convert between Mw. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/earthquake-magnitude/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Earthquake Magnitude Converter on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Earthquake Magnitude Converter">
+<meta name="twitter:description" content="Convert between Mw. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Earthquake Magnitude Converter on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Earthquake Magnitude Converter","url":"https://ocurp.com/workspace/tools/earthquake-magnitude/","description":"Convert between Mw. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Earthquake Magnitude Converter</h1>
+      <p class="mt-1 text-xs text-white/40">SCIENCE & ENGINEERING &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Convert a reported magnitude between the moment scale and the body-wave, surface-wave and local scales, then read the radiated energy in joules and in tonnes of TNT. The energy step is the real one: 10^1.5 = 31.6 per whole unit of magnitude.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-6" style="grid-column:1/-1">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div><label class="ws-label mb-2 block" for="eq-scale">Reported scale</label>
+      <select id="eq-scale" class="ws-input !w-40">
+        <option value="mw" selected>Mw &mdash; moment magnitude</option>
+        <option value="mb">mb &mdash; body-wave (short period)</option>
+        <option value="Ms">Ms &mdash; surface-wave</option>
+        <option value="ML">ML &mdash; local / Richter</option>
+      </select></div>
+    <div><label class="ws-label mb-2 block" for="eq-mag">Magnitude</label>
+      <input id="eq-mag" type="number" class="ws-input" value="5.0" step="0.1"></div>
+    <div><label class="ws-label mb-2 block" for="eq-other">Compare against</label>
+      <select id="eq-other" class="ws-input !w-40">
+        <option value="mw" selected>Mw</option>
+        <option value="mb">mb</option>
+        <option value="Ms">Ms</option>
+        <option value="ML">ML</option>
+      </select></div>
+    <div><label class="ws-label mb-2 block" for="eq-other-mag">Its magnitude</label>
+      <input id="eq-other-mag" type="number" class="ws-input" value="4.0" step="0.1"></div>
+  </div>
+  <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div><label class="ws-label mb-2 block" for="eq-tnt">TNT unit</label>
+      <select id="eq-tnt" class="ws-input !w-40">
+        <option value="t" selected>tonnes of TNT (4.184 MJ/kg)</option>
+        <option value="kt">kilotonnes</option>
+        <option value="Mt">megatonnes</option>
+      </select></div>
+    <div class="flex items-end"><button id="eq-run" class="ws-btn">Convert</button></div>
+    <div class="flex items-end"><button id="eq-cp" class="ws-btn-ghost">Copy readout</button></div>
+    <div class="flex items-end"><button id="eq-preset" class="ws-btn-ghost">Load a real event</button></div>
+  </div>
+  <div class="mt-3" id="err"></div>
+</div>
+<div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+<section class="ws-panel mt-4 p-5">
+  <div class="ws-label mb-3">Converted magnitude &mdash; every scale, side by side</div>
+  <div id="eq-all"></div>
+</section>
+<section class="ws-panel mt-4 p-5">
+  <div class="ws-label mb-3">Energy at the converted Mw</div>
+  <div id="eq-energy"></div>
+</section>
+<section class="ws-panel mt-4 p-5">
+  <div class="ws-label mb-3">Energy ratio</div>
+  <div id="eq-ratio"></div>
+</section>
+<section class="ws-panel mt-4 p-5">
+  <div class="ws-label mb-3">The relations being used</div>
+  <div id="eq-notes" class="text-xs leading-6 text-white/50"></div>
+</section>
+
+  </div>
+  <div class="mt-8">
+<script>
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function $(id){return document.getElementById(id);}
+function r(n,d){if(!isFinite(n))return String(n);var f=Math.pow(10,d===undefined?6:d);var v=Math.round(n*f)/f;if(Object.is(v,-0))v=0;return v;}
+function grp(n,d){
+  var v=r(n,d===undefined?2:d); if(typeof v!=='number') return String(v);
+  var s=String(Math.abs(v)), parts=s.split('.'), sg=v<0?'-':'';
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  while(parts.length<2)parts.push('');
+  if(d>0&&parts[1].length<d)parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
+  return sg+parts.join('.');
+}
+function row(c){return '<tr class="border-t border-white/5">'+c.map(function(x){return '<td class="py-2 pr-4">'+x+'</td>';}).join('')+'</tr>';}
+function kv(k,v){return '<div class="ws-kv"><span>'+esc(k)+'</span><span>'+esc(v)+'</span></div>';}
+function setErr(m){var e=$('err');if(!e)return;e.textContent=m?'\\u2717 '+m:'';e.style.color=m?'#f87171':'';}
+function card(k,v,span){
+  return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4"'+(span?' style="grid-column:span '+span+'"':'')+'>'
+    +'<div class="ws-label">'+esc(k)+'</div><div class="mt-1 font-display text-lg font-black text-accent">'+esc(v)+'</div></div>';
+}
+function show(list){$('stats').innerHTML=list.map(function(p){return card(p[0],p[1],p[2]);}).join('');}
+function cp(btn){var el=$(btn.getAttribute('data-t'));var t=el?el.textContent:'';
+  try{navigator.clipboard.writeText(t);}catch(e){}
+  btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy';},1200);}
+function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
+  el.addEventListener('input',fn);el.addEventListener('change',fn);});}
+
+/* Scordilis (2006) empirical linear relations that take a reported magnitude on
+   a body-wave / surface-wave / local scale to an equivalent moment magnitude.
+   Each scale has a low branch and a high branch; the breakpoint is where the
+   two fit lines cross. */
+var EQ_REL = {
+  mb:  [{ max: 3.5, a: 2.0/3, b: 1.067 }, { max: 9.9, a: 0.56, b: 2.40 }],
+  Ms:  [{ max: 4.0, a: 0.67, b: 1.90 }, { max: 9.9, a: 0.67, b: 2.37 }],
+  ML:  [{ max: 4.0, a: 0.67, b: 1.90 }, { max: 9.9, a: 0.67, b: 2.37 }]
+};
+/* Gutenberg-Richter in SI joules: log10(E) = 1.5*Mw + 4.8.
+   (The erg form is log10 E = 1.5*M + 11.8, the same equation.) */
+function eqToMw(scale, mag){
+  if (scale === 'mw') return mag;
+  var br = EQ_REL[scale];
+  if (!br) throw new Error('unknown scale ' + scale);
+  var p = (mag < br[0].max) ? br[0] : br[1];
+  return p.a * mag + p.b;
+}
+function eqFromMw(scale, mw){
+  if (scale === 'mw') return mw;
+  var br = EQ_REL[scale];
+  var p = (mw - br[0].b) / br[0].a < br[0].max ? br[0] : br[1];
+  return (mw - p.b) / p.a;
+}
+function eqEnergyJ(mw){ return Math.pow(10, 1.5 * mw + 4.8); }
+var J_PER_TNT_TONNE = 4.184e9;   // 1 tonne TNT = 4.184 GJ
+var TNT_DIV = { t: 1, kt: 1e3, Mt: 1e6 };
+
+function solveEq(i){
+  i = i || {};
+  var scale = i.scale || $('eq-scale').value;
+  var mag   = i.mag   !== undefined ? Number(i.mag)   : Number($('eq-mag').value);
+  var oScale= i.oScale|| $('eq-other').value;
+  var oMag  = i.oMag  !== undefined ? Number(i.oMag)  : Number($('eq-other-mag').value);
+  var tntU  = i.tntU  || $('eq-tnt').value;
+  var o = { scale: scale, mag: mag, oScale: oScale, oMag: oMag, tntU: tntU };
+  if (!isFinite(mag) || !isFinite(oMag)) throw new Error('magnitudes must be numbers');
+  if (mag < -2 || mag > 10) throw new Error('magnitude ' + mag + ' is outside the scale');
+  if (oMag < -2 || oMag > 10) throw new Error('comparison magnitude ' + oMag + ' is outside the scale');
+  o.mw = eqToMw(scale, mag);
+  o.oMw = eqToMw(oScale, oMag);
+  o.energyJ = eqEnergyJ(o.mw);
+  o.energyKilotons = o.energyJ / 1000 / J_PER_TNT_TONNE;
+  o.tntValue = o.energyJ / J_PER_TNT_TONNE / (TNT_DIV[tntU] || 1);
+  o.tntUnit = tntU;
+  o.dMw = o.mw - o.oMw;
+  o.ratio = Math.pow(10, 1.5 * o.dMw);
+  o.all = {};
+  ['mw','mb','Ms','ML'].forEach(function(s){ o.all[s] = eqFromMw(s, o.mw); });
+  return o;
+}
+
+var EQ_PRESETS = [
+  ['mw', 7.8, '2018 Fiji, Mw 7.8'],
+  ['mb', 7.8, '2018 Fiji, mb 7.8'],
+  ['Ms', 6.5, '2010 Haiti, Ms 6.5'],
+  ['ML', 6.8, '1989 Loma Prieta, ML 6.8'],
+  ['Ms', 8.6, '1960 Chile, Ms 8.6']
+];
+function eqApply(i){
+  try {
+    var o = solveEq(i);
+    setErr('');
+    $('eq-all').innerHTML = ['mw','mb','Ms','ML'].map(function(s){
+      return kv(s, grp(o.all[s], 3)); }).join('');
+    $('eq-energy').innerHTML =
+        kv('Mw', grp(o.mw, 3))
+      + kv('log10(E / J)', grp(1.5 * o.mw + 4.8, 4))
+      + kv('Energy', grp(o.energyJ, 0) + ' J')
+      + kv('Energy', grp(o.energyJ / 1e6, 3) + ' MJ')
+      + kv('Energy', grp(o.energyKilotons, 3) + ' kilotonnes TNT')
+      + kv('Energy (' + o.tntUnit + ')', grp(o.tntValue, 3));
+    $('eq-ratio').innerHTML =
+        kv('Magnitude difference', grp(o.dMw, 3))
+      + kv('Energy ratio', grp(o.ratio, 3) + ' : 1')
+      + kv('Per whole unit of Mw', '31.6 : 1');
+    $('eq-notes').innerHTML =
+      '<p class="mb-2">Body waves are attenuated faster than surface waves, so a given mb '
+      + 'corresponds to a LARGER Mw than the same number on Ms or ML - hence the b term '
+      + 'jumps from 1.067 to 2.40 at mb 3.5.</p>'
+      + '<p class="mb-2">Relations: mb &lt; 3.5 &rarr; Mw = 0.667 mb + 1.067; mb &ge; 3.5 '
+      + '&rarr; Mw = 0.56 mb + 2.40. Ms and ML &lt; 4.0 &rarr; Mw = 0.67 M + 1.90; '
+      + '&ge; 4.0 &rarr; Mw = 0.67 M + 2.37.</p>'
+      + '<p class="mb-2">Energy uses Gutenberg-Richter in SI, log10 E[J] = 1.5 Mw + 4.8, so '
+      + 'one whole magnitude step is 10^1.5 = 31.6x the energy.</p>'
+      + '<p>1 tonne TNT is taken as 4.184 GJ, the conventional definition.</p>';
+    show([['Moment magnitude', grp(o.mw, 3)],
+          ['Energy', grp(o.energyJ, 0) + ' J'],
+          ['In TNT', grp(o.tntValue, 2) + ' ' + o.tntUnit],
+          ['vs second value', grp(o.ratio, 2) + 'x']]);
+    return o;
+  } catch (e) { setErr(e.message); show([]); return null; }
+}
+function eqLoadPreset(i){
+  var p = EQ_PRESETS[i];
+  $('eq-scale').value = p[0]; $('eq-mag').value = p[1];
+  eqApply();
+}
+$('eq-preset').onclick = function(){
+  var i = eqApply() === null ? 0 : (eqLoadPreset.n = (eqLoadPreset.n || -1) + 1) % EQ_PRESETS.length;
+  eqLoadPreset(i);
+};
+$('eq-run').onclick = function(){ eqApply(); };
+$('eq-cp').onclick = function(){ cp({ getAttribute:function(){return 'eq-all';}, textContent:'' }); };
+bind(['eq-scale','eq-mag','eq-other','eq-other-mag','eq-tnt'], eqApply);
+eqApply();
+
+window.__T = window.__T || {};
+window.__T['earthquake-magnitude'] = {
+  slug: 'earthquake-magnitude',
+  run: function(i){
+    i = i || {};
+    var pairs = [['scale','eq-scale'],['mag','eq-mag'],['oScale','eq-other'],
+                 ['oMag','eq-other-mag'],['tntU','eq-tnt']];
+    pairs.forEach(function(p){ if (i[p[0]] !== undefined) $(p[1]).value = i[p[0]]; });
+    var o = solveEq(i);
+    eqApply(i);
+    return o;
+  }
+};
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/energy-converter/">
+      <span class="ocurp-related-n">Energy &amp; Heat Converter</span>
+      <span class="ocurp-related-b">Joules, calories, BTU, watt-hours and electron-volts converted exactly.</span>
+    </a></li>
+    <li><a href="/workspace/tools/solar-panel-calculator/">
+      <span class="ocurp-related-n">Solar Panel Calculator</span>
+      <span class="ocurp-related-b">Solar output in kWh, payback period and offset for a given roof and tariff.</span>
+    </a></li>
+    <li><a href="/workspace/tools/solar-panel-size-calculator/">
+      <span class="ocurp-related-n">Solar Panel Size Calculator</span>
+      <span class="ocurp-related-b">Turn system size, peak sun hours and installed cost into annual kWh and a lifetime saving </span>
+    </a></li>
+    <li><a href="/workspace/tools/barometric-altitude/">
+      <span class="ocurp-related-n">Barometric Altitude &amp; Hypsometric Pressure</span>
+      <span class="ocurp-related-b">The barometric formula reading an altitude straight off a pressure, beside the hypsometric</span>
+    </a></li>
+    <li><a href="/workspace/tools/blackbody-radiation/">
+      <span class="ocurp-related-n">Blackbody Radiation</span>
+      <span class="ocurp-related-b">Wien&#x27;s peak wavelength and the Stefan-Boltzmann flux, with the luminosity of a star at the</span>
+    </a></li>
+    <li><a href="/workspace/tools/buffer-ph/">
+      <span class="ocurp-related-n">Buffer pH</span>
+      <span class="ocurp-related-b">Henderson-Hasselbalch against the useful pKa +- 1 band, and the exact charge-balance pH fo</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
