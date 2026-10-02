@@ -110,7 +110,7 @@ const GRAV=1500;                 // px/s^2, +y is down
    in the lane forever. The flipper kick (806 px/s) was also being trimmed. */
 const BALL_R=8, BALL_MAX=1400;
 const BALL_DAMP=0.9986;          // rolling friction, per step
-const LAUNCH_MIN=340, LAUNCH_MAX=1250, LAUNCH_CHG=2100;
+const LAUNCH_MIN=1120, LAUNCH_MAX=1250, LAUNCH_CHG=2100;
 const WALL_L=12, WALL_R=348, CEIL=24, DRAIN_Y=492;
 /* flippers: pivots and angles. Left bat points right, right bat points
    left, so the right flipper's angle is mirrored through PI. */
@@ -134,20 +134,21 @@ const SLINGS=[[96,400,-0.72],[264,400,0.72]];
 const TARGETS=[[180,90],[180,130],[180,206],[180,246],[180,322],[180,362],[120,58],[242,58]];
 /* wall segments the ball bounces off: [x1,y1,x2,y2] */
 const WALLS=[
-  /* outer shell. The bottom is OPEN between the two outlane guides so a
-     ball that gets past the flippers can actually reach y>DRAIN_Y and
-     drain; the old closed V-floor peaked at y=492, which pinned the ball
-     centre at y<=484 while a drain needs y>500. Never drainable. */
-  [WALL_L,CEIL,WALL_L,470],[WALL_L,470,62,492],
-  [298,492,350,470],[350,470,WALL_R,CEIL],
+  /* outer shell. Everything below y=470 is OPEN between x=62 and x=298.
+     The old floor ran down to y=492 and the outlane guides ran to 492 too,
+     so the ball centre was pinned at y<=492 while the drain test needs
+     y>DRAIN_Y+BALL_R=500: the game could never end and never drained. */
+  [WALL_L,CEIL,WALL_L,470],[WALL_L,470,62,470],
+  [298,470,350,470],[350,470,WALL_R,CEIL],
   /* plunger lane: left wall, then the deflector. It slopes DOWN to the
      right so a ball rising up the lane strikes its underside and is
      thrown LEFT into the upper playfield. Sloping it up-right (the old
      way) reflected the ball straight back down into the lane it came
      from, so the lane had no exit at any launch power. */
   [302,112,302,466],[302,64,WALL_R,112],
-  /* outlane guides */
-  [62,492,62,340],[298,492,298,340],
+  /* outlane guides - they stop at y=470, level with the shell, so the
+     outlane drains instead of trapping the ball in a sealed pocket */
+  [62,470,62,340],[298,470,298,340],
   /* lower inlane guides funnelling to the flippers */
   [104,330,128,376],[256,330,232,376],
   /* little shelf over the left outlane */
@@ -551,6 +552,7 @@ requestAnimationFrame(loop);
 
 <link rel="stylesheet" href="/workspace/play.css?v=20261002c">
 <script src="/workspace/play.js?v=20261002c" defer></script>
+
 
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">

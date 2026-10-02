@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Texas Hold'em \u2014 Play Free in Browser | Ocurp</title>
+<title>Holdem — Play Free in Browser | Ocurp</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -60,23 +60,23 @@ tailwind.config = { theme: { extend: {
       font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
   }
 </style>
-<meta name="description" content="No-limit Hold'em with blinds, a 7-card best-5 evaluator and an opponent that reads pot odds. Free poker against one bot - runs entirely in your browser.">
+<meta name="description" content="Holdem - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
 <link rel="canonical" href="https://ocurp.com/workspace/games/holdem/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Texas Hold'em">
-<meta property="og:description" content="No-limit Hold'em with blinds, a 7-card best-5 evaluator and an opponent that reads pot odds. Free poker against one bot - runs entirely in your browser.">
+<meta property="og:title" content="Holdem">
+<meta property="og:description" content="Holdem - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
 <meta property="og:url" content="https://ocurp.com/workspace/games/holdem/">
 <meta property="og:site_name" content="Ocurp">
 <meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Texas Hold'em on Ocurp - free, runs in your browser">
+<meta property="og:image:alt" content="Holdem on Ocurp - free, runs in your browser">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Texas Hold'em">
-<meta name="twitter:description" content="No-limit Hold'em with blinds, a 7-card best-5 evaluator and an opponent that reads pot odds. Free poker against one bot - runs entirely in your browser.">
+<meta name="twitter:title" content="Holdem">
+<meta name="twitter:description" content="Holdem - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
 <meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
-<meta name="twitter:image:alt" content="Texas Hold'em on Ocurp - free, runs in your browser">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Texas Hold'em","url":"https://ocurp.com/workspace/games/holdem/","description":"No-limit Hold'em with blinds, a 7-card best-5 evaluator and an opponent that reads pot odds. Free poker against one bot - runs entirely in your browser.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<meta name="twitter:image:alt" content="Holdem on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Holdem","url":"https://ocurp.com/workspace/games/holdem/","description":"Holdem - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 
@@ -229,13 +229,24 @@ function eval7(cards){
     return {cat:FLUSH,k:fr.slice(0,5),hi:fr[0],label:'flush'};
   }
   const sh=straightHigh(rs);
-  const trips=g.filter(x=>x.n===3)[0];
+  const tripsAll=g.filter(x=>x.n===3);
+  const trips=tripsAll[0];
   const pairs=g.filter(x=>x.n===2);
-  if(trips&&pairs[0])return {cat:FULL,k:[trips.r,pairs[0].r],hi:trips.r,label:'full house'};
+  // Two trips also make a full house (the lower trip plays as the pair) - the
+  // trips&&pairs test alone missed 4-4-4-2-2-2 and scored it three of a kind.
+  if(trips&&(pairs.length||tripsAll.length>1)){
+    const pairR=pairs.length?pairs[0].r:tripsAll[1].r;
+    return {cat:FULL,k:[trips.r,pairR],hi:trips.r,label:'full house'};
+  }
   if(g[0].n===4)return {cat:FOUR,k:[g[0].r].concat(kickers(g,3,[g[0].r])),hi:g[0].r,label:'four of a kind'};
   if(sh)return {cat:STRAIGHT,k:[sh],hi:sh,label:'straight '+sh};
   if(trips)return {cat:THREE,k:[trips.r].concat(kickers(g,2,[trips.r])),hi:trips.r,label:'three of a kind'};
-  if(pairs.length===2)return {cat:TWO_PAIR,k:[pairs[0].r,pairs[1].r].concat(kickers(g,1,[pairs[0].r,pairs[1].r])),hi:pairs[0].r,label:'two pair'};
+  if(pairs.length===2||pairs.length===3){
+    // 7 cards can hold THREE pairs. Testing only pairs.length===2 scored
+    // T-9-8 doubled as a HIGH CARD - the strongest two pairs play, and the
+    // third pair's ranks are still available as kickers.
+    return {cat:TWO_PAIR,k:[pairs[0].r,pairs[1].r].concat(kickers(g,1,[pairs[0].r,pairs[1].r])),hi:pairs[0].r,label:'two pair'};
+  }
   if(pairs.length===1)return {cat:PAIR,k:[pairs[0].r].concat(kickers(g,3,[pairs[0].r])),hi:pairs[0].r,label:'pair'};
   return {cat:HIGH_CARD,k:rs.sort((a,b)=>b-a).slice(0,5),hi:Math.max.apply(null,rs),label:'high card'};
 }
@@ -261,6 +272,15 @@ function other(who){return who==='you'?'bot':'you'}
 function toCall(who){return Math.max(0,S.bet[other(who)]-S.bet[who])}
 function minRaiseTo(who){return S.bet[who]+toCall(who)+MIN_RAISE}
 function newHand(){
+  // A busted stack is a dead session: with 0 chips every blind is posted as 0
+  // and no hand can ever move the number again, so the table reads frozen
+  // forever. Re-stack both sides instead and say so in the log.
+  if(S.stacks.you<=0||S.stacks.bot<=0){
+    const bk=S.stacks.bot;
+    S.stacks={you:START_STACK,bot:START_STACK};
+    S.net=0;
+    say('Both stacks reset to '+START_STACK+(bk?' (you were all-in).':'.'));
+  }
   S.deck=shuffle(mkDeck());S.pos=0;S.board=[];S.hole=[];S.bot=[];
   S.contrib={you:0,bot:0};S.bet={you:0,bot:0};S.lastRaise=BIG_BLIND;
   S.street=0;S.over=false;S.acted={you:false,bot:false};S.turn='you';S.last=null;
@@ -287,7 +307,7 @@ function act(who,type,amt){
   }
   if(type==='check'){
     say(who==='you'?'You check.':'Bot checks.');
-    if(who==='you'){render();setTimeout(botAct,BOT_THINK);return true}
+    if(who==='you'){S.turn='bot';render();setTimeout(botAct,BOT_THINK);return true}
     return streetOver();
   }
   if(type!=='bet'&&type!=='raise'&&type!=='call')return false;
@@ -528,7 +548,7 @@ window.__holdem={S:S,eval7:eval7,strength:strength,normalised:normalised,best5:b
 </style>
 <link rel="stylesheet" href="/workspace/play.css?v=20261002c">
 <script src="/workspace/play.js?v=20261002c" defer></script>
-<!--ocurp-related-->
+
 
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">

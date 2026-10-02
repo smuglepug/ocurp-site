@@ -152,6 +152,12 @@ var FC=(function(){
   // winning line is foundation plays alone is not a game, so it is thrown away.
   var SCRAMBLE_MIN=22, SCRAMBLE_SPAN=34;
   var WANT_TABLEAU_MOVES=8;
+  // Want at least this many foundation-ready cards BURIED under other cards.
+  // 2 is the honest ceiling: scrambleOnce() never plays to a foundation, so
+  // canFoundation() can only be true for the four aces, and buriedReady()
+  // counts at most one ace per column. WANT_BURIED=3 made almost every deal
+  // fail candidate selection and fall back to a base deal that auto-wins.
+  var WANT_BURIED=2;
 
   function rank(c){return c%13}
   function suit(c){return (c/13)|0}
@@ -355,9 +361,10 @@ function buriedReady(S){
         pool.push(m);
       }
       if(!pool.length)break;
+      var before=disorderOf(S);
       var m2=pool[(rnd()*pool.length)|0];
       applyMove(S,m2);
-      disorder+=Math.abs(disorderOf(S)-disorderOf(S));    // evaluated after the move
+      disorder+=Math.abs(disorderOf(S)-before);          // measured across the move
       done++;
     }
     return {S:S, steps:done, disorder:disorder};
@@ -701,7 +708,6 @@ newGame();
 <link rel="stylesheet" href="/workspace/play.css?v=20261002c">
 <script src="/workspace/play.js?v=20261002c" defer></script>
 
-<!--ocurp-related-->
 
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">
