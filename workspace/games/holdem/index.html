@@ -202,8 +202,10 @@ function rankGroups(rs){
 function straightHigh(rs){
   const u=[...new Set(rs)].sort((a,b)=>b-a);
   if(u.length<5)return 0;
-  if(u.indexOf(14)>=0&&u.indexOf(2)>=0&&u.indexOf(3)>=0&&u.indexOf(4)>=0&&u.indexOf(5)>=0)return 5;
+  // highest descending run first, and only then the wheel: A-2-3-4-5-6 is a
+  // SIX-high straight, so testing the wheel first mis-ranked it as 5.
   for(let i=0;i+4<u.length;i++)if(u[i]-u[i+4]===4)return u[i];
+  if(u.indexOf(14)>=0&&u.indexOf(2)>=0&&u.indexOf(3)>=0&&u.indexOf(4)>=0&&u.indexOf(5)>=0)return 5;
   return 0;
 }
 function kickers(g,n,taken){
@@ -280,7 +282,7 @@ function act(who,type,amt){
   if(type==='check'&&toCall(who)>0)return false;
   S.acted[who]=true;
   if(type==='fold'){
-    if(who==='bot'){say('Bot folded.');S.turn='you';render();return true}
+    if(who==='bot')return finish('botFolded');
     return finish('youFolded');
   }
   if(type==='check'){
@@ -288,13 +290,20 @@ function act(who,type,amt){
     if(who==='you'){render();setTimeout(botAct,BOT_THINK);return true}
     return streetOver();
   }
-  if(type!=='bet'&&type!=='raise')return false;
+  if(type!=='bet'&&type!=='raise'&&type!=='call')return false;
+  // 'call' is just a bet whose total is exactly bet+call, so it goes through
+  // the same accounting. The bot calls with type 'call' - rejecting that name
+  // here meant the bot silently refused to call anything.
+  if(type==='call')type='bet';
   let total=Math.floor(amt);
   if(!isFinite(total))return false;
   if(total>S.bet[who]+S.stacks[who])total=S.bet[who]+S.stacks[who];
   const call=toCall(who);
   if(total<S.bet[who]+call)return false;                    // cannot call under the price
-  if(total>S.bet[who]&&total<minRaiseTo(who))return false;  // under-raise rejected
+  // A CALL is total===bet+call and is always legal. Only an actual raise has to
+  // clear the minimum increment, so the guard must exclude a pure call - it
+  // rejected every call, leaving fold or all-in as the only moves.
+  if(total>S.bet[who]+call&&total<minRaiseTo(who))return false;  // under-raise rejected
   const prev=S.bet[who];
   put(who,total-prev);
   if(total>prev&&total-prev-call>=MIN_RAISE)S.lastRaise=total-prev-call;
@@ -355,6 +364,11 @@ function finish(reason){
     net=refund.you-S.contrib.you;
     S.stacks.bot+=p;
     why='You folded. Net '+(net>0?'+':'')+net+'.';
+  }else if(reason==='botFolded'){
+    // you bet more, the bot declined: the uncontested pot is yours.
+    net=refund.you-S.contrib.you;
+    S.stacks.you+=p;
+    why='Bot folded. You take the pot. Net '+(net>0?'+':'')+net+'.';
   }else{
     yE=eval7(S.hole.concat(S.board));bE=eval7(S.bot.concat(S.board));
     if(ys===bs){
@@ -515,5 +529,57 @@ window.__holdem={S:S,eval7:eval7,strength:strength,normalised:normalised,best5:b
 <link rel="stylesheet" href="/workspace/play.css?v=20261002c">
 <script src="/workspace/play.js?v=20261002c" defer></script>
 <!--ocurp-related-->
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/breakout/">
+      <span class="ocurp-related-n">Breakout</span>
+      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
 </body>
 </html>

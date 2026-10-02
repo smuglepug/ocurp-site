@@ -44,11 +44,11 @@ tailwind.config = { theme: { extend: {
       font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
   }
 </style>
-<meta name="description" content="One table, two flippers, a plunger. Work the bumpers, beat the targets, and clear all eight before three balls run out. Runs entirely in your browser.">
+<meta name="description" content="Pinball - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
 <link rel="canonical" href="https://ocurp.com/workspace/games/pinball/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Pinball">
-<meta property="og:description" content="One table, two flippers, a plunger. Work the bumpers, beat the targets, and clear all eight before three balls run out. Runs entirely in your browser.">
+<meta property="og:description" content="Pinball - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
 <meta property="og:url" content="https://ocurp.com/workspace/games/pinball/">
 <meta property="og:site_name" content="Ocurp">
 <meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
@@ -57,10 +57,10 @@ tailwind.config = { theme: { extend: {
 <meta property="og:image:alt" content="Pinball on Ocurp - free, runs in your browser">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Pinball">
-<meta name="twitter:description" content="One table, two flippers, a plunger. Work the bumpers, beat the targets, and clear all eight before three balls run out. Runs entirely in your browser.">
+<meta name="twitter:description" content="Pinball - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
 <meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
 <meta name="twitter:image:alt" content="Pinball on Ocurp - free, runs in your browser">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Pinball","url":"https://ocurp.com/workspace/games/pinball/","description":"One table, two flippers, a plunger. Work the bumpers, beat the targets, and clear all eight before three balls run out. Runs entirely in your browser.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Pinball","url":"https://ocurp.com/workspace/games/pinball/","description":"Pinball - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -103,7 +103,12 @@ const cv=$('cv'),cx=cv.getContext('2d'),W=cv.width,H=cv.height;
    ================================================================== */
 const STEP=1/60;
 const GRAV=1500;                 // px/s^2, +y is down
-const BALL_R=8, BALL_MAX=780;
+/* BALL_MAX must clear the launch impulse. The plunger shoots at vy=-0.98p,
+   and reaching the lane exit (y=112, 354px above the rest at y=466) needs
+   vy>=sqrt(2*1500*354)=1030 px/s. At BALL_MAX=780 the clamp in release()
+   and update() silently ate every launch above that, so the ball rattled
+   in the lane forever. The flipper kick (806 px/s) was also being trimmed. */
+const BALL_R=8, BALL_MAX=1400;
 const BALL_DAMP=0.9986;          // rolling friction, per step
 const LAUNCH_MIN=340, LAUNCH_MAX=1250, LAUNCH_CHG=2100;
 const WALL_L=12, WALL_R=348, CEIL=24, DRAIN_Y=492;
@@ -129,12 +134,20 @@ const SLINGS=[[96,400,-0.72],[264,400,0.72]];
 const TARGETS=[[180,90],[180,130],[180,206],[180,246],[180,322],[180,362],[120,58],[242,58]];
 /* wall segments the ball bounces off: [x1,y1,x2,y2] */
 const WALLS=[
-  [WALL_L,CEIL,WALL_L,470],[WALL_L,470,86,492],[86,492,350,470],[350,470,WALL_R,CEIL],
-  /* plunger lane: left wall, then the diagonal deflector that ejects the
-     ball leftwards into the upper playfield */
-  [302,112,302,466],[302,112,WALL_R,64],
+  /* outer shell. The bottom is OPEN between the two outlane guides so a
+     ball that gets past the flippers can actually reach y>DRAIN_Y and
+     drain; the old closed V-floor peaked at y=492, which pinned the ball
+     centre at y<=484 while a drain needs y>500. Never drainable. */
+  [WALL_L,CEIL,WALL_L,470],[WALL_L,470,62,492],
+  [298,492,350,470],[350,470,WALL_R,CEIL],
+  /* plunger lane: left wall, then the deflector. It slopes DOWN to the
+     right so a ball rising up the lane strikes its underside and is
+     thrown LEFT into the upper playfield. Sloping it up-right (the old
+     way) reflected the ball straight back down into the lane it came
+     from, so the lane had no exit at any launch power. */
+  [302,112,302,466],[302,64,WALL_R,112],
   /* outlane guides */
-  [62,468,62,340],[298,468,298,340],
+  [62,492,62,340],[298,492,298,340],
   /* lower inlane guides funnelling to the flippers */
   [104,330,128,376],[256,330,232,376],
   /* little shelf over the left outlane */
@@ -430,9 +443,15 @@ function release(){
   if(!S.charging)return;
   S.charging=false;
   if(S.inPlunger&&S.running&&!S.over){
+    /* Nearly vertical. Rising the full 354px from y=466 to the lane exit at
+       y=112 needs vy>=sqrt(2*1500*354)=1031 px/s, and the lane is only 24px
+       wide from x=326 to the wall at x=302, so vx must stay below ~35 px/s.
+       The old slope vx=-0.20p / vy=-0.98p (4.9:1) could not satisfy both at
+       any power: it jammed the ball against the lane wall. The lane guide
+       does the sideways work instead, so the plunger fires straight up. */
     const p=Math.max(LAUNCH_MIN,S.charge);
-    S.vx=-(p*0.20);
-    S.vy=-(p*0.98);
+    S.vx=-(p*0.04);
+    S.vy=-(p*0.999);
     const sp=Math.hypot(S.vx,S.vy);
     if(sp>BALL_MAX){S.vx*=BALL_MAX/sp;S.vy*=BALL_MAX/sp}
     S.inPlunger=false;S.charge=0;S.launches++;
@@ -532,5 +551,57 @@ requestAnimationFrame(loop);
 
 <link rel="stylesheet" href="/workspace/play.css?v=20261002c">
 <script src="/workspace/play.js?v=20261002c" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/breakout/">
+      <span class="ocurp-related-n">Breakout</span>
+      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
 </body>
 </html>

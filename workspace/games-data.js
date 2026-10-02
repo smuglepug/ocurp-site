@@ -74,4 +74,11 @@ const RAW = [
   {slug:"peg-solitaire",name:"Peg Solitaire",cat:"game",blurb:"Peg Solitaire - playable in the browser.",tags:["GAMES"],ready:true},
   {slug:"mines-digger",name:"Mines Digger",cat:"game",blurb:"Mines Digger - playable in the browser.",tags:["GAMES"],ready:true},
   {slug:"towers",name:"Towers",cat:"game",blurb:"Towers - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"blackjack",name:"Blackjack",cat:"game",blurb:"Blackjack - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"freecell",name:"Freecell",cat:"game",blurb:"Freecell - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"holdem",name:"Holdem",cat:"game",blurb:"Holdem - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"pinball",name:"Pinball",cat:"game",blurb:"Pinball - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"platformer",name:"Platformer",cat:"game",blurb:"Platformer - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"tower-defense",name:"Tower Defense",cat:"game",blurb:"Tower Defense - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"yahtzee",name:"Yahtzee",cat:"game",blurb:"Yahtzee - playable in the browser.",tags:["GAMES"],ready:true},
 ];
