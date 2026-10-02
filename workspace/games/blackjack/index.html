@@ -309,7 +309,14 @@ function settleRound(){
       else{payout(h,Math.round(h.bet*(1+BJ_PAY)));say('Blackjack! +'+h.bet*BJ_PAY)}
       continue;
     }
-    if(d.natural){payout(h,h.bet);say('Dealer blackjack - push');continue}
+    if(d.natural){
+      // A dealer natural beats every hand that is not itself a natural. It
+      // used to refund the bet as a "push" here, which quietly handed the
+      // player their money back against a dealer blackjack.
+      if(t.natural&&!h.fromSplit){payout(h,h.bet);say('Both blackjack - push')}
+      else{say('Dealer blackjack - lose '+h.bet)}
+      continue;
+    }
     if(d.bust){payout(h,h.bet+h.bet);say('Dealer bust '+d.total+' - win '+h.bet);continue}
     const dt=d.total;
     if(t.total>dt){payout(h,h.bet*2);say('Win '+t.total+' vs '+dt)}
