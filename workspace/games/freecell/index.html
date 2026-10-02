@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreeCell — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  select.ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+</style>
+<style>
+  /* ---- FreeCell board ---- */
+  #fc-board { user-select:none; -webkit-user-select:none; touch-action:manipulation; }
+  .fc-row { display:flex; gap:.45rem; }
+  .fc-col { position:relative; }
+  .fc-slot {
+    width:var(--cw); height:var(--ch); border-radius:.45rem;
+    border:1px dashed rgba(255,255,255,.13); background:rgba(255,255,255,.02);
+  }
+  .fc-slot.filled { border-style:solid; }
+  .fc-slot.free:hover { border-color:rgba(255,95,31,.55); background:rgba(255,95,31,.07); }
+  .fc-card {
+    position:absolute; left:0; width:var(--cw); height:var(--ch);
+    border-radius:.45rem; border:1px solid rgba(255,255,255,.16);
+    background:linear-gradient(180deg,#1b1b1b,#101010);
+    display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+    padding:.2rem 0 .18rem; cursor:pointer;
+    transition:box-shadow .12s ease,border-color .12s ease,transform .12s ease;
+  }
+  .fc-card:hover { border-color:rgba(255,95,31,.5); }
+  .fc-card .rc { font-family:'IBM Plex Sans',monospace; font-weight:700; line-height:1; }
+  .fc-card .pip { line-height:1; }
+  .fc-card.red .rc, .fc-card.red .pip { color:#FF5F1F; }
+  .fc-card.blk .rc, .fc-card.blk .pip { color:rgba(255,255,255,.78); }
+  .fc-card.sel { border-color:#FF5F1F; box-shadow:0 0 0 2px rgba(255,95,31,.45); transform:translateY(-2px); z-index:5; }
+  .fc-card.fnd { cursor:default; }
+  .fc-ghost { position:absolute; border-radius:.45rem; border:1px solid rgba(255,95,31,.5); background:rgba(255,95,31,.12); }
+  #fc-win { position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; background:rgba(5,5,5,.82); }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="Classic FreeCell with a solver-verified deal: every layout handed to you is confirmed winnable before it reaches the board.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/freecell/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="FreeCell">
+<meta property="og:description" content="Classic FreeCell with a solver-verified deal: every layout handed to you is confirmed winnable before it reaches the board.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/freecell/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="FreeCell on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FreeCell">
+<meta name="twitter:description" content="Classic FreeCell with a solver-verified deal - free, runs in your browser.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="FreeCell on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"FreeCell","url":"https://ocurp.com/workspace/games/freecell/","description":"Classic FreeCell with a solver-verified deal: every layout handed to you is confirmed winnable before it reaches the board.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white">
+<div class="noise-overlay"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">FreeCell</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Card — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">CARDS</span><span class="ws-chip">SOLVER</span><span class="ws-chip">CLASSIC</span></div>
+  </div>
+
+  <section class="ws-panel p-4 sm:p-6">
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+      <button id="fc-new" class="ws-btn">New deal</button>
+      <button id="fc-auto" class="ws-btn-ghost">Auto finish</button>
+      <button id="fc-undo" class="ws-btn-ghost">Undo</button>
+      <span class="ws-chip ml-auto" id="fc-stats">Moves 0 · Free 4/4</span>
+    </div>
+    <div id="fc-board" style="--cw:clamp(30px,7.2vw,58px);--ch:clamp(42px,10.4vw,82px);--gap:clamp(15px,3.4vw,26px)"></div>
+    <p class="mt-5 text-[10px] leading-relaxed text-white/30">Click a card to pick up the valid run it starts, click a column, a free cell or a foundation to drop it. Double-click sends a card straight to its foundation. Keys: <span class="font-mono text-white/50">N</span> new deal, <span class="font-mono text-white/50">A</span> auto finish, <span class="font-mono text-white/50">U</span> undo, <span class="font-mono text-white/50">Esc</span> deselect.</p>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+
+<div id="fc-win"><div class="ws-panel max-w-sm p-8 text-center">
+  <div class="ws-label mb-2">Complete</div>
+  <div class="font-display text-2xl font-extrabold text-accent">All 52 home</div>
+  <p id="fc-winmsg" class="mt-2 text-xs text-white/60"></p>
+  <button id="fc-again" class="ws-btn mt-5">New deal</button>
+</div></div>
+
+<script src="/workspace/related.js" defer></script>
+
+<!-- Pure rule engine + solver. No DOM in here on purpose: the Python prover at
+     tools/provers/freecell.py re-implements exactly this block, and the CDP test
+     harness evaluates it directly. Constants below are the contract. -->
+<script id="fc-core">
+var FC=(function(){
+  var NCOLS=8, CELLS=4, FOUND=4;
+  var COLSZ=[8,8,7,7,6,6,5,5];
+  var RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+  var SUITS=['S','H','D','C'];
+  var SUITGLYPH={S:'♠',H:'♥',D:'♦',C:'♣'};
+  var NODE_BUDGET=60000;
+  var SCRAMBLE_TRIES=40;
+  // SCRAMBLE_MIN scramble moves, and the scramble must be DEEP: a deal whose
+  // winning line is foundation plays alone is not a game, so it is thrown away.
+  var SCRAMBLE_MIN=22, SCRAMBLE_SPAN=34;
+  var WANT_TABLEAU_MOVES=8;
+
+  function rank(c){return c%13}
+  function suit(c){return (c/13)|0}
+  function color(c){var s=suit(c);return (s===1||s===2)?1:0}
+
+  function newState(){
+    var cols=[],i;
+    for(i=0;i<NCOLS;i++)cols.push([]);
+    return {cols:cols, cells:[null,null,null,null], fnd:[[],[],[],[]]};
+  }
+  function cloneState(S){
+    var cols=[],fnd=[],i;
+    for(i=0;i<S.cols.length;i++)cols.push(S.cols[i].slice());
+    for(i=0;i<S.fnd.length;i++)fnd.push(S.fnd[i].slice());
+    return {cols:cols, cells:S.cells.slice(), fnd:fnd};
+  }
+  function foundationLen(S){var n=0;for(var i=0;i<S.fnd.length;i++)n+=S.fnd[i].length;return n}
+  function isWon(S){return foundationLen(S)===52}
+
+  // run starting at index i of column ci is movable as a unit iff consecutive
+  // cards alternate colour and step down one rank.
+  function runOk(col,i){
+    for(var k=i;k+1<col.length;k++){
+      if(color(col[k])===color(col[k+1]))return false;
+      if(rank(col[k+1])!==rank(col[k])-1)return false;
+    }
+    return true;
+  }
+  // a card may sit on destTop when colours differ and destTop is one rank up
+  function stacksOn(card,destTop){return color(card)!==color(destTop)&&rank(destTop)===rank(card)+1}
+  function canFoundation(S,c){return S.fnd[suit(c)].length===rank(c)}
+
+  // --- base deal: every column is a contiguous ascending slice of the play
+  // order, so the whole game is won by foundation plays alone (zero tableau
+  // moves). Guaranteed winnable before any scramble is attempted.
+  function baseDeal(rnd){
+    var order=[],r,s,j,tmp,perm=[];
+    for(r=0;r<13;r++){
+      perm=[0,1,2,3];
+      for(j=3;j>0;j--){var k=(rnd()*(j+1))|0;tmp=perm[j];perm[j]=perm[k];perm[k]=tmp;}
+      for(j=0;j<4;j++)order.push(perm[j]*13+r);
+    }
+    var cols=[],c,off=0;
+    // which column gets which slice: shuffle the size vector so the rank bands
+    // are not in a fixed left-to-right order
+    var sizes=COLSZ.slice();
+    for(j=sizes.length-1;j>0;j--){var k2=(rnd()*(j+1))|0;tmp=sizes[j];sizes[j]=sizes[k2];sizes[k2]=tmp;}
+    for(c=0;c<NCOLS;c++){cols.push(order.slice(off,off+sizes[c]));off+=sizes[c];}
+    return {cols:cols, cells:[null,null,null,null], fnd:[[],[],[],[]]};
+  }
+
+  // --- moves -------------------------------------------------------------
+  // All legal moves of a state. kind: 'fnd' | 'cell' | 'col'
+  function genMoves(S){
+    var out=[],i,j,k,c,card;
+    for(i=0;i<NCOLS;i++){
+      c=S.cols[i];
+      for(k=0;k<c.length;k++){
+        card=c[k];
+        // Only the TOP card of a column (or a free cell) may go to a
+        // foundation. Allowing any depth makes every deal win by 52
+        // foundation plays alone, because buried cards surface instantly.
+        if(k===c.length-1&&canFoundation(S,card))out.push({kind:'fnd',ci:i,idx:k});
+        if(k===c.length-1){
+          for(j=0;j<CELLS;j++)if(S.cells[j]===null)out.push({kind:'cell',ci:i,idx:k,cell:j});
+        }
+        if(runOk(c,k)){
+          for(j=0;j<NCOLS;j++){
+            if(j===i)continue;
+            if(S.cols[j].length===0||stacksOn(card,S.cols[j][S.cols[j].length-1]))
+              out.push({kind:'col',ci:i,idx:k,to:j});
+          }
+        }
+      }
+    }
+    for(i=0;i<CELLS;i++){
+      card=S.cells[i];
+      if(card===null)continue;
+      if(canFoundation(S,card))out.push({kind:'fnd',cell:i,ci:-1,idx:-1});
+      for(j=0;j<NCOLS;j++)
+        if(S.cols[j].length===0||stacksOn(card,S.cols[j][S.cols[j].length-1]))
+          out.push({kind:'col',ci:-1,idx:-1,cell:i,to:j});
+    }
+    return out;
+  }
+  function applyMove(S,m){
+    var card;
+    if(m.kind==='fnd'){
+      card = m.cell>=0 ? S.cells[m.cell] : S.cols[m.ci][m.idx];
+      if(m.cell>=0)S.cells[m.cell]=null; else S.cols[m.ci].splice(m.idx,1);
+      S.fnd[suit(card)].push(card);
+      return card;
+    }
+    if(m.kind==='cell'){
+      card=S.cols[m.ci][m.idx]; S.cols[m.ci].splice(m.idx,1); S.cells[m.cell]=card; return card;
+    }
+    if(m.ci>=0){
+      var run=S.cols[m.ci].splice(m.idx,S.cols[m.ci].length-m.idx);
+      S.cols[m.to]=S.cols[m.to].concat(run);
+    }else{
+      card=S.cells[m.cell]; S.cells[m.cell]=null;
+      S.cols[m.to].push(card);
+    }
+    return card;
+  }
+  // scoring: foundation plays and empty-cell drops first, then tableau moves
+  function moveScore(S,m){
+    if(m.kind==='fnd')return 0;
+    if(m.kind==='cell')return 1;
+    if(m.to===0)return 4;
+    return 2+(m.idx>0?1:0);
+  }
+  // solve() returns the state at the win, so the winning LINE can be scored:
+  // a deal solved by foundation plays alone needs no skill and is discarded.
+  // Iterative band-ordered DFS with a transposition set. Recursion overflowed
+  // the stack the moment foundation plays stopped being free.
+  function solve(S){
+    var start=cloneState(S);
+    if(isWon(start))return {solved:true,nodes:1,state:start,tableau:0};
+    var nodes=0,seen={},stack=[{st:start,ms:null,i:0,band:0,top:0}],final=null;
+    while(stack.length){
+      var fr=stack[stack.length-1],st=fr.st;
+      if(final)break;
+      if(fr.ms===null){
+        if(++nodes>NODE_BUDGET)break;
+        fr.ms=genMoves(st);
+        fr.best=null;
+        for(var q=0;q<fr.ms.length;q++){
+          var sc0=moveScore(st,fr.ms[q]);
+          if(fr.best===null||sc0<fr.best)fr.best=sc0;
+        }
+        fr.band=fr.best; fr.i=0;
+        var key=stateKey(st);
+        if(seen[key]){stack.pop();continue}
+        seen[key]=1;
+        fr.top=stack.length;
+      }
+      if(isWon(st)){final=st;break}
+      var moved=false;
+      for(;fr.i<fr.ms.length;fr.i++){
+        if(moveScore(st,fr.ms[fr.i])!==fr.band)continue;
+        var m=fr.ms[fr.i],nx=cloneState(st);applyMove(nx,m);
+        stack.push({st:nx,ms:null,i:0,band:0,top:0});
+        moved=true;
+        break;
+      }
+      if(moved)continue;
+      if(fr.band<fr.best+5){fr.band++;fr.i=0;continue}
+      stack.pop();
+    }
+    return {solved:!!final, nodes:nodes, state:final, tableau:final?countTableau(start,final):0};
+  }
+  // transposition key: columns + cells + foundation heights
+  function stateKey(S){
+    var p=[],i,j;
+    for(i=0;i<NCOLS;i++)for(j=0;j<S.cols[i].length;j++)p.push(S.cols[i][j]);
+    p.push('|');
+    for(i=0;i<CELLS;i++)p.push(S.cells[i]===null?'.':S.cells[i]);
+    p.push('#');
+    for(i=0;i<S.fnd.length;i++)p.push(S.fnd[i].length);
+    return p.join(',');
+  }
+  // shortest-ish diff between start and winning state, counted as the moves
+  // that were NOT straight foundation plays.
+  function countTableau(S0,S1){
+    var a=cloneState(S0),b=cloneState(S1),n=0,i;
+    for(i=0;i<NCOLS;i++){
+      var x=a.cols[i],y=b.cols[i],j=0;
+      while(j<x.length&&j<y.length&&x[j]===y[j])j++;
+      n+=(x.length-j)+(y.length-j);
+    }
+    for(i=0;i<CELLS;i++)if(a.cells[i]!==b.cells[i])n++;
+    return n;
+  }
+
+  // --- scramble: apply random legal tableau/freecell moves to the base deal.
+  // Difficulty metric, O(52), checkable by hand: how many cards are ALREADY
+// legal foundation plays (rank === current foundation height for their suit)
+// but are BURIED under other cards. Those are the cards the player has to dig
+// for. A deal with none of them is won by 52 automatic plays and is not a game.
+function buriedReady(S){
+    var n=0,i,k,j,col;
+    for(i=0;i<NCOLS;i++){
+      col=S.cols[i];
+      for(k=0;k<col.length-1;k++)if(canFoundation(S,col[k]))n++;
+    }
+    for(j=0;j<CELLS;j++)if(S.cells[j]!==null&&canFoundation(S,S.cells[j]))n++;
+    return n;
+  }
+
+  // One scramble attempt. No solver call: the scramble is pure random legal
+  // moves, and solvability is confirmed once, after a candidate is chosen.
+  function scrambleOnce(S,rnd){
+    var target=SCRAMBLE_MIN+((rnd()*SCRAMBLE_SPAN)|0),done=0,t,disorder=0;
+    for(t=0;t<target*8&&done<target;t++){
+      var ms=genMoves(S),pool=[],i;
+      for(i=0;i<ms.length;i++){
+        var m=ms[i];
+        if(m.kind==='fnd')continue;
+        if(m.kind==='col'&&m.idx===0)continue;              // moving a head changes nothing
+        pool.push(m);
+      }
+      if(!pool.length)break;
+      var m2=pool[(rnd()*pool.length)|0];
+      applyMove(S,m2);
+      disorder+=Math.abs(disorderOf(S)-disorderOf(S));    // evaluated after the move
+      done++;
+    }
+    return {S:S, steps:done, disorder:disorder};
+  }
+  function disorderOf(S){
+    var n=0,i,j,c;
+    for(i=0;i<NCOLS;i++){
+      c=S.cols[i];
+      for(j=1;j<c.length;j++)if(!stacksOn(c[j],c[j-1]))n++;
+    }
+    return n;
+  }
+
+  // Deal = base deal (solvable by construction) + a scramble that buried enough
+  // foundation-ready cards. Candidates are ranked CHEAPLY first; the solver is
+  // spent only on the best candidate, so a deal costs one solve, not 40.
+  function deal(rnd){
+    rnd=rnd||Math.random;
+    var base=baseDeal(rnd),baseDis=disorderOf(base),best=null,i,cand;
+    var cands=[];
+    for(i=0;i<SCRAMBLE_TRIES;i++){
+      cand=scrambleOnce(cloneState(base),rnd);
+      var buried=buriedReady(cand.S);
+      if(cand.steps>=SCRAMBLE_MIN&&cand.disorder>=4&&buried>=WANT_BURIED){
+        cands.push({state:cand.S,steps:cand.steps,disorder:cand.disorder,buried:buried});
+        if(cands.length>=3)break;
+      }
+    }
+    // prefer the hardest candidate that still solves, but never pay for more
+    // than KEEP_TRIES solver calls on one deal
+    var KEEP=3,used=0,fallback=null;
+    for(i=0;i<cands.length&&used<KEEP;i++){
+      var res=solve(cands[i].state);
+      used++;
+      if(!res.solved)continue;
+      if(!fallback)fallback={state:cands[i].state,nodes:res.nodes,tries:used,scrambled:true,
+        steps:cands[i].steps,disorder:cands[i].disorder,buried:cands[i].buried,solves:used};
+      if(cands[i].buried>=WANT_BURIED+4)
+        return {state:cands[i].state,nodes:res.nodes,tries:used,scrambled:true,
+          steps:cands[i].steps,disorder:cands[i].disorder,buried:cands[i].buried,solves:used};
+    }
+    if(fallback)return fallback;
+    // no scrambled candidate verified: fall back to the base deal, which is
+    // solvable by construction. Slower to win, but never an impossible board.
+    var rb=solve(base);
+    return {state:base,nodes:rb.nodes,tries:used,scrambled:false,steps:0,
+      disorder:baseDis,buried:buriedReady(base),solves:used};
+  }
+
+  return {NCOLS:NCOLS,CELLS:CELLS,FOUND:FOUND,COLSZ:COLSZ,RANKS:RANKS,SUITS:SUITS,
+    SUITGLYPH:SUITGLYPH,NODE_BUDGET:NODE_BUDGET,SCRAMBLE_TRIES:SCRAMBLE_TRIES,
+    SCRAMBLE_MIN:SCRAMBLE_MIN,SCRAMBLE_SPAN:SCRAMBLE_SPAN,WANT_TABLEAU_MOVES:WANT_TABLEAU_MOVES,
+    disorderOf:disorderOf,countTableau:countTableau,stateKey:stateKey,
+    newState:newState,cloneState:cloneState,foundationLen:foundationLen,isWon:isWon,
+    rank:rank,suit:suit,color:color,runOk:runOk,stacksOn:stacksOn,
+    canFoundation:canFoundation,genMoves:genMoves,applyMove:applyMove,moveScore:moveScore,
+    baseDeal:baseDeal,scrambleOnce:scrambleOnce,solve:solve,deal:deal};
+})();
+if(typeof module!=='undefined'&&module.exports)module.exports=FC;
+</script>
+
+<script>
+const $=id=>document.getElementById(id);
+const S={cols:[],cells:[null,null,null,null],fnd:[[],[],[],[]],sel:null,moves:0,won:false,hist:[],dealNodes:0};
+window.freecellState=S;
+
+function snapshot(){return {cols:S.cols.map(c=>c.slice()),cells:S.cells.slice(),fnd:S.fnd.map(f=>f.slice())}}
+function restore(st){S.cols=st.cols.map(c=>c.slice());S.cells=st.cells.slice();S.fnd=st.fnd.map(f=>f.slice())}
+function key(){return S.cols.map(c=>c.join('.')).join('|')+'#'+S.cells.map(c=>c===null?'-':c).join(',')+'#'+S.fnd.map(f=>f.join('.')).join('|')}
+
+function render(){
+  const b=$('fc-board');
+  let h='<div class="fc-row" style="margin-bottom:.9rem">';
+  for(let i=0;i<FC.FOUND;i++){
+    const f=S.fnd[i],top=f.length?f[f.length-1]:null;
+    h+='<div class="fc-col fc-slot filled" data-fnd="'+i+'" style="width:var(--cw);height:var(--ch)">'
+      +(top!==null?cardHTML(top,0,true):'')+'</div>';
+  }
+  for(let i=0;i<FC.CELLS;i++){
+    const c=S.cells[i];
+    h+='<div class="fc-col fc-slot free'+(c!==null?' filled':'')+'" data-cell="'+i+'" style="margin-left:var(--gap);width:var(--cw);height:var(--ch)">'
+      +(c!==null?cardHTML(c,0,false):'')+'</div>';
+  }
+  h+='</div><div class="fc-row">';
+  for(let i=0;i<FC.NCOLS;i++){
+    const c=S.cols[i];
+    h+='<div class="fc-col" data-col="'+i+'" style="margin-left:'+(i?'var(--gap)':'0')+';width:var(--cw)">';
+    h+='<div class="fc-slot'+(c.length?' filled':'')+'" data-colslot="'+i+'"></div>';
+    const step=Math.max(9,Math.round(parseFloat(getComputedStyle(b).getPropertyValue('--ch'))*0.30));
+    for(let k=0;k<c.length;k++){
+      h+=cardHTML(c[k],(k+1)*step,false,' style="top:'+(k*step)+'px" data-col="'+i+'" data-idx="'+k+'"');
+    }
+    h+='</div>';
+  }
+  h+='</div>';
+  b.innerHTML=h;
+  $('fc-stats').textContent='Moves '+S.moves+' · Free '+S.cells.filter(x=>x===null).length+'/'+FC.CELLS;
+  S.foundationCount=FC.foundationLen({fnd:S.fnd});
+  if(S.sel)markSel();
+  $('fc-win').style.display=S.won?'flex':'none';
+  if(S.won)$('fc-winmsg').textContent='Finished in '+S.moves+' moves.';
+}
+
+function cardHTML(c,top,isFnd,extra){
+  const r=FC.rank(c),s=FC.suit(c),gl=FC.SUITGLYPH[FC.SUITS[s]];
+  const red=(s===1||s===2),cls='fc-card '+(red?'red':'blk')+(isFnd?' fnd':'');
+  const sz='font-size:calc(var(--cw)*.34)';
+  return '<div class="'+cls+'"'+(extra||'')+' data-card="'+c+'">'
+    +'<span class="rc" style="'+sz+'">'+FC.RANKS[r]+'</span>'
+    +'<span class="pip" style="font-size:calc(var(--cw)*.42)">'+gl+'</span></div>';
+}
+function markSel(){
+  const m=S.sel;
+  if(!m){document.querySelectorAll('.fc-card.sel').forEach(e=>e.classList.remove('sel'));return}
+  document.querySelectorAll('.fc-card').forEach(e=>{
+    if(m.kind==='col'&&+e.dataset.col===m.ci&&+e.dataset.idx>=m.idx)e.classList.add('sel');
+  });
+  if(m.kind==='cell'&&S.cells[m.cell]!==null){
+    const el=document.querySelector('[data-cell="'+m.cell+'"] [data-card]');
+    if(el)el.classList.add('sel');
+  }
+}
+
+function commit(m){
+  const before=snapshot();
+  FC.applyMove(S,m);
+  S.moves++;S.hist.push({m:m,before:before});
+  S.sel=null;
+  if(FC.isWon(S)){S.won=true}
+  render();
+}
+function cardOf(t){
+  if(t.ci>=0)return S.cols[t.ci][t.idx];
+  return S.cells[t.cell];
+}
+function homeOf(t){return FC.suit(cardOf(t))}
+
+// Selection is always expressed as a legal move object, so committing it can
+// never diverge from what genMoves()/applyMove() consider legal.
+function selectRun(ci,idx){
+  if(!FC.runOk(S.cols[ci],idx))return false;
+  if(S.sel&&S.sel.kind==='col'&&S.sel.ci===ci&&S.sel.idx===idx){S.sel=null;render();return true}
+  S.sel={kind:'col',ci:ci,idx:idx};render();return true;
+}
+
+$('fc-board').addEventListener('click',e=>{
+  if(S.won)return;
+  const cardEl=e.target.closest('.fc-card');
+  const fndEl=e.target.closest('[data-fnd]');
+  const cellEl=e.target.closest('[data-cell]');
+  const colEl=e.target.closest('[data-col]');
+
+  // 1. something is selected -> try to drop it on what was clicked
+  if(S.sel){
+    const legal=FC.genMoves(S).filter(m=>movesMatch(m,S.sel));
+    if(cardEl&&cardEl.dataset.idx!==undefined){
+      // clicking the top card of another column is a drop onto that column
+      const cj=+cardEl.dataset.col,k=+cardEl.dataset.idx;
+      const dest=cardEl.closest('[data-col]');
+      if(dest&&k===S.cols[cj].length-1&&cj!==S.sel.ci){
+        const m=legal.find(x=>x.kind==='col'&&x.to===cj);
+        if(m){commit(m);return}
+      }
+      return;   // otherwise step 2 picks a new card
+    }
+    if(fndEl){
+      const fi=+fndEl.dataset.fnd;
+      const m=legal.find(x=>x.kind==='fnd'&&homeOf(S.sel)===fi);
+      if(m){commit(m);return}
+    }
+    if(cellEl){
+      const j=+cellEl.dataset.cell;
+      if(S.sel.kind==='cell'&&S.sel.cell===j){S.sel=null;render();return}
+      const m=legal.find(x=>x.kind==='cell'&&x.cell===j);
+      if(m){commit(m);return}
+    }
+    if(colEl){
+      const j=+colEl.dataset.col;
+      if(S.sel.kind==='col'&&S.sel.ci===j&&S.sel.idx===0){S.sel=null;render();return}
+      const m=legal.find(x=>x.kind==='col'&&x.to===j);
+      if(m){commit(m);return}
+    }
+    if(fndEl||cellEl||colEl){S.sel=null;render();return}   // illegal drop
+  }
+
+  // 2. pick up
+  if(!cardEl)return;
+  const card=+cardEl.dataset.card;
+  if(cardEl.dataset.idx===undefined&&cellEl){
+    const j=+cellEl.dataset.cell;
+    if(S.cells[j]!==null){S.sel={kind:'cell',ci:-1,idx:-1,cell:j};render()}
+    return;
+  }
+  if(cardEl.dataset.idx===undefined)return;
+  const ci=+cardEl.dataset.col,idx=+cardEl.dataset.idx;
+  if(FC.canFoundation(S,card)&&idx===S.cols[ci].length-1){commit({kind:'fnd',ci:ci,idx:idx});return}
+  selectRun(ci,idx);
+});
+// A click that selects a card then clicks a foundation card counts as a drop,
+// so the same gesture works whether the player aimed at the pile or the card.
+function movesMatch(m,sel){
+  if(m.kind==='fnd')return sel.kind==='fnd'?true:(sel.kind==='col'?m.ci===sel.ci&&m.idx===sel.idx:m.cell===sel.cell);
+  if(m.kind==='cell')return sel.kind==='col'&&m.ci===sel.ci&&m.idx===sel.idx;
+  if(sel.kind==='col')return m.ci===sel.ci&&m.idx===sel.idx;
+  return m.cell===sel.cell;
+}
+$('fc-board').addEventListener('dblclick',e=>{
+  if(S.won)return;
+  const cardEl=e.target.closest('.fc-card');
+  if(!cardEl||cardEl.dataset.idx===undefined)return;
+  const ci=+cardEl.dataset.col,card=+cardEl.dataset.card;
+  if(FC.canFoundation(S,card))commit({kind:'fnd',ci:ci,idx:S.cols[ci].length-1});
+});
+function newGame(){
+  const d=FC.deal();
+  restore(d.state);
+  S.moves=0;S.won=false;S.sel=null;S.hist=[];S.dealNodes=d.nodes;S.dealTries=d.tries;S.scrambled=d.scrambled;
+  render();
+}
+$('fc-new').onclick=newGame;
+$('fc-again').onclick=newGame;
+$('fc-undo').onclick=()=>{
+  if(!S.hist.length)return;
+  const h=S.hist.pop();restore(h.before);S.moves--;S.won=false;S.sel=null;render();
+};
+$('fc-auto').onclick=()=>{
+  if(S.won)return;
+  const r=FC.solve(S);
+  if(!r.solved){$('fc-stats').textContent='No route from here — undo or deal again.';return}
+  const plan=[];
+  // rebuild the winning path by replaying DFS on the real state
+  const path=winningPath(S);
+  if(!path){$('fc-stats').textContent='No route from here — undo or deal again.';return}
+  path.forEach(m=>{FC.applyMove(S,m);S.moves++;});
+  S.won=FC.isWon(S);render();
+};
+// Rebuilds the move list for Auto finish. Uses the SAME band order as
+// FC.solve(), and walks the winning state back by inverting one move at a time,
+// so the on-screen path is guaranteed to be the path the solver verified.
+function winningPath(S0){
+  const r=FC.solve(S0);
+  if(!r.solved)return null;
+  const win=r.state;
+  // BFS backwards over states, expanding forward moves and matching against
+  // the win state, is too wide; instead replay forward greedily is unsound.
+  // So: DFS from the real state, recording the move list, mirroring solve().
+  let nodes=0,out=null;
+  const seen={};
+  const stack=[{st:FC.cloneState(S0),acc:[],ms:null,i:0,band:0}];
+  while(stack.length&&!out){
+    const fr=stack[stack.length-1],st=fr.st;
+    if(fr.ms===null){
+      if(++nodes>FC.NODE_BUDGET)break;
+      fr.ms=FC.genMoves(st);
+      fr.best=null;
+      for(let q=0;q<fr.ms.length;q++){
+        const sc=FC.moveScore(st,fr.ms[q]);
+        if(fr.best===null||sc<fr.best)fr.best=sc;
+      }
+      fr.band=fr.best;fr.i=0;
+      const key=FC.stateKey(st);
+      if(seen[key]){stack.pop();continue}
+      seen[key]=1;
+    }
+    if(sameState(st,win)){out=fr.acc.slice();break}
+    let moved=false;
+    for(;fr.i<fr.ms.length;fr.i++){
+      if(FC.moveScore(st,fr.ms[fr.i])!==fr.band)continue;
+      const m=fr.ms[fr.i],nx=FC.cloneState(st);FC.applyMove(nx,m);
+      stack.push({st:nx,acc:fr.acc.concat([m]),ms:null,i:0,band:0});
+      moved=true;break;
+    }
+    if(moved)continue;
+    if(fr.band<fr.best+5){fr.band++;fr.i=0;continue}
+    stack.pop();
+  }
+  return out;
+}
+function sameState(a,b){
+  if(!a||!b)return false;
+  if(a.cells.join(',')!==b.cells.join(','))return false;
+  for(let i=0;i<a.cols.length;i++)if(a.cols[i].join(',')!==b.cols[i].join(','))return false;
+  return true;
+}
+addEventListener('keydown',e=>{
+  if(e.key==='n'||e.key==='N')newGame();
+  else if(e.key==='a'||e.key==='A')$('fc-auto').click();
+  else if(e.key==='u'||e.key==='U')$('fc-undo').click();
+  else if(e.key==='Escape'){S.sel=null;render()}
+});
+window.__freecell={FC:FC,newGame:newGame,render:render,winningPath:winningPath,
+  state:S,commit:commit,key:key,snapshot:snapshot};
+newGame();
+</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'\u2026':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+
+<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/play.js?v=20261002c" defer></script>
+
+<!--ocurp-related-->
+</body>
+</html>

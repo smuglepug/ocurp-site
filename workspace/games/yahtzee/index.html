@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yahtzee \u2014 Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="All 13 categories, three rolls, the 35-point upper bonus. Free Yahtzee with a real scorecard and an auto-pick advisor - runs entirely in your browser.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/yahtzee/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Yahtzee">
+<meta property="og:description" content="All 13 categories, three rolls, the 35-point upper bonus. Free Yahtzee with a real scorecard and an auto-pick advisor - runs entirely in your browser.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/yahtzee/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Yahtzee on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Yahtzee">
+<meta name="twitter:description" content="All 13 categories, three rolls, the 35-point upper bonus. Free Yahtzee with a real scorecard and an auto-pick advisor - runs entirely in your browser.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Yahtzee on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Yahtzee","url":"https://ocurp.com/workspace/games/yahtzee/","description":"All 13 categories, three rolls, the 35-point upper bonus. Free Yahtzee with a real scorecard and an auto-pick advisor - runs entirely in your browser.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Yahtzee</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">DICE</span><span class="ws-chip">13 BOXES</span><span class="ws-chip">SOLO</span></div>
+  </div>
+
+  <section class="ws-panel p-6">
+    <div class="grid gap-6 lg:grid-cols-[300px_1fr]">
+      <div class="yz-left">
+        <div id="dice" class="yz-dice"></div>
+        <div class="flex gap-2">
+          <button id="roll" class="ws-btn flex-1">Roll</button>
+          <button id="auto" class="ws-btn-ghost flex-1">Auto-pick</button>
+        </div>
+        <div class="mt-1 text-center text-[10px] text-white/35" id="rolls">Roll 1 of 3</div>
+        <div class="grid grid-cols-2 gap-2 mt-1">
+          <div class="bj-stat"><div class="ws-label mb-1">Score</div><div id="score" class="bj-num">0</div></div>
+          <div class="bj-stat"><div class="ws-label mb-1">Upper / bonus</div><div id="upper" class="bj-num">0</div></div>
+        </div>
+        <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3">
+          <div class="ws-label mb-2">Hand</div>
+          <pre id="handout" class="ws-out text-[11px] min-h-[70px]"></pre>
+        </div>
+        <div class="flex gap-2">
+          <button id="new" class="ws-btn-ghost flex-1">New game</button>
+        </div>
+        <p class="text-[10px] leading-relaxed text-white/30">Three rolls per turn. Hold any dice you
+          want to keep. A Yahtzee also scores 25 for a full house and 5 of a kind counts for four of
+          a kind. Score 63 or more in the top six for a 35-point bonus. There is no joker bonus.</p>
+      </div>
+      <div>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <div class="yz-col-label">Upper</div>
+          <div class="yz-col-label">Lower</div>
+          <div id="colU" class="flex flex-col gap-1.5"></div>
+          <div id="colL" class="flex flex-col gap-1.5"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen’s Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const $=id=>document.getElementById(id);
+/* --- rules constants. tools/provers/yahtzee.py re-implements these exactly. --- */
+const DICE=5, ROLLS=3, FACES=6;
+const UPPER_BONUS_AT=63, UPPER_BONUS=35;
+const SC_FULL_HOUSE=25, SC_SMALL_STRAIGHT=30, SC_LARGE_STRAIGHT=40, SC_YAHTZEE=50;
+const YAHTZEE_COUNTS_AS_FULL_HOUSE=true;   // five of a kind fills the full house
+const YAHTZEE_COUNTS_AS_FOUR_OF_A_KIND=true;
+const ALLOW_ZERO=true;                    // an unfilled category may bank a 0
+
+const S={dice:[1,1,1,1,1],keep:[false,false,false,false,false],turn:1,
+  cats:Object.create(null),log:[],over:false};
+window.yahtzeeState=S;
+
+const CATS=[
+  {id:'ones',label:'Ones',sec:'u'},{id:'twos',label:'Twos',sec:'u'},
+  {id:'threes',label:'Threes',sec:'u'},{id:'fours',label:'Fours',sec:'u'},
+  {id:'fives',label:'Fives',sec:'u'},{id:'sixes',label:'Sixes',sec:'u'},
+  {id:'three',label:'Three of a kind',sec:'l'},{id:'four',label:'Four of a kind',sec:'l'},
+  {id:'full',label:'Full house',sec:'l'},{id:'small',label:'Small straight',sec:'l'},
+  {id:'large',label:'Large straight',sec:'l'},{id:'yahtzee',label:'Yahtzee',sec:'l'},
+  {id:'chance',label:'Chance',sec:'l'}];
+
+function counts(d){const c=[];for(let i=0;i<=FACES;i++)c[i]=0;
+  for(const v of d)c[v]++;return c}
+function total(d){return d.reduce((a,b)=>a+b,0)}
+function maxCount(c){let m=0;for(let i=1;i<=FACES;i++)if(c[i]>m)m=c[i];return m}
+/* longest run of consecutive present faces starting at `from` */
+function run(c,from,len){
+  for(let i=from;i+len-1<=FACES;i++){
+    let ok=true;
+    for(let k=0;k<len;k++)if(!c[i+k])ok=false;
+    if(ok)return true;
+  }
+  return false;
+}
+/* --- scoring. Returns the RAW potential for a category. --- */
+function scoreCat(id,d){
+  d=d||S.dice;
+  const c=counts(d),mx=maxCount(c),t=total(d);
+  if(/^ones$|^twos$|^threes$|^fours$|^fives$|^sixes$/.test(id)){
+    const n=id==='ones'?1:id==='twos'?2:id==='threes'?3:id==='fours'?4:id==='fives'?5:6;
+    return c[n]*n;
+  }
+  if(id==='three')return mx>=3?t:0;
+  if(id==='four')return (mx>=4||(YAHTZEE_COUNTS_AS_FOUR_OF_A_KIND&&mx===5))?t:0;
+  if(id==='full'){
+    if(mx===5)return YAHTZEE_COUNTS_AS_FULL_HOUSE?SC_FULL_HOUSE:0;
+    let trip=false,pair=false;
+    for(let i=1;i<=FACES;i++){if(c[i]===3)trip=true;if(c[i]===2)pair=true}
+    return (trip&&pair)?SC_FULL_HOUSE:0;
+  }
+  if(id==='small')return run(c,1,4)||run(c,2,4)||run(c,3,4)?SC_SMALL_STRAIGHT:0;
+  if(id==='large')return run(c,1,5)||run(c,2,5)?SC_LARGE_STRAIGHT:0;
+  if(id==='yahtzee')return mx===5?SC_YAHTZEE:0;
+  if(id==='chance')return t;
+  return 0;
+}
+function upperSubtotal(){
+  let s=0;for(const k of ['ones','twos','threes','fours','fives','sixes'])
+    if(S.cats[k]!==undefined)s+=S.cats[k];
+  return s;
+}
+function bonus(){return upperSubtotal()>=UPPER_BONUS_AT?UPPER_BONUS:0}
+function totalScore(){
+  let s=0;for(const k in S.cats)s+=S.cats[k];return s+bonus();
+}
+/* the best category available right now, ties broken by upper-first (standard play) */
+function bestCat(){
+  let best=null,bv=-1;
+  for(const c of CATS){
+    if(S.cats[c.id]!==undefined)continue;
+    const v=scoreCat(c.id);
+    if(v>bv){bv=v;best=c.id}
+  }
+  return best?{id:best,value:bv}:null;
+}
+function roll(){
+  if(S.over)return false;
+  for(let i=0;i<DICE;i++)if(!S.keep[i])S.dice[i]=1+Math.floor(Math.random()*FACES);
+  if(S.turn<ROLLS){S.turn++;render();return true}
+  return true;
+}
+function toggle(i){
+  if(S.over)return false;
+  S.keep[i]=!S.keep[i];render();return true;
+}
+function pick(id){
+  if(S.over)return false;
+  if(S.cats[id]!==undefined)return false;
+  S.cats[id]=ALLOW_ZERO?scoreCat(id):0;
+  const b=bestCat();
+  S.log.push(CATS.find(c=>c.id===id).label+' = '+S.cats[id]);
+  if(S.log.length>8)S.log.shift();
+  S.dice=[1,1,1,1,1];S.keep=[false,false,false,false,false];S.turn=1;
+  const left=CATS.filter(c=>S.cats[c.id]===undefined).length;
+  if(left===0){S.over=true;S.log.push('Final score '+totalScore()+'.')}
+  render();return true;
+}
+function newGame(){
+  S.cats=Object.create(null);S.over=false;S.turn=1;S.log=[];
+  S.dice=[1,1,1,1,1];S.keep=[false,false,false,false,false];
+  S.log.push('New game.');
+  render();
+}
+function pips(v){
+  const m={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+  const s=new Set(m[v]||[]);
+  let h='';
+  for(let k=0;k<9;k++)h+='<span'+(s.has(k)?' class="yz-pip"':'')+'></span>';
+  return h;
+}
+function render(){
+  $('dice').innerHTML=S.dice.map((v,i)=>
+    '<div class="yz-die'+(S.keep[i]?' kept':'')+'" data-d="'+i+'" role="button" tabindex="0"'
+    +' aria-label="die '+(i+1)+' showing '+v+(S.keep[i]?', held':'')+'">'+pips(v)+'</div>').join('');
+  $('dice').querySelectorAll('[data-d]').forEach(el=>{
+    el.onclick=()=>toggle(+el.dataset.d);
+    el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle(+el.dataset.d)}};
+  });
+  const b=bestCat();
+  const mk=c=>{
+    const done=S.cats[c.id]!==undefined;
+    const pot=done?S.cats[c.id]:scoreCat(c.id);
+    return '<button class="yz-cat'+(done?' done':'')+(b&&b.id===c.id&&!S.over?' best':'')+'"'
+      +' data-c="'+c.id+'"'+(done||S.over?' disabled':'')+'>'
+      +'<span>'+c.label+'</span><b>'+pot+'</b></button>';
+  };
+  $('colU').innerHTML=CATS.filter(c=>c.sec==='u').map(mk).join('');
+  $('colL').innerHTML=CATS.filter(c=>c.sec==='l').map(mk).join('');
+  $('colU').querySelectorAll('button').forEach(el=>el.onclick=()=>pick(el.dataset.c));
+  $('colL').querySelectorAll('button').forEach(el=>el.onclick=()=>pick(el.dataset.c));
+  $('roll').textContent=S.turn===1?'Roll':(S.turn===2?'Roll again':'Score a box');
+  $('roll').disabled=S.over||S.turn>ROLLS;
+  $('auto').disabled=S.over;
+  $('rolls').textContent=S.over?'Game over':('Roll '+S.turn+' of '+ROLLS);
+  $('score').textContent=totalScore();
+  $('upper').textContent=upperSubtotal()+(bonus()?' +'+bonus():'');
+  const d=counts(S.dice);
+  $('handout').textContent='dice    '+S.dice.join(' ')+'\n'
+    +'counts   '+d.slice(1).map((n,i)=>(i+1)+'\u00d7'+n).join('  ')+'\n'
+    +'sum     '+total(S.dice)+'\n'
+    +'best    '+(b?CATS.find(c=>c.id===b.id).label+' ('+b.value+')':'\u2014')+'\n'
+    +'filled  '+CATS.filter(c=>S.cats[c.id]!==undefined).length+'/13';
+}
+$('roll').onclick=()=>roll();
+$('new').onclick=()=>newGame();
+$('auto').onclick=()=>{const b=bestCat();if(b)pick(b.id)};
+newGame();
+window.__yahtzee={S:S,scoreCat:scoreCat,counts:counts,total:total,run:run,bestCat:bestCat,
+  pick:pick,roll:roll,toggle:toggle,newGame:newGame,totalScore:totalScore,bonus:bonus,
+  upperSubtotal:upperSubtotal,CATS:CATS,
+  consts:{DICE:DICE,ROLLS:ROLLS,FACES:FACES,UPPER_BONUS_AT:UPPER_BONUS_AT,
+    UPPER_BONUS:UPPER_BONUS,SC_FULL_HOUSE:SC_FULL_HOUSE,SC_SMALL_STRAIGHT:SC_SMALL_STRAIGHT,
+    SC_LARGE_STRAIGHT:SC_LARGE_STRAIGHT,SC_YAHTZEE:SC_YAHTZEE,
+    YAHTZEE_COUNTS_AS_FULL_HOUSE:YAHTZEE_COUNTS_AS_FULL_HOUSE,
+    YAHTZEE_COUNTS_AS_FOUR_OF_A_KIND:YAHTZEE_COUNTS_AS_FOUR_OF_A_KIND,ALLOW_ZERO:ALLOW_ZERO}};</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  /* Watch the usual output nodes; report a short, useful summary. */
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      /* A game node is a label like "Score 12" - read it out as it stands.
+         A tool node is raw output - a character count is the useful summary. */
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+</script>
+<style>
+
+  .yz-left{display:flex;flex-direction:column;gap:.75rem}
+  .yz-dice{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem}
+  .yz-die{aspect-ratio:1;border-radius:.7rem;background:#eceae5;border:1px solid rgba(0,0,0,.4);
+    display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:14%;cursor:pointer;
+    box-shadow:0 1px 0 rgba(0,0,0,.6);transition:transform .12s ease,background .12s ease}
+  .yz-die:hover{transform:translateY(-2px)}
+  .yz-die.kept{background:#FF5F1F}
+  .yz-die.roll{animation:yzpop .18s ease}
+  @keyframes yzpop{0%{transform:scale(.86) rotate(-4deg)}100%{transform:none}}
+  .yz-pip{width:100%;height:100%;border-radius:50%;background:#050505}
+  .yz-die.kept .yz-pip{background:#050505}
+  .yz-col-label{font-family:'IBM Plex Sans',monospace;font-size:9px;font-weight:900;letter-spacing:.3em;
+    text-transform:uppercase;color:rgba(255,255,255,.3)}
+  .yz-cat{display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+    border-radius:.6rem;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);
+    padding:.5rem .65rem;font-size:11px;color:rgba(255,255,255,.75);cursor:pointer;text-align:left;
+    transition:border-color .15s ease,background .15s ease}
+  .yz-cat:hover:not(:disabled){border-color:rgba(255,95,31,.5);background:rgba(255,95,31,.08)}
+  .yz-cat:disabled{opacity:.4;cursor:not-allowed}
+  .yz-cat.done{opacity:.85;border-color:rgba(255,255,255,.06)}
+  .yz-cat.best{border-color:rgba(255,95,31,.75);background:rgba(255,95,31,.1)}
+  .yz-cat b{font-family:'IBM Plex Sans',monospace;color:#FF5F1F;font-variant-numeric:tabular-nums}
+  .yz-cat.done b{color:rgba(255,255,255,.45)}
+
+</style>
+<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/play.js?v=20261002c" defer></script>
+<!--ocurp-related-->
+</body>
+</html>

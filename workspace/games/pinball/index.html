@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pinball — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="One table, two flippers, a plunger. Work the bumpers, beat the targets, and clear all eight before three balls run out. Runs entirely in your browser.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/pinball/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Pinball">
+<meta property="og:description" content="One table, two flippers, a plunger. Work the bumpers, beat the targets, and clear all eight before three balls run out. Runs entirely in your browser.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/pinball/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Pinball on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Pinball">
+<meta name="twitter:description" content="One table, two flippers, a plunger. Work the bumpers, beat the targets, and clear all eight before three balls run out. Runs entirely in your browser.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Pinball on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Pinball","url":"https://ocurp.com/workspace/games/pinball/","description":"One table, two flippers, a plunger. Work the bumpers, beat the targets, and clear all eight before three balls run out. Runs entirely in your browser.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Pinball</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">PHYSICS</span><span class="ws-chip">CANVAS</span></div>
+  </div>
+  <section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_240px]"><div><canvas id="cv" width="360" height="500" class="mx-auto w-full max-w-[380px] rounded-lg border border-white/10 bg-[#0a0a0a]"></canvas><p class="mt-3 text-center text-[10px] leading-relaxed text-white/30">Left flipper: A or &#8592; &#183; Right flipper: D or &#8594; &#183; Hold SPACE to charge the plunger, release to fire</p></div><div class="flex flex-col gap-3">
+    <div class="flex gap-2"><button id="start" class="ws-btn flex-1">Start</button><button id="reset" class="ws-btn-ghost">Reset</button></div>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Score</div><div class="font-display text-xl font-black text-accent" id="score">0</div></div>
+      <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Best</div><div class="font-display text-xl font-black text-white/60" id="best">0</div></div>
+      <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Balls</div><div class="font-display text-xl font-black text-white" id="balls">3</div></div>
+      <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Targets</div><div class="font-display text-xl font-black text-white" id="targets">0/8</div></div>
+    </div>
+    <div id="msg" class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Hold SPACE to charge the plunger and release. Knock down all eight targets to win.</div>
+    <p class="text-[10px] leading-relaxed text-white/30">A flipper swung to meet the ball sends it back up the table. Swing it early or late and the ball drains. Three balls, no bonus.</p>
+  </div></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),cx=cv.getContext('2d'),W=cv.width,H=cv.height;
+
+/* ==================================================================
+   DESIGN CONSTANTS - mirrored verbatim in tools/provers/pinball.py
+   Every number the physics depends on is named here.
+   ================================================================== */
+const STEP=1/60;
+const GRAV=1500;                 // px/s^2, +y is down
+const BALL_R=8, BALL_MAX=780;
+const BALL_DAMP=0.9986;          // rolling friction, per step
+const LAUNCH_MIN=340, LAUNCH_MAX=1250, LAUNCH_CHG=2100;
+const WALL_L=12, WALL_R=348, CEIL=24, DRAIN_Y=492;
+/* flippers: pivots and angles. Left bat points right, right bat points
+   left, so the right flipper's angle is mirrored through PI. */
+const PIVOT=[[118,438],[242,438]];
+const FLIP_LEN=54, FLIP_R=6;
+const FLIP_REST=[0.42,Math.PI-0.42];
+const FLIP_UP=[-0.58,Math.PI+0.58];
+const FLIP_RATE=18.0;            // radians per second
+const BAT_KICK=430, BAT_UP=880;  // along-bat impulse and the upward bias
+const BUMP_R=15, BUMP_K=1.60, BUMP_PUSH=150;
+const SLING_K=1.55, SLING_PUSH=270, SLING_R=3;
+const TARGET_N=8, TARGET_PTS=2500, TARGET_HW=6, TARGET_HH=11;
+const BALLS=3, PTS_BUMPER=120, PTS_SLING=260;
+
+/* pop bumpers [x,y] down the centre of the table */
+const BUMPS=[[180,110],[180,226],[180,342]];
+/* slingshots [x,y,angle] - short kickers flanking the lower playfield */
+const SLINGS=[[96,400,-0.72],[264,400,0.72]];
+/* stand-up targets [x,y]: six sit on the bumper rims, two sit high on
+   the side walls so the ball has to be worked up there to reach them */
+const TARGETS=[[180,90],[180,130],[180,206],[180,246],[180,322],[180,362],[120,58],[242,58]];
+/* wall segments the ball bounces off: [x1,y1,x2,y2] */
+const WALLS=[
+  [WALL_L,CEIL,WALL_L,470],[WALL_L,470,86,492],[86,492,350,470],[350,470,WALL_R,CEIL],
+  /* plunger lane: left wall, then the diagonal deflector that ejects the
+     ball leftwards into the upper playfield */
+  [302,112,302,466],[302,112,WALL_R,64],
+  /* outlane guides */
+  [62,468,62,340],[298,468,298,340],
+  /* lower inlane guides funnelling to the flippers */
+  [104,330,128,376],[256,330,232,376],
+  /* little shelf over the left outlane */
+  [44,300,80,300],[44,300,44,340]
+];
+/* the plunger lane floor stops the ball until the shot is released */
+const LANE_X=326, LANE_Y=466;
+
+const S={W:W,H:H,x:LANE_X,y:LANE_Y,vx:0,vy:0,
+  inPlunger:true,charge:0,charging:false,
+  fl:[FLIP_REST[0],FLIP_REST[1]],
+  pressed:[false,false],
+  balls:BALLS,score:0,targetsDown:0,hits:0,launches:0,
+  running:false,over:false,won:false,t:0,ticks:0,
+  drains:0,lastDrain:'none',serveIn:0,got:TARGETS.map(()=>false)};
+window.pinballState=S;
+
+let ac=null;
+function tone(f,dur,vol){
+  try{
+    ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    if(ac.state==='suspended')ac.resume();
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.type='square';o.frequency.value=f;g.gain.value=vol||0.028;
+    o.connect(g);g.connect(ac.destination);o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+(dur||0.06));
+    o.stop(ac.currentTime+(dur||0.06));
+  }catch(e){}
+}
+const best=function(){return +(localStorage.getItem('ws-pinball-best')||0)};
+const saveBest=function(){
+  if(S.score>best()){localStorage.setItem('ws-pinball-best',S.score);$('best').textContent=S.score}
+};
+function hud(){
+  $('score').textContent=S.score;
+  $('balls').textContent=S.balls;
+  $('targets').textContent=S.targetsDown+'/'+TARGET_N;
+  $('best').textContent=best();
+}
+function serveBall(){
+  S.x=LANE_X;S.y=LANE_Y;S.vx=0;S.vy=0;S.charge=0;S.charging=false;
+  S.inPlunger=true;S.fl=[FLIP_REST[0],FLIP_REST[1]];S.pressed=[false,false];
+}
+function reset(){
+  S.score=0;S.targetsDown=0;S.hits=0;S.balls=BALLS;
+  S.running=false;S.over=false;S.won=false;S.t=0;S.ticks=0;
+  S.drains=0;S.lastDrain='none';S.serveIn=0;
+  S.got=TARGETS.map(()=>false);
+  serveBall();hud();
+  $('msg').textContent='Hold SPACE to charge the plunger and release. Knock down all eight targets to win.';
+  draw();
+}
+function start(){
+  if(!S.running||S.over||S.won){reset();S.running=true;
+    $('msg').textContent='Hold SPACE to charge, release to launch. A, D or the arrows work the flippers.'}
+}
+function drain(){
+  S.inPlunger=false;S.drains++;S.lastDrain='drain';S.balls--;
+  tone(120,0.25,0.04);
+  if(S.balls<=0){
+    S.balls=0;S.over=true;S.running=false;
+    $('msg').textContent='Out of balls. '+S.targetsDown+'/'+TARGET_N+' targets, '+S.score+' points. Press Start.';
+  }else{
+    S.serveIn=0.7;
+    $('msg').textContent='Drained — '+S.balls+' ball'+(S.balls===1?'':'s')+' left. Hold SPACE to charge.';
+  }
+  hud();
+}
+function win(){
+  if(S.won)return;
+  S.won=true;S.over=true;S.running=false;saveBest();
+  $('msg').textContent='Table clear: all '+TARGET_N+' targets down, '+S.score+' points, '+S.balls+' ball'+(S.balls===1?'':'s')+' left. Press Start.';
+  tone(880,0.3,0.05);hud();
+}
+function addScore(n){S.score+=n;$('score').textContent=String(S.score)}
+function closestSeg(px,py,x1,y1,x2,y2){
+  const dx=x2-x1,dy=y2-y1,L=dx*dx+dy*dy;
+  let t=L>0?((px-x1)*dx+(py-y1)*dy)/L:0;
+  if(t<0)t=0;else if(t>1)t=1;
+  const cx=x1+dx*t,cy=y1+dy*t;
+  return {d:Math.hypot(px-cx,py-cy),x:cx,y:cy};
+}
+/* the bat capsule: midpoint to tip along the flipper's own axis */
+function batSeg(i){
+  const a=S.fl[i],px=PIVOT[i][0],py=PIVOT[i][1];
+  return [px+Math.cos(a)*FLIP_LEN*0.5,py+Math.sin(a)*FLIP_LEN*0.5,
+          px+Math.cos(a)*FLIP_LEN,py+Math.sin(a)*FLIP_LEN];
+}
+function update(dt){
+  S.t+=dt;S.ticks++;
+  /* flippers move even between balls */
+  for(let i=0;i<2;i++){
+    const want=S.pressed[i]?FLIP_UP[i]:FLIP_REST[i];
+    const d=want-S.fl[i],mv=FLIP_RATE*dt;
+    S.fl[i]=d>0?Math.min(want,S.fl[i]+mv):Math.max(want,S.fl[i]-mv);
+  }
+  if(!S.running||S.over)return;
+  if(S.serveIn>0){S.serveIn-=dt;if(S.serveIn<=0)serveBall();return}
+  if(S.inPlunger){
+    if(S.charging)S.charge=Math.min(LAUNCH_MAX,S.charge+LAUNCH_CHG*dt);
+    return;
+  }
+  /* free ball: clamp, gravity, damping, then substepped collision */
+  let sp=Math.hypot(S.vx,S.vy);
+  if(sp>BALL_MAX){S.vx*=BALL_MAX/sp;S.vy*=BALL_MAX/sp;sp=BALL_MAX}
+  S.vy+=GRAV*dt;
+  S.vx*=BALL_DAMP;S.vy*=BALL_DAMP;
+  const sub=Math.max(1,Math.min(12,Math.ceil(sp*dt/BALL_R)));
+  for(let k=0;k<sub;k++){
+    if(stepBall(dt/sub))return;
+    if(S.y-BALL_R>DRAIN_Y){drain();return}
+  }
+}
+function stepBall(h){
+  S.x+=S.vx*h;
+  S.y+=S.vy*h;
+  /* outer box */
+  if(S.x-BALL_R<WALL_L){S.x=WALL_L+BALL_R;S.vx=Math.abs(S.vx)*0.80;S.hits++;tone(240,0.03,0.018)}
+  if(S.x+BALL_R>WALL_R){S.x=WALL_R-BALL_R;S.vx=-Math.abs(S.vx)*0.80;S.hits++;tone(240,0.03,0.018)}
+  if(S.y-BALL_R<CEIL){S.y=CEIL+BALL_R;S.vy=Math.abs(S.vy)*0.80;S.hits++;tone(300,0.03,0.018)}
+  /* wall segments */
+  for(let i=0;i<WALLS.length;i++){
+    const w=WALLS[i];
+    const c=closestSeg(S.x,S.y,w[0],w[1],w[2],w[3]);
+    if(c.d<BALL_R&&c.d>1e-9){
+      let nx=S.x-c.x,ny=S.y-c.y,L=Math.hypot(nx,ny);
+      if(L<1e-9){nx=-(w[3]-w[1]);ny=w[2]-w[0];L=Math.hypot(nx,ny)||1}
+      nx/=L;ny/=L;
+      S.x=c.x+nx*(BALL_R+0.01);S.y=c.y+ny*(BALL_R+0.01);
+      const dot=S.vx*nx+S.vy*ny;
+      if(dot<0){S.vx-=2*dot*nx;S.vy-=2*dot*ny;S.hits++;tone(260,0.03,0.018)}
+    }
+  }
+  /* pop bumpers */
+  for(let i=0;i<BUMPS.length;i++){
+    const b=BUMPS[i],dx=S.x-b[0],dy=S.y-b[1];
+    const d=Math.hypot(dx,dy),R=BUMP_R+BALL_R;
+    if(d<R&&d>1e-9){
+      const nx=dx/d,ny=dy/d;
+      S.x=b[0]+nx*(R+0.01);S.y=b[1]+ny*(R+0.01);
+      const dot=S.vx*nx+S.vy*ny;
+      S.vx=(S.vx-2*dot*nx)*BUMP_K+nx*BUMP_PUSH;
+      S.vy=(S.vy-2*dot*ny)*BUMP_K+ny*BUMP_PUSH;
+      S.hits++;addScore(PTS_BUMPER);tone(640+Math.random()*80,0.05,0.03);
+    }
+  }
+  /* slingshots */
+  for(let i=0;i<SLINGS.length;i++){
+    const g=SLINGS[i];
+    const c=closestSeg(S.x,S.y,g[0],g[1],g[0]+Math.cos(g[2])*36,g[1]+Math.sin(g[2])*36);
+    if(c.d<BALL_R+SLING_R&&c.d>1e-9){
+      let nx=S.x-c.x,ny=S.y-c.y,L=Math.hypot(nx,ny);
+      if(L<1e-9){nx=-Math.sin(g[2]);ny=Math.cos(g[2]);L=1}
+      nx/=L;ny/=L;
+      S.x=c.x+nx*(BALL_R+SLING_R+0.01);S.y=c.y+ny*(BALL_R+SLING_R+0.01);
+      const dot=S.vx*nx+S.vy*ny;
+      if(dot<0){
+        S.vx=(S.vx-2*dot*nx)*SLING_K+nx*SLING_PUSH;
+        S.vy=(S.vy-2*dot*ny)*SLING_K+ny*SLING_PUSH;
+        S.hits++;addScore(PTS_SLING);tone(420,0.05,0.03);
+      }
+    }
+  }
+  /* stand-up targets */
+  for(let i=0;i<TARGETS.length;i++){
+    if(S.got[i])continue;
+    const t=TARGETS[i];
+    if(Math.abs(S.x-t[0])<=BALL_R+TARGET_HW&&Math.abs(S.y-t[1])<=BALL_R+TARGET_HH){
+      S.got[i]=true;S.targetsDown++;
+      addScore(TARGET_PTS);tone(880,0.09,0.035);
+      $('targets').textContent=S.targetsDown+'/'+TARGET_N;
+      if(S.targetsDown>=TARGET_N){win();return true}
+    }
+  }
+  /* flippers: the bat reflects the ball along its own face and adds a
+     fixed kick, so meeting the ball at the right moment is the skill */
+  for(let i=0;i<2;i++){
+    const b=batSeg(i);
+    const c=closestSeg(S.x,S.y,b[0],b[1],b[2],b[3]);
+    const R=FLIP_R+BALL_R;
+    if(c.d<R&&c.d>1e-9){
+      let nx=S.x-c.x,ny=S.y-c.y,L=Math.hypot(nx,ny);
+      if(L<1e-9){nx=-Math.sin(S.fl[i]);ny=Math.cos(S.fl[i]);L=1}
+      nx/=L;ny/=L;
+      S.x=c.x+nx*(R+0.02);S.y=c.y+ny*(R+0.02);
+      const spd=Math.hypot(S.vx,S.vy)||1;
+      const ax=Math.cos(S.fl[i]),ay=Math.sin(S.fl[i]);
+      S.vx=ax*BAT_KICK+nx*spd*0.35;
+      S.vy=ay*BAT_KICK+ny*spd*0.35-BAT_UP;
+      S.hits++;tone(300,0.04,0.026);
+    }
+  }
+  return false;
+}
+function draw(){
+  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,W,H);
+  cx.strokeStyle='rgba(255,255,255,.10)';cx.lineWidth=2;
+  cx.strokeRect(WALL_L,CEIL,WALL_R-WALL_L,DRAIN_Y-CEIL);
+  /* outlane lanes */
+  cx.strokeStyle='rgba(255,95,31,.10)';cx.lineWidth=12;
+  cx.beginPath();cx.moveTo(62,468);cx.lineTo(62,344);cx.stroke();
+  cx.beginPath();cx.moveTo(298,468);cx.lineTo(298,344);cx.stroke();
+  /* walls */
+  cx.strokeStyle='rgba(255,255,255,.20)';cx.lineWidth=3;
+  for(let i=0;i<WALLS.length;i++){
+    const w=WALLS[i];
+    cx.beginPath();cx.moveTo(w[0],w[1]);cx.lineTo(w[2],w[3]);cx.stroke();
+  }
+  /* slingshots */
+  for(let i=0;i<SLINGS.length;i++){
+    const g=SLINGS[i];
+    cx.strokeStyle='rgba(255,95,31,.6)';cx.lineWidth=5;
+    cx.beginPath();cx.moveTo(g[0],g[1]);
+    cx.lineTo(g[0]+Math.cos(g[2])*36,g[1]+Math.sin(g[2])*36);cx.stroke();
+  }
+  /* bumpers */
+  for(let i=0;i<BUMPS.length;i++){
+    const b=BUMPS[i];
+    cx.fillStyle='rgba(255,95,31,.18)';
+    cx.beginPath();cx.arc(b[0],b[1],BUMP_R,0,7);cx.fill();
+    cx.strokeStyle='#FF5F1F';cx.lineWidth=2;
+    cx.beginPath();cx.arc(b[0],b[1],BUMP_R,0,7);cx.stroke();
+  }
+  /* targets */
+  for(let i=0;i<TARGETS.length;i++){
+    const t=TARGETS[i];
+    cx.fillStyle=S.got[i]?'rgba(255,255,255,.10)':'#FF5F1F';
+    cx.fillRect(t[0]-TARGET_HW,t[1]-TARGET_HH,TARGET_HW*2,TARGET_HH*2);
+  }
+  /* drain line */
+  cx.strokeStyle='rgba(255,95,31,.3)';cx.lineWidth=2;
+  cx.beginPath();cx.moveTo(62,DRAIN_Y-6);cx.lineTo(298,DRAIN_Y-6);cx.stroke();
+  /* flippers */
+  for(let i=0;i<2;i++){
+    const b=batSeg(i),ax=(b[0]+b[2])/2,ay=(b[1]+b[3])/2,a=S.fl[i];
+    cx.save();cx.translate(ax,ay);cx.rotate(a);
+    cx.fillStyle=S.pressed[i]?'#ffffff':'#FF5F1F';
+    cx.beginPath();
+    if(cx.roundRect)cx.roundRect(-FLIP_LEN/2,-FLIP_R,FLIP_LEN,FLIP_R*2,FLIP_R);
+    else cx.rect(-FLIP_LEN/2,-FLIP_R,FLIP_LEN,FLIP_R*2);
+    cx.fill();
+    cx.restore();
+    cx.fillStyle='#ffffff';
+    cx.beginPath();cx.arc(PIVOT[i][0],PIVOT[i][1],4,0,7);cx.fill();
+  }
+  /* plunger */
+  if(S.inPlunger){
+    const len=16+(S.charge/LAUNCH_MAX)*32;
+    cx.fillStyle='rgba(255,255,255,.35)';
+    cx.fillRect(LANE_X+10,LANE_Y-3,len,6);
+    cx.fillStyle=S.charge>=LAUNCH_MAX?'#FF5F1F':'rgba(255,255,255,.7)';
+    cx.fillRect(LANE_X+10,LANE_Y-8,len,16);
+  }
+  /* the ball */
+  if(!S.over){
+    cx.fillStyle='#ffffff';
+    cx.beginPath();cx.arc(S.x,S.y,BALL_R,0,7);cx.fill();
+    cx.strokeStyle='rgba(255,95,31,.75)';cx.lineWidth=1.5;
+    cx.beginPath();cx.arc(S.x,S.y,BALL_R,0,7);cx.stroke();
+  }
+  if(S.won){
+    cx.fillStyle='rgba(10,10,10,.82)';cx.fillRect(0,0,W,H);
+    cx.fillStyle='#FF5F1F';cx.font='900 24px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('TABLE CLEAR',W/2,H/2-6);
+    cx.fillStyle='rgba(255,255,255,.55)';cx.font='700 12px IBM Plex Sans,monospace';
+    cx.fillText(S.score+' PTS / '+S.balls+' BALLS LEFT',W/2,H/2+18);
+  }else if(S.over){
+    cx.fillStyle='rgba(10,10,10,.82)';cx.fillRect(0,0,W,H);
+    cx.fillStyle='#FF5F1F';cx.font='900 24px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('GAME OVER',W/2,H/2-6);
+    cx.fillStyle='rgba(255,255,255,.55)';cx.font='700 12px IBM Plex Sans,monospace';
+    cx.fillText(S.score+' PTS / '+S.targetsDown+' OF '+TARGET_N,W/2,H/2+18);
+  }else if(!S.running){
+    cx.fillStyle='rgba(255,255,255,.45)';cx.font='900 15px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('PRESS START',W/2,H/2);
+  }
+}
+let acc=0,last=0;
+function loop(ts){
+  if(!last)last=ts;
+  acc+=(ts-last)/1000;last=ts;
+  if(acc>0.25)acc=0.25;
+  while(acc>=STEP){update(STEP);acc-=STEP}
+  draw();
+  requestAnimationFrame(loop);
+}
+function setFlip(i,down){
+  S.pressed[i]=down;
+  if(down&&!S.running&&!S.over)start();
+  tone(down?520:300,0.03,0.018);
+}
+function release(){
+  if(!S.charging)return;
+  S.charging=false;
+  if(S.inPlunger&&S.running&&!S.over){
+    const p=Math.max(LAUNCH_MIN,S.charge);
+    S.vx=-(p*0.20);
+    S.vy=-(p*0.98);
+    const sp=Math.hypot(S.vx,S.vy);
+    if(sp>BALL_MAX){S.vx*=BALL_MAX/sp;S.vy*=BALL_MAX/sp}
+    S.inPlunger=false;S.charge=0;S.launches++;
+    tone(200+p/10,0.12,0.035);
+  }
+}
+function keyDown(e){
+  const k=String(e.key).toLowerCase();
+  if(k==='a'||k==='arrowleft'){setFlip(0,true);e.preventDefault()}
+  else if(k==='d'||k==='arrowright'){setFlip(1,true);e.preventDefault()}
+  else if(k===' '||k==='spacebar'){
+    e.preventDefault();
+    if(!S.running&&!S.over)start();
+    S.charging=true;
+  }
+}
+function keyUp(e){
+  const k=String(e.key).toLowerCase();
+  if(k==='a'||k==='arrowleft')setFlip(0,false);
+  else if(k==='d'||k==='arrowright')setFlip(1,false);
+  else if(k===' '||k==='spacebar')release();
+}
+addEventListener('keydown',keyDown);
+addEventListener('keyup',keyUp);
+function canvasX(e){
+  const r=cv.getBoundingClientRect();
+  return (e.clientX-r.left)/r.width*W;
+}
+cv.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  const sx=canvasX(e);
+  if(!S.running&&!S.over){start();return}
+  if(sx>=296&&S.inPlunger){S.charging=true;return}
+  if(sx>W*0.5){setFlip(1,true);release()}
+  else{setFlip(0,true);release()}
+});
+cv.addEventListener('pointerup',e=>{
+  e.preventDefault();
+  const sx=canvasX(e);
+  if(sx<=W*0.5)setFlip(0,false);else setFlip(1,false);
+  if(S.charging)release();
+});
+cv.addEventListener('pointercancel',()=>{setFlip(0,false);setFlip(1,false);release()});
+$('start').onclick=start;
+$('reset').onclick=reset;
+window.__pb={step:function(n){for(let i=0;i<(n||1);i++)update(STEP);draw()},
+  reset:reset,start:start,state:S,release:release,setFlip:setFlip,
+  launch:function(v){S.charge=v;S.charging=true;release()}};
+hud();reset();
+requestAnimationFrame(loop);
+</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+
+<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/play.js?v=20261002c" defer></script>
+</body>
+</html>

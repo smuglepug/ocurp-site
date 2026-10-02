@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platformer — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="One fixed course, three gaps, a spike strip and a flag at the end. Every jump arc is honest physics you can check by hand. Runs entirely in your browser.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/platformer/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Platformer">
+<meta property="og:description" content="One fixed course, three gaps, a spike strip and a flag at the end. Every jump arc is honest physics you can check by hand. Runs entirely in your browser.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/platformer/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Platformer on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Platformer">
+<meta name="twitter:description" content="One fixed course, three gaps, a spike strip and a flag at the end. Every jump arc is honest physics you can check by hand. Runs entirely in your browser.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Platformer on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Platformer","url":"https://ocurp.com/workspace/games/platformer/","description":"One fixed course, three gaps, a spike strip and a flag at the end. Every jump arc is honest physics you can check by hand. Runs entirely in your browser.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Platformer</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">PLATFORM</span><span class="ws-chip">PRECISE</span><span class="ws-chip">CANVAS</span></div>
+  </div>
+  <section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_240px]"><div><canvas id="cv" width="480" height="320" class="mx-auto w-full max-w-[520px] rounded-lg border border-white/10 bg-[#0a0a0a]"></canvas><p class="mt-3 text-center text-[10px] leading-relaxed text-white/30">&#8594; or D to run &#183; SPACE, W or &#8593; to jump — tap for a hop, hold for full height</p></div><div class="flex flex-col gap-3">
+    <div class="flex gap-2"><button id="start" class="ws-btn flex-1">Start</button><button id="reset" class="ws-btn-ghost">Reset</button></div>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Distance</div><div class="font-display text-xl font-black text-accent" id="dist">0</div></div>
+      <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Best</div><div class="font-display text-xl font-black text-white/60" id="best">0</div></div>
+      <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Jumps</div><div class="font-display text-xl font-black text-white" id="jumps">0</div></div>
+      <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Orbs</div><div class="font-display text-xl font-black text-white" id="orbs">0/9</div></div>
+    </div>
+    <div id="msg" class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Reach the flag at the far right. Falling costs the run.</div>
+    <p class="text-[10px] leading-relaxed text-white/30" id="phys">A held jump peaks ~97px and stays airborne ~0.74s, covering ~126px of ground at full run.</p>
+  </div></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),cx=cv.getContext('2d'),W=cv.width,H=cv.height;
+
+/* ==================================================================
+   DESIGN CONSTANTS - mirrored verbatim in tools/provers/platformer.py
+   Units are px and px/second; the loop runs update(STEP) with
+   STEP = 1/60, so nothing below depends on the display frame rate.
+   ================================================================== */
+const GRAV=1150, JUMP=-500, VMAX=900, RUN=170;
+const PW=20, PH=26, STEP=1/60;
+const FLOOR_Y=280, DEATH_Y=340, GOAL_X=1420, START_X=60, LEVEL_END=1560;
+const COYOTE=6, JUMP_BUF=6, JUMP_CUT=0.45;
+/* solid ground slabs [x, width, topY] */
+const SURF=[[0,300,FLOOR_Y],[348,252,FLOOR_Y],[664,236,FLOOR_Y],[944,616,FLOOR_Y]];
+/* one-way ledges [x, width, topY] - land from above only */
+const LEDGE=[[1180,90,206]];
+/* deadly spike strips [x, width], drawn sitting on the floor */
+const SPIKES=[[210,28],[1120,30]];
+/* optional collectibles [x, y] */
+const ORBS=[[120,266],[268,266],[400,266],[500,266],[760,266],[840,266],[1180,266],[1260,266],[1380,266]];
+
+/* derived geometry - the page computes these itself, not the prover */
+const GAPS=(function(){
+  const g=[];
+  for(let i=1;i<SURF.length;i++)g.push(SURF[i][0]-(SURF[i-1][0]+SURF[i-1][1]));
+  return g;
+})();
+const WIDEST_GAP=Math.max.apply(null,GAPS);
+/* JUMP^2 / (2*GRAV) = 250000/2300 = 108.70px of rise */
+const JUMP_APEX=JUMP*JUMP/(2*GRAV);
+const AIRTIME=2*Math.abs(JUMP)/GRAV;
+const REACH=RUN*AIRTIME;
+
+const S={W:W,H:H,x:START_X,y:FLOOR_Y-PH,py:FLOOR_Y-PH,vy:0,dir:0,face:1,
+  onGround:true,keys:{},coyote:0,buf:0,jumping:false,
+  running:false,over:false,won:false,dist:0,jumps:0,ticks:0,
+  got:ORBS.map(()=>false),collected:0,death:null};
+window.platformerState=S;
+
+let ac=null;
+function tone(f,dur,vol){
+  try{
+    ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    if(ac.state==='suspended')ac.resume();
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.type='triangle';o.frequency.value=f;g.gain.value=vol||0.035;
+    o.connect(g);g.connect(ac.destination);o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+(dur||0.09));
+    o.stop(ac.currentTime+(dur||0.09));
+  }catch(e){}
+}
+const boxHit=function(ax,ay,aw,ah,bx,by,bw,bh){
+  return ax<bx+bw&&ax+aw>bx&&ay<by+bh&&ay+ah>by;
+};
+
+function reset(){
+  S.x=START_X;S.y=FLOOR_Y-PH;S.py=S.y;S.vy=0;S.dir=0;S.face=1;S.onGround=true;
+  S.coyote=0;S.buf=0;S.jumping=false;S.running=false;S.over=false;S.won=false;
+  S.dist=0;S.jumps=0;S.ticks=0;S.collected=0;S.death=null;
+  S.keys={};S.got=ORBS.map(()=>false);
+  $('dist').textContent='0';$('jumps').textContent='0';
+  $('orbs').textContent='0/'+ORBS.length;$('best').textContent=best();
+  $('msg').textContent='Reach the flag at the far right. Falling costs the run.';
+  draw();
+}
+function start(){
+  if(!S.running||S.over||S.won){reset();S.running=true;
+    $('msg').textContent='Go. The widest gap in the course is '+WIDEST_GAP+'px; your jump covers '+Math.round(REACH)+'px.'}
+}
+function gameOver(why){
+  if(S.over||S.won)return;
+  S.over=true;S.running=false;S.death=why;
+  saveBest();
+  $('msg').textContent=why+' at x='+Math.floor(S.x)+'. '+S.jumps+' jumps, '+Math.floor(S.dist)+'px. Press Start.';
+  tone(120,0.28,0.05);
+}
+function win(){
+  if(S.won)return;
+  S.won=true;S.over=true;S.running=false;
+  saveBest();
+  $('msg').textContent='Flag reached: '+S.jumps+' jumps, '+S.collected+'/'+ORBS.length+' orbs. Press Start.';
+  tone(880,0.25,0.05);
+}
+const best=function(){return +(localStorage.getItem('ws-platformer-best')||0)};
+const saveBest=function(){
+  if(Math.floor(S.dist)>best()){localStorage.setItem('ws-platformer-best',Math.floor(S.dist));$('best').textContent=Math.floor(S.dist)}
+};
+
+/* swept one-way landing: the feet crossed the top this step */
+function landingTops(x,y){
+  const out=[];
+  for(let i=0;i<SURF.length;i++){
+    const s=SURF[i];
+    if(x+PW>s[0]&&x<s[0]+s[1])out.push([s[2],'solid']);
+  }
+  for(let i=0;i<LEDGE.length;i++){
+    const l=LEDGE[i];
+    if(x+PW>l[0]&&x<l[0]+l[1])out.push([l[2],'ledge']);
+  }
+  return out;
+}
+function pressJump(){S.buf=JUMP_BUF}
+function heldJump(){return !!(S.keys[' ']||S.keys['w']||S.keys['arrowup'])}
+
+function update(dt){
+  S.ticks++;
+  if(!S.running||S.over)return;
+  const k=S.keys;
+  let want=0;
+  if(k['arrowright']||k['d'])want=1;
+  if(k['arrowleft']||k['a'])want=-1;
+  if(want!==0){S.dir=want;S.face=want}
+
+  /* jump: buffered press + coyote grace; releasing early cuts the rise */
+  if(S.buf>0)S.buf--;
+  if(S.onGround)S.coyote=COYOTE;else if(S.coyote>0)S.coyote--;
+  if(S.buf>0&&S.coyote>0){
+    S.vy=JUMP;S.onGround=false;S.coyote=0;S.buf=0;S.jumping=true;S.jumps++;
+    tone(520,0.06,0.03);
+  }
+  if(S.jumping&&!heldJump())S.vy*=JUMP_CUT;
+  if(S.vy>=0)S.jumping=false;
+
+  /* horizontal (constant run speed: this is a precision platformer) */
+  S.x+=S.dir*RUN*dt;
+  if(S.x<0)S.x=0;
+  if(S.x>LEVEL_END-PW)S.x=LEVEL_END-PW;
+
+  /* vertical: gravity then a swept collision against every surface top */
+  S.vy=Math.min(VMAX,S.vy+GRAV*dt);
+  const ny=S.y+S.vy*dt;
+  const feetOld=S.y+PH, feetNew=ny+PH;
+  S.py=S.y;
+  S.onGround=false;
+  if(S.vy>=0){
+    let bestTop=-1e9;
+    const tops=landingTops(S.x,ny);
+    for(let i=0;i<tops.length;i++){
+      const top=tops[i][0];
+      if(feetOld<=top+0.001&&feetNew>=top){if(top>bestTop)bestTop=top}
+    }
+    if(bestTop>-1e8){S.y=bestTop-PH;S.vy=0;S.onGround=true}
+    else S.y=ny;
+  }else{
+    S.y=ny;
+  }
+
+  /* hazards */
+  for(let i=0;i<SPIKES.length;i++){
+    const s=SPIKES[i];
+    if(boxHit(S.x,S.y,PW,PH,s[0],FLOOR_Y-16,s[1],16)){gameOver('Ran into the spikes');return}
+  }
+  /* orbs */
+  for(let i=0;i<ORBS.length;i++){
+    if(S.got[i])continue;
+    const o=ORBS[i];
+    if(Math.abs(S.x+PW/2-o[0])<15&&Math.abs(S.y+PH/2-o[1])<17){
+      S.got[i]=true;S.collected++;
+      $('orbs').textContent=S.collected+'/'+ORBS.length;tone(760,0.05,0.03);
+    }
+  }
+  /* progress */
+  S.dist=Math.max(0,S.x-START_X);
+  $('dist').textContent=Math.floor(S.dist);
+  $('jumps').textContent=S.jumps;
+  if(S.y>DEATH_Y){gameOver('Fell into the pit');return}
+  if(S.x+PW>=GOAL_X){win();return}
+}
+
+const cam=function(){return Math.max(0,Math.min(LEVEL_END-W,S.x-W*0.38))};
+function draw(){
+  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,W,H);
+  const c=cam();
+  cx.save();cx.translate(-c,0);
+  /* ground slabs */
+  for(let i=0;i<SURF.length;i++){
+    const s=SURF[i];
+    cx.fillStyle='rgba(255,255,255,.09)';
+    cx.fillRect(s[0],s[2],s[1],H-s[2]);
+    cx.fillStyle='rgba(255,255,255,.28)';
+    cx.fillRect(s[0],s[2],s[1],2);
+  }
+  /* one-way ledges */
+  for(let i=0;i<LEDGE.length;i++){
+    const l=LEDGE[i];
+    cx.fillStyle='rgba(255,95,31,.16)';cx.fillRect(l[0],l[2],l[1],8);
+    cx.fillStyle='#FF5F1F';cx.fillRect(l[0],l[2],l[1],2);
+  }
+  /* spikes */
+  for(let i=0;i<SPIKES.length;i++){
+    const s=SPIKES[i];
+    cx.fillStyle='rgba(255,255,255,.5)';
+    for(let k=0;k<s[1];k+=8){
+      const x=s[0]+k, half=Math.min(8,s[1]-k)/2;
+      cx.beginPath();cx.moveTo(x-half,FLOOR_Y-16);cx.lineTo(x,FLOOR_Y);cx.lineTo(x+half,FLOOR_Y);
+      cx.closePath();cx.fill();
+    }
+  }
+  /* orbs */
+  for(let i=0;i<ORBS.length;i++){
+    if(S.got[i])continue;
+    const o=ORBS[i];
+    cx.strokeStyle='#FF5F1F';cx.lineWidth=2;
+    cx.beginPath();cx.arc(o[0],o[1],5,0,7);cx.stroke();
+  }
+  /* goal flag */
+  cx.strokeStyle='#FF5F1F';cx.lineWidth=3;
+  cx.beginPath();cx.moveTo(GOAL_X,FLOOR_Y);cx.lineTo(GOAL_X,FLOOR_Y-54);cx.stroke();
+  cx.fillStyle='#FF5F1F';
+  cx.beginPath();cx.moveTo(GOAL_X,FLOOR_Y-54);cx.lineTo(GOAL_X+26,FLOOR_Y-44);
+  cx.lineTo(GOAL_X,FLOOR_Y-34);cx.closePath();cx.fill();
+  /* the runner */
+  cx.save();cx.translate(S.x+PW/2,S.y+PH/2);
+  cx.fillStyle=S.onGround?'#FF5F1F':'#fff';
+  if(cx.roundRect)cx.beginPath(),cx.roundRect(-PW/2,-PH/2,PW,PH,5),cx.fill();
+  else cx.fillRect(-PW/2,-PH/2,PW,PH);
+  cx.fillStyle='#0a0a0a';
+  cx.fillRect(S.face>0?3:-6,-6,3,3);
+  cx.restore();
+  cx.restore();
+  if(S.won){
+    cx.fillStyle='rgba(10,10,10,.80)';cx.fillRect(0,0,W,H);
+    cx.fillStyle='#FF5F1F';cx.font='900 26px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('FLAG',W/2,H/2-6);
+    cx.fillStyle='rgba(255,255,255,.55)';cx.font='700 12px IBM Plex Sans,monospace';
+    cx.fillText(S.jumps+' JUMPS / '+S.collected+' ORBS',W/2,H/2+18);
+  }else if(S.over){
+    cx.fillStyle='rgba(10,10,10,.80)';cx.fillRect(0,0,W,H);
+    cx.fillStyle='#FF5F1F';cx.font='900 20px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText(String(S.death||'DOWN').toUpperCase(),W/2,H/2-6);
+    cx.fillStyle='rgba(255,255,255,.55)';cx.font='700 12px IBM Plex Sans,monospace';
+    cx.fillText(Math.floor(S.x)+' / '+GOAL_X+' PX',W/2,H/2+18);
+  }else if(!S.running){
+    cx.fillStyle='rgba(255,255,255,.45)';cx.font='900 15px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('PRESS START',W/2,H/2);
+  }
+}
+/* fixed-step loop: the game advances at STEP regardless of refresh rate */
+let acc=0,last=0;
+function loop(ts){
+  if(!last)last=ts;
+  acc+=(ts-last)/1000;last=ts;
+  if(acc>0.25)acc=0.25;
+  while(acc>=STEP){update(STEP);acc-=STEP}
+  draw();
+  requestAnimationFrame(loop);
+}
+function setKey(e,down){
+  const k=String(e.key).toLowerCase();
+  S.keys[k]=down;
+  if(k===' '||k==='spacebar'){
+    if(down){if(!S.running)start();else pressJump()}
+    e.preventDefault();
+  }
+  if(k==='w'||k==='arrowup'){
+    if(down){if(!S.running)start();else pressJump()}
+    e.preventDefault();
+  }
+  if(down&&(k==='arrowright'||k==='d'||k==='arrowleft'||k==='a'))e.preventDefault();
+}
+addEventListener('keydown',e=>setKey(e,true));
+addEventListener('keyup',e=>setKey(e,false));
+cv.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  const r=cv.getBoundingClientRect();
+  const sx=(e.clientX-r.left)/r.width*W+cam();
+  S.keys[sx<S.x+PW/2?'arrowleft':'arrowright']=true;
+  if(!S.running)start();
+});
+cv.addEventListener('pointerup',()=>{S.keys.arrowleft=false;S.keys.arrowright=false});
+cv.addEventListener('pointercancel',()=>{S.keys.arrowleft=false;S.keys.arrowright=false});
+$('start').onclick=start;
+$('reset').onclick=reset;
+window.__pl={step:function(n){for(let i=0;i<(n||1);i++)update(STEP);draw()},
+  reset:reset,start:start,state:S,pressJump:pressJump,
+  setKeys:function(o){for(const k in o)S.keys[k]=o[k]},
+  GAPS:GAPS,WIDEST_GAP:WIDEST_GAP,REACH:REACH,JUMP_APEX:JUMP_APEX};
+$('best').textContent=best();
+$('phys').textContent='A held jump peaks '+JUMP_APEX.toFixed(1)+'px and stays airborne '
+  +AIRTIME.toFixed(2)+'s, covering '+REACH.toFixed(1)+'px at full run. Widest gap here is '
+  +WIDEST_GAP+'px.';
+reset();
+requestAnimationFrame(loop);
+</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+
+<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/play.js?v=20261002c" defer></script>
+</body>
+</html>

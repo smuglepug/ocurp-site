@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tower Defense — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="Six waves on one fixed lane. Place turrets, watch the range circles, and stop every runner before it reaches the exit. Runs entirely in your browser.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/tower-defense/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Tower Defense">
+<meta property="og:description" content="Six waves on one fixed lane. Place turrets, watch the range circles, and stop every runner before it reaches the exit. Runs entirely in your browser.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/tower-defense/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Tower Defense on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Tower Defense">
+<meta name="twitter:description" content="Six waves on one fixed lane. Place turrets, watch the range circles, and stop every runner before it reaches the exit. Runs entirely in your browser.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Tower Defense on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Tower Defense","url":"https://ocurp.com/workspace/games/tower-defense/","description":"Six waves on one fixed lane. Place turrets, watch the range circles, and stop every runner before it reaches the exit. Runs entirely in your browser.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Tower Defense</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">STRATEGY</span><span class="ws-chip">WAVES</span><span class="ws-chip">CANVAS</span></div>
+  </div>
+  <section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_240px]"><div><canvas id="cv" width="400" height="400" class="mx-auto w-full max-w-[420px] rounded-lg border border-white/10 bg-[#0a0a0a]"></canvas><p class="mt-3 text-center text-[10px] leading-relaxed text-white/30">Click a dark tile to build. Grey tiles are the lane.</p></div><div class="flex flex-col gap-3">
+    <div class="flex gap-2"><button id="start" class="ws-btn flex-1">Start</button><button id="reset" class="ws-btn-ghost">Reset</button></div>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Cash</div><div class="font-display text-xl font-black text-accent" id="cash">150</div></div>
+      <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Lives</div><div class="font-display text-xl font-black text-white" id="lives">12</div></div>
+      <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Wave</div><div class="font-display text-xl font-black text-white" id="wave">0/6</div></div>
+      <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Kills</div><div class="font-display text-xl font-black text-white" id="kills">0</div></div>
+    </div>
+    <div id="msg" class="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Six waves. Each runner that reaches the exit costs a life.</div>
+    <p class="text-[10px] leading-relaxed text-white/30">Turret costs 55. Range 132px. A kill pays 6. Clear all six waves to win.</p>
+  </div></div></section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),cx=cv.getContext('2d'),W=cv.width,H=cv.height;
+
+/* ---- design constants (mirrored verbatim in tools/provers/tower-defense.py) */
+const TILE=44,COLS=9,ROWS=9;
+const START_CASH=150,TOWER_COST=55,KILL_CASH=6,MAX_TOWERS=10;
+const RANGE=132,FIRE_CD=0.85,PROJ_SPEED=340,DMG=12;
+const LIVES=12,PRJ_R=3,TOWER_R=11,ENEMY_R=9;
+const SPAWN_GAP=0.75,BREATHER=3.0;
+/* [count, hp, speed px/s, leak] per wave */
+const WAVES=[[6,30,56,1],[8,41,58,1],[10,55,60,1],[12,74,63,1],[14,100,66,2],[16,135,69,2]];
+/* lane waypoints in tile coordinates, entered at the left edge */
+const PATH=[[-1,7],[7,7],[7,4],[1,4],[1,1],[8,1],[9,1]];
+
+/* ---- lane geometry, derived once from PATH ---- */
+const PATH_PX=PATH.map(p=>[p[0]*TILE+TILE/2,p[1]*TILE+TILE/2]);
+const SEG=[];
+for(let i=0;i<PATH_PX.length-1;i++)
+  SEG.push({ax:PATH_PX[i][0],ay:PATH_PX[i][1],bx:PATH_PX[i+1][0],by:PATH_PX[i+1][1],
+            len:Math.hypot(PATH_PX[i+1][0]-PATH_PX[i][0],PATH_PX[i+1][1]-PATH_PX[i][1])});
+const PATH_LEN=SEG.reduce((a,s)=>a+s.len,0);
+const PATH_TILES={};
+for(let i=0;i<SEG.length;i++){
+  const s=SEG[i],steps=Math.ceil(s.len/TILE*2);
+  for(let k=0;k<=steps;k++){
+    const x=s.ax+(s.bx-s.ax)*k/steps, y=s.ay+(s.by-s.ay)*k/steps;
+    PATH_TILES[(Math.floor(x/TILE))+','+(Math.floor(y/TILE))]=1;
+  }
+}
+function buildable(c,r){
+  if(c<0||r<0||c>=COLS||r>=ROWS)return false;
+  return !PATH_TILES[c+','+r];
+}
+/* position + heading at a distance along the lane */
+function laneAt(d){
+  if(d<=0){const s=SEG[0];return{x:s.ax,y:s.ay,a:Math.atan2(s.by-s.ay,s.bx-s.ax)}}
+  let acc=0;
+  for(let i=0;i<SEG.length;i++){
+    const s=SEG[i];
+    if(d<=acc+s.len){
+      const t=(d-acc)/s.len;
+      return {x:s.ax+(s.bx-s.ax)*t,y:s.ay+(s.by-s.ay)*t,
+              a:Math.atan2(s.by-s.ay,s.bx-s.ax)};
+    }
+    acc+=s.len;
+  }
+  const s=SEG[SEG.length-1];
+  return{x:s.bx,y:s.by,a:Math.atan2(s.by-s.ay,s.bx-s.ax)};
+}
+
+const S={W:W,H:H,cash:START_CASH,lives:LIVES,kills:0,wave:0,waveNo:-1,
+  running:false,over:false,won:false,t:0,spawnT:0,spawned:0,
+  enemies:[],towers:[],shots:[],buildings:[],nextId:1,hover:null,
+  leaks:0,shotsFired:0,ticks:0};
+window.towerDefenseState=S;
+
+let ac=null;
+function tone(f,dur,vol){
+  try{
+    ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    if(ac.state==='suspended')ac.resume();
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.type='square';o.frequency.value=f;g.gain.value=vol||0.035;
+    o.connect(g);g.connect(ac.destination);o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+(dur||0.09));
+    o.stop(ac.currentTime+(dur||0.09));
+  }catch(e){}
+}
+
+function reset(){
+  S.cash=START_CASH;S.lives=LIVES;S.kills=0;S.wave=0;S.waveNo=-1;
+  S.running=false;S.over=false;S.won=false;S.t=0;S.spawnT=0;S.spawned=0;
+  S.enemies=[];S.towers=[];S.shots=[];S.buildings=[];S.leaks=0;S.shotsFired=0;S.ticks=0;
+  hud();draw();
+}
+function hud(){
+  $('cash').textContent=Math.floor(S.cash);
+  $('lives').textContent=S.lives;
+  $('wave').textContent=Math.min(S.waveNo+1,WAVES.length)+'/'+WAVES.length;
+  $('kills').textContent=S.kills;
+}
+function start(){
+  if(S.over||S.won||!S.running){reset();S.running=true;S.waveNo=0;S.spawnT=0;S.spawned=0;
+    $('msg').textContent='Wave 1. Build on the dark tiles before they walk.'}
+}
+function canBuild(c,r){
+  if(!buildable(c,r))return 'lane';
+  if(S.cash<TOWER_COST)return 'cash';
+  if(S.towers.length>=MAX_TOWERS)return 'full';
+  for(const b of S.buildings)if(b.c===c&&b.r===r)return 'taken';
+  return '';
+}
+function build(c,r){
+  const why=canBuild(c,r);
+  if(why)return why;
+  S.cash-=TOWER_COST;
+  S.towers.push({c:c,r:r,x:c*TILE+TILE/2,y:r*TILE+TILE/2,cd:0,ang:-Math.PI/2,kills:0});
+  S.buildings.push({c:c,r:r});
+  hud();tone(520,0.06,0.03);
+  return '';
+}
+function gameOver(why){
+  S.over=true;S.running=false;
+  $('msg').textContent=why+' — '+S.kills+' kills, wave '+Math.min(S.waveNo+1,WAVES.length)+'. Press Start.';
+  tone(120,0.3,0.05);hud();
+}
+function win(){
+  S.won=true;S.over=true;S.running=false;
+  $('msg').textContent='All '+WAVES.length+' waves held. '+S.lives+' lives left, '+S.kills+' kills. Press Start.';
+  tone(880,0.25,0.05);hud();
+}
+function spawnOne(){
+  const w=WAVES[S.waveNo];
+  S.enemies.push({d:0,hp:w[1],maxhp:w[1],spd:w[2],leak:w[3],
+    x:PATH_PX[0][0],y:PATH_PX[0][1],a:0,r:ENEMY_R,hitT:0});
+  S.spawned++;
+}
+function update(dt){
+  S.t+=dt;S.ticks++;
+  if(!S.running||S.over)return;
+  /* --- spawning ------------------------------------------------- */
+  if(S.spawned<WAVES[S.waveNo][0]){
+    S.spawnT-=dt;
+    if(S.spawnT<=0){spawnOne();S.spawnT=SPAWN_GAP}
+  }else if(S.enemies.length===0){
+    /* wave cleared */
+    S.waveNo++;
+    if(S.waveNo>=WAVES.length){win();return}
+    S.spawned=0;S.spawnT=BREATHER;
+    S.cash+=20;                      // wave clear bonus
+    $('msg').textContent='Wave '+S.waveNo+' cleared. +20 cash. Next wave inbound.';
+    hud();
+  }else{
+    S.spawnT=Math.min(S.spawnT,0.0001);
+  }
+  /* --- enemies march -------------------------------------------- */
+  for(const e of S.enemies){
+    e.d+=e.spd*dt;
+    if(e.d>=PATH_LEN){
+      e.gone=true;
+      S.lives-=e.leak;S.leaks++;
+      tone(160,0.08,0.03);
+    }else{
+      const p=laneAt(e.d);e.x=p.x;e.y=p.y;e.a=p.a;
+    }
+  }
+  for(let i=S.enemies.length-1;i>=0;i--)
+    if(S.enemies[i].gone||S.enemies[i].hp<=0)S.enemies.splice(i,1);
+  if(S.lives<=0){S.lives=0;gameOver('They got through');return}
+  /* --- turrets acquire, lead, fire ------------------------------ */
+  for(const t of S.towers){
+    t.cd-=dt;
+    let best=null,bestD=-1;
+    for(const e of S.enemies){
+      const dx=e.x-t.x,dy=e.y-t.y,dist=Math.hypot(dx,dy);
+      if(dist>RANGE+ENEMY_R)continue;
+      if(e.d>bestD){bestD=e.d;best=e}
+    }
+    if(!best)continue;
+    const lead=Math.hypot(best.x-t.x,best.y-t.y)/PROJ_SPEED;
+    const p=laneAt(best.d+best.spd*lead);
+    t.ang=Math.atan2(p.y-t.y,p.x-t.x);
+    if(t.cd<=0){
+      t.cd=FIRE_CD;
+      const a=Math.atan2(p.y-t.y,p.x-t.x);
+      S.shots.push({x:t.x+Math.cos(a)*TOWER_R,y:t.y+Math.sin(a)*TOWER_R,
+        vx:Math.cos(a)*PROJ_SPEED,vy:Math.sin(a)*PROJ_SPEED,life:1.2});
+      S.shotsFired++;
+      tone(300+Math.random()*60,0.03,0.02);
+    }
+  }
+  /* --- shots ----------------------------------------------------- */
+  for(let i=S.shots.length-1;i>=0;i--){
+    const s=S.shots[i];
+    s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;
+    if(s.life<=0){S.shots.splice(i,1);continue}
+    for(const e of S.enemies){
+      if(Math.hypot(e.x-s.x,e.y-s.y)<PRJ_R+ENEMY_R){
+        e.hp-=DMG;e.hitT=0.12;
+        S.shots.splice(i,1);
+        if(e.hp<=0){S.kills++;S.cash+=KILL_CASH;tone(700,0.05,0.03)}
+        break;
+      }
+    }
+  }
+  for(const e of S.enemies)e.hitT=Math.max(0,e.hitT-dt);
+  hud();
+}
+function draw(){
+  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,W,H);
+  /* buildable tiles */
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    if(buildable(c,r)){
+      cx.fillStyle='rgba(255,255,255,.028)';
+      cx.fillRect(c*TILE+1,r*TILE+1,TILE-2,TILE-2);
+    }
+  }
+  /* lane */
+  cx.lineCap='round';cx.lineJoin='round';
+  cx.strokeStyle='rgba(255,255,255,.10)';cx.lineWidth=TILE-8;
+  cx.beginPath();cx.moveTo(PATH_PX[0][0],PATH_PX[0][1]);
+  for(let i=1;i<PATH_PX.length;i++)cx.lineTo(PATH_PX[i][0],PATH_PX[i][1]);
+  cx.stroke();
+  cx.strokeStyle='rgba(255,255,255,.05)';cx.lineWidth=TILE-22;
+  cx.stroke();
+  /* lane direction ticks */
+  cx.strokeStyle='rgba(255,255,255,.16)';cx.lineWidth=2;
+  for(let d=40;d<PATH_LEN;d+=TILE*1.5){
+    const p=laneAt(d);
+    cx.beginPath();
+    cx.moveTo(p.x-Math.cos(p.a)*6,p.y-Math.sin(p.a)*6);
+    cx.lineTo(p.x+Math.cos(p.a)*6,p.y+Math.sin(p.a)*6);
+    cx.stroke();
+  }
+  /* entry + exit markers */
+  const e0=PATH_PX[0],e1=PATH_PX[PATH_PX.length-1];
+  cx.fillStyle='#FF5F1F';cx.fillRect(e0[0]-8,e0[1]-8,16,16);
+  cx.fillStyle='#fff';cx.fillRect(e1[0]-9,e1[1]-9,18,18);
+  /* range circle under the hover tile */
+  if(S.hover&&buildable(S.hover.c,S.hover.r)&&!S.over){
+    cx.strokeStyle='rgba(255,95,31,.35)';cx.lineWidth=1;
+    cx.beginPath();cx.arc(S.hover.c*TILE+TILE/2,S.hover.r*TILE+TILE/2,RANGE,0,7);cx.stroke();
+  }
+  /* turrets: an accent ring with an aimed barrel */
+  for(const t of S.towers){
+    cx.fillStyle='rgba(255,95,31,.16)';
+    cx.beginPath();cx.arc(t.x,t.y,RANGE,0,7);cx.fill();
+    cx.strokeStyle='rgba(255,95,31,.22)';cx.lineWidth=1;
+    cx.beginPath();cx.arc(t.x,t.y,RANGE,0,7);cx.stroke();
+    cx.strokeStyle='#FF5F1F';cx.lineWidth=4;
+    cx.beginPath();cx.moveTo(t.x,t.y);
+    cx.lineTo(t.x+Math.cos(t.ang)*15,t.y+Math.sin(t.ang)*15);cx.stroke();
+    cx.fillStyle='#FF5F1F';cx.beginPath();cx.arc(t.x,t.y,TOWER_R,0,7);cx.fill();
+    cx.fillStyle='#0a0a0a';cx.beginPath();cx.arc(t.x,t.y,4,0,7);cx.fill();
+  }
+  /* enemies */
+  for(const e of S.enemies){
+    cx.fillStyle=e.hitT>0?'#fff':'rgba(255,255,255,.62)';
+    cx.beginPath();cx.arc(e.x,e.y,e.r,0,7);cx.fill();
+    cx.fillStyle='#FF5F1F';
+    cx.beginPath();cx.arc(e.x+Math.cos(e.a)*e.r*0.5,e.y+Math.sin(e.a)*e.r*0.5,3,0,7);cx.fill();
+    cx.fillStyle='rgba(255,95,31,.75)';
+    cx.fillRect(e.x-e.r,e.y-e.r-4,2*e.r*Math.max(0,e.hp/e.maxhp),2);
+  }
+  /* shots */
+  cx.fillStyle='#fff';
+  for(const s of S.shots){cx.beginPath();cx.arc(s.x,s.y,PRJ_R,0,7);cx.fill()}
+  /* overlay */
+  if(S.won){
+    cx.fillStyle='rgba(10,10,10,.80)';cx.fillRect(0,0,W,H);
+    cx.fillStyle='#FF5F1F';cx.font='900 26px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('HELD',W/2,H/2-6);
+    cx.fillStyle='rgba(255,255,255,.55)';cx.font='700 12px IBM Plex Sans,monospace';
+    cx.fillText(S.kills+' KILLS / '+S.lives+' LIVES',W/2,H/2+18);
+  }else if(S.over){
+    cx.fillStyle='rgba(10,10,10,.80)';cx.fillRect(0,0,W,H);
+    cx.fillStyle='#FF5F1F';cx.font='900 22px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('OVERRUN',W/2,H/2-6);
+    cx.fillStyle='rgba(255,255,255,.55)';cx.font='700 12px IBM Plex Sans,monospace';
+    cx.fillText('WAVE '+(S.waveNo+1)+' / '+WAVES.length,W/2,H/2+18);
+  }else if(!S.running){
+    cx.fillStyle='rgba(255,255,255,.45)';cx.font='900 15px Manrope,sans-serif';cx.textAlign='center';
+    cx.fillText('PRESS START',W/2,H/2);
+  }
+}
+/* ---- fixed-step loop: deterministic, independent of frame rate ---- */
+const STEP=1/60;
+let acc=0,last=0;
+function loop(ts){
+  if(!last)last=ts;
+  acc+=(ts-last)/1000;last=ts;
+  if(acc>0.25)acc=0.25;
+  while(acc>=STEP){update(STEP);acc-=STEP}
+  draw();
+  requestAnimationFrame(loop);
+}
+function tileAt(e){
+  const r=cv.getBoundingClientRect();
+  return {c:Math.floor((e.clientX-r.left)/r.width*COLS),
+          r:Math.floor((e.clientY-r.top)/r.height*ROWS)};
+}
+cv.addEventListener('pointermove',e=>{S.hover=tileAt(e)});
+cv.addEventListener('pointerleave',()=>{S.hover=null});
+cv.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  const t=tileAt(e);
+  const why=build(t.c,t.r);
+  if(why==='lane')$('msg').textContent='That tile is the lane. Build on the dark tiles.';
+  else if(why==='cash')$('msg').textContent='Not enough cash. A turret costs '+TOWER_COST+'.';
+  else if(why==='full')$('msg').textContent='Tower limit reached ('+MAX_TOWERS+').';
+  else if(why==='taken')$('msg').textContent='Tile already has a turret.';
+  else $('msg').textContent='Turret online. '+Math.floor(S.cash)+' cash left.';
+});
+addEventListener('keydown',e=>{
+  if(e.key===' '||e.key==='Spacebar'||e.key==='Enter'){start();e.preventDefault()}
+});
+$('start').onclick=start;
+$('reset').onclick=reset;
+window.__td={step:function(n){for(let i=0;i<(n||1);i++)update(STEP);draw()},
+  reset:reset,start:start,build:build,state:S,canBuild:canBuild,PATH_LEN:PATH_LEN};
+hud();reset();
+requestAnimationFrame(loop);
+</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+
+<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/play.js?v=20261002c" defer></script>
+</body>
+</html>

@@ -18,8 +18,17 @@
    player who had not entered fullscreen could not reach anything below the
    game. The gesture lock belongs on the thing that actually consumes swipes
    (the canvas, or the DOM board), never on the container around it. */
-.ocurp-canvas,
-.ocurp-surface-inner {
+/* ONLY while playing. This was unconditional, so a game's own board element
+   kept touch-action:none for the whole time the page was open, not just during
+   play. On meme-sound-generator the detected surface is the 300x934 pad grid
+   (y 231..1165 on a 390x844 phone), which covers most of the first screen, so a
+   swipe anywhere over it could not scroll the page -- exactly the "I still
+   can't scroll down" report, on a page that is in fact 3525px tall.
+
+   Browsing must stay fully scrollable. Play mode is the only time a gesture
+   should be captured by the board instead of the document. */
+html.ocurp-playing .ocurp-canvas,
+html.ocurp-playing .ocurp-surface-inner {
   touch-action: none;
 }
 /* Contain the scroll chain on the BOARD only.
@@ -80,7 +89,12 @@ html.ocurp-playing .ocurp-surface {
      black square with a stray dot in the middle. Centering comes from the
      element's own box instead. */
   background: var(--dark, #050505);
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  /* The play bar is a 20px fixed strip at the top. The surface is inset:0, so
+     without top padding the top row of the board sits UNDER it -- measured
+     overlap 18px on checkers and 11px on connect-four, which is why the top
+     row of pieces looked cut off. Reserve the bar's height. */
+  padding: calc(20px + env(safe-area-inset-top)) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 html.ocurp-playing .ocurp-surface .ws-panel {
   border: 0 !important;
@@ -413,4 +427,15 @@ html.ocurp-sheet-open body {
   .ocurp-sheet__card {
     border-radius: 16px;
   }
+}
+
+/* The game's own `touch-none` class locked the page for the whole time the
+   page was open, not just during play. A canvas that fills the first screen then
+   made the whole document unscrollable while browsing: measured delta 0 on
+   falling-sand, whose canvas spans y~560-900 of a 2161px page. Browsing must
+   always scroll; only play mode captures gestures. Paired with the
+   html.ocurp-playing scope in play.css, this re-enables the page scroll while
+   leaving the gesture lock intact once play mode is on. */
+html:not(.ocurp-playing) .touch-none {
+  touch-action: auto !important;
 }

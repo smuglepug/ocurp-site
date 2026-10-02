@@ -167,13 +167,7 @@
           : '<div class="flex h-full w-full items-center justify-center bg-[#0a0a0a]">'
             + '<span class="font-display text-4xl font-black text-white/15">' + esc(e.name.slice(0, 2).toUpperCase()) + '</span></div>')
       : '<img src="/workspace/logos/' + esc(e.slug) + '.png" alt="' + esc(e.name) + ' logo" loading="lazy" decoding="async" width="96" height="96" class="h-24 w-24 rounded-2xl border border-white/10 object-cover transition-transform duration-500 group-hover:scale-[1.04]">';
-    var isFav = !!(window.OcurpAuth && OcurpAuth.favourites && OcurpAuth.favourites.has(e.slug));
-    var favBtn = '<button data-fav="' + esc(e.slug) + '" title="' + (isFav ? 'Remove from your profile' : 'Save to your profile') + '"'
-      + ' aria-label="Save to profile" aria-pressed="' + (isFav ? 'true' : 'false') + '"'
-      + ' class="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border bg-black/55 text-base leading-none backdrop-blur transition-all '
-      + (isFav ? 'border-accent text-accent' : 'border-white/20 text-white/55 hover:border-accent hover:text-accent')
-      + '">' + (isFav ? '\u2605' : '\u2606') + '</button>';
-    /* When the entry has a real cover image, the generated pattern must NOT sit
+/* When the entry has a real cover image, the generated pattern must NOT sit
        on top of it -- the earlier version layered the pattern over the photo,
        which is why Rentify's real banner arrived tinted and the other cards
        looked like abstract wallpaper. A real image gets the banner to itself;
@@ -186,27 +180,25 @@
        thumbnails stacked on a caption -- the difference the screenshots show. */
     var art = '<div class="pointer-events-none absolute inset-0 overflow-hidden rounded-t-[1.5rem] md:rounded-t-[3rem]">'
       + banner
-      + '<div class="absolute inset-0 bg-gradient-to-t from-[#050505]/95 via-[#050505]/80 to-[#050505]/55"></div>'
+      + '<div class="absolute inset-0 bg-gradient-to-t from-[#050505]/92 via-[#050505]/45 to-[#050505]/15"></div>'
       + '</div>';
     var tags = e.tags.filter(function (t) { return String(t).toUpperCase() !== 'CLIENT-SIDE'; }).slice(0, 3).map(function (t) {
       return '<span class="rounded-full border border-white/15 bg-white/[0.05] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white/65">' + esc(t) + '</span>';
     }).join('');
-    var action = '<span class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.22em] '
-      + (e.ready ? 'text-accent' : 'text-white/25') + '">'
-      + (e.ready ? (isGames ? 'Play' : (isWebsites ? 'Visit' : 'Open')) : 'In build')
-      + (e.ready ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 17 17 7M9 7h8v8"/></svg>' : '')
-      + '</span>';
+    /* Owen: "the name of the game should be down then on that the down is play,
+       that's all." So the card carries the name and a single action pill, and
+       nothing else -- no blurb, no tag chips, no star, no domain. */
+    var action = e.ready
+      ? '<span class="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-black transition-transform duration-300 group-hover:scale-[1.04]">'
+        + (isGames ? 'Play' : (isWebsites ? 'Visit' : 'Open'))
+        + '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M7 17 17 7M9 7h8v8"/></svg></span>'
+      : '<span class="inline-flex items-center rounded-full border border-white/20 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">In build</span>';
     var target = isWebsites ? ' target="_blank" rel="noopener"' : '';
     return '<a href="' + href + '"' + target + ' class="group relative flex h-[260px] flex-col justify-end overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.02] p-5 transition-all duration-700 hover:border-accent/30 hover:bg-white/[0.05] md:h-[450px] md:rounded-[3rem] md:p-10" data-card>'
       + art
-      + favBtn
-      + '<div class="relative flex flex-1 flex-col">'
-      + '<div class="flex items-center justify-between gap-3"><span class="font-mono text-[9px] font-black uppercase tracking-[0.24em] text-white/55">' + esc(cat) + '</span>' + status + '</div>'
-      + '<h3 class="mt-4 font-display text-2xl font-black leading-tight tracking-tight text-white md:text-3xl">' + esc(e.name) + '</h3>'
-      + '<p class="mt-3 line-clamp-3 max-w-[46ch] text-sm leading-relaxed text-white/60">' + esc(e.blurb || e.desc || '') + '</p>'
-      + '<div class="mt-5 flex flex-wrap gap-1.5">' + tags + '</div>'
-      + '<div class="mt-6 flex-1"></div>'
-      + action
+      + '<div class="relative flex h-full flex-col justify-end">'
+      + '<h3 class="font-display text-[26px] font-black leading-[1.05] tracking-tight text-white md:text-[34px]">' + esc(e.name) + '</h3>'
+      + '<div class="mt-5">' + action + '</div>'
       + '</div></a>';
   }
 

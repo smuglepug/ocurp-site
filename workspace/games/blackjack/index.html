@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blackjack \u2014 Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="Real dealer, real shoe, hit-to-17. Free blackjack with split and double that runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/blackjack/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Blackjack">
+<meta property="og:description" content="Real dealer, real shoe, hit-to-17. Free blackjack with split and double that runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/blackjack/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Blackjack on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Blackjack">
+<meta name="twitter:description" content="Real dealer, real shoe, hit-to-17. Free blackjack with split and double that runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Blackjack on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Blackjack","url":"https://ocurp.com/workspace/games/blackjack/","description":"Real dealer, real shoe, hit-to-17. Free blackjack with split and double that runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Blackjack</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">CARDS</span><span class="ws-chip">RULES</span><span class="ws-chip">SOLO</span></div>
+  </div>
+
+  <section class="ws-panel p-6">
+    <div class="grid gap-6 lg:grid-cols-[1fr_250px]">
+      <div class="bj-table">
+        <div class="bj-dealer">
+          <div class="ws-label mb-2">Dealer <span id="dcount" class="text-white/40"></span></div>
+          <div id="dealer" class="bj-hand"></div>
+          <div id="dval" class="bj-val">\u2014</div>
+        </div>
+        <div class="bj-mid">
+          <div id="msg" class="bj-msg">Place your bet and deal.</div>
+        </div>
+        <div id="phands"></div>
+      </div>
+      <div class="flex flex-col gap-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bj-stat"><div class="ws-label mb-1">Bankroll</div><div id="bank" class="bj-num">1000</div></div>
+          <div class="bj-stat"><div class="ws-label mb-1">Net</div><div id="net" class="bj-num">0</div></div>
+        </div>
+        <div>
+          <label class="ws-label mb-2 block">Bet</label>
+          <input id="bet" type="number" class="ws-input" min="1" max="500" value="25">
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="deal" class="ws-btn flex-1">Deal</button>
+          <button id="hit" class="ws-btn-ghost flex-1" disabled>Hit</button>
+          <button id="stand" class="ws-btn-ghost flex-1" disabled>Stand</button>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="dbl" class="ws-btn-ghost flex-1" disabled>Double</button>
+          <button id="spl" class="ws-btn-ghost flex-1" disabled>Split</button>
+          <button id="ins" class="ws-btn-ghost w-full" disabled>Insurance</button>
+        </div>
+        <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3">
+          <div class="ws-label mb-2">Ledger</div>
+          <pre id="ledger" class="ws-out min-h-[90px] text-[11px]"></pre>
+        </div>
+        <p class="text-[10px] leading-relaxed text-white/30">Dealer draws to 16 and stands on every 17, hard or soft. Blackjack pays 3:2, insurance pays 2:1, splits are limited to 4 hands and a split hand
+          may not be doubled. A new 52-card deck is shuffled every hand.</p>
+      </div>
+    </div>
+  </section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen’s Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const $=id=>document.getElementById(id);
+/* --- rules constants. The prover in tools/provers/blackjack.py re-implements
+   these exact numbers and greps this file for them. --- */
+const DECKS=1;              // a fresh 52-card deck, reshuffled every hand
+const DEALER_STAND=17;      // dealer stands on every 17, hard or soft
+const DEALER_HIT_SOFT17=false;// stand on every 17, hard or soft
+const BJ_PAY=1.5;           // blackjack pays 3:2
+const INS_PAY=2;            // insurance pays 2:1
+const MAX_HANDS=4;          // up to 3 splits -> 4 live hands
+const MAX_SPLITS=3;
+const NO_DOUBLE_AFTER_SPLIT=true;
+const PEEK=true;            // dealer peeks for blackjack on A/10
+const START_BANKROLL=1000;
+const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const SUITS=['s','h','d','c'];
+const SUIT_GLYPH={s:'\u2660',h:'\u2665',d:'\u2666',c:'\u2663'};
+
+const S={deck:[],pos:0,dealer:[],hands:[],phase:'betting',bankroll:START_BANKROLL,
+  net:0,handsPlayed:0,dealerBJ:false,insurance:0,log:[],last:null,cur:-1};
+window.blackjackState=S;
+
+function mkDeck(){
+  const d=[];
+  for(let i=0;i<DECKS;i++)for(const s of SUITS)for(const r of RANKS)d.push({r:r,s:s});
+  return d;
+}
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));
+    const t=a[i];a[i]=a[j];a[j]=t}
+  return a;
+}
+function cardVal(c){return c.r==='A'?11:(c.r==='10'||c.r==='J'||c.r==='Q'||c.r==='K')?10:+c.r}
+/* soft total: an ace counts 1 until the hand is hard 21 or better. */
+function hand(cards){
+  let t=0,aces=0;
+  for(const c of cards){t+=cardVal(c);if(c.r==='A')aces++}
+  let soft=t<=21&&aces>0;
+  while(t>21&&aces>0){t-=10;aces--}
+  return {total:t,soft:soft,bust:t>21,natural:(cards.length===2&&t===21)};
+}
+function dealerDraw(){
+  const h=hand(S.dealer);
+  while(h.total<DEALER_STAND||(DEALER_HIT_SOFT17&&h.total===DEALER_STAND&&h.soft)){
+    S.dealer.push(S.deck[S.pos++]);}
+  return hand(S.dealer);
+}
+function newHand(cards,bet,fromSplit){
+  return {cards:cards,bet:bet,done:false,stood:false,fromSplit:!!fromSplit,result:null,
+    payout:0,doubled:false,splits:0};
+}
+function betAmt(){
+  const v=Math.floor(+$('bet').value||25);
+  return Math.max(1,Math.min(500,isFinite(v)?v:25));
+}
+function start(){
+  if(S.phase!=='betting')return false;
+  const b=betAmt();
+  if(S.bankroll<b)return false;
+  S.deck=shuffle(mkDeck());S.pos=0;S.dealer=[];S.hands=[];S.insurance=0;
+  S.dealerBJ=false;S.phase='player';S.cur=0;S.log=[];
+  S.hands.push(newHand([S.deck[S.pos++],S.deck[S.pos++]],b,false));
+  S.dealer.push(S.deck[S.pos++],S.deck[S.pos++]);
+  S.bankroll-=b;
+  S.settled=false;
+  const dl=hand(S.hands[0].cards);
+  if(dl.natural&&(S.dealer[1].r==='A'||cardVal(S.dealer[1])===10)){
+    /* Insurance is live and the round is about to end on the peek. */
+    S.phase='insurance';
+    say('Dealer shows an ace. Insurance costs half your bet and pays 2:1.');
+  }else{
+    say('Your hand: '+dl.total+(dl.natural?' - blackjack!':'.'));
+    afterPeekCheck();
+  }
+  render();return true;
+}
+function afterPeekCheck(){
+  if(PEEK&&(S.dealer[1].r==='A'||cardVal(S.dealer[1])===10)&&hand(S.dealer).natural){
+    S.dealerBJ=true;S.phase='done';settleRound();
+  }
+}
+function say(t){S.log.push(t);if(S.log.length>7)S.log.shift()}
+function curHand(){return S.hands[S.cur]}
+/* --- player actions --- */
+function canAct(){return S.phase==='player'&&S.hands[S.cur]&&!curHand().done}
+function hit(){
+  if(!canAct())return false;
+  const h=curHand();
+  h.cards.push(S.deck[S.pos++]);
+  const t=hand(h.cards);
+  if(t.bust){h.done=true;h.result='bust';say('Bust: '+t.total+'.')}
+  else if(t.total===21){h.done=true;h.stood=true;h.result='stand';say('21.')}
+  render();next();return true;
+}
+function stand(){
+  if(!canAct())return false;
+  const h=curHand();h.done=true;h.stood=true;h.result='stand';
+  say('Stand on '+hand(h.cards).total+'.');render();next();return true;
+}
+function double(){
+  if(!canAct())return false;
+  const h=curHand();
+  if(h.cards.length!==2)return false;
+  if(NO_DOUBLE_AFTER_SPLIT&&h.fromSplit)return false;
+  const b=h.bet;
+  if(S.bankroll<b)return false;
+  S.bankroll-=b;h.bet=b*2;h.doubled=true;
+  h.cards.push(S.deck[S.pos++]);
+  h.done=true;h.stood=true;
+  h.result=hand(h.cards).bust?'bust':'stand';
+  say('Double: '+hand(h.cards).total+(hand(h.cards).bust?' - bust.':'.'));
+  render();next();return true;
+}
+function split(){
+  if(!canAct())return false;
+  const h=curHand();
+  if(h.cards.length!==2||h.cards[0].r!==h.cards[1].r)return false;
+  if(S.hands.length>=MAX_HANDS||S.hands.filter(x=>x.fromSplit).length>=MAX_SPLITS)return false;
+  const a=h.cards[0],b=h.cards[1];
+  h.cards=[a,S.deck[S.pos++]];h.result=null;h.fromSplit=true;h.splits=h.splits+1;
+  if(S.bankroll<h.bet)return false;
+  S.bankroll-=h.bet;
+  const nh=newHand([b,S.deck[S.pos++]],h.bet,true);nh.splits=h.splits;
+  S.hands.splice(S.cur+1,0,nh);
+  say('Split.');
+  /* A split ace gets exactly one card, per the common rule. */
+  if(a.r==='A'){h.done=true;h.stood=true;h.result='stand'}
+  if(hand(nh.cards).natural||(b.r==='A')){nh.done=true;nh.stood=true;nh.result='stand'}
+  render();next();return true;
+}
+function insure(take){
+  if(S.phase!=='insurance')return false;
+  const h=S.hands[0];
+  if(take){
+    const c=Math.floor(h.bet/2);
+    if(S.bankroll>=c){S.bankroll-=c;S.insurance=c;say('Insurance taken: '+c+'.')}
+    else say('Not enough to insure.');
+  }else say('Insurance declined.');
+  S.phase='player';
+  if(S.hands[0].done&&S.hands.length===1)next();
+  render();return true;
+}
+/* advance to the next live hand, or run the dealer */
+function next(){
+  if(S.phase!=='player')return;
+  let i=S.hands.findIndex(h=>!h.done);
+  if(i>=0){S.cur=i;render();return}
+  S.phase='dealer';render();
+  setTimeout(()=>{dealerDraw();settleRound();render()},380);
+}
+function payout(h,amount){h.payout=amount;S.bankroll+=amount}
+function settleRound(){
+  if(S.settled)return;
+  S.settled=true;
+  const d=hand(S.dealer);
+  let insNet=0;
+  if(S.insurance){
+    /* insurance staked S.insurance, pays 2:1 on a dealer blackjack */
+    if(d.natural)insNet=S.insurance*INS_PAY;
+    say(d.natural?('Insurance pays '+S.insurance*INS_PAY):'Insurance lost.');
+  }
+  for(const h of S.hands){
+    const t=hand(h.cards);
+    if(h.result==='bust'){say('Bust - lose '+h.bet);continue}
+    if(t.natural&&!h.fromSplit){
+      if(d.natural){payout(h,h.bet);say('Both blackjack - push')}
+      else{payout(h,Math.round(h.bet*(1+BJ_PAY)));say('Blackjack! +'+h.bet*BJ_PAY)}
+      continue;
+    }
+    if(d.natural){payout(h,h.bet);say('Dealer blackjack - push');continue}
+    if(d.bust){payout(h,h.bet+h.bet);say('Dealer bust '+d.total+' - win '+h.bet);continue}
+    const dt=d.total;
+    if(t.total>dt){payout(h,h.bet*2);say('Win '+t.total+' vs '+dt)}
+    else if(t.total<dt){say('Lose '+t.total+' vs '+dt)}
+    else{payout(h,h.bet);say('Push on '+t.total)}
+  }
+  const net=S.hands.reduce((a,h)=>a+h.payout-h.bet,0)+insNet;
+  S.net+=net;S.handsPlayed++;
+  S.last={dealer:d.total,dealerBust:d.bust,hands:S.hands.map(h=>({cards:h.cards.map(c=>c.r+c.s),
+    bet:h.bet,result:h.result,payout:h.payout,total:hand(h.cards).total})),net:net};
+  S.phase='done';
+  say(net>0?'Hand won.':net<0?'Hand lost.':'Push.');
+  $('net').textContent=(S.net>0?'+':'')+S.net;
+}
+function render(){
+  const dh=hand(S.dealer);
+  $('dealer').innerHTML=S.dealer.map((c,i)=>cardHTML(c,
+    (i===1&&S.phase==='insurance'&&!S.dealerBJ)?'dn':'up')).join('');
+  $('dval').innerHTML=!S.dealer.length?'':S.phase==='insurance'&&!S.dealerBJ
+    ? 'A + ?'
+    : (dh.soft?'soft ':'')+'<b>'+dh.total+'</b>'+(dh.bust?' bust':'');
+  $('dcount').textContent=S.deck.length-S.pos+' cards left';
+  $('phands').innerHTML=S.hands.map((h,i)=>{
+    const t=hand(h.cards);
+    return '<div class="bj-pslot"><div class="bj-wager'+(i===S.cur&&S.phase==='player'?' act':'')+'">'
+      +'hand '+(i+1)+' \u00b7 '+h.bet+(h.doubled?' (doubled)':'')
+      +(h.result?' \u00b7 '+h.result:'')+'</div>'
+      +'<div class="bj-pcards">'+h.cards.map(c=>cardHTML(c,'up')).join('')+'</div>'
+      +'<div class="bj-val">'+((t.soft?'soft ':'')+t.total+(t.bust?' bust':''))+'</div></div>';
+  }).join('');
+  $('msg').textContent=S.log.length?S.log[S.log.length-1]:'Place your bet and deal.';
+  $('ledger').textContent='played  '+S.handsPlayed+'\n'
+    +'net     '+(S.net>0?'+':'')+S.net+'\n'
+    +'dealer  '+(S.last?(S.last.dealerBust?'bust '+S.last.dealer:String(S.last.dealer)):'\u2014')+'\n'
+    +'last    '+(S.last?S.last.hands.map(h=>h.total+':'+h.result).join('  '):'\u2014');
+  $('bank').textContent=S.bankroll;
+  const p=S.phase==='player',h=curHand();
+  $('deal').disabled=S.phase!=='betting';
+  $('hit').disabled=!p;$('stand').disabled=!p;
+  $('dbl').disabled=!p||!h||h.cards.length!==2||(NO_DOUBLE_AFTER_SPLIT&&h.fromSplit)||S.bankroll<h.bet;
+  $('spl').disabled=!p||!h||h.cards.length!==2||h.cards[0].r!==h.cards[1].r
+    ||S.hands.length>=MAX_HANDS;
+  $('ins').disabled=S.phase!=='insurance';
+  $('bet').disabled=S.phase!=='betting';
+}
+function cardHTML(c,face){
+  if(face==='dn')return '<div class="bj-card face"></div>';
+  return '<div class="bj-card'+(c.s==='h'||c.s==='d'?' r':'')+'"><span>'+c.r+'</span>'
+    +'<span class="bj-s">'+SUIT_GLYPH[c.s]+'</span></div>';
+}
+$('deal').onclick=()=>start();
+$('hit').onclick=()=>hit();
+$('stand').onclick=()=>stand();
+$('dbl').onclick=()=>double();
+$('spl').onclick=()=>split();
+$('ins').onclick=()=>insure(true);
+render();
+window.__bjSet=function(o){Object.assign(S,o);render()};
+window.__blackjack={S:S,mkDeck:mkDeck,shuffle:shuffle,hand:hand,cardVal:cardVal,
+  start:start,hit:hit,stand:stand,double:double,split:split,insure:insure,
+  dealerDraw:dealerDraw,settleRound:settleRound,render:render,
+  consts:{DECKS:DECKS,DEALER_STAND:DEALER_STAND,DEALER_HIT_SOFT17:DEALER_HIT_SOFT17,
+    BJ_PAY:BJ_PAY,INS_PAY:INS_PAY,MAX_HANDS:MAX_HANDS,MAX_SPLITS:MAX_SPLITS,
+    NO_DOUBLE_AFTER_SPLIT:NO_DOUBLE_AFTER_SPLIT,PEEK:PEEK}};</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  /* Watch the usual output nodes; report a short, useful summary. */
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      /* A game node is a label like "Score 12" - read it out as it stands.
+         A tool node is raw output - a character count is the useful summary. */
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+</script>
+<style>
+
+  .bj-table{border-radius:.85rem;border:1px solid rgba(255,255,255,.08);background:
+    radial-gradient(120% 90% at 50% 0%,rgba(255,95,31,.07),rgba(255,255,255,.015) 60%,transparent);
+    padding:1.25rem;display:flex;flex-direction:column;gap:1rem;min-height:430px}
+  .bj-hand{display:flex;flex-wrap:wrap;gap:.4rem;min-height:78px}
+  .bj-ph{display:flex;flex-wrap:wrap;gap:.5rem;align-items:flex-start;
+    border-top:1px solid rgba(255,255,255,.06);padding-top:.75rem}
+  .bj-pslot{display:flex;flex-direction:column;gap:.35rem}
+  .bj-pcards{display:flex;flex-wrap:wrap;gap:.4rem;min-height:78px;min-width:70px}
+  .bj-card{width:52px;height:74px;border-radius:7px;background:#eceae5;color:#050505;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    font-family:'Manrope',sans-serif;font-weight:800;font-size:15px;line-height:1;
+    box-shadow:0 1px 0 rgba(0,0,0,.6);border:1px solid rgba(0,0,0,.35)}
+  .bj-card.r{color:#FF5F1F}
+  .bj-card .bj-s{font-size:17px}
+  .bj-card.face{background:#141414;color:rgba(255,255,255,.16);border-color:rgba(255,255,255,.08);
+    box-shadow:none}
+  .bj-val{font-family:'IBM Plex Sans',monospace;font-size:12px;color:rgba(255,255,255,.6)}
+  .bj-val b{color:#FF5F1F}
+  .bj-mid{display:flex;align-items:center;justify-content:center;border-top:1px solid rgba(255,255,255,.06);
+    border-bottom:1px solid rgba(255,255,255,.06);padding:.5rem 0}
+  .bj-msg{font-size:12px;color:rgba(255,255,255,.7);text-align:center}
+  .bj-stat{border-radius:.75rem;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);
+    padding:.7rem;text-align:center}
+  .bj-num{font-family:'Manrope',sans-serif;font-size:20px;font-weight:800;color:#FF5F1F;
+    font-variant-numeric:tabular-nums}
+  .bj-wager{font-family:'IBM Plex Sans',monospace;font-size:9px;letter-spacing:.15em;
+    text-transform:uppercase;color:rgba(255,255,255,.35)}
+  .bj-wager.act{color:#FF5F1F}
+
+</style>
+<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/play.js?v=20261002c" defer></script>
+<!--ocurp-related-->
+</body>
+</html>

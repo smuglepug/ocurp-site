@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Texas Hold'em \u2014 Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="No-limit Hold'em with blinds, a 7-card best-5 evaluator and an opponent that reads pot odds. Free poker against one bot - runs entirely in your browser.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/holdem/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Texas Hold'em">
+<meta property="og:description" content="No-limit Hold'em with blinds, a 7-card best-5 evaluator and an opponent that reads pot odds. Free poker against one bot - runs entirely in your browser.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/holdem/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Texas Hold'em on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Texas Hold'em">
+<meta name="twitter:description" content="No-limit Hold'em with blinds, a 7-card best-5 evaluator and an opponent that reads pot odds. Free poker against one bot - runs entirely in your browser.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Texas Hold'em on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Texas Hold'em","url":"https://ocurp.com/workspace/games/holdem/","description":"No-limit Hold'em with blinds, a 7-card best-5 evaluator and an opponent that reads pot odds. Free poker against one bot - runs entirely in your browser.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Texas Hold'em</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">POKER</span><span class="ws-chip">BLINDS</span><span class="ws-chip">1-UP</span></div>
+  </div>
+
+  <section class="ws-panel p-6">
+    <div class="grid gap-6 lg:grid-cols-[1fr_250px]">
+      <div class="ph-table">
+        <div class="ph-seat">
+          <div class="ws-label mb-1">Bot <span id="bout" class="text-white/40"></span></div>
+          <div id="bot" class="ph-hand"></div>
+          <div id="bval" class="bj-val">&mdash;</div>
+        </div>
+        <div class="ph-board">
+          <div class="ws-label mb-2">Board</div>
+          <div id="board" class="ph-cards"></div>
+          <div id="potline" class="potline">Pot 0</div>
+        </div>
+        <div class="ph-seat">
+          <div class="ws-label mb-1">You <span id="ybet" class="text-white/40"></span></div>
+          <div id="you" class="ph-hand"></div>
+          <div id="yval" class="bj-val">&mdash;</div>
+        </div>
+        <div id="msg" class="bj-mid"><span class="bj-msg">Blinds are up. Call to see the flop.</span></div>
+      </div>
+      <div class="flex flex-col gap-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bj-stat"><div class="ws-label mb-1">Stack</div><div id="stack" class="bj-num">1000</div></div>
+          <div class="bj-stat"><div class="ws-label mb-1">Net</div><div id="net" class="bj-num">0</div></div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="fold" class="ws-btn-ghost flex-1" disabled>Fold</button>
+          <button id="check" class="ws-btn-ghost flex-1" disabled>Check</button>
+        </div>
+        <div class="flex gap-2">
+          <input id="raise" type="number" class="ws-input" min="0" step="1" value="0">
+          <button id="bet" class="ws-btn flex-1" disabled>Bet / Raise</button>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="allin" class="ws-btn-ghost flex-1" disabled>All in</button>
+          <button id="new" class="ws-btn-ghost flex-1">New hand</button>
+        </div>
+        <div class="flex flex-wrap gap-2" id="quick">
+          <button class="ws-btn-ghost qb" data-q="0.5">1/2 pot</button>
+          <button class="ws-btn-ghost qb" data-q="0.75">3/4 pot</button>
+          <button class="ws-btn-ghost qb" data-q="1">Pot</button>
+        </div>
+        <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3">
+          <div class="ws-label mb-2">Hand log</div>
+          <pre id="ledger" class="ws-out min-h-[120px] text-[11px]"></pre>
+        </div>
+        <p class="text-[10px] leading-relaxed text-white/30">Small blind 10, big blind 20. Both
+          players start with 1000. You act first pre-flop and first after the flop; the bot is
+          called or raised, never checks to you for free. Showdown uses the best five cards out of
+          your seven.</p>
+      </div>
+    </div>
+  </section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen’s Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>const $=id=>document.getElementById(id);
+/* --- rules constants. tools/provers/holdem.py re-implements these exactly. --- */
+const HOLE=2, BOARD_MAX=5;
+const SMALL_BLIND=10, BIG_BLIND=20, START_STACK=1000;
+const MIN_RAISE=BIG_BLIND;           // smallest legal raise increment
+const RANK_ORDER='23456789TJQKA';   // 2..A
+const SUITS='shdc';
+const BOT_THINK=480;                // ms the bot "thinks" for
+const BOT_RAKE=0.50;                // normalised strength above which it raises
+const BOT_CALL_LOOSE=0.20;          // strength above which it always calls a bet
+const STREET_NAMES=['pre-flop','flop','turn','river','showdown'];
+
+const S={deck:[],pos:0,hole:[],bot:[],board:[],
+  contrib:{you:0,bot:0},   // total chips in the middle this hand, per side
+  bet:{you:0,bot:0},       // chips put in on the CURRENT street, per side
+  lastRaise:BIG_BLIND,
+  stacks:{you:START_STACK,bot:START_STACK},
+  street:0,turn:'you',over:false,log:[],net:0,handsPlayed:0,last:null,
+  acted:{you:false,bot:false}};
+window.holdemState=S;
+
+function mkDeck(){
+  const d=[];
+  for(const s of SUITS)for(const r of RANK_ORDER)d.push({r:r,s:s});
+  return d;
+}
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));
+    const t=a[i];a[i]=a[j];a[j]=t}
+  return a;
+}
+function rv(c){return RANK_ORDER.indexOf(c.r)+2}       // 2..14
+function pot(){return S.contrib.you+S.contrib.bot}
+function name7(cards){
+  return cards.map(c=>c.r+(c.s==='s'?'s':c.s==='h'?'h':c.s==='d'?'d':'c')).join(' ');
+}
+/* ---------- evaluation: best 5 out of n, 10 categories ---------- */
+const HIGH_CARD=0,PAIR=1,TWO_PAIR=2,THREE=3,STRAIGHT=4,FLUSH=5,FULL=6,FOUR=7,SF=8,RF=9;
+const CAT_NAME=['high card','one pair','two pair','three of a kind','straight','flush',
+  'full house','four of a kind','straight flush','royal flush'];
+function rankGroups(rs){
+  const g={};
+  for(const r of rs)g[r]=(g[r]||0)+1;
+  return Object.keys(g).map(Number).map(r=>({r:r,n:g[r]})).sort((a,b)=>b.n-a.n||b.r-a.r);
+}
+/* high card of the best 5-card run, 0 if none; A-2-3-4-5 counts low (5) */
+function straightHigh(rs){
+  const u=[...new Set(rs)].sort((a,b)=>b-a);
+  if(u.length<5)return 0;
+  if(u.indexOf(14)>=0&&u.indexOf(2)>=0&&u.indexOf(3)>=0&&u.indexOf(4)>=0&&u.indexOf(5)>=0)return 5;
+  for(let i=0;i+4<u.length;i++)if(u[i]-u[i+4]===4)return u[i];
+  return 0;
+}
+function kickers(g,n,taken){
+  const out=[];
+  for(const x of g){if(out.length>=n)break;if(taken.indexOf(x.r)>=0)continue;out.push(x.r)}
+  return out;
+}
+function eval7(cards){
+  const rs=cards.map(rv);
+  const bySuit={};
+  for(const c of cards)(bySuit[c.s]=bySuit[c.s]||[]).push(rv(c));
+  const g=rankGroups(rs);
+  const flushS=Object.keys(bySuit).filter(s=>bySuit[s].length>=5)[0];
+  if(flushS){
+    const fr=bySuit[flushS].sort((a,b)=>b-a);
+    const sh=straightHigh(fr);
+    if(sh===14)return {cat:RF,k:[14],hi:14,label:'royal flush'};
+    if(sh)return {cat:SF,k:[sh],hi:sh,label:'straight flush '+sh};
+    if(g[0].n>=4)return {cat:FOUR,k:[g[0].r].concat(kickers(g,3,[g[0].r])),hi:g[0].r,label:'four of a kind'};
+    if(g[0].n===3&&g[1]&&g[1].n===2)return {cat:FULL,k:[g[0].r,g[1].r],hi:g[0].r,label:'full house'};
+    return {cat:FLUSH,k:fr.slice(0,5),hi:fr[0],label:'flush'};
+  }
+  const sh=straightHigh(rs);
+  const trips=g.filter(x=>x.n===3)[0];
+  const pairs=g.filter(x=>x.n===2);
+  if(trips&&pairs[0])return {cat:FULL,k:[trips.r,pairs[0].r],hi:trips.r,label:'full house'};
+  if(g[0].n===4)return {cat:FOUR,k:[g[0].r].concat(kickers(g,3,[g[0].r])),hi:g[0].r,label:'four of a kind'};
+  if(sh)return {cat:STRAIGHT,k:[sh],hi:sh,label:'straight '+sh};
+  if(trips)return {cat:THREE,k:[trips.r].concat(kickers(g,2,[trips.r])),hi:trips.r,label:'three of a kind'};
+  if(pairs.length===2)return {cat:TWO_PAIR,k:[pairs[0].r,pairs[1].r].concat(kickers(g,1,[pairs[0].r,pairs[1].r])),hi:pairs[0].r,label:'two pair'};
+  if(pairs.length===1)return {cat:PAIR,k:[pairs[0].r].concat(kickers(g,3,[pairs[0].r])),hi:pairs[0].r,label:'pair'};
+  return {cat:HIGH_CARD,k:rs.sort((a,b)=>b-a).slice(0,5),hi:Math.max.apply(null,rs),label:'high card'};
+}
+/* one comparable integer: category, then the tiebreak ranks */
+function strength(cards){
+  const e=eval7(cards);
+  return e.cat*1e6+e.k.reduce((a,b)=>a*16+b,0);
+}
+function normalised(cards){return strength(cards)/(RF*1e6+1)}
+/* the five cards actually used, for the UI */
+function best5(cards){
+  let best=null;
+  for(let a=0;a<cards.length;a++)for(let b=a+1;b<cards.length;b++)for(let c=b+1;c<cards.length;c++)
+    for(let d=c+1;d<cards.length;d++)for(let e=d+1;e<cards.length;e++){
+      const s=strength([cards[a],cards[b],cards[c],cards[d],cards[e]]);
+      if(!best||s>best.s)best={s:s,idx:[a,b,c,d,e]};
+    }
+  return best.idx.map(i=>cards[i]);
+}
+/* ---------- betting ---------- */
+function say(t){S.log.push(t);if(S.log.length>9)S.log.shift()}
+function other(who){return who==='you'?'bot':'you'}
+function toCall(who){return Math.max(0,S.bet[other(who)]-S.bet[who])}
+function minRaiseTo(who){return S.bet[who]+toCall(who)+MIN_RAISE}
+function newHand(){
+  S.deck=shuffle(mkDeck());S.pos=0;S.board=[];S.hole=[];S.bot=[];
+  S.contrib={you:0,bot:0};S.bet={you:0,bot:0};S.lastRaise=BIG_BLIND;
+  S.street=0;S.over=false;S.acted={you:false,bot:false};S.turn='you';S.last=null;
+  S.hole.push(S.deck[S.pos++],S.deck[S.pos++]);
+  S.bot.push(S.deck[S.pos++],S.deck[S.pos++]);
+  put('you',SMALL_BLIND);put('bot',BIG_BLIND);
+  say('Hand '+(S.handsPlayed+1)+' \u00b7 blinds '+SMALL_BLIND+'/'+BIG_BLIND+'.');
+  render();
+  setTimeout(botAct,BOT_THINK);
+}
+function put(who,amt){
+  amt=Math.min(amt,S.stacks[who]);
+  S.stacks[who]-=amt;S.bet[who]+=amt;S.contrib[who]+=amt;
+  return amt;
+}
+function act(who,type,amt){
+  if(S.over)return false;
+  if(S.turn!==who)return false;
+  if(type==='check'&&toCall(who)>0)return false;
+  S.acted[who]=true;
+  if(type==='fold'){
+    if(who==='bot'){say('Bot folded.');S.turn='you';render();return true}
+    return finish('youFolded');
+  }
+  if(type==='check'){
+    say(who==='you'?'You check.':'Bot checks.');
+    if(who==='you'){render();setTimeout(botAct,BOT_THINK);return true}
+    return streetOver();
+  }
+  if(type!=='bet'&&type!=='raise')return false;
+  let total=Math.floor(amt);
+  if(!isFinite(total))return false;
+  if(total>S.bet[who]+S.stacks[who])total=S.bet[who]+S.stacks[who];
+  const call=toCall(who);
+  if(total<S.bet[who]+call)return false;                    // cannot call under the price
+  if(total>S.bet[who]&&total<minRaiseTo(who))return false;  // under-raise rejected
+  const prev=S.bet[who];
+  put(who,total-prev);
+  if(total>prev&&total-prev-call>=MIN_RAISE)S.lastRaise=total-prev-call;
+  say((who==='you'?'You ':'Bot ')+(call>0?'raise to ':'bet ')+S.bet[who]+'.');
+  if(who==='you'){S.turn='bot';render();setTimeout(botAct,BOT_THINK);return true}
+  S.turn='you';
+  return streetOver();
+}
+/* the betting round ends on level bets once both sides have acted */
+function streetOver(){
+  if(S.bet.you===S.bet.bot&&S.acted.you&&S.acted.bot)return nextStreet();
+  S.turn='you';render();return true;
+}
+function nextStreet(){
+  S.street++;
+  if(S.street>3)return finish('showdown');
+  const n=S.street===1?3:1;
+  for(let i=0;i<n;i++)S.board.push(S.deck[S.pos++]);
+  say(STREET_NAMES[S.street]+': '+S.board.map(c=>c.r).join(' ')+'.');
+  S.bet={you:0,bot:0};S.acted={you:false,bot:false};S.lastRaise=BIG_BLIND;
+  S.turn='you';
+  render();
+  return true;
+}
+/* the bot: normalised 7-card strength plus a pot-odds nudge */
+function botAct(){
+  if(S.over||S.turn!=='bot')return;
+  const n=normalised(S.bot.concat(S.board));
+  const call=toCall('bot');
+  if(call===0){
+    if(n>BOT_RAKE){
+      const amt=S.bet.bot+Math.max(MIN_RAISE,Math.round((pot()+MIN_RAISE)*0.6));
+      if(amt>=S.bet.bot+MIN_RAISE)act('bot','raise',amt);
+      else act('bot','check');
+    }else act('bot','check');
+  }else if(n>BOT_RAKE){
+    act('bot','raise',S.bet.bot+call+Math.max(MIN_RAISE,Math.round(pot()*0.6)));
+  }else if(n>BOT_CALL_LOOSE||Math.random()<(call/(pot()+call))){
+    act('bot','call',S.bet.bot+call);
+  }else act('bot','fold');
+}
+/* ---------- settlement ----------
+   The uncalled part of the biggest street bet goes back to whoever put it in.
+   Everyone else is exactly break-even on that refund, so folding wins the
+   contested pot and loses only what was actually matched. */
+function finish(reason){
+  if(S.over)return true;
+  S.over=true;S.turn='done';
+  for(let i=S.board.length;i<5;i++)S.board.push(S.deck[S.pos++]);
+  const refund={you:0,bot:0};
+  if(S.bet.you>S.bet.bot)refund.you=S.bet.you-S.bet.bot;
+  if(S.bet.bot>S.bet.you)refund.bot=S.bet.bot-S.bet.you;
+  S.stacks.you+=refund.you;S.stacks.bot+=refund.bot;
+  const p=pot();
+  let net,why,yE=null,bE=null;
+  const ys=strength(S.hole.concat(S.board)),bs=strength(S.bot.concat(S.board));
+  if(reason==='youFolded'){
+    net=refund.you-S.contrib.you;
+    S.stacks.bot+=p;
+    why='You folded. Net '+(net>0?'+':'')+net+'.';
+  }else{
+    yE=eval7(S.hole.concat(S.board));bE=eval7(S.bot.concat(S.board));
+    if(ys===bs){
+      const half=Math.floor(p/2);
+      S.stacks.you+=half+refund.you;S.stacks.bot+=p-half+refund.bot;
+      net=half+refund.you-S.contrib.you;
+      why='Split pot \u00b7 '+yE.label+'.';
+    }else if(ys>bs){
+      S.stacks.you+=p+refund.you;S.stacks.bot+=refund.bot;
+      net=p+refund.you-S.contrib.you;
+      why='You win with '+yE.label+' vs '+bE.label+'.';
+    }else{
+      S.stacks.bot+=p+refund.bot;S.stacks.you+=refund.you;
+      net=refund.you-S.contrib.you;
+      why='Bot wins with '+bE.label+' vs '+yE.label+'.';
+    }
+  }
+  S.net+=net;S.handsPlayed++;
+  S.last={net:net,you:yE?yE.label:'folded',bot:bE?bE.label:'folded',reason:reason,
+    board:S.board.map(c=>c.r+c.s).join(' '),hole:S.hole.map(c=>c.r+c.s).join(' '),
+    you5:yE?best5(S.hole.concat(S.board)).map(c=>c.r+c.s).join(' '):'',
+    pot:p,stacksYou:S.stacks.you,stacksBot:S.stacks.bot};
+  say(why);
+  render();
+  return true;
+}
+/* ---------- UI ---------- */
+function cardHTML(c,back){
+  if(back)return '<div class="ph-card back"></div>';
+  const g={s:'\u2660',h:'\u2665',d:'\u2666',c:'\u2663'}[c.s];
+  return '<div class="ph-card'+(c.s==='h'||c.s==='d'?' r':'')+'"><span>'+c.r+'</span><span>'+g+'</span></div>';
+}
+function bestName(cards){const e=eval7(cards);return e.label+' \u00b7 '+best5(cards).map(c=>c.r).join('')}
+function render(){
+  $('bot').innerHTML=S.bot.map(c=>cardHTML(c,false)).join('');
+  $('you').innerHTML=S.hole.map(c=>cardHTML(c,false)).join('');
+  $('board').innerHTML=S.board.map(c=>cardHTML(c,false)).join('');
+  const done=S.board.length===5;
+  const p=pot();
+  const ys=done?strength(S.hole.concat(S.board)):null;
+  const bs=(S.over&&done)?strength(S.bot.concat(S.board)):null;
+  $('potline').textContent='Pot '+pot()+'  \u00b7  to call '+toCall('you');
+  $('ybet').textContent=S.bet.you?('bet '+S.bet.you):'';
+  $('bout').textContent=S.bet.bot?('bet '+S.bet.bot):'';
+  $('yval').innerHTML=done?bestName(S.hole.concat(S.board)):'&mdash;';
+  $('bval').innerHTML=(S.over&&done)?bestName(S.bot.concat(S.board)):'&mdash;';
+  $('stack').textContent=S.stacks.you;
+  $('net').textContent=(S.net>0?'+':'')+S.net;
+  $('ledger').textContent=S.log.join('\n');
+  const live=!S.over&&S.turn==='you',call=toCall('you');
+  $('fold').disabled=!live;
+  $('check').disabled=!live||call>0;
+  $('bet').disabled=!live;
+  $('allin').disabled=!live;
+  $('raise').value=live?Math.max(minRaiseTo('you'),S.bet.you+call*2):0;
+  $('raise').max=S.stacks.you+S.bet.you;
+  $('msg').innerHTML='<span class="bj-msg">'+(S.log.length?S.log[S.log.length-1]:'Blinds are up.')+'</span>';
+  S.showStrength={you:done?ys:null,bot:(S.over&&done)?bs:null,
+    youCat:done?eval7(S.hole.concat(S.board)).cat:null,
+    botCat:(S.over&&done)?eval7(S.bot.concat(S.board)).cat:null,
+    best5You:done?best5(S.hole.concat(S.board)).map(c=>c.r+c.s).join(' '):'',
+    pot:p,contrib:S.contrib};
+}
+$('fold').onclick=()=>act('you','fold');
+$('check').onclick=()=>act('you','check');
+$('bet').onclick=()=>act('you','bet',+$('raise').value);
+$('allin').onclick=()=>act('you','bet',S.bet.you+S.stacks.you);
+$('new').onclick=()=>{if(S.over)newHand()};
+$('quick').querySelectorAll('.qb').forEach(b=>b.onclick=()=>{
+  const call=toCall('you');
+  const v=Math.max(minRaiseTo('you'),S.bet.you+call*2+Math.round(pot()*(+b.dataset.q)));
+  $('raise').value=Math.min(v,S.bet.you+S.stacks.you);
+});
+(function(){S.stacks={you:START_STACK,bot:START_STACK};S.net=0;S.handsPlayed=0;S.log=[];newHand()})();
+window.__holdem={S:S,eval7:eval7,strength:strength,normalised:normalised,best5:best5,
+  mkDeck:mkDeck,shuffle:shuffle,act:act,newHand:newHand,finish:finish,showdown:finish,
+  botAct:botAct,render:render,name7:name7,CAT_NAME:CAT_NAME,pot:pot,toCall:toCall,
+  minRaiseTo:minRaiseTo,put:put,
+  consts:{HOLE:HOLE,SMALL_BLIND:SMALL_BLIND,BIG_BLIND:BIG_BLIND,MIN_RAISE:MIN_RAISE,
+    START_STACK:START_STACK,BOT_RAKE:BOT_RAKE,BOT_CALL_LOOSE:BOT_CALL_LOOSE,
+    STREET_NAMES:STREET_NAMES}};
+</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  /* Watch the usual output nodes; report a short, useful summary. */
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      /* A game node is a label like "Score 12" - read it out as it stands.
+         A tool node is raw output - a character count is the useful summary. */
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+</script>
+<style>
+
+  .ph-table{border-radius:.85rem;border:1px solid rgba(255,255,255,.08);background:
+    radial-gradient(120% 90% at 50% 50%,rgba(255,95,31,.07),rgba(255,255,255,.015) 60%,transparent);
+    padding:1.25rem;display:flex;flex-direction:column;gap:1rem;min-height:460px}
+  .ph-hand{display:flex;flex-wrap:wrap;gap:.4rem;min-height:78px}
+  .ph-cards{display:flex;flex-wrap:wrap;gap:.4rem;min-height:78px}
+  .ph-board{text-align:center;display:flex;flex-direction:column;align-items:center;
+    border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,white/.06);
+    padding:.75rem 0}
+  .ph-board{border-bottom:1px solid rgba(255,255,255,.06)}
+  .potline{font-family:'IBM Plex Sans',monospace;font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;color:#FF5F1F;margin-top:.6rem}
+  .ph-card{width:50px;height:70px;border-radius:7px;background:#eceae5;color:#050505;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    font-family:'Manrope',sans-serif;font-weight:800;font-size:14px;line-height:1;
+    box-shadow:0 1px 0 rgba(0,0,0,.6);border:1px solid rgba(0,0,0,.35)}
+  .ph-card.r{color:#FF5F1F}
+  .ph-card.back{background:linear-gradient(135deg,#1b1b1b,#0d0d0d);
+    border-color:rgba(255,255,255,.08);box-shadow:none;
+    background-image:linear-gradient(135deg,rgba(255,95,31,.22),rgba(255,95,31,.04))}
+  .ph-card.deal{animation:phdeal .22s ease}
+  @keyframes phdeal{0%{transform:translateY(-14px) scale(.9);opacity:0}100%{transform:none;opacity:1}}
+  .qb{padding:.4rem .6rem;font-size:9px}
+
+</style>
+<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/play.js?v=20261002c" defer></script>
+<!--ocurp-related-->
+</body>
+</html>
