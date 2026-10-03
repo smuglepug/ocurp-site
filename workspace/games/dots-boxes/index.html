@@ -85,7 +85,7 @@ tailwind.config = { theme: { extend: {
         </div>
       <style>
   .db-wrap{display:grid;gap:0;width:max-content;position:relative}
-  .db-dot{position:absolute;width:12px;height:12px;border-radius:50%;
+  .db-dot{position:absolute;pointer-events:none;width:12px;height:12px;border-radius:50%;
     background:rgba(255,255,255,.75);transform:translate(-50%,-50%)}
   .db-line{position:absolute;background:#FF5F1F;border-radius:2px;cursor:pointer}
   .db-line:hover{background:#ffa06a}
@@ -146,10 +146,15 @@ let db={used:new Set(),owner:new Map(),claimed:new Set(),turn:0,sc:[0,0],rw:[0,0
         round:0,status:'playing',lastRound:null};
 
 const dbEdgeId=(i)=>DBK(DB.EDGES[i]);
-const dbCentre=(r,c)=>PAD+T/2+(r)*(CELL+T)+CELL/2;
+/* Geometry: dot (r,c) is centred at PAD+T/2 + idx*S with S = CELL+T. A horizontal
+   line h(r,c) joins dot(r,c) to dot(r,c+1); a vertical line v(r,c) joins dot(r,c)
+   to dot(r+1,c). The old helper used the row for BOTH axes, so every dot sat on
+   the diagonal and lines floated half a cell off the grid. */
+const DS=CELL+T;
+const dbDot=(i)=>PAD+T/2+i*DS;
 const dbSeg=(e)=>e[0]==='h'
-  ?{x:PAD+e[2]*(CELL+T), y:dbCentre(e[1],e[2])-T/2, w:CELL, h:T}
-  :{x:dbCentre(e[1],e[2])-T/2, y:PAD+e[1]*(CELL+T), w:T, h:CELL};
+  ?{x:PAD+T+e[2]*DS, y:PAD+e[1]*DS, w:CELL, h:T}
+  :{x:PAD+e[2]*DS, y:PAD+T+e[1]*DS, w:T, h:CELL};
 
 function dbNewRound(){
   db.used=new Set();db.owner=new Map();db.claimed=new Set();db.turn=0}
@@ -206,13 +211,14 @@ function dbEndRound(){
 function drawFrame(){
   const W=PAD*2+(DB.DOTS-1)*(CELL+T)+T;
   let h='<div style="position:relative;width:'+W+'px;height:'+W+'px">';
-  for(let bi=0;bi<DB.BOXES.length;bi++)h+='<div class="db-boxhl" id="bhl'+bi+'"></div>';
+  for(let bi=0;bi<DB.BOXES.length;bi++)h+='<div class="db-boxhl" id="bhl'+bi+'" style="left:'+(PAD+T+(bi%2)*DS)+
+    'px;top:'+(PAD+T+Math.floor(bi/2)*DS)+'px;width:'+CELL+'px;height:'+CELL+'px"></div>';
   for(let i=0;i<DB.EDGES.length;i++){
     const s=dbSeg(DB.EDGES[i]);
     h+='<div class="db-line" id="ln'+i+'" data-i="'+i+'" style="left:'+s.x+
       'px;top:'+s.y+'px;width:'+s.w+'px;height:'+s.h+'px"></div>'}
   for(let r=0;r<DB.DOTS;r++)for(let c=0;c<DB.DOTS;c++)
-    h+='<div class="db-dot" style="left:'+dbCentre(r,c)+'px;top:'+dbCentre(r,c)+'px"></div>';
+    h+='<div class="db-dot" style="left:'+(dbDot(c)-6)+'px;top:'+(dbDot(r)-6)+'px"></div>';
   h+='</div>';
   DBD('field').innerHTML=h;
   DBD('field').querySelectorAll('.db-line').forEach(el=>el.onclick=()=>{
