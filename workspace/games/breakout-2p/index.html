@@ -166,11 +166,17 @@ function park(){
 function start(){ if(over>=0) reset(); running=true; last=0; loop(); }
 function serve(b){ b.vx=SPD0*0.55; b.vy=-SPD0; b.spd=SPD0; }
 function hitBrick(b,r){
-  const bl=b.x-r, br=b.x+r, bt=b.y-r, bb=b.y+r;
+  const bl=b.x-BALL_R, br=b.x+BALL_R, bt=b.y-BALL_R, bb=b.y+BALL_R;   /* `r` here is the brick: b.x-r was NaN, so the ball vanished after its first brick hit */
   const ox=Math.min(br,r.x+r.w)-Math.max(bl,r.x);
   const oy=Math.min(bb,r.y+r.h)-Math.max(bt,r.y);
   if(ox<oy){ b.vx = b.vx>0 ? -Math.abs(b.vx) : Math.abs(b.vx); b.x += b.vx>0? ox : -ox; }
   else     { b.vy = b.vy>0 ? -Math.abs(b.vy) : Math.abs(b.vy); b.y += b.vy>0? oy : -oy; }
+}
+/* top level: breakBrick() calls this, but it used to live inside step(), so clearing the last brick threw ReferenceError and the game could never be won */
+function finish(w){
+  running=false; over=w;
+  $('stat').textContent = w===0 ? 'CLEARED' : 'GAME OVER';
+  $('stat').style.color = w===0 ? ORANGE : '#ff5f5f';
 }
 function breakBrick(k){
   rally=0;
@@ -290,11 +296,6 @@ function step(dt){
     balls=[b];
     $('stat').textContent='SERVING';
   }
-  function finish(w){
-    running=false; over=w;
-    $('stat').textContent = w===0 ? 'CLEARED' : 'GAME OVER';
-    $('stat').style.color = w===0 ? ORANGE : '#ff5f5f';
-  }
 }
 function draw(){
   cx.fillStyle='#050505'; cx.fillRect(0,0,W,H);
@@ -332,10 +333,12 @@ cv.addEventListener('pointermove',e=>{
   if(drag){ pad1=Math.max(pw1/2,Math.min(W-pw1/2,x)); }
 });
 cv.addEventListener('pointerdown',e=>{ drag=1; cv.setPointerCapture(e.pointerId); });
-cv.addEventListener('pointerup',e=>{ drag=0; if(!balls.length) serve(balls[0]); });
+/* serve the parked ball (the old test was `!balls.length`, which can never serve a ball that exists) */
+function serveParked(){ if(!running) start(); const b=balls[0]; if(b&&!b.vx&&!b.vy) serve(b); }
+cv.addEventListener('pointerup',e=>{ drag=0; serveParked(); });
 addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft') keys.l=1; if(e.key==='ArrowRight') keys.r=1;
-  if(e.key===' '){ if(!balls.length) serve(balls[0]); e.preventDefault(); }
+  if(e.key===' '){ serveParked(); e.preventDefault(); }
   if(e.key==='r'||e.key==='R') reset();
 });
 addEventListener('keyup',e=>{ if(e.key==='ArrowLeft') keys.l=0; if(e.key==='ArrowRight') keys.r=0; });
