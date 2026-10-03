@@ -201,7 +201,7 @@ function utNew(seed,level){
 }
 function utSay(s){UT.log.unshift(s);if(UT.log.length>50)UT.log.pop()}
 function utPlay(b,i){
-  if(UT.over||UT.auto)return null;
+  if(UT.over)return null;
   if(UT.boards[b][i]!==0)return null;
   if(UT.dir!==-1&&UT.dir!==b&&!utBoardFull(UT.boards,UT.dir))return null;
   var p=UT.turn; UT.boards[b][i]=p+1; UT.moves++;
@@ -241,7 +241,7 @@ function utBoardNear(boards,b,p){
      column and both diagonals, scored by how many of them p already holds. */
   var r=Math.floor(b/3),c=b%3,n=0,groups=[[[0,1,2],[3,4,5],[6,7,8]],[[0,3,6],[1,4,7],[2,5,8]],
     [[0,4,8],[2,4,6]]];
-  for(var g=0;g<3;g++)for(var l=0;l<3;l++){var gr=groups[g][l];
+  for(var g=0;g<3;g++)for(var l=0;l<groups[g].length;l++){var gr=groups[g][l];
     if(gr.indexOf(b)<0)continue;
     var have=0,empty=0;
     for(var k=0;k<3;k++){if(gr[k]===b)continue;
@@ -319,11 +319,16 @@ function utRender(){
      click too, and a handler on the wrapper that only forwards to its first
      free cell would make the page look half-broken. */
   var cells=$('ut-outer').getElementsByClassName('ut-s');
-  for(var k=0;k<cells.length;k++){var el=cells[k];
+  /* each handler needs its own bi/ii: with `var` in a plain loop every square
+     shared the last pair and every click played board 9, square 9 */
+  for(var k=0;k<cells.length;k++)(function(el){
     var bi=+el.getAttribute('data-b'),ii=+el.getAttribute('data-i');
-    el.style.cursor=(UT.over||UT.auto)?'default':'pointer';
-    el.onclick=function(){utPlay(bi,ii)};
-  }
+    el.style.cursor=(UT.over||UT.auto||UT.turn!==0)?'default':'pointer';
+    el.onclick=function(){
+      if(UT.over||UT.auto||UT.turn!==0)return;
+      if(utPlay(bi,ii)==='ok')utAIRun();
+    };
+  })(cells[k]);
   $('ut-s0').textContent=UT.won[0];$('ut-s1').textContent=UT.won[1];
   $('ut-dir').textContent=UT.dir===-1?'free':'board '+(UT.dir+1);
   $('ut-dirsub').textContent=UT.dir===-1?'first move picks it'
@@ -343,9 +348,24 @@ function utRender(){
    +'AI level            '+UT.level+'   (1-ply'+(UT.level==='sharp'?'+1-ply look-ahead':'')+', beatable)\n'
    +'seed                '+UT.seed;
 }
-$('ut-new').onclick=function(){utNew(undefined,$('ut-ai').value)};
+/* the AI answers a moment after the player; a generation counter drops a reply
+   that was scheduled for a game that has since been restarted */
+var utGen=0;
+function utAIRun(){
+  var g=++utGen;
+  if(UT.over||UT.turn!==1||UT.auto)return;
+  setTimeout(function(){
+    if(g!==utGen||UT.over||UT.turn!==1||UT.auto)return;
+    var m=utAIMove(); if(m)utPlay(m[0],m[1]);
+  },450);
+}
+function utFresh(level,aiFirst){
+  utGen++;utNew((Math.random()*1e9)|0,level);
+  if(aiFirst){UT.turn=1;utSay('Sides swapped: the AI opens.');utRender();utAIRun()}
+}
+$('ut-new').onclick=function(){utFresh($('ut-ai').value,false)};
 $('ut-ai').onchange=function(){UT.level=$('ut-ai').value;utRender()};
-$('ut-swap').onclick=function(){utNew(undefined,UT.level)};
+$('ut-swap').onclick=function(){utFresh(UT.level,true)};
 utNew(5,'greedy');
 
 window.__ultimate_ttt={newGame:function(seed,level){utNew(seed,level);return this.state()},
