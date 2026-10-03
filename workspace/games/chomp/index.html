@@ -100,8 +100,8 @@ tailwind.config = { theme: { extend: {
       <span class="ws-chip" id="left">SWEET 12</span>
       <span class="ws-chip" id="stat">YOUR MOVE</span>
     </div>
-    <canvas id="cv" class="w-full touch-none" style="aspect-ratio:420/560"></canvas>
-    <p class="mt-3 text-center text-xs text-white/45">Click a square to take it. <b>Shift-click</b> to take two side-by-side squares at once. The four corner squares are poisoned &mdash; eat one and you lose immediately. Take the last sweet square and your opponent is left holding nothing but poison. The CPU plays the exact minimax, so this is a real contest, not a gimme.</p>
+    <canvas id="cv" class="mx-auto block w-full touch-none" style="aspect-ratio:420/560;max-width:420px"></canvas>
+    <p class="mt-3 text-center text-xs text-white/45">Click a square to take it. <b>Shift-click</b> to take two side-by-side squares at once. The red top-right square is poisoned &mdash; eat it and you lose immediately. Take the last sweet square and your opponent is left holding nothing but poison. The CPU plays the exact minimax, so this is a real contest, not a gimme.</p>
   </section>
 
   <div id="ws-more" class="mt-12"></div>
@@ -115,6 +115,7 @@ const $=id=>document.getElementById(id);
 const ORANGE='#FF5F1F';
 const cv=$('cv'), cx=cv.getContext('2d');
 const N=4, CELL=86, BOARD=344, OX=38, OY=76, W=420, H=560;
+cv.width=W; cv.height=H;   /* the canvas had no pixel size, so it drew into a 300x150 buffer stretched over the page */
 /* 4x4 bar with ONE poisoned corner -> 16-1 = 15 safe squares.
    Rule: each turn you take ONE or TWO orthogonally adjacent squares that touch
    the eaten edge (or the already-eaten region). Eating the poisoned square
@@ -193,6 +194,8 @@ function play(squares){
   if(bad){ finish(turn); return; }             /* the poison-eater just lost */
   if(remaining()===0){ finish(1-turn); return; }
   render();
+  /* hand over: nothing else ever restarted the CPU after the first move */
+  if(turn===1) cpuTurn(); else $('stat').textContent='YOUR MOVE';
 }
 let thinking=false;
 function cpuTurn(){
