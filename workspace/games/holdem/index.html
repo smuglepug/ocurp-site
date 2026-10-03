@@ -291,12 +291,25 @@ function act(who,type,amt){
   if(type==='check'&&toCall(who)>0)return false;
   S.acted[who]=true;
   if(type==='fold'){
-    if(who==='bot'){say('Bot folded.');S.turn='you';render();return true}
+    if(who==='bot'){say('Bot folded.');return finish('botFolded')}   /* it only handed you the turn, so the hand never ended and the pot was never paid */
     return finish('youFolded');
   }
   if(type==='check'){
     say(who==='you'?'You check.':'Bot checks.');
     if(who==='you'){render();setTimeout(botAct,BOT_THINK);return true}
+    return streetOver();
+  }
+  if(type==='call'){
+    /* match the bet (capped by the stack = all-in call). The page had no call action at all:
+       the bot's call was rejected so its turn never ended, and the player had no Call button. */
+    const c=toCall(who);
+    if(c<=0)return false;
+    put(who,c);
+    say((who==='you'?'You call ':'Bot calls ')+c+'.');
+    if(who==='you'){
+      if(S.bet.you===S.bet.bot&&S.acted.bot)return nextStreet();   /* your call closes the round */
+      S.turn='bot';render();setTimeout(botAct,BOT_THINK);return true}
+    S.turn='you';
     return streetOver();
   }
   if(type!=='bet'&&type!=='raise')return false;
@@ -369,6 +382,10 @@ function finish(reason){
     net=refund.you-S.contrib.you;
     S.stacks.bot+=p;
     why='You folded. Net '+(net>0?'+':'')+net+'.';
+  }else if(reason==='botFolded'){
+    net=p-S.contrib.you;            /* the uncalled part was already refunded above */
+    S.stacks.you+=p;
+    why='Bot folded. You win '+p+'. Net '+(net>0?'+':'')+net+'.';
   }else{
     yE=eval7(S.hole.concat(S.board));bE=eval7(S.bot.concat(S.board));
     if(ys===bs){
@@ -420,7 +437,8 @@ function render(){
   $('ledger').textContent=S.log.join('\n');
   const live=!S.over&&S.turn==='you',call=toCall('you');
   $('fold').disabled=!live;
-  $('check').disabled=!live||call>0;
+  $('check').disabled=!live;
+  $('check').textContent=call>0?'Call '+Math.min(call,S.stacks.you):'Check';
   $('bet').disabled=!live;
   $('allin').disabled=!live;
   $('raise').value=live?Math.max(minRaiseTo('you'),S.bet.you+call*2):0;
@@ -433,7 +451,7 @@ function render(){
     pot:p,contrib:S.contrib};
 }
 $('fold').onclick=()=>act('you','fold');
-$('check').onclick=()=>act('you','check');
+$('check').onclick=()=>act('you',toCall('you')>0?'call':'check');
 $('bet').onclick=()=>act('you','bet',+$('raise').value);
 $('allin').onclick=()=>act('you','bet',S.bet.you+S.stacks.you);
 $('new').onclick=()=>{if(S.over)newHand()};
