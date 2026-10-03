@@ -199,13 +199,7 @@ function render(){
   const cells=$('board').querySelectorAll('.wsc');
   for(const el of cells){
     const i=+el.dataset.i;
-    el.className='wsc'+(selSet.has(i)?' on':'')+(foundCells.includes(i)?' hit':'');
-    el.onpointerdown=e=>{e.preventDefault();if(ws.status!=='playing')return;
-      ws.anchor=i;ws.drag=i;render()};
-    el.onpointerenter=()=>{if(ws.anchor<0||ws.status!=='playing')return;
-      ws.drag=i;trySelect(ws.anchor,ws.drag);render()};
-    el.onpointerup=()=>{if(ws.anchor<0)return;trySelect(ws.anchor,ws.drag);
-      ws.anchor=-1;ws.drag=-1;render()}}
+    el.className='wsc'+(selSet.has(i)?' on':'')+(foundCells.includes(i)?' hit':'')}
   $('list').innerHTML=WS.WORDS.map(w=>'<span class="wlc'+
     (ws.found.includes(w)?' found':'')+'">'+w+'</span>').join('');
   const m=Math.floor(Math.max(0,ws.left)/60),s=Math.max(0,ws.left)%60;
@@ -226,6 +220,28 @@ function selectLineIs(word,from){
         if(x<0||y<0||x>=WS.W||y>=WS.H||WS.BOARD[y][x]!==seq[i]){ok=false;break}}
       if(ok)return true}
   return false}
+/* One set of handlers on the board itself (the cells are rebuilt on every render).
+   Dragging finds the cell under the finger with elementFromPoint: a touch pointer
+   stays captured by the cell it started on and never fires pointerenter on the
+   others, so the old per-cell pointerenter selection could not be used on a phone. */
+(function(){
+  const B=$('board');
+  B.style.touchAction='none';
+  B.addEventListener('pointerdown',e=>{
+    const c=e.target.closest&&e.target.closest('.wsc'); if(!c)return;
+    e.preventDefault();
+    if(e.target.releasePointerCapture){try{e.target.releasePointerCapture(e.pointerId)}catch(_){}}
+    if(ws.status!=='playing')return;
+    ws.anchor=+c.dataset.i;ws.drag=ws.anchor;render()});
+  B.addEventListener('pointermove',e=>{
+    if(ws.anchor<0||ws.status!=='playing')return;
+    const t=document.elementFromPoint(e.clientX,e.clientY);
+    const c=t&&t.closest&&t.closest('.wsc'); if(!c)return;
+    const i=+c.dataset.i; if(i===ws.drag)return;
+    ws.drag=i;trySelect(ws.anchor,ws.drag);render()});
+  const end=()=>{if(ws.anchor<0)return;trySelect(ws.anchor,ws.drag);ws.anchor=-1;ws.drag=-1;render()};
+  addEventListener('pointerup',end);addEventListener('pointercancel',end);
+})();
 $('start').onclick=()=>wsStart();
 $('pause').onclick=()=>{if(ws.status==='playing'){ws.status='paused';wsStop();render()}};
 $('new').onclick=()=>{wsStop();ws={found:[],status:'ready',left:WS.LIMIT,score:0,
