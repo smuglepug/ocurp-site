@@ -174,9 +174,17 @@ function submit(){
   return s}
 // Every word still reachable on THIS board from any start cell - the honest
 // "how much is left" number, computed with the same adjacency rule.
+const PREF=new Set();BG.DICT.forEach(w=>{for(let k=1;k<=w.length;k++)PREF.add(w.slice(0,k))});
+const reachCache={};
 function reachable(){
-  const L=letters(),out=new Set();
+  const L=letters();
+  if(reachCache[L]!==undefined)return reachCache[L];
+  const out=new Set();
   for(let i=0;i<L.length;i++){(function walk(i,used,s){
+    /* prune: no dictionary word starts with s, so no extension can score.
+       Without this the walk enumerated every self-avoiding path on the board
+       (~8 s per call) and render() ran it every click and every second. */
+    if(!PREF.has(s))return;
     if(s.length>=BG.MIN&&LEX.has(s))out.add(s);
     for(const d of N8){
       const r=Math.floor(i/BG.N)+d[0],c=i%BG.N+d[1];
@@ -185,7 +193,7 @@ function reachable(){
       if(used&(1<<j))continue;
       walk(j,used|(1<<j),s+L[j])}
   })(i,1<<i,L[i])}
-  return out.size}
+  return (reachCache[L]=out.size)}
 function render(){
   const L=letters();
   $('board').innerHTML=Array.from(L).map((ch,i)=>
