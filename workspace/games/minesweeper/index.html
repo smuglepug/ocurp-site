@@ -104,7 +104,7 @@ let W,H,M,g,revealed,flags,over,won,started;
 function reset(){const [w,h,m]=$('lvl').value.split(',').map(Number);W=w;H=h;M=m;
   g=Array(H).fill().map(()=>Array(W).fill(0));revealed=Array(H).fill().map(()=>Array(W).fill(false));
   flags=Array(H).fill().map(()=>Array(W).fill(false));over=false;won=false;
-  started=false;$('left').textContent=M;draw()}
+  started=false;$('left').textContent=M;if($('status'))$('status').textContent='Reveal every safe square. Right-click (or long-press) to flag a mine.';draw()}
 function lay(safeR,safeC){started=true;
   // Never place a mine under the first click, and never in its neighbourhood,
   // so opening a square can never lose the game on turn one.
@@ -121,7 +121,7 @@ function lay(safeR,safeC){started=true;
 function checkWin(){if(over||won)return;
   for(let r=0;r<H;r++)for(let c=0;c<W;c++){if(g[r][c]!==-1&&!revealed[r][c])return}
   won=true;
-  $('status').textContent='Cleared - every safe square is open. '+leftCount()+' seconds.'}
+  $('status').textContent='Cleared - every safe square is open.'}   /* no timer exists: it printed the flag count as 'seconds' */
 function leftCount(){return Math.max(0,M-flags.flat().filter(Boolean).length)}
 function draw(){$('grid').style.gridTemplateColumns='repeat('+W+',1fr)';
   let html='';
@@ -141,7 +141,7 @@ function draw(){$('grid').style.gridTemplateColumns='repeat('+W+',1fr)';
 function reveal(r,c){if(over||revealed[r][c]||flags[r][c])return;
   if(!started)lay(r,c);
   revealed[r][c]=true;
-  if(g[r][c]===-1){over=true;for(let i=0;i<H;i++)for(let j=0;j<W;j++)revealed[i][j]=true;draw();return}
+  if(g[r][c]===-1){over=true;if($('status'))$('status').textContent='Boom - that was a mine. Press New to try again.';for(let i=0;i<H;i++)for(let j=0;j<W;j++)revealed[i][j]=true;draw();return}
   if(g[r][c]===0)for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;
     if(nr>=0&&nr<H&&nc>=0&&nc<W&&!revealed[nr][nc])reveal(nr,nc)}
   draw();checkWin()}
