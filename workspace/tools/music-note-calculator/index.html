@@ -226,6 +226,12 @@ function renderListen(){
 document.getElementById('mnc-note').addEventListener('change', render);
 document.getElementById('mnc-hear').addEventListener('input', renderListen);
 
+/* shared AudioContext (ctx() was never defined, so both Play buttons threw) */
+var mncAC = null;
+function ctx(){
+  try{ mncAC = mncAC || new (window.AudioContext || window.webkitAudioContext)(); if(mncAC.state === 'suspended') mncAC.resume(); return mncAC; }
+  catch(e){ return null; }
+}
 document.getElementById('mnc-play').addEventListener('click', function(){
   var st = render(), c = ctx(); if(!c) return;
   var t = c.currentTime, o = c.createOscillator(), g = c.createGain();

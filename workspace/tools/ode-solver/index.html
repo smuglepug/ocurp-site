@@ -216,13 +216,13 @@ function compileExpr(src, names){
   function expr(){
     var v=term();
     while(t[pos]&&(t[pos].k==='+'||t[pos].k==='-')){ var op=t[pos].k; pos++; var w=term();
-      v=(op==='+')?function(s){return v(s)+w(s)}:function(s){return v(s)-w(s)}; }
+      v=(function(l,r,o){return o==='+'?function(s){return l(s)+r(s)}:function(s){return l(s)-r(s)}})(v,w,op); }   /* bind l/r now: closing over v made it call itself forever */
     return v;
   }
   function term(){
     var v=power();
     while(t[pos]&&(t[pos].k==='*'||t[pos].k==='/')){ var op=t[pos].k; pos++; var w=power();
-      v=(op==='*')?function(s){return v(s)*w(s)}:function(s){return v(s)/w(s)}; }
+      v=(function(l,r,o){return o==='*'?function(s){return l(s)*r(s)}:function(s){return l(s)/r(s)}})(v,w,op); }
     return v;
   }
   function power(){
