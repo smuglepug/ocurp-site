@@ -121,12 +121,10 @@ tailwind.config = { theme: { extend: {
 
         <p class="mt-4 text-[11px] leading-relaxed text-white/45">
           A full <span class="text-white/70">double-six set of 28 tiles</span>. Play a tile
-          that matches either open end of the chain; the double is the two exposed pips at
-          each side and both ends score when the round closes. Six tiles each, sixteen in
-          the boneyard. Play a tile and the chain grows; no legal tile and a non-empty
-          boneyard means you <span class="text-accent">draw</span> &mdash; if the drawn tile
-          fits you play it, otherwise the turn passes, and either way a tile has left the
-          boneyard, so the round always ends. Empty hand wins the chain outright. First to
+          that matches either open end of the chain. Six tiles each, sixteen in
+          the boneyard. Play a tile and the chain grows; no tile that fits means you <span class="text-accent">draw</span> until one does (or pass once the
+          boneyard is empty). The round winner scores the pips left in the opponent&rsquo;s hand: an empty
+          hand wins outright, and if both sides are stuck the lighter hand wins the difference. First to
           the target score takes the match. The AI is one-ply greedy: it takes the heaviest
           tile it can and prefers to break its own doubles last.
         </p>
@@ -192,17 +190,28 @@ function dmLegal(hand,chain){
   for(var i=0;i<hand.length;i++)if(dmFits(hand[i],e))out.push(i);
   return out;
 }
+/* A played tile is stored oriented left-to-right so that every pair of
+   neighbours touches on equal pips and dmEnds() is always the true open ends.
+   It goes on the right end when it fits there, otherwise on the left. */
 function dmPlay(hand,chain,i){
-  var t=hand[i],h=hand.slice();h.splice(i,1);return {hand:h,chain:chain.concat([t]),tile:t};
+  var t=hand[i],h=hand.slice();h.splice(i,1);
+  var a=t.split('|').map(Number),e=dmEnds(chain),nc;
+  if(e===null)nc=[t];
+  else if(a[0]===e[1])nc=chain.concat([a[0]+'|'+a[1]]);
+  else if(a[1]===e[1])nc=chain.concat([a[1]+'|'+a[0]]);
+  else if(a[1]===e[0])nc=[a[0]+'|'+a[1]].concat(chain);
+  else nc=[a[1]+'|'+a[0]].concat(chain);
+  return {hand:h,chain:nc,tile:t};
 }
 function dmChainPips(chain){var s=0;for(var i=0;i<chain.length;i++)s+=DM_PIPS(chain[i]);return s}
 
-function dmNew(seed,target){
+function dmNew(seed,target,keep){
   var sd=(seed===undefined)?20261002:(seed|0);
   var d=dmShuffle(DM_SET,rngOf(sd));
+  var sc=keep?DM.scores.slice():[0,0],rd=keep?DM.round:0;
   Object.assign(DM,{seed:sd,target:target||100,boney:d.slice(DM_HAND*2),chain:[],turn:0,
-      hand:[d.slice(0,DM_HAND),d.slice(DM_HAND,DM_HAND*2)],scores:[0,0],chosen:null,
-      over:false,roundOver:false,log:[],pass:0,round:0,pulls:0});
+      hand:[d.slice(0,DM_HAND),d.slice(DM_HAND,DM_HAND*2)],scores:sc,chosen:null,
+      over:false,roundOver:false,log:[],pass:0,round:rd,pulls:0});
   dmSay('New round. '+DM.boney.length+' tiles in the boneyard.');
   dmRender();
 }
@@ -215,8 +224,17 @@ function dmDraw(){
   dmSay((DM.turn===0?'You':'AI')+' drew '+t.replace('|','-')); return t;
 }
 function dmPass(){
-  DM.log.unshift('');DM.log.shift();
-  DM.chain.length===0;DM.turn=1-DM.turn;DM.pass++;DM.render();
+  dmSay((DM.turn===0?'You':'AI')+' pass - nothing fits and the boneyard is empty');
+  DM.turn=1-DM.turn;DM.pass++;
+  if(DM.pass>=2)dmBlocked();
+  DM.render();
+}
+/* Both players stuck with an empty boneyard: the lighter hand wins the chain. */
+function dmBlocked(){
+  var h0=0,h1=0,i;
+  for(i=0;i<DM.hand[0].length;i++)h0+=DM_PIPS(DM.hand[0][i]);
+  for(i=0;i<DM.hand[1].length;i++)h1+=DM_PIPS(DM.hand[1][i]);
+  dmEndRound(h0<=h1?0:1,false);
 }
 /* one-ply greedy: heaviest tile that fits; among equals prefer a double, then
    the lower tile so the AI does not hoard its own doubles. */
@@ -224,9 +242,9 @@ function dmAIChoice(hand,chain){
   var lg=dmLegal(hand,chain);
   if(!lg.length)return null;
   var best=null,bk=-1;
-  for(var i=0;i<lg.length;i++){var t=hand[i],a=t.split('|').map(Number);
+  for(var i=0;i<lg.length;i++){var t=hand[lg[i]],a=t.split('|').map(Number);
     var k=DM_PIPS(t)*10+(a[0]===a[1]?5:0)-a[0];
-    if(k>bk){bk=k;best=i}}
+    if(k>bk){bk=k;best=lg[i]}}
   return best;
 }
 function dmAdvance(){
@@ -234,7 +252,10 @@ function dmAdvance(){
   var p=DM.turn,lg=dmLegal(DM.hand[p],DM.chain);
   if(lg.length){
     var i=(p===0?DM.chosen:dmAIChoice(DM.hand[p],DM.chain));
-    if(i===null||i===undefined||i<0)i=lg[0];
+    if(i===null||i===undefined||lg.indexOf(i)<0){
+      if(p===0&&i!==null&&i!==undefined){DM.chosen=null;dmSay('That tile does not match either open end.');return 'illegal'}
+      i=lg[0];
+    }
     var r=dmPlay(DM.hand[p],DM.chain,i);
     DM.hand[p]=r.hand;DM.chain=r.chain;DM.chosen=null;
     dmSay((p===0?'You':'AI')+' played '+r.tile.replace('|','-')+'  (ends '
@@ -249,7 +270,7 @@ function dmAdvance(){
     var lg2=dmLegal(DM.hand[p],DM.chain);
     if(lg2.length){
       var j=(p===0?DM.chosen:dmAIChoice(DM.hand[p],DM.chain));
-      if(j===null||j===undefined||j<0)j=lg2[0];
+      if(j===null||j===undefined||lg2.indexOf(j)<0)j=lg2[0];
       var r2=dmPlay(DM.hand[p],DM.chain,j);
       DM.hand[p]=r2.hand;DM.chain=r2.chain;DM.chosen=null;
       dmSay((p===0?'You':'AI')+' drew and played '+r2.tile.replace('|','-'));
@@ -258,7 +279,11 @@ function dmAdvance(){
       dmSay((p===0?'You':'AI')+' drew '+t.replace('|','-')+' - no fit, turn passes'); }
     DM.render();return 'drew';
   }
-  dmEndRound(DM.turn===0?1:0,false);DM.render();return 'blocked';
+  /* no legal tile and an empty boneyard: pass; two passes in a row block the round */
+  dmSay((p===0?'You':'AI')+' pass - nothing fits and the boneyard is empty');
+  DM.turn=1-p;DM.pass++;
+  if(DM.pass>=2){dmBlocked();DM.render();return 'blocked'}
+  DM.render();return 'passed';
 }
 /* p won the round.  An empty hand takes the whole chain and scores nothing for
    the pickup; a blocked round hands the chain pips to the player still holding
@@ -267,15 +292,18 @@ function dmEndRound(p,empty){
   var chain=dmChainPips(DM.chain),other=1-p;
   var hp=[0,0];
   for(var i=0;i<DM.hand[0].length;i++)hp[0]+=DM_PIPS(DM.hand[0][i]);
-  for(var i2=0;i2<DM.hand[1].length;i2++)hp[1]+=DM_PIPS(DM.hand[1][i]);
-  DM.scores[p]+=chain;                 /* the chain always goes to the winner */
-  DM.scores[other]+=empty?hp[other]:0; /* and the loser picks up only if stuck */
+  for(var i2=0;i2<DM.hand[1].length;i2++)hp[1]+=DM_PIPS(DM.hand[1][i2]);
+  /* winner scores the pips left in the loser's hand; a blocked round scores the difference */
+  var gain=empty?hp[other]:Math.max(0,hp[other]-hp[p]);
+  DM.scores[p]+=gain;
   DM.roundOver=true;DM.round++;
-  dmSay('Round over ('+(empty?'hand emptied':'boneyard empty, blocked')+'). '
-    +(DM.turn===0?'You':'AI')+' scores the chain: '+chain
+  dmSay('Round over ('+(empty?'hand emptied':'blocked')+'). '
+    +(p===0?'You':'AI')+' scores '+gain+' (chain '+chain+' pips)'
     +'. Pickups: '+hp[0]+' / '+hp[1]+'.  Totals '+DM.scores[0]+' / '+DM.scores[1]);
   if(DM.scores[p]>=DM.target)DM.over=true;
+  if(DM.over)dmSay((p===0?'You win':'AI wins')+' the match.');
 }
+DM.render=function(){dmRender()};
 DM.autoRound=function(maxTurns){
   var g=maxTurns||400,i=0;
   while(!DM.roundOver&&i++<g){
@@ -313,7 +341,8 @@ function dmRender(){
     el.onclick=function(){
       if(DM.turn!==0||DM.roundOver)return;
       var k=+el.getAttribute('data-i');
-      DM.chosen=k; dmAdvance();
+      if(dmLegal(DM.hand[0],DM.chain).length===0){dmSay('Nothing fits - use '+(DM.boney.length?'Draw':'Pass')+'.');dmRender();return}
+      DM.chosen=k; dmAdvance(); dmAIRun();
     };
   })(hs[i]);
   $('dm-pips').textContent=dmChainPips(DM.chain);
@@ -323,7 +352,9 @@ function dmRender(){
   $('dm-turn').textContent=DM.over?'MATCH OVER':DM.roundOver?'ROUND OVER':(DM.turn===0?'YOUR MOVE':'AI THINKING');
   $('dm-status').textContent=DM.log.length?DM.log[0]:'DEAL';
   $('dm-log').textContent=DM.log.join('\n');
-  $('dm-draw').disabled=DM.boney.length===0||DM.roundOver||DM.turn!==0;
+  $('dm-draw').textContent=DM.boney.length?'Draw':'Pass';
+  $('dm-draw').disabled=DM.roundOver||DM.turn!==0||dmLegal(DM.hand[0],DM.chain).length>0;
+  $('dm-deal').textContent=(DM.roundOver&&!DM.over)?'Next round':'New game';
   dmData();
 }
 function dmData(){
@@ -332,17 +363,28 @@ function dmData(){
     'tiles in the set   '+DM_SET.length+'   (0<=a<=b<=6, doubles included)\n'
    +'total pips         '+pips+'   = 6*7*8/2 = 168, the double-six invariant\n'
    +'tiles per hand     '+DM_HAND+' x 2 = 12, boneyard starts at 28-12 = 16\n'
-   +'chain scoring      sum of both pips of every tile on the board\n'
-   +'                   + your own unplayed hand when you empty it, or the\n'
-   +'                     chain pips to the non-stuck player on a block\n'
+   +'scoring            round winner scores the pips left in the opponent\'s hand\n'
+   +'                   (blocked round: the lighter hand wins the difference)\n'
    +'target score       '+DM.target+'\n'
    +'boneyard left      '+DM.boney.length+'\n'
    +'seed               '+DM.seed;
 }
-$('dm-deal').onclick=function(){dmNew(undefined,+$('dm-target').value)};
-$('dm-target').onchange=function(){dmNew(undefined,+$('dm-target').value)};
-$('dm-draw').onclick=function(){if(DM.turn===0&&!DM.roundOver)dmDraw(),dmRender()};
-dmNew(3,100);
+var dmTimer=null;
+function dmAIRun(){
+  clearTimeout(dmTimer);
+  if(DM.turn!==1||DM.roundOver)return;
+  dmTimer=setTimeout(function(){dmAdvance();dmAIRun()},600);
+}
+function dmFresh(keep){clearTimeout(dmTimer);dmNew((Math.random()*1e9)|0,+$('dm-target').value,keep)}
+$('dm-deal').onclick=function(){dmFresh(DM.roundOver&&!DM.over)};
+$('dm-target').onchange=function(){dmFresh(false)};
+$('dm-draw').onclick=function(){
+  if(DM.turn!==0||DM.roundOver)return;
+  if(dmLegal(DM.hand[0],DM.chain).length){dmSay('You have a tile that fits - play it.');dmRender();return}
+  if(DM.boney.length){dmDraw();dmRender()}
+  else{dmPass();dmAIRun()}
+};
+dmNew((Math.random()*1e9)|0,100);
 
 window.__dominoes={newGame:function(seed,target){dmNew(seed,target);return this.state()},
   state:DM.state,advance:dmAdvance,draw:dmDraw,legal:function(p){return dmLegal(DM.hand[p===undefined?DM.turn:p],DM.chain)},
