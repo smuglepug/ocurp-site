@@ -178,8 +178,12 @@
        inside the rounded corners, with a dark scrim so the type stays readable.
        That is what made the hero look deliberate and the listings look like
        thumbnails stacked on a caption -- the difference the screenshots show. */
+    /* Games and tools: a real screenshot of the running page sits over the generated
+       pattern (the pattern + monogram stay as the fallback if card.jpg is missing). */
+    var shot = isWebsites ? '' : '<img src="/workspace/' + base + '/' + esc(e.slug) + '/card.jpg?v=20261003" alt="' + esc(e.name) + '" loading="lazy" decoding="async"'
+      + ' class="absolute inset-0 z-[1] h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" onerror="this.remove()">';
     var art = '<div class="pointer-events-none absolute inset-0 overflow-hidden rounded-t-[1.5rem] md:rounded-t-[3rem]">'
-      + banner
+      + banner + shot
       + '<div class="absolute inset-0 bg-gradient-to-t from-[#050505]/92 via-[#050505]/45 to-[#050505]/15"></div>'
       + '</div>';
     var tags = e.tags.filter(function (t) { return String(t).toUpperCase() !== 'CLIENT-SIDE'; }).slice(0, 3).map(function (t) {
