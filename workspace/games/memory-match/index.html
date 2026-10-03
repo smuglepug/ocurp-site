@@ -116,10 +116,11 @@ tailwind.config = { theme: { extend: {
 <script src="/workspace/play.js?v=20261002c" defer></script>
 <script>
 const ICONS=['▲','●','■','★','♥','♦','⚡','✹'];
-let cards,open,lock,moves,found;
+let cards,open,lock,moves,found,flipBack=null;
 const el=id=>document.getElementById(id);
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function reset(){
+  clearTimeout(flipBack);flipBack=null;
   cards=shuffle(ICONS.concat(ICONS).map((ic,i)=>({ic,id:i,up:false,done:false})));
   open=[];lock=false;moves=0;found=0;
   el('moves').textContent='0';
@@ -147,7 +148,7 @@ function flip(i){
         el('best').textContent=localStorage.getItem('ws-mem-best');
       }
       draw();
-    } else setTimeout(()=>{cards[open[0]].up=cards[open[1]].up=false;open=[];lock=false;draw()},650);
+    } else flipBack=setTimeout(()=>{flipBack=null;cards[open[0]].up=cards[open[1]].up=false;open=[];lock=false;draw()},650);
   }}
 el('reset').onclick=reset;
 reset();
