@@ -143,7 +143,7 @@ const YAHTZEE_COUNTS_AS_FULL_HOUSE=true;   // five of a kind fills the full hous
 const YAHTZEE_COUNTS_AS_FOUR_OF_A_KIND=true;
 const ALLOW_ZERO=true;                    // an unfilled category may bank a 0
 
-const S={dice:[1,1,1,1,1],keep:[false,false,false,false,false],turn:1,
+const S={dice:[1,1,1,1,1],keep:[false,false,false,false,false],turn:1,rolled:0,
   cats:Object.create(null),log:[],over:false};
 window.yahtzeeState=S;
 
@@ -212,29 +212,33 @@ function bestCat(){
 }
 function roll(){
   if(S.over)return false;
-  for(let i=0;i<DICE;i++)if(!S.keep[i])S.dice[i]=1+Math.floor(Math.random()*FACES);
-  if(S.turn<ROLLS){S.turn++;render();return true}
-  return true;
+  /* three rolls a turn, counted properly: the old counter stopped at 3 but the button stayed
+     live, so a turn could be re-rolled without limit */
+  if(S.rolled>=ROLLS)return false;
+  for(let i=0;i<DICE;i++)if(S.rolled===0||!S.keep[i])S.dice[i]=1+Math.floor(Math.random()*FACES);
+  S.rolled++;S.turn=Math.min(ROLLS,S.rolled+1);
+  render();return true;
 }
 function toggle(i){
-  if(S.over)return false;
+  if(S.over||S.rolled===0)return false;
   S.keep[i]=!S.keep[i];render();return true;
 }
 function pick(id){
   if(S.over)return false;
   if(S.cats[id]!==undefined)return false;
+  if(S.rolled===0)return false;     /* roll before you score: unrolled dice scored a free Yahtzee */
   S.cats[id]=ALLOW_ZERO?scoreCat(id):0;
   const b=bestCat();
   S.log.push(CATS.find(c=>c.id===id).label+' = '+S.cats[id]);
   if(S.log.length>8)S.log.shift();
-  S.dice=[1,1,1,1,1];S.keep=[false,false,false,false,false];S.turn=1;
+  S.dice=[1,1,1,1,1];S.keep=[false,false,false,false,false];S.turn=1;S.rolled=0;
   const left=CATS.filter(c=>S.cats[c.id]===undefined).length;
   if(left===0){S.over=true;S.log.push('Final score '+totalScore()+'.')}
   render();return true;
 }
 function newGame(){
   S.cats=Object.create(null);S.over=false;S.turn=1;S.log=[];
-  S.dice=[1,1,1,1,1];S.keep=[false,false,false,false,false];
+  S.dice=[1,1,1,1,1];S.keep=[false,false,false,false,false];S.rolled=0;
   S.log.push('New game.');
   render();
 }
@@ -258,17 +262,17 @@ function render(){
     const done=S.cats[c.id]!==undefined;
     const pot=done?S.cats[c.id]:scoreCat(c.id);
     return '<button class="yz-cat'+(done?' done':'')+(b&&b.id===c.id&&!S.over?' best':'')+'"'
-      +' data-c="'+c.id+'"'+(done||S.over?' disabled':'')+'>'
+      +' data-c="'+c.id+'"'+(done||S.over||S.rolled===0?' disabled':'')+'>'
       +'<span>'+c.label+'</span><b>'+pot+'</b></button>';
   };
   $('colU').innerHTML=CATS.filter(c=>c.sec==='u').map(mk).join('');
   $('colL').innerHTML=CATS.filter(c=>c.sec==='l').map(mk).join('');
   $('colU').querySelectorAll('button').forEach(el=>el.onclick=()=>pick(el.dataset.c));
   $('colL').querySelectorAll('button').forEach(el=>el.onclick=()=>pick(el.dataset.c));
-  $('roll').textContent=S.turn===1?'Roll':(S.turn===2?'Roll again':'Score a box');
-  $('roll').disabled=S.over||S.turn>ROLLS;
-  $('auto').disabled=S.over;
-  $('rolls').textContent=S.over?'Game over':('Roll '+S.turn+' of '+ROLLS);
+  $('roll').textContent=S.rolled===0?'Roll':(S.rolled<ROLLS?'Roll again':'Score a box');
+  $('roll').disabled=S.over||S.rolled>=ROLLS;
+  $('auto').disabled=S.over||S.rolled===0;
+  $('rolls').textContent=S.over?'Game over':('Roll '+S.rolled+' of '+ROLLS);
   $('score').textContent=totalScore();
   $('upper').textContent=upperSubtotal()+(bonus()?' +'+bonus():'');
   const d=counts(S.dice);
