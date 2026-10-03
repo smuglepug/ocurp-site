@@ -114,12 +114,11 @@ function draw(){$('board').innerHTML=bd.map((row,r)=>row.map((p,c)=>{
  return '<button data-c="'+c+'" class="flex aspect-square items-center justify-center rounded-full" style="background:#0b1220">'
   +(col?'<span style="display:block;width:84%;height:84%;border-radius:9999px;background:'+col+';box-shadow:0 2px 4px rgba(0,0,0,.5)"></span>':'')+'</button>'}).join('')).join('');
  $('board').querySelectorAll('button').forEach(el=>el.onclick=()=>click(+el.dataset.c))}
-function click(col){if(over||turn!=='y')return;const r=drop(col,'y');if(r<0)return;
- hist.push(JSON.parse(JSON.stringify(bd)));draw();
+function click(col){if(over||turn!=='y')return;if(bd[0][col])return;hist.push(JSON.parse(JSON.stringify(bd)));const r=drop(col,'y');draw();
  if(wins('y')){over=true;$('msg').textContent='You win!';return}
  if(bd[0].every(v=>v)){over=true;$('msg').textContent='Draw \u2014 board full.';return}
  turn='r';$('turn').textContent='AI';setTimeout(ai,300)}
-function ai(){const valid=[];for(let c=0;c<COLS;c++)if(!bd[0][c])valid.push(c);
+function ai(){if(turn!=='r'||over)return;const valid=[];for(let c=0;c<COLS;c++)if(!bd[0][c])valid.push(c);
  if(!valid.length)return;let best=valid[0],bs=-1e9;
  for(const c of valid){let score=Math.random()*2;
   const r=drop(c,'r');if(r<0)continue;if(wins('r'))score+=100;bd[r][c]=0;
