@@ -196,7 +196,48 @@ function build(){
     ld.name = site || title;
     ld.url = url;
     if(desc) ld.description = desc;
-    lines.push('
+    lines.push('<script type="application/ld+json">'
+      +JSON.stringify(ld,null,2)+'</'+'script>');
+  }
+  var code=lines.join('\n');
+
+  var host='';
+  try{ host=new URL(url).hostname; }catch(e){ host=url; }
+  var big = cardType==='summary_large_image' && img;
+  $('prev').innerHTML =
+      '<div class="flex gap-3">'
+    + '<div class="flex h-[110px] w-[110px] flex-none items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">'
+    + (img ? '<img src="'+escAttr(img)+'" class="h-full w-full object-cover" alt="">'
+           : '<span class="text-xs text-white/30">no image</span>')
+    + '</div>'
+    + '<div class="min-w-0">'
+    + '<div class="truncate text-xs uppercase text-white/50">'+esc(host)+'</div>'
+    + '<div class="mt-1 line-clamp-2 font-display text-lg font-bold leading-snug">'+esc(title)+'</div>'
+    + '<div class="mt-1 line-clamp-2 text-sm text-white/60">'+esc(desc)+'</div>'
+    + '</div></div>'
+    + '<div class="mt-4 rounded-lg border border-white/10 bg-white/[0.03] p-3 text-[11px] text-white/55">'
+    + (big?'Large image card - fills most of a timeline.':'Small card - image sits left, text wraps beside it.')
+    + '</div>';
+
+  $('code').textContent=code;
+  var tagCount=code.split('\n').length;
+  var bytes=new Blob([code]).size;
+  show([['Tags',tagCount-($('jsonld').checked?1:0)],
+        ['Code bytes',bytes],
+        ['Title',titleCount(title.length)],
+        ['Description',descCount(desc.length)]]);
+  return code;
+}
+['url','title','desc','img','site','tw'].forEach(function(id){
+  $(id).addEventListener('input',build);
+});
+$('card').addEventListener('change',build);
+$('noesc').addEventListener('change',build);
+$('jsonld').addEventListener('change',build);
+window.__meta={build:build,escAttr:escAttr,metaAttrs:metaAttrs,
+               titleCount:titleCount,descCount:descCount};
+build();
+</script>
 
 
 <!--ocurp-related-->
