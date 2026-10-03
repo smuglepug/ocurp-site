@@ -144,8 +144,8 @@ tailwind.config = { theme: { extend: {
      the page instead of steering the game), a Fullscreen control that requests
      real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
      desktop. Regenerate every game page after editing either file. -->
-<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
-<script src="/workspace/play.js?v=20261002c" defer></script>
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
 <script>
 (function(){
   var $ = function(id){ return document.getElementById(id); };
@@ -333,8 +333,10 @@ tailwind.config = { theme: { extend: {
     $(id).addEventListener('input', go);
     $(id).addEventListener('change', go);
   });
-  go();
-
+  /* go() ran HERE, before window.__T['ideal-weight-calculator'] existed on
+     line 294, so every call that hit the out-of-range branch threw
+     "Cannot set properties of undefined (setting 'last')". The harness entry
+     point must be registered before the first invocation. */
   window.__T['ideal-weight-calculator'] = {
     slug: 'ideal-weight-calculator',
     FORMULAS: F,
@@ -350,6 +352,9 @@ tailwind.config = { theme: { extend: {
       return go();
     }
   };
+  /* safe now: __T is registered, so the out-of-range branch in go() can
+     assign .last without throwing. */
+  go();
 })();
 </script>
 
@@ -358,21 +363,17 @@ tailwind.config = { theme: { extend: {
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
   <ul class="ocurp-related-grid">
-    <li><a href="/workspace/tools/bmi-calculator-bmr/">
-      <span class="ocurp-related-n">BMI + BMR Calculator</span>
-      <span class="ocurp-related-b">Body mass index plus basal metabolic rate, with the healthy weight range for your height.</span>
-    </a></li>
     <li><a href="/workspace/tools/a-irr-calculator/">
       <span class="ocurp-related-n">IRR Calculator</span>
       <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
     </a></li>
     <li><a href="/workspace/tools/age-calculator/">
       <span class="ocurp-related-n">Age Calculator</span>
-      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+      <span class="ocurp-related-b">Exact age in years</span>
     </a></li>
     <li><a href="/workspace/tools/apy-vs-apr-calculator/">
       <span class="ocurp-related-n">APY vs APR Calculator</span>
-      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns, and exactly ho</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
     </a></li>
     <li><a href="/workspace/tools/aspect-ratio/">
       <span class="ocurp-related-n">Aspect Ratio Calculator</span>
@@ -380,7 +381,11 @@ tailwind.config = { theme: { extend: {
     </a></li>
     <li><a href="/workspace/tools/base-converter/">
       <span class="ocurp-related-n">Base Converter</span>
-      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/tools/">See all tools →</a>

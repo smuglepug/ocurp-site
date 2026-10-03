@@ -181,12 +181,27 @@ function goalAdj(tdee,goal){
   if(goal==='bulk') return  0.10*tdee;
   return 0;
 }
+// Last-edited twin, so kg/lb and cm/ft-in stay in sync instead of one winning
+// forever just because it shipped with a default value.
+var kgTwin='kg', htTwin='cm';
+// 175.26 cm -> 5'9". Rounds to the nearest inch the way a tape measure reads.
+function cmToFtIn(cm){
+  var totalIn=cm/2.54, ft=Math.floor(totalIn/12), inch=Math.round(totalIn-ft*12);
+  if(inch===12){ ft+=1; inch=0; }
+  return ft+"'"+inch+'"';
+}
 function run(){
   var kg=parseFloat($('kg').value), cm=parseFloat($('cm').value),
       age=parseFloat($('age').value), lb=parseFloat($('lb').value);
   var fcm=ftinToCm($('ft').value);
-  if(!isFinite(kg)&&isFinite(lb)){ kg=lb*0.45359237; $('kg').value=r(kg,2); }
-  if(!isFinite(cm)&&fcm){ cm=fcm; $('cm').value=r(cm,2); }
+  // One source of truth per dimension. The kg/cm boxes ship with defaults, so a
+  // plain "use lb only if kg is empty" fallback never fires and the lb / ft-in
+  // boxes are dead inputs. Instead we remember which twin the user last typed
+  // in and derive the other from it, so an imperial entry is never ignored.
+  if(kgTwin==='lb'&&isFinite(lb)&&lb>0){ kg=lb*0.45359237; $('kg').value=r(kg,2); }
+  else if(isFinite(kg)&&kg>0){ lb=kg/0.45359237; $('lb').value=r(lb,2); }
+  if(htTwin==='ft'&&fcm){ cm=fcm; $('cm').value=r(cm,2); }
+  else if(isFinite(cm)&&cm>0){ $('ft').value=cmToFtIn(cm); }
   if(!isFinite(kg)||!isFinite(cm)||kg<=0||cm<=0){
     seterr('err','need a weight above 0 and a height above 0'); return; }
   if(!isFinite(age)||age<=0){ seterr('err','need an age above 0'); return; }
@@ -219,6 +234,17 @@ function run(){
   show([['BMI',r(b,1)],['Category',bmiBand(b)],
         ['TDEE',Math.round(t)+' kcal'],['Target',Math.round(t+adj)+' kcal']]);
 }
+// Which twin the user touched decides which one wins - this is what makes the
+// imperial boxes live instead of decorative. Registered BEFORE the run bindings
+// so the first keystroke already sees the new source of truth.
+[['kg','kg'],['lb','lb']].forEach(function(p){
+  $(p[0]).addEventListener('input',function(){ kgTwin=p[1]; });
+  $(p[0]).addEventListener('change',function(){ kgTwin=p[1]; });
+});
+[['cm','cm'],['ft','ft']].forEach(function(p){
+  $(p[0]).addEventListener('input',function(){ htTwin=p[1]; });
+  $(p[0]).addEventListener('change',function(){ htTwin=p[1]; });
+});
 ['kg','lb','cm','ft','age','sex','act','goal','neck','waist','hip','bf'].forEach(function(id){
   $(id).addEventListener('input',run); $(id).addEventListener('change',run);
 });
@@ -272,29 +298,29 @@ run();
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
   <ul class="ocurp-related-grid">
-    <li><a href="/workspace/tools/calorie-needs-calculator/">
-      <span class="ocurp-related-n">Calorie Needs Calculator</span>
-      <span class="ocurp-related-b">Mifflin-St Jeor BMR for men and women, the six real activity multipliers, TDEE as BMR time</span>
+    <li><a href="/workspace/tools/acronym-generator/">
+      <span class="ocurp-related-n">Acronym Generator</span>
+      <span class="ocurp-related-b">Build initialisms</span>
     </a></li>
-    <li><a href="/workspace/tools/bmi/">
-      <span class="ocurp-related-n">BMI Calculator</span>
-      <span class="ocurp-related-b">Body mass index with healthy-range context.</span>
+    <li><a href="/workspace/tools/alarm/">
+      <span class="ocurp-related-n">Alarm Clock</span>
+      <span class="ocurp-related-b">Set an alarm a number of seconds ahead or at a wall-clock time</span>
     </a></li>
-    <li><a href="/workspace/tools/calorie-calculator/">
-      <span class="ocurp-related-n">Calorie Calculator</span>
-      <span class="ocurp-related-b">Daily calories from age, weight, activity and goal, using the Mifflin-St Jeor equation.</span>
+    <li><a href="/workspace/tools/bingo-card-generator/">
+      <span class="ocurp-related-n">Bingo Card Generator</span>
+      <span class="ocurp-related-b">Printable 5x5 bingo cards with a proper B-I-N-G-O number range and a matching call sheet.</span>
     </a></li>
-    <li><a href="/workspace/tools/ideal-weight-calculator/">
-      <span class="ocurp-related-n">Ideal Weight Calculator</span>
-      <span class="ocurp-related-b">Devine, Robinson, Miller and Hamwi side by side, plus the healthy BMI band.</span>
+    <li><a href="/workspace/tools/character-count-analyzer/">
+      <span class="ocurp-related-n">Character Count Analyzer</span>
+      <span class="ocurp-related-b">Live character counts against the real limits for X</span>
     </a></li>
-    <li><a href="/workspace/tools/pregnancy-due-date/">
-      <span class="ocurp-related-n">Pregnancy Due Date</span>
-      <span class="ocurp-related-b">Estimated due date from the last period, plus the current week and trimester.</span>
+    <li><a href="/workspace/tools/citation-generator/">
+      <span class="ocurp-related-n">Citation Generator</span>
+      <span class="ocurp-related-b">APA 7</span>
     </a></li>
-    <li><a href="/workspace/tools/water-intake/">
-      <span class="ocurp-related-n">Water Intake Calculator</span>
-      <span class="ocurp-related-b">A weight-based daily water estimate in millilitres, litres, glasses and bottles, adjusted </span>
+    <li><a href="/workspace/tools/countdown/">
+      <span class="ocurp-related-n">Countdown Timer</span>
+      <span class="ocurp-related-b">Count down a number of minutes from now or to a fixed date and time</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/tools/">See all tools →</a>

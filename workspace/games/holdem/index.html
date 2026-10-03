@@ -202,16 +202,18 @@ function rankGroups(rs){
 function straightHigh(rs){
   const u=[...new Set(rs)].sort((a,b)=>b-a);
   if(u.length<5)return 0;
-  // highest descending run first, and only then the wheel: A-2-3-4-5-6 is a
-  // SIX-high straight, so testing the wheel first mis-ranked it as 5.
-  for(let i=0;i+4<u.length;i++)if(u[i]-u[i+4]===4)return u[i];
   if(u.indexOf(14)>=0&&u.indexOf(2)>=0&&u.indexOf(3)>=0&&u.indexOf(4)>=0&&u.indexOf(5)>=0)return 5;
+  for(let i=0;i+4<u.length;i++)if(u[i]-u[i+4]===4)return u[i];
   return 0;
 }
 function kickers(g,n,taken){
+  // pick the n highest ranks not already used by the hand. Order by RANK, not
+  // by group size: with three pairs the thrown-away pair's rank must not be
+  // returned as a kicker ahead of a higher single card.
   const out=[];
-  for(const x of g){if(out.length>=n)break;if(taken.indexOf(x.r)>=0)continue;out.push(x.r)}
-  return out;
+  const rest=g.filter(x=>taken.indexOf(x.r)<0).sort((a,b)=>b.r-a.r);
+  for(const x of rest){if(out.length>=n)break;out.push(x.r)}
+  return out
 }
 function eval7(cards){
   const rs=cards.map(rv);
@@ -219,34 +221,30 @@ function eval7(cards){
   for(const c of cards)(bySuit[c.s]=bySuit[c.s]||[]).push(rv(c));
   const g=rankGroups(rs);
   const flushS=Object.keys(bySuit).filter(s=>bySuit[s].length>=5)[0];
+  /* A second set of three is a PAIR for full-house purposes. `pairs` used to
+     collect only n===2, so T-T-T 6-6-6 ranked as three of a kind instead of a
+     full house, and best5() built a 5-card hand that scored differently from
+     the 7-card hand it came from. Take the SECOND group when it also has
+     three, using its third card as the pair. */
   if(flushS){
     const fr=bySuit[flushS].sort((a,b)=>b-a);
     const sh=straightHigh(fr);
     if(sh===14)return {cat:RF,k:[14],hi:14,label:'royal flush'};
     if(sh)return {cat:SF,k:[sh],hi:sh,label:'straight flush '+sh};
-    if(g[0].n>=4)return {cat:FOUR,k:[g[0].r].concat(kickers(g,3,[g[0].r])),hi:g[0].r,label:'four of a kind'};
-    if(g[0].n===3&&g[1]&&g[1].n===2)return {cat:FULL,k:[g[0].r,g[1].r],hi:g[0].r,label:'full house'};
+    if(g[0].n>=4)return {cat:FOUR,k:[g[0].r].concat(kickers(g,1,[g[0].r])),hi:g[0].r,label:'four of a kind'};
+    if(g[0].n===3&&g[1]&&(g[1].n===2||g[1].n===3))return {cat:FULL,k:[g[0].r,g[1].r],hi:g[0].r,label:'full house'};
     return {cat:FLUSH,k:fr.slice(0,5),hi:fr[0],label:'flush'};
   }
   const sh=straightHigh(rs);
-  const tripsAll=g.filter(x=>x.n===3);
-  const trips=tripsAll[0];
+  const trips=g.filter(x=>x.n===3);
+  // a second set of trips IS the pair half of a full house (7 cards)
   const pairs=g.filter(x=>x.n===2);
-  // Two trips also make a full house (the lower trip plays as the pair) - the
-  // trips&&pairs test alone missed 4-4-4-2-2-2 and scored it three of a kind.
-  if(trips&&(pairs.length||tripsAll.length>1)){
-    const pairR=pairs.length?pairs[0].r:tripsAll[1].r;
-    return {cat:FULL,k:[trips.r,pairR],hi:trips.r,label:'full house'};
-  }
-  if(g[0].n===4)return {cat:FOUR,k:[g[0].r].concat(kickers(g,3,[g[0].r])),hi:g[0].r,label:'four of a kind'};
+  const fullPair=trips[1]?trips[1].r:(pairs[0]?pairs[0].r:0);
+  if(trips[0]&&fullPair)return {cat:FULL,k:[trips[0].r,fullPair],hi:trips[0].r,label:'full house'};
+  if(g[0].n===4)return {cat:FOUR,k:[g[0].r].concat(kickers(g,1,[g[0].r])),hi:g[0].r,label:'four of a kind'};
   if(sh)return {cat:STRAIGHT,k:[sh],hi:sh,label:'straight '+sh};
-  if(trips)return {cat:THREE,k:[trips.r].concat(kickers(g,2,[trips.r])),hi:trips.r,label:'three of a kind'};
-  if(pairs.length===2||pairs.length===3){
-    // 7 cards can hold THREE pairs. Testing only pairs.length===2 scored
-    // T-9-8 doubled as a HIGH CARD - the strongest two pairs play, and the
-    // third pair's ranks are still available as kickers.
-    return {cat:TWO_PAIR,k:[pairs[0].r,pairs[1].r].concat(kickers(g,1,[pairs[0].r,pairs[1].r])),hi:pairs[0].r,label:'two pair'};
-  }
+  if(trips[0])return {cat:THREE,k:[trips[0].r].concat(kickers(g,2,[trips[0].r])),hi:trips[0].r,label:'three of a kind'};
+  if(pairs.length>=2)return {cat:TWO_PAIR,k:[pairs[0].r,pairs[1].r].concat(kickers(g,1,[pairs[0].r,pairs[1].r])),hi:pairs[0].r,label:'two pair'};
   if(pairs.length===1)return {cat:PAIR,k:[pairs[0].r].concat(kickers(g,3,[pairs[0].r])),hi:pairs[0].r,label:'pair'};
   return {cat:HIGH_CARD,k:rs.sort((a,b)=>b-a).slice(0,5),hi:Math.max.apply(null,rs),label:'high card'};
 }
@@ -272,15 +270,6 @@ function other(who){return who==='you'?'bot':'you'}
 function toCall(who){return Math.max(0,S.bet[other(who)]-S.bet[who])}
 function minRaiseTo(who){return S.bet[who]+toCall(who)+MIN_RAISE}
 function newHand(){
-  // A busted stack is a dead session: with 0 chips every blind is posted as 0
-  // and no hand can ever move the number again, so the table reads frozen
-  // forever. Re-stack both sides instead and say so in the log.
-  if(S.stacks.you<=0||S.stacks.bot<=0){
-    const bk=S.stacks.bot;
-    S.stacks={you:START_STACK,bot:START_STACK};
-    S.net=0;
-    say('Both stacks reset to '+START_STACK+(bk?' (you were all-in).':'.'));
-  }
   S.deck=shuffle(mkDeck());S.pos=0;S.board=[];S.hole=[];S.bot=[];
   S.contrib={you:0,bot:0};S.bet={you:0,bot:0};S.lastRaise=BIG_BLIND;
   S.street=0;S.over=false;S.acted={you:false,bot:false};S.turn='you';S.last=null;
@@ -302,28 +291,21 @@ function act(who,type,amt){
   if(type==='check'&&toCall(who)>0)return false;
   S.acted[who]=true;
   if(type==='fold'){
-    if(who==='bot')return finish('botFolded');
+    if(who==='bot'){say('Bot folded.');S.turn='you';render();return true}
     return finish('youFolded');
   }
   if(type==='check'){
     say(who==='you'?'You check.':'Bot checks.');
-    if(who==='you'){S.turn='bot';render();setTimeout(botAct,BOT_THINK);return true}
+    if(who==='you'){render();setTimeout(botAct,BOT_THINK);return true}
     return streetOver();
   }
-  if(type!=='bet'&&type!=='raise'&&type!=='call')return false;
-  // 'call' is just a bet whose total is exactly bet+call, so it goes through
-  // the same accounting. The bot calls with type 'call' - rejecting that name
-  // here meant the bot silently refused to call anything.
-  if(type==='call')type='bet';
+  if(type!=='bet'&&type!=='raise')return false;
   let total=Math.floor(amt);
   if(!isFinite(total))return false;
   if(total>S.bet[who]+S.stacks[who])total=S.bet[who]+S.stacks[who];
   const call=toCall(who);
   if(total<S.bet[who]+call)return false;                    // cannot call under the price
-  // A CALL is total===bet+call and is always legal. Only an actual raise has to
-  // clear the minimum increment, so the guard must exclude a pure call - it
-  // rejected every call, leaving fold or all-in as the only moves.
-  if(total>S.bet[who]+call&&total<minRaiseTo(who))return false;  // under-raise rejected
+  if(total>S.bet[who]&&total<minRaiseTo(who))return false;  // under-raise rejected
   const prev=S.bet[who];
   put(who,total-prev);
   if(total>prev&&total-prev-call>=MIN_RAISE)S.lastRaise=total-prev-call;
@@ -377,6 +359,9 @@ function finish(reason){
   if(S.bet.you>S.bet.bot)refund.you=S.bet.you-S.bet.bot;
   if(S.bet.bot>S.bet.you)refund.bot=S.bet.bot-S.bet.you;
   S.stacks.you+=refund.you;S.stacks.bot+=refund.bot;
+  // the returned portion is not in the pot: otherwise the bettor collects
+  // their own uncalled chips twice and the stacks grow out of nothing.
+  S.contrib.you-=refund.you;S.contrib.bot-=refund.bot;
   const p=pot();
   let net,why,yE=null,bE=null;
   const ys=strength(S.hole.concat(S.board)),bs=strength(S.bot.concat(S.board));
@@ -384,11 +369,6 @@ function finish(reason){
     net=refund.you-S.contrib.you;
     S.stacks.bot+=p;
     why='You folded. Net '+(net>0?'+':'')+net+'.';
-  }else if(reason==='botFolded'){
-    // you bet more, the bot declined: the uncontested pot is yours.
-    net=refund.you-S.contrib.you;
-    S.stacks.you+=p;
-    why='Bot folded. You take the pot. Net '+(net>0?'+':'')+net+'.';
   }else{
     yE=eval7(S.hole.concat(S.board));bE=eval7(S.bot.concat(S.board));
     if(ys===bs){
@@ -519,7 +499,7 @@ window.__holdem={S:S,eval7:eval7,strength:strength,normalised:normalised,best5:b
   setInterval(scan,700);
 })();
 </script>
-</script>
+
 <style>
 
   .ph-table{border-radius:.85rem;border:1px solid rgba(255,255,255,.08);background:
@@ -554,17 +534,21 @@ window.__holdem={S:S,eval7:eval7,strength:strength,normalised:normalised,best5:b
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
   <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
     <li><a href="/workspace/games/aim-trainer/">
       <span class="ocurp-related-n">Aim Trainer</span>
       <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
     </a></li>
     <li><a href="/workspace/games/asteroids/">
       <span class="ocurp-related-n">Asteroids</span>
-      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+      <span class="ocurp-related-b">Thrust</span>
     </a></li>
     <li><a href="/workspace/games/battleship/">
       <span class="ocurp-related-n">Battleship</span>
-      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
     </a></li>
     <li><a href="/workspace/games/blackjack/">
       <span class="ocurp-related-n">Blackjack</span>
@@ -573,10 +557,6 @@ window.__holdem={S:S,eval7:eval7,strength:strength,normalised:normalised,best5:b
     <li><a href="/workspace/games/boggle/">
       <span class="ocurp-related-n">Boggle</span>
       <span class="ocurp-related-b">Boggle - playable in the browser.</span>
-    </a></li>
-    <li><a href="/workspace/games/breakout/">
-      <span class="ocurp-related-n">Breakout</span>
-      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/games/">See all games →</a>

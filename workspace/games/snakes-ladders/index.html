@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snakes Ladders — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="Snakes Ladders - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/snakes-ladders/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Snakes Ladders">
+<meta property="og:description" content="Snakes Ladders - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/snakes-ladders/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Snakes Ladders on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Snakes Ladders">
+<meta name="twitter:description" content="Snakes Ladders - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Snakes Ladders on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Snakes Ladders","url":"https://ocurp.com/workspace/games/snakes-ladders/","description":"Snakes Ladders - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Snakes & Ladders</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">BOARD</span><span class="ws-chip">DICE</span><span class="ws-chip">2-4 PLAYERS</span><span class="ws-chip">SOLO</span></div>
+  </div>
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="sl-new" class="ws-btn">New game</button>
+      <button id="sl-roll" class="ws-btn">Roll</button>
+      <button id="sl-auto" class="ws-btn-ghost">Auto-play</button>
+      <select id="sl-players" class="ws-btn-ghost" style="width:auto" title="Players">
+        <option value="2" selected>2 players</option>
+        <option value="3">3 players</option>
+        <option value="4">4 players</option>
+      </select>
+      <div class="sl-die" id="sl-die">&mdash;</div>
+      <span class="ws-chip" id="sl-turn">PLAYER 1 TO MOVE</span>
+      <span class="ws-chip" id="sl-status">ROLL</span>
+    </div>
+
+    <div class="mt-5"><div class="sl-board" id="sl-board"></div></div>
+
+    <div class="mt-3 flex flex-wrap items-center justify-center gap-4 text-[11px] text-white/50">
+      <span><span style="color:#FF5F1F">&#9650;</span> ladder climbs &middot;
+        <span style="color:rgba(255,255,255,.7)">&#9660;</span> snake slides</span>
+      <span>Land exactly on 100 to win &middot; a 6 rolls again (max 3 in a row)</span>
+    </div>
+
+    <div class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4" id="sl-stats"></div>
+
+    <p class="mt-4 text-[11px] leading-relaxed text-white/45">
+      The classic race up 100 squares with <span class="text-white/70">8 ladders and
+      8 snakes</span>. Roll, count forward, and if you stop on a ladder foot or a
+      snake head you jump immediately &mdash; one jump per roll, never a chain.
+      Overshooting 100 is not allowed: you bounce back and wait for the exact roll.
+      A 6 earns another turn, up to three in a row, so no player can stall the
+      table. First token onto 100 wins outright.
+    </p>
+  </section>
+  <section class="ws-panel mt-4 p-5">
+    <div class="ws-label mb-2">The board, square by square</div>
+    <pre id="sl-data" class="ws-out text-[11px]"></pre>
+  </section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen’s Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+var $=function(id){return document.getElementById(id)};
+/* mulberry32: 32-bit seeded PRNG. Every game on this page draws from a
+   seeded stream, so `__<slug>.newGame(0)` in the console replays exactly. */
+function rngOf(seed){var a=seed>>>0;return function(){a=a+0x6D2B79F5|0;
+  var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;
+  return((t^t>>>14)>>>0)/4294967296}}
+function ri(rng,n){return Math.floor(rng()*n)}
+
+/* ── the board, exactly as drawn above ────────────────────────────────── */
+var SL_GOAL=100;
+var SL_LADDERS={1:38,4:14,9:31,21:42,28:84,36:44,51:67,71:91};   /* 8 */
+var SL_SNAKES ={16:6,47:26,49:11,56:53,62:19,64:60,87:24,93:73}; /* 8 */
+var SL_MAX6=3;
+var SL_NAME=['You','Silver','Graphite','Slate'];
+var SL={};
+
+/* page: one jump only - the landing square, never the destination */
+function slJump(sq){var j=SL_LADDERS[sq];if(j!==undefined)return{to:j,kind:'ladder'};
+  j=SL_SNAKES[sq];if(j!==undefined)return{to:j,kind:'snake'};return null}
+function slCell(n){var r=Math.floor((n-1)/10),c=(n-1)%10;
+  if(r%2===1)c=9-c;                              /* boustrophedon rows */
+  return [9-r,c]}
+
+function slNew(n,seed){
+  n=n||2; var sd=(seed===undefined)?20261002:(seed|0);
+  Object.assign(SL,{n:n,seed:sd,rng:rngOf(sd),pos:new Array(n).fill(1),turn:0,die:null,
+      chain:0,over:false,winner:null,rolls:0,turns:0,status:'ROLL',jumps:0,
+      ladderJumps:0,snakeJumps:0});
+  slRender();slData();
+}
+function slRoll(){
+  if(SL.over)return null;
+  var d=ri(SL.rng,6)+1, p=SL.turn, from=SL.pos[p];
+  SL.die=d; SL.rolls++; SL.chain++;
+  var want=from+d, landed=Math.min(want,SL_GOAL), j=null;
+  if(want<=SL_GOAL){ j=slJump(landed);
+    if(j){ landed=j.to; SL.jumps++; if(j.kind==='ladder')SL.ladderJumps++;else SL.snakeJumps++; } }
+  SL.pos[p]=landed;
+  var msg='PLAYER '+(p+1)+' ROLLED '+d+': '+from+' \u2192 ';
+  if(want>SL_GOAL)msg+='OVERSHOT 100, STAYS ON '+landed;
+  else msg+=(landed===want?'':'via '+(j?j.kind:'?'))+' '+landed;
+  SL.status=msg;
+  if(landed>=SL_GOAL){ SL.over=true; SL.winner=p;
+    SL.status=SL_NAME[p].toUpperCase()+' LANDS EXACTLY ON 100 - WINS'; slRender(); return d; }
+  if(d===6&&SL.chain<SL_MAX6){ SL.status+=' - SIX, ROLL AGAIN'; slRender(); return d; }
+  SL.chain=0; SL.turn=(SL.turn+1)%SL.n; SL.turns++;
+  slRender(); return d;
+}
+function slTurnsToGoal(sq){
+  /* Exact number of rolls to reach 100 if EVERY roll were the maximum 6 and no
+     jump intervened.  With average 3.5 the true number is 99/3.5 = 28.3 rolls
+     for the last stretch, so this is a strict lower bound on the roll budget. */
+  return Math.ceil((SL_GOAL-sq)/6);
+}
+SL.aiCell=function(p,d){
+  var from=SL.pos[p],want=from+d,landed=Math.min(want,SL_GOAL),j=null;
+  if(want<=SL_GOAL){j=slJump(landed);if(j)landed=j.to}
+  return landed;
+};
+SL.step=function(){
+  if(SL.over)return null;
+  var d=slRoll();
+  if(SL.over)return 'over';
+  if(d===6&&SL.chain>0)return 'six';
+  return 'ok';
+};
+SL.auto=function(maxTurns){
+  var g=maxTurns||3000,i=0;
+  while(!SL.over&&i++<g){
+    slRoll();
+  }
+  return {over:SL.over,winner:SL.winner,turns:SL.turns,rolls:SL.rolls,iterations:i};
+};
+SL.state=function(){return {n:SL.n,turn:SL.turn,die:SL.die,chain:SL.chain,over:SL.over,
+  winner:SL.winner,pos:SL.pos.slice(),rolls:SL.rolls,turns:SL.turns,jumps:SL.jumps,
+  ladderJumps:SL.ladderJumps,snakeJumps:SL.snakeJumps,status:SL.status}};
+
+function slRender(){
+  var here={};
+  for(var n=1;n<=SL_GOAL;n++){var c=slCell(n);here[c[0]+','+c[1]]=n}
+  var t={};
+  for(var p=0;p<SL.n;p++)for(var q=0;q<SL.n;q++)if(SL.pos[p]===SL.pos[q]){t[p+','+SL.pos[p]]=p}
+  var seats={};
+  for(var p2=0;p2<SL.n;p2++){(seats[SL.pos[p2]]=seats[SL.pos[p2]]||[]).push(p2)}
+  var h='';
+  for(var r=0;r<10;r++)for(var c2=0;c2<10;c2++){
+    var n2=here[r+','+c2],cls='sl-c'+((n2-1)%20>=10?' alt':'');
+    if(n2===SL_GOAL)cls+=' goal';
+    var inner='<span class="sl-n">'+n2+'</span>';
+    var j=slJump(n2);
+    if(j)inner+='<span class="sl-link '+(j.kind==='ladder'?'sl-ladder':'sl-snake')+'">'
+      +(j.kind==='ladder'?'&#9650;':'&#9660;')+'</span>';
+    var dots='';
+    (seats[n2]||[]).forEach(function(p3,k){
+      dots+='<span class="sl-t p'+p3+(k>0?' stk':'')+'">'+(p3+1)+'</span>'});
+    h+='<div class="'+cls+'">'+inner+dots+'</div>';
+  }
+  $('sl-board').innerHTML=h;
+  $('sl-die').textContent=SL.die===null?'\u2014':SL.die;
+  $('sl-die').className='sl-die'+(SL.die===6?' hot':'');
+  $('sl-turn').textContent=SL.over?(SL.winner!==null?SL_NAME[SL.winner].toUpperCase()+' WINS':'DRAW')
+    :'PLAYER '+(SL.turn+1)+' ('+SL_NAME[SL.turn]+') TO MOVE';
+  $('sl-status').textContent=SL.status;
+  var sh='';
+  for(var p4=0;p4<SL.n;p4++){
+    sh+='<div class="sl-stat"><div class="ws-label mb-1">'+SL_NAME[p4]+'</div>'
+      +'<div class="lg-num">'+SL.pos[p4]+'</div>'
+      +'<div class="text-[10px] text-white/35">rolls to 100 at 6s: '+slTurnsToGoal(SL.pos[p4])+'</div></div>';
+  }
+  $('sl-stats').innerHTML=sh;
+}
+function slData(){
+  var lad=Object.keys(SL_LADDERS).map(Number).sort(function(a,b){return a-b});
+  var snk=Object.keys(SL_SNAKES).map(Number).sort(function(a,b){return a-b});
+  var bad=[];
+  lad.concat(snk).forEach(function(s){
+    var dst=SL_LADDERS[s]!==undefined?SL_LADDERS[s]:SL_SNAKES[s];
+    if(dst<1||dst>100)bad.push(s);
+    if(SL_LADDERS[dst]!==undefined||SL_SNAKES[dst]!==undefined)bad.push(s+' cascades');
+  });
+  $('sl-data').textContent=
+    'ladders ('+lad.length+')   '+lad.map(function(s){return s+'\u2192'+SL_LADDERS[s]}).join('  ')+'\n'
+   +'snakes  ('+snk.length+')   '+snk.map(function(s){return s+'\u2192'+SL_SNAKES[s]}).join('  ')+'\n'
+   +'sum of ladder rises  '+lad.reduce(function(a,s){return a+(SL_LADDERS[s]-s)},0)+'\n'
+   +'sum of snake slides  '+snk.reduce(function(a,s){return a+(SL_SNAKES[s]-s)},0)+'\n'
+   +'goals                '+SL_GOAL+', exact landing required\n'
+   +'cascades             '+(bad.length?bad.join(', '):'none - no jump lands on another jump')+'\n'
+   +'max chained sixes    '+SL_MAX6+'\n'
+   +'seed                 '+SL.seed;
+}
+$('sl-new').onclick=function(){slNew(+$('sl-players').value)};
+$('sl-players').onchange=function(){slNew(+$('sl-players').value)};
+$('sl-roll').onclick=function(){slRoll()};
+$('sl-auto').onclick=function(){
+  $('sl-auto').disabled=true;var n=0;
+  var iv=setInterval(function(){slRoll();if(SL.over||++n>3000){clearInterval(iv);$('sl-auto').disabled=false}},0);
+};
+slNew(2,11);
+
+window.__snakes_ladders={newGame:function(n,seed){slNew(n,seed);return this.state()},
+  state:SL.state,roll:slRoll,cell:slCell,jump:slJump,rollsToGoal:slTurnsToGoal,
+  step:SL.step,auto:SL.auto,render:slRender,
+  consts:{GOAL:SL_GOAL,LADDERS:SL_LADDERS,SNAKES:SL_SNAKES,MAX6:SL_MAX6,NAMES:SL_NAME}};
+</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  /* Watch the usual output nodes; report a short, useful summary. */
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      /* A game node is a label like "Score 12" - read it out as it stands.
+         A tool node is raw output - a character count is the useful summary. */
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+
+<style>
+<style>
+  .sl-board{display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:repeat(10,1fr);
+    gap:1px;width:min(100%,520px);aspect-ratio:1/1;margin:0 auto;
+    border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);
+    padding:3px;box-sizing:border-box}
+  .sl-c{position:relative;border-radius:3px;background:rgba(255,255,255,.045)}
+  .sl-c.alt{background:rgba(255,255,255,.02)}
+  .sl-c.goal{background:rgba(255,95,31,.22);box-shadow:inset 0 0 0 1px rgba(255,95,31,.5)}
+  .sl-n{position:absolute;left:2px;top:1px;font:700 7px 'IBM Plex Sans',monospace;
+    color:rgba(255,255,255,.28)}
+  .sl-link{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:11px;line-height:1}
+  .sl-ladder{color:rgba(255,95,31,.85)}
+  .sl-snake{color:rgba(255,255,255,.42)}
+  .sl-t{position:absolute;width:8px;height:8px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font:900 5px 'IBM Plex Sans',monospace}
+  .sl-t.p0{background:#FF5F1F;color:#000}
+  .sl-t.p1{background:#f2efe9;color:#0b0b0b}
+  .sl-t.p2{background:#a8a8a8;color:#0b0b0b}
+  .sl-t.p3{background:#6e6e6e;color:#f2efe9}
+  .sl-t.stk{width:6px;height:6px;border:1px solid #050505}
+  .sl-die{width:42px;height:42px;border-radius:8px;background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;
+    font:800 21px 'Manrope',sans-serif;color:#fff}
+  .sl-die.hot{background:#FF5F1F;color:#000;border-color:#FF5F1F}
+  .sl-stat{border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);padding:.6rem .7rem}
+</style>
+</style>
+<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/play.js?v=20261002c" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

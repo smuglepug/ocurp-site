@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plinko Drop — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="Plinko Drop - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/plinko-drop/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Plinko Drop">
+<meta property="og:description" content="Plinko Drop - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/plinko-drop/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Plinko Drop on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Plinko Drop">
+<meta name="twitter:description" content="Plinko Drop - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Plinko Drop on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Plinko Drop","url":"https://ocurp.com/workspace/games/plinko-drop/","description":"Plinko Drop - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Plinko Drop</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">Canvas</span><span class="ws-chip">20 Drops</span><span class="ws-chip">No Install</span></div>
+  </div>
+
+  <div class="ws-plinko-wrap">
+    <div>
+      <div class="ws-plinko-stage">
+        <canvas id="pd-canvas" width="560" height="620"
+                aria-label="Plinko Drop peg board"></canvas>
+      </div>
+      <div class="ws-plinko-cols" id="pd-cols" role="group"
+           aria-label="Choose a release column"></div>
+      <p class="ws-note" id="pd-msg" role="status" aria-live="polite">
+        Pick a column and drop. Land the disc in the centre jackpot slot
+        within 20 drops to win.
+      </p>
+    </div>
+    <aside class="ws-panel">
+      <h2>Run</h2>
+      <div class="ws-stat"><span>Score</span><b id="pd-score" class="accent">0</b></div>
+      <div class="ws-stat"><span>Drops left</span><b id="pd-drops">20</b></div>
+      <div class="ws-stat"><span>Best</span><b id="pd-best">0</b></div>
+      <h2 style="margin-top:16px">Slots</h2>
+      <div class="ws-slots" id="pd-slots"></div>
+      <div class="ws-bars" id="pd-bars"></div>
+      <h2 style="margin-top:16px">Landed</h2>
+      <div class="ws-tally" id="pd-tally"></div>
+      <button class="ws-cta" id="pd-drop" type="button">Drop</button>
+      <button class="ws-cta" id="pd-reset" type="button"
+              style="background:#0d0d0d;color:#FF5F1F;margin-top:8px">Reset</button>
+    </aside>
+  </div>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen’s Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+(function () {
+  'use strict';
+
+  // ---- constants. tools/provers/plinko-drop.py re-implements EXACTLY these
+  // and greps this file for them; changing one without changing
+  // plinko_drop_const.py makes the prover fail loudly.
+  var W = 560, H = 620;
+  var R_DISC = 6.0, R_PEG = 5.0;
+  var GRAV = 900.0, V_MAX = 900.0;
+  var REST = 0.40, TANG_KEEP = 0.90, WALL_REST = 0.55;
+  var DT = 1 / 240;
+  var FRICTION = 0.86, REST_VX = 12.0, REST_VY = 8.0;
+  var ROWS = 9, PEG_DY = 50.0, PEG_DX = 44.0, PEG_PHASE = 22.0;
+  var TOP_Y = 96.0, DROP_Y = 30.0;
+  var SLOT_W = [40, 48, 56, 64, 100, 64, 56, 48, 40];
+  var MULT = [1, 2, 3, 5, 10, 5, 3, 2, 1];
+  var NSLOTS = 9;
+  var SLOT_Y = 520.0, FLOOR_Y = 596.0;
+  var MAX_DROPS = 20, BASE_SCORE = 100;
+  var N_COLS = 11, COL_INSET = 22.0, COL_SPAN = W - 2 * COL_INSET;
+  var COL_W = COL_SPAN / (N_COLS - 1);
+  var JACKPOT_SLOT = 4;
+  var MARGIN = (W - SLOT_W.reduce(function (a, b) { return a + b; }, 0)) / 2;
+  var FLOOR_Y_TOP = FLOOR_Y - R_DISC;
+  var LAST_PEG_Y = TOP_Y + (ROWS - 1) * PEG_DY;
+
+  var COLS = [];
+  for (var k = 0; k < N_COLS; k++) COLS.push(COL_INSET + COL_SPAN * k / (N_COLS - 1));
+
+  var BDIV = [];
+  var acc = MARGIN;
+  for (var i = 0; i < NSLOTS; i++) { BDIV.push(acc); acc += SLOT_W[i]; }
+
+  // Mirror-symmetric lattice: even rows hold 11 pegs, odd rows 10, each row
+  // centred on W/2, so neither side of the board is structurally better.
+  var PEGROWS = {}, PEGS = [];
+  for (var r = 0; r < ROWS; r++) {
+    var y = TOP_Y + r * PEG_DY;
+    var n = (r % 2 === 0) ? 11 : 10;
+    var a = (W - PEG_DX * (n - 1)) / 2 + (r % 2 === 0 ? PEG_PHASE : 0);
+    var row = [];
+    for (var j = 0; j < n; j++) row.push([a + PEG_DX * j, y]);
+    PEGROWS[r] = row;
+    for (var q = 0; q < row.length; q++) PEGS.push(row[q]);
+  }
+
+  var cv = document.getElementById('pd-canvas');
+  var ctx = cv.getContext('2d');
+  var msgEl = document.getElementById('pd-msg');
+  var scoreEl = document.getElementById('pd-score');
+  var dropsEl = document.getElementById('pd-drops');
+  var bestEl = document.getElementById('pd-best');
+  var tallyEl = document.getElementById('pd-tally');
+  var dropBtn = document.getElementById('pd-drop');
+  var resetBtn = document.getElementById('pd-reset');
+  var colsEl = document.getElementById('pd-cols');
+  var slotsEl = document.getElementById('pd-slots');
+  var barsEl = document.getElementById('pd-bars');
+
+  var ORANGE = '#FF5F1F';
+  var discs = [], running = false, col = 5;
+  var score = 0, dropsLeft = MAX_DROPS, best = 0;
+  var tally = [], won = false;
+
+  try { best = parseInt(localStorage.getItem('pd_best') || '0', 10) || 0; }
+  catch (e) { best = 0; }
+  bestEl.textContent = best;
+
+  for (var c = 0; c < N_COLS; c++) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ws-plinko-col';
+    b.textContent = 'C' + (c + 1);
+    b.setAttribute('data-col', String(c));
+    b.setAttribute('aria-pressed', c === col ? 'true' : 'false');
+    b.addEventListener('click', (function (cc) {
+      return function () {
+        if (running) return;
+        col = cc;
+        var all = colsEl.querySelectorAll('.ws-plinko-col');
+        for (var i = 0; i < all.length; i++)
+          all[i].setAttribute('aria-pressed', i === cc ? 'true' : 'false');
+      };
+    })(c));
+    colsEl.appendChild(b);
+  }
+
+  var slotHtml = '';
+  for (var s = 0; s < NSLOTS; s++)
+    slotHtml += '<div class="ws-slot' + (s === JACKPOT_SLOT ? ' jackpot' : '') +
+                '"><em>SLOT ' + (s + 1) + '</em><b>x' + MULT[s] + '</b></div>';
+  slotsEl.innerHTML = slotHtml;
+  var barHtml = '';
+  for (var t = 0; t < NSLOTS; t++)
+    barHtml += '<div class="ws-bar"><i>S' + (t + 1) + '</i><u><s id="pd-bar-' +
+               t + '"></s></u><b id="pd-n-' + t + '">0</b></div>';
+  barsEl.innerHTML = barHtml;
+
+  function drawBoard() {
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, W, H);
+    // slot wells
+    for (var i = 0; i < NSLOTS; i++) {
+      var x = BDIV[i];
+      ctx.fillStyle = (i === JACKPOT_SLOT) ? '#FF5F1F' : '#0d0d0d';
+      ctx.fillRect(x + 1, SLOT_Y, SLOT_W[i] - 2, FLOOR_Y - SLOT_Y);
+      ctx.fillStyle = (i === JACKPOT_SLOT) ? '#050505' : 'rgba(255,255,255,.08)';
+      ctx.font = '800 13px "Space Grotesk",system-ui,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('x' + MULT[i], x + SLOT_W[i] / 2, SLOT_Y + 26);
+    }
+    // dividers
+    ctx.fillStyle = 'rgba(255,255,255,.12)';
+    for (var d = 1; d < NSLOTS; d++)
+      ctx.fillRect(BDIV[d] - 1, SLOT_Y, 2, FLOOR_Y - SLOT_Y);
+    // pegs
+    for (var q = 0; q < PEGS.length; q++) {
+      ctx.beginPath();
+      ctx.arc(PEGS[q][0], PEGS[q][1], R_PEG, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,.28)';
+      ctx.fill();
+    }
+    // launch markers
+    for (var m = 0; m < N_COLS; m++) {
+      ctx.fillStyle = (m === col) ? ORANGE : 'rgba(255,255,255,.18)';
+      ctx.fillRect(COLS[m] - 7, DROP_Y - 12, 14, 3);
+    }
+  }
+
+  function drawDisc(d) {
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, R_DISC, 0, Math.PI * 2);
+    ctx.fillStyle = ORANGE;
+    ctx.fill();
+  }
+
+  function nearRow(y) {
+    var r = Math.floor(y / PEG_DY);
+    if (r < 0) r = 0;
+    if (r > ROWS - 1) r = ROWS - 1;
+    return PEGROWS[r];
+  }
+
+  function step(d) {
+    d.vy = Math.min(V_MAX, d.vy + GRAV * DT);
+    d.x += d.vx * DT;
+    d.y += d.vy * DT;
+    if (d.x < R_DISC) { d.x = R_DISC; d.vx = Math.abs(d.vx) * WALL_REST; }
+    if (d.x > W - R_DISC) { d.x = W - R_DISC; d.vx = -Math.abs(d.vx) * WALL_REST; }
+    var row = nearRow(d.y);
+    var rr = R_PEG + R_DISC;
+    for (var i = 0; i < row.length; i++) {
+      var px = row[i][0], py = row[i][1];
+      var dx = px - d.x, dy = py - d.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist >= rr || dist === 0) continue;
+      var nx = dx / dist, ny = dy / dist;
+      d.x = px - nx * rr;
+      d.y = py - ny * rr;
+      var vn = d.vx * nx + d.vy * ny;
+      var tx = -ny, ty = nx;
+      var vt = d.vx * tx + d.vy * ty;
+      var vn2 = -REST * vn;
+      var vt2 = TANG_KEEP * vt;
+      d.vx = nx * vn2 + tx * vt2;
+      d.vy = ny * vn2 + ty * vt2;
+    }
+    // Anything that has fallen past the last peg row and gone stationary is
+    // settled, whether it stopped on a perch or on the floor. Without this a
+    // disc that balances on a peg hangs forever and the game never ends.
+    if (d.y > LAST_PEG_Y && Math.abs(d.vx) < REST_VX && Math.abs(d.vy) < REST_VY)
+      return true;
+    if (d.y > SLOT_Y) {
+      if (d.y > FLOOR_Y_TOP) {
+        d.y = FLOOR_Y_TOP;
+        if (d.vy > 0) d.vy = 0;
+      }
+      var k = slotAt(d.x);
+      var left = k > 0 ? BDIV[k] : 0;
+      var right = k < NSLOTS - 1 ? BDIV[k] + SLOT_W[k] : W;
+      if (d.x < left + R_DISC) {
+        d.x = left + R_DISC;
+        if (d.vx < 0) d.vx = -d.vx * WALL_REST;
+      } else if (d.x > right - R_DISC) {
+        d.x = right - R_DISC;
+        if (d.vx > 0) d.vx = -d.vx * WALL_REST;
+      }
+      d.vx *= FRICTION;
+    }
+    return false;
+  }
+
+  function slotAt(x) {
+    for (var i = 0; i < NSLOTS; i++)
+      if (x >= BDIV[i] && x < BDIV[i] + SLOT_W[i]) return i;
+    return x < BDIV[0] ? 0 : NSLOTS - 1;
+  }
+
+  function renderTally() {
+    var h = '';
+    for (var i = 0; i < tally.length; i++)
+      h += '<i class="' + (tally[i] === JACKPOT_SLOT ? 'j' : '') + '">x' +
+           MULT[tally[i]] + '</i>';
+    tallyEl.innerHTML = h;
+  }
+
+  function refreshBars() {
+    var counts = [];
+    for (var i = 0; i < NSLOTS; i++) counts.push(0);
+    for (var t = 0; t < tally.length; t++) counts[tally[t]]++;
+    var mx = 1;
+    for (var i = 0; i < NSLOTS; i++) mx = Math.max(mx, counts[i]);
+    for (var i = 0; i < NSLOTS; i++) {
+      var bar = document.getElementById('pd-bar-' + i);
+      var n = document.getElementById('pd-n-' + i);
+      if (bar) bar.style.width = Math.round(100 * counts[i] / mx) + '%';
+      if (n) n.textContent = String(counts[i]);
+    }
+    return counts;
+  }
+
+  function say(t, good) {
+    msgEl.textContent = t;
+    msgEl.className = good ? 'ws-note win' : 'ws-note';
+  }
+
+  function finish(slot) {
+    running = false;
+    discs.length = 0;
+    tally.push(slot);
+    var gain = MULT[slot] * BASE_SCORE;
+    score += gain;
+    scoreEl.textContent = String(score);
+    tallyEl.innerHTML = '';
+    renderTally();
+    refreshBars();
+    var counts = [];
+    for (var i = 0; i < NSLOTS; i++) counts.push(0);
+    for (var t = 0; t < tally.length; t++) counts[tally[t]]++;
+    dropsLeft--;
+    dropsEl.textContent = String(dropsLeft);
+    if (slot === JACKPOT_SLOT && !won) {
+      won = true;
+      if (score > best) { best = score; bestEl.textContent = String(best); }
+      try { localStorage.setItem('pd_best', String(best)); } catch (e) {}
+      say('Jackpot. Centre slot, x' + MULT[JACKPOT_SLOT] + ' — run complete.',
+          true);
+      return;
+    }
+    if (dropsLeft <= 0) {
+      say('Out of drops. Best centre-slot run needs ' + MAX_DROPS +
+          ' drops from the middle columns.');
+      dropBtn.disabled = true;
+      return;
+    }
+    if (d.y0 === undefined) {}
+    say('Slot ' + (slot + 1) + ' — x' + MULT[slot] + '. ' + dropsLeft +
+        ' drops left.');
+  }
+
+  function dropNow() {
+    if (running || dropsLeft <= 0) return;
+    running = true;
+    discs = [{ x: COLS[col], y: DROP_Y, vx: 0, vy: 0 }];
+    dropBtn.disabled = true;
+  }
+
+  function reset() {
+    running = false;
+    discs.length = 0;
+    score = 0; dropsLeft = MAX_DROPS; tally = []; won = false;
+    scoreEl.textContent = '0';
+    dropsEl.textContent = String(MAX_DROPS);
+    renderTally();
+    refreshBars();
+    dropBtn.disabled = false;
+    say('Pick a column and drop. Land the disc in the centre jackpot slot ' +
+        'within 20 drops to win.');
+  }
+
+  dropBtn.addEventListener('click', dropNow);
+  resetBtn.addEventListener('click', reset);
+  cv.addEventListener('click', function (e) {
+    var rect = cv.getBoundingClientRect();
+    var x = (e.clientX - rect.left) * (W / rect.width);
+    var bestD = Infinity, pick = col;
+    for (var i = 0; i < N_COLS; i++) {
+      var d = Math.abs(COLS[i] - x);
+      if (d < bestD) { bestD = d; pick = i; }
+    }
+    if (pick !== col) {
+      col = pick;
+      var all = colsEl.querySelectorAll('.ws-plinko-col');
+      for (var i = 0; i < all.length; i++)
+        all[i].setAttribute('aria-pressed', i === col ? 'true' : 'false');
+    }
+  });
+
+  var raf = 0, acc = 0, last = 0;
+  function frame(ts) {
+    if (!last) last = ts;
+    var dtms = Math.min(50, ts - last);
+    last = ts;
+    if (running) {
+      acc += dtms / 1000;
+      while (acc >= DT) {
+        acc -= DT;
+        for (var i = discs.length - 1; i >= 0; i--) {
+          if (step(discs[i])) {
+            var done = discs[i];
+            discs.splice(i, 1);
+            finish(slotAt(done.x));
+          }
+        }
+        if (!running) break;
+      }
+    }
+    drawBoard();
+    for (var j = 0; j < discs.length; j++) drawDisc(discs[j]);
+    raf = requestAnimationFrame(frame);
+  }
+
+  reset();
+  raf = requestAnimationFrame(frame);
+
+  window.__plinko = {
+    outcomeForColumn: function (c) {
+      var d = { x: COLS[c], y: DROP_Y, vx: 0, vy: 0 }, t = 0;
+      while (t < 12) {
+        t += DT;
+        if (step(d)) break;
+      }
+      return slotAt(d.x);
+    },
+    outcomeMap: function () {
+      var m = [];
+      for (var c = 0; c < N_COLS; c++) m.push(this.outcomeForColumn(c));
+      return m;
+    },
+    board: function () {
+      return { W: W, H: H, cols: COLS.slice(), pitch: COL_W,
+               margins: MARGIN, bdiv: BDIV.slice(), floor_top: FLOOR_Y_TOP,
+               last_peg_y: LAST_PEG_Y };
+    },
+    slotAt: slotAt,
+    cols: function () { return COLS.slice(); },
+    mult: function () { return MULT.slice(); },
+    state: function () {
+      var counts = [];
+      for (var i = 0; i < NSLOTS; i++) counts.push(0);
+      for (var t = 0; t < tally.length; t++) counts[tally[t]]++;
+      return {
+        score: score, dropsLeft: dropsLeft, drops: tally.length,
+        tally: tally.slice(), counts: counts, won: won, running: running,
+        best: best, col: col, pe: PEGS.length
+      };
+    }
+  };
+})();
+</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  /* Watch the usual output nodes; report a short, useful summary. */
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      /* A game node is a label like "Score 12" - read it out as it stands.
+         A tool node is raw output - a character count is the useful summary. */
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+
+<style>
+
+.ws-plinko-wrap{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:20px;align-items:start}
+@media (max-width:900px){.ws-plinko-wrap{grid-template-columns:minmax(0,1fr)}}
+.ws-plinko-stage{position:relative;background:#050505;border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;padding:12px;overflow:hidden}
+.ws-plinko-stage canvas{display:block;width:100%;height:auto;border-radius:8px;
+  background:#050505;touch-action:none;cursor:crosshair}
+.ws-plinko-cols{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.ws-plinko-col{flex:1 1 0;min-width:0;background:#0d0d0d;border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;color:rgba(255,255,255,.55);font:800 10px/1 'Space Grotesk',system-ui,sans-serif;
+  letter-spacing:.14em;padding:9px 0;text-transform:uppercase;cursor:pointer;
+  transition:border-color .12s,color .12s,background .12s}
+.ws-plinko-col:hover{border-color:#FF5F1F;color:#fff}
+.ws-plinko-col:focus-visible{outline:2px solid #FF5F1F;outline-offset:2px}
+.ws-plinko-col[aria-pressed="true"]{background:#FF5F1F;border-color:#FF5F1F;color:#050505}
+.ws-panel{background:#0a0a0a;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px}
+.ws-panel h2{margin:0 0 10px;font:800 10px/1 'Space Grotesk',system-ui,sans-serif;
+  letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+.ws-stat{display:flex;justify-content:space-between;align-items:baseline;
+  padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.ws-stat:last-of-type{border-bottom:0}
+.ws-stat span{font:700 10px/1 'Space Grotesk',system-ui,sans-serif;
+  letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+.ws-stat b{font:800 18px/1 'Space Grotesk',system-ui,sans-serif;color:#fff}
+.ws-stat b.accent{color:#FF5F1F}
+.ws-slots{display:flex;gap:3px;margin-top:12px}
+.ws-slot{flex:1 1 0;background:#0d0d0d;border:1px solid rgba(255,255,255,.08);border-radius:6px;
+  text-align:center;padding:7px 0}
+.ws-slot em{display:block;font:800 9px/1 'Space Grotesk',system-ui,sans-serif;
+  letter-spacing:.1em;color:rgba(255,255,255,.35);font-style:normal}
+.ws-slot b{display:block;margin-top:4px;font:800 12px/1 'Space Grotesk',system-ui,sans-serif;color:#fff}
+.ws-slot.jackpot{background:#FF5F1F;border-color:#FF5F1F}
+.ws-slot.jackpot em,.ws-slot.jackpot b{color:#050505}
+.ws-bars{margin-top:12px;display:flex;flex-direction:column;gap:5px}
+.ws-bar{display:flex;align-items:center;gap:8px}
+.ws-bar i{flex:0 0 26px;font:800 9px/1 'Space Grotesk',system-ui,sans-serif;
+  letter-spacing:.08em;color:rgba(255,255,255,.35);font-style:normal}
+.ws-bar u{flex:1 1 auto;height:6px;background:#141414;border-radius:3px;overflow:hidden;
+  text-decoration:none}
+.ws-bar u s{display:block;height:100%;background:#FF5F1F;width:0}
+.ws-bar b{flex:0 0 20px;text-align:right;font:800 11px/1 'Space Grotesk',system-ui,sans-serif;
+  color:rgba(255,255,255,.7)}
+.ws-cta{margin-top:14px;width:100%;background:#FF5F1F;color:#050505;border:0;border-radius:8px;
+  padding:12px 0;font:800 11px/1 'Space Grotesk',system-ui,sans-serif;letter-spacing:.18em;
+  text-transform:uppercase;cursor:pointer}
+.ws-cta:hover{filter:brightness(1.1)}
+.ws-cta:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.ws-cta:disabled{opacity:.4;cursor:not-allowed;filter:none}
+.ws-note{margin-top:12px;font:600 10px/1.5 'Space Grotesk',system-ui,sans-serif;
+  color:rgba(255,255,255,.35)}
+.ws-note.win{color:#FF5F1F}
+.ws-tally{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;min-height:20px}
+.ws-tally i{font:800 10px/1 'Space Grotesk',system-ui,sans-serif;font-style:normal;
+  background:#141414;border:1px solid rgba(255,255,255,.08);border-radius:4px;
+  padding:4px 6px;color:rgba(255,255,255,.6)}
+.ws-tally i.j{background:#FF5F1F;border-color:#FF5F1F;color:#050505}
+
+</style>
+<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/play.js?v=20261002c" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -94,8 +94,8 @@ tailwind.config = { theme: { extend: {
      the page instead of steering the game), a Fullscreen control that requests
      real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
      desktop. Regenerate every game page after editing either file. -->
-<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
-<script src="/workspace/play.js?v=20261002c" defer></script>
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
 <script>
 function cp(btn){
   var el=document.getElementById(btn.getAttribute('data-t')||'out');
@@ -219,11 +219,18 @@ function paint(){
 
   var mB = sex === 'f' ? [[13,'Essential fat'],[20,'Athletic'],[24,'Fitness'],[31,'Average'],[1e9,'Obese']]
                        : [[5,'Essential fat'],[13,'Athletic'],[17,'Fitness'],[24,'Average'],[1e9,'Obese']];
+  /* The final band has no mB[i+1] - its upper bound is 1e9, the open-ended
+     "Obese" row. Reading it unconditionally threw on every render, so the
+     whole body-fat script died before producing any output. */
   $('bands').innerHTML = mB.map(function(x,i){
-    return row([esc(x[1]),
-      (i===0?'below '+mB[i+1][0]:mB[i][0]+'-'+mB[i+1][0])+'%',
-      (i===0?'below '+mB[i+1][0]:mB[i][0]+'-'+mB[i+1][0])+'%',
-      (pct>=mB[i][0] && pct<mB[i+1][0] ? 'you' : '')]);
+    /* 1e9 is the open-ended sentinel for the last band, so it must never be
+       printed as a percentage - show the band's own lower bound instead. */
+    var lo = i===0 ? 'below '+mB[1][0] : (i===mB.length-1 ? mB[i][0]+' and above' : mB[i][0]+'-'+mB[i+1][0]);
+    var hi = (i===mB.length-1) ? '' : lo+'%';
+    var up = i+1 < mB.length ? mB[i+1][0] : Infinity;
+    var lab = (i===mB.length-1) ? mB[i][0]+'% and above' : lo+'%';
+    return row([esc(x[1]), lab, hi,
+      (pct>=mB[i][0] && pct<up ? 'you' : '')]);
   }).join('');
 
   $('out').textContent =
@@ -259,11 +266,11 @@ paint();
     </a></li>
     <li><a href="/workspace/tools/age-calculator/">
       <span class="ocurp-related-n">Age Calculator</span>
-      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+      <span class="ocurp-related-b">Exact age in years</span>
     </a></li>
     <li><a href="/workspace/tools/apy-vs-apr-calculator/">
       <span class="ocurp-related-n">APY vs APR Calculator</span>
-      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns, and exactly ho</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
     </a></li>
     <li><a href="/workspace/tools/aspect-ratio/">
       <span class="ocurp-related-n">Aspect Ratio Calculator</span>
@@ -271,11 +278,11 @@ paint();
     </a></li>
     <li><a href="/workspace/tools/base-converter/">
       <span class="ocurp-related-n">Base Converter</span>
-      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
     </a></li>
     <li><a href="/workspace/tools/base-converter-table/">
       <span class="ocurp-related-n">Base Converter Table</span>
-      <span class="ocurp-related-b">Convert one number into every base at once, with a signed bit-width view, two&#x27;s complement</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/tools/">See all tools →</a>

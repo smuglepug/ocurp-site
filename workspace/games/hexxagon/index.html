@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hexagon Reversi — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Reversi on a hex board. Stones flip along the six straight lines through the hex you play. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/hexxagon/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Hexagon Reversi">
+<meta property="og:description" content="Reversi on a hex board. Stones flip along the six straight lines through the hex you play. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/hexxagon/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Hexagon Reversi on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Hexagon Reversi">
+<meta name="twitter:description" content="Reversi on a hex board. Stones flip along the six straight lines through the hex you play. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Hexagon Reversi on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Hexagon Reversi","url":"https://ocurp.com/workspace/games/hexxagon/","description":"Reversi on a hex board. Stones flip along the six straight lines through the hex you play. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Hexagon Reversi</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">BOARD</span><span class="ws-chip">HEX</span></div>
+        </div>
+      
+  <style>
+    #hexxagon-bad-fallback { display: none }
+    #board polygon.bad { stroke:#FF5F1F; stroke-width:2.4; fill:rgba(255,95,31,.3);
+      animation:hxbad .32s ease-out }
+    @keyframes hxbad { from { fill:rgba(255,95,31,.55) } to { fill:rgba(255,95,31,.3) } }
+    @media (prefers-reduced-motion:reduce) { #board polygon.bad { animation:none } }
+  </style>
+  <section class="ws-panel p-6">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <button id="newg" class="ws-btn">New game</button>
+      <button id="rs" class="ws-btn-ghost">Reset</button>
+      <button id="seed" class="ws-btn-ghost">New seed</button>
+      <span class="ws-chip" id="tally">BLACK 3 &middot; WHITE 3</span>
+      <span class="ws-chip" id="mv">MOVES 0</span>
+      <span class="ws-chip" id="turn">BLACK TO PLAY</span>
+    </div>
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <label class="ws-label" for="rad">Radius</label>
+      <input id="rad" type="range" min="2" max="3" step="1"
+             value="2" class="ws-input !w-28">
+      <span class="ws-chip" id="radout">RADIUS 2</span>
+      <span class="ws-chip" id="turn2">You are black</span>
+    </div>
+    <div class="grid gap-6 md:grid-cols-[1fr_230px]">
+      <svg id="board" viewBox="-10 -10 20 20" role="grid"
+           aria-label="Hexagon Reversi board" class="mx-auto w-full max-w-[560px] select-none"></svg>
+      <div class="flex flex-col gap-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Black</div>
+            <div class="font-display text-xl font-black text-accent" id="s1">3</div>
+          </div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">White</div>
+            <div class="font-display text-xl font-black text-white" id="s2">3</div>
+          </div>
+        </div>
+        <div id="msg" class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">
+          You are black. Legal hexes carry a dot.
+        </div>
+        <div id="banner" class="hidden rounded-xl border border-accent/40 bg-accent/10 p-3 text-center
+             font-display text-sm font-black uppercase tracking-[0.2em] text-accent"></div>
+        <p class="text-[10px] text-white/50">
+          Place a stone so it traps a run of the other colour between itself and one
+          of your own stones along any of the six straight lines. Every trapped run
+          flips at once. The game ends when neither side can move &mdash; most hexes
+          wins.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+const $ = id => document.getElementById(id);
+const RADIUS_DEFAULT = 2, RADIUS_ALT = 3;
+const DIRS = [[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];                       // axial neighbours, pointy-top
+const SEED_BLACK = [[1,0],[0,-1],[-1,1]];           // alternating inner ring, black
+const SEED_WHITE = [[1,-1],[-1,0],[0,1]];           // alternating inner ring, white
+const HEX = 27;
+const STONE = "●";
+const AI_DELAY_MS = 260;
+const SQ3 = Math.sqrt(3);
+
+let bd, radius, turn, over, moves, winner, aiTimer, passNote;
+
+const key = (q, r) => q + ',' + r;
+const onBoard = (q, r) => Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)) <= radius;
+const at = (q, r) => (bd[key(q, r)] || '');
+const other = c => (c === 'b' ? 'w' : 'b');
+
+// The flip rule. From an empty hex, walk each of the six straight lines. A run
+// of >=1 opponent stones terminated by one of your own stones flips. Empty runs
+// and runs that run off the edge flip nothing.
+function flipsAt(q, r, col) {
+  const out = [];
+  if (at(q, r)) return out;
+  for (let d = 0; d < DIRS.length; d++) {
+    const dq = DIRS[d][0], dr = DIRS[d][1];
+    let nq = q + dq, nr = r + dr;
+    const run = [];
+    while (onBoard(nq, nr) && at(nq, nr) && at(nq, nr) !== col) {
+      run.push(key(nq, nr));
+      nq += dq; nr += dr;
+    }
+    if (run.length && onBoard(nq, nr) && at(nq, nr) === col) out.push.apply(out, run);
+  }
+  return out;
+}
+
+function legalFor(col) {
+  const out = [];
+  for (let q = -radius; q <= radius; q++) {
+    for (let r = -radius; r <= radius; r++) {
+      if (!onBoard(q, r) || at(q, r)) continue;
+      if (flipsAt(q, r, col).length) out.push([q, r]);
+    }
+  }
+  return out;
+}
+
+// A move: every satisfying ray flips SIMULTANEOUSLY, then the stone lands.
+function place(q, r, col) {
+  const f = flipsAt(q, r, col);
+  for (let i = 0; i < f.length; i++) bd[f[i]] = col;
+  bd[key(q, r)] = col;
+  return f.length;
+}
+
+function tally() {
+  let b = 0, w = 0;
+  for (const k in bd) { if (bd[k] === 'b') b++; else if (bd[k] === 'w') w++; }
+  return [b, w];
+}
+
+// The end test: neither side has a legal move. Board full counts as neither.
+function terminal() {
+  return legalFor('b').length === 0 && legalFor('w').length === 0;
+}
+
+// Deterministic LCG, mirrored by the prover so a seed reproduces the layout.
+function mkrnd(s0) {
+  let s = (s0 * 2654435761) >>> 0;
+  if (!s) s = 0x9E3779B9;
+  return function () {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+// Order-independent tiebreak: the AI and the verifier both need the SAME move
+// out of a tie of equal flip counts, and Math.random() is not reproducible.
+function hsh(q, r, col) {
+  let x = ((q * 73856093) ^ (r * 19349663) ^ (col === 'b' ? 0x5bf03635 : 0x27d4eb2d)) >>> 0;
+  x = Math.imul(x, 0x85ebca6b) >>> 0;
+  x = ((x << 13) | (x >>> 19)) >>> 0;
+  x = Math.imul(x, 0xc2b2ae35) >>> 0;
+  return (x ^ (x >>> 16)) >>> 0;
+}
+
+// Greedy: the legal move that flips the most stones, ties broken by hsh.
+// This is the AI, and it is also the autopilot the prover flies.
+function greedy(col) {
+  const lm = legalFor(col);
+  let best = null, bf = -1, bh = -1;
+  for (let i = 0; i < lm.length; i++) {
+    const q = lm[i][0], r = lm[i][1];
+    const f = flipsAt(q, r, col).length;
+    const h = hsh(q, r, col);
+    if (f > bf || (f === bf && h > bh)) { bf = f; bh = h; best = lm[i]; }
+  }
+  return best;
+}
+
+// A randomised legal start: 3 black + 3 white anywhere, accepted only when
+// BOTH sides have a legal move and at least MIN_FOUR flips exist in total, so
+// a random seed can never ship the instant-pass board.
+const MIN_FOUR = 4;
+function randomLayout(rnd) {
+  const pool = [];
+  for (let q = -radius; q <= radius; q++)
+    for (let r = -radius; r <= radius; r++) if (onBoard(q, r)) pool.push([q, r]);
+  for (let attempt = 0; attempt < 400; attempt++) {
+    const pick = [];
+    const copy = pool.slice();
+    for (let i = 0; i < 6; i++) {
+      const j = Math.floor(rnd() * copy.length);
+      pick.push(copy.splice(j, 1)[0]);
+    }
+    const b = {};
+    for (let i = 0; i < 3; i++) b[key(pick[i][0], pick[i][1])] = 'b';
+    for (let i = 3; i < 6; i++) b[key(pick[i][0], pick[i][1])] = 'w';
+    const saved = bd; bd = b;
+    const lb = legalFor('b').length, lw = legalFor('w').length;
+    const flips = lb ? flipsAt(legalFor('b')[0][0], legalFor('b')[0][1], 'b').length : 0;
+    bd = saved;
+    if (lb > 0 && lw > 0 && flips >= 1) return b;
+  }
+  return null;
+}
+
+function newGame(opt) {
+  if (aiTimer) { clearTimeout(aiTimer); aiTimer = null; }
+  const useRandom = opt && opt.random;
+  radius = (opt && opt.radius) || RADIUS_DEFAULT;
+  $('rad').value = radius;
+  $('radout').textContent = 'RADIUS ' + radius;
+  moves = 0; over = false; winner = ''; passNote = '';
+  bd = {};
+  if (useRandom) {
+    const seed = (Math.floor(Math.random() * 1000000) + 1) >>> 0;
+    bd = randomLayout(mkrnd(seed)) || {};
+    if (!bd[key]) {
+      SEED_BLACK.forEach(c => bd[key(c[0], c[1])] = 'b');
+      SEED_WHITE.forEach(c => bd[key(c[0], c[1])] = 'w');
+    }
+  } else {
+    SEED_BLACK.forEach(c => bd[key(c[0], c[1])] = 'b');
+    SEED_WHITE.forEach(c => bd[key(c[0], c[1])] = 'w');
+  }
+  turn = 'b';
+  $('banner').classList.add('hidden');
+  render('You are black. Legal hexes carry a dot.');
+  if (terminal()) finish();
+  else if (turn !== 'b') scheduleAI();
+}
+
+// A side with no legal move passes AUTOMATICALLY and the UI says so. The pass
+// is not a ply and costs no move count.
+function advance() {
+  const t = tally();
+  if (terminal()) { finish(); return; }
+  let note = passNote;
+  passNote = '';
+  if (legalFor(turn).length === 0) {
+    note = (turn === 'w' ? 'White has no move ' : 'You have no move ') + '\u2014 pass.';
+    passNote = note;
+    turn = other(turn);
+    if (terminal()) { finish(); return; }
+  }
+  render(note || '');
+  if (turn === 'w') scheduleAI();
+}
+
+function scheduleAI() {
+  if (aiTimer) clearTimeout(aiTimer);
+  aiTimer = setTimeout(function () {
+    aiTimer = null;
+    if (over || turn !== 'w') return;
+    const mv = greedy('w');
+    if (!mv) { advance(); return; }
+    place(mv[0], mv[1], 'w');
+    moves++;
+    turn = 'b';
+    advance();
+  }, AI_DELAY_MS);
+}
+
+function finish() {
+  over = true;
+  const t = tally();
+  winner = t[0] > t[1] ? 'b' : (t[1] > t[0] ? 'w' : 'd');
+  const bn = $('banner');
+  bn.classList.remove('hidden');
+  bn.textContent = winner === 'b' ? 'You win ' + t[0] + '-' + t[1]
+    : (winner === 'w' ? 'You lose ' + t[1] + '-' + t[0] : 'Draw ' + t[0] + '-' + t[1]);
+  render(bn.textContent);
+}
+
+function clickHex(q, r) {
+  if (over || turn !== 'b') return;
+  if (at(q, r)) { render('That hex already holds a stone.'); return; }
+  const f = flipsAt(q, r, 'b');
+  if (!f.length) {
+    render('Illegal: no straight line traps a run of white against a black stone.');
+    flash(key(q, r));
+    return;
+  }
+  place(q, r, 'b');
+  moves++;
+  turn = 'w';
+  advance();
+}
+
+// An illegal tap gets one accent outline pulse, then goes back to normal.
+function flash(k) {
+  const el = $('board').querySelector('[data-h="' + k + '"]');
+  if (!el) return;
+  el.classList.add('bad');
+  setTimeout(function () { el.classList.remove('bad'); }, 320);
+}
+
+function cx(q, r) { return SQ3 * HEX * (q + r / 2); }
+function cy(r) { return 1.5 * HEX * r; }
+function corners(q, r) {
+  const x = cx(q, r), y = cy(r), out = [];
+  for (let i = 0; i < 6; i++) {
+    const a = (Math.PI / 180) * (60 * i - 90);
+    out.push((x + HEX * Math.cos(a)).toFixed(2) + ',' + (y + HEX * Math.sin(a)).toFixed(2));
+  }
+  return out.join(' ');
+}
+
+function render(msg) {
+  const span = 3 * radius + 1;
+  const w = SQ3 * HEX * span, h = 3 * HEX * radius + 2 * HEX;
+  $('board').setAttribute('viewBox', (-w / 2 - 2) + ' ' + (-h / 2 - 2) + ' ' + (w + 4) + ' ' + (h + 4));
+  const lm = (!over && turn === 'b') ? legalFor('b') : [];
+  const legal = {};
+  for (let i = 0; i < lm.length; i++) legal[key(lm[i][0], lm[i][1])] = 1;
+  let s = '';
+  for (let q = -radius; q <= radius; q++) {
+    for (let r = -radius; r <= radius; r++) {
+      if (!onBoard(q, r)) continue;
+      const k = key(q, r), p = at(q, r), isL = !!legal[k];
+      const fill = isL ? 'rgba(255,95,31,.16)' : 'rgba(255,255,255,.045)';
+      s += '<polygon data-h="' + k + '" points="' + corners(q, r) +
+           '" fill="' + fill + '" stroke="rgba(255,255,255,.12)" stroke-width="1"></polygon>';
+      s += '<circle cx="' + cx(q, r).toFixed(2) + '" cy="' + cy(r).toFixed(2) +
+           '" r="1" fill="none" pointer-events="none"></circle>';
+      if (p) {
+        const col = p === 'b' ? '#0d0d0d' : '#f5f5f5';
+        const str = p === 'b' ? 'rgba(255,255,255,.55)' : 'rgba(0,0,0,.85)';
+        s += '<text x="' + cx(q, r).toFixed(2) + '" y="' + cy(r).toFixed(2) +
+             '" text-anchor="middle" dominant-baseline="central" pointer-events="none" ' +
+             'style="font-size:' + (HEX * 1.45).toFixed(1) + 'px;line-height:1;' +
+             'fill:' + col + ';stroke:' + str + ';stroke-width:1.4px;' +
+             '-webkit-text-stroke:1.4px ' + str + ';paint-order:stroke">' +
+             STONE + '</text>';
+      } else if (isL) {
+        s += '<circle cx="' + cx(q, r).toFixed(2) + '" cy="' + cy(r).toFixed(2) +
+             '" r="' + (HEX * 0.19).toFixed(2) + '" fill="rgba(255,95,31,.5)" ' +
+             'pointer-events="none"></circle>';
+      }
+    }
+  }
+  $('board').innerHTML = s;
+  $('board').style.cssText = 'max-height:76vh';
+  const t = tally();
+  $('s1').textContent = t[0];
+  $('s2').textContent = t[1];
+  $('tally').textContent = 'BLACK ' + t[0] + ' \u00b7 WHITE ' + t[1];
+  $('mv').textContent = 'MOVES ' + moves;
+  $('turn').textContent = over ? 'GAME OVER'
+    : (turn === 'b' ? 'BLACK TO PLAY' : 'WHITE TO PLAY');
+  $('turn2').textContent = over ? (winner === 'b' ? 'You win' : winner === 'w' ? 'You lose' : 'Draw')
+    : (turn === 'b' ? 'Your move' : 'White is thinking');
+  if (msg !== undefined && msg !== null && msg !== '') $('msg').textContent = msg;
+}
+
+$('board').addEventListener('click', function (e) {
+  const el = e.target.closest('[data-h]');
+  if (!el) return;
+  const parts = el.getAttribute('data-h').split(',');
+  clickHex(parseInt(parts[0], 10), parseInt(parts[1], 10));
+});
+$('newg').addEventListener('click', function () { newGame({ radius: +$('rad').value }); });
+$('rs').addEventListener('click', function () { newGame({ radius: +$('rad').value }); });
+$('seed').addEventListener('click', function () { newGame({ radius: +$('rad').value, random: true }); });
+$('rad').addEventListener('input', function () { newGame({ radius: +$('rad').value }); });
+
+// Test hook: lets the CDP verifier drive REAL board state instead of reading
+// a text node. Mirrors what the Python prover computes.
+window.__hexxagon = {
+  radius: function () { return radius; },
+  state: function () {
+    const t = tally();
+    return {
+      radius: radius, black: t[0], white: t[1], filled: t[0] + t[1],
+      moves: moves, turn: turn, over: over, winner: winner,
+      legal: legalFor(turn).map(c => c[0] + ',' + c[1]),
+      stones: Object.keys(bd).filter(k => bd[k]).sort()
+    };
+  },
+  legalFor: function (col) { return legalFor(col).map(c => c[0] + ',' + c[1]); },
+  flipsAt: function (q, r, col) { return flipsAt(q, r, col); },
+  tallyText: function () { return $('tally').textContent; },
+  play: function (k, col) {
+    const p = String(k).split(',');
+    const q = parseInt(p[0], 10), r = parseInt(p[1], 10);
+    const f = flipsAt(q, r, col);
+    if (!f.length) return { ok: false, flips: 0 };
+    place(q, r, col);
+    moves++;
+    render('');
+    return { ok: true, flips: f.length, state: this.state() };
+  },
+  reset: function () { newGame({ radius: RADIUS_DEFAULT }); return this.state(); },
+  resetAt: function (rad) { newGame({ radius: rad || RADIUS_DEFAULT }); return this.state(); }
+};
+
+newGame({ radius: RADIUS_DEFAULT });
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

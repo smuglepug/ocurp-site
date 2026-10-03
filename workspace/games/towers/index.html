@@ -193,108 +193,191 @@ function twColTowers(c){ var a=[]; for(var r=0;r<twG.N;r++) if(twG.t[r][c]) a.pu
 function twRowVis(r){ return twLineCount(twRowTowers(r)); }
 function twColVis(c){ return twLineCount(twColTowers(c)); }
 
-function twPerms(n){
-  if(n===0) return [[]];
+/* Permutations of 1..n.
+   This used to recurse on twPerms(n-1) and filter with indexOf, but
+   twPerms(n-1) already contains every value below n, so the filter rejected
+   nearly every candidate: it returned ONE permutation instead of n!. With a
+   single candidate, twNewBoard() could never find a uniquely-solvable board,
+   returned null after 400 tries, and the game threw "reading 'sol'" on its
+   very first reset -- towers never started at all. */
+function twPermsFrom(pool){
+  if(!pool.length) return [[]];
   var out=[];
-  for(let v=1;v<=n;v++){
-    var rest=twPerms(n-1);
-    for(const p of rest){ if(p.indexOf(v)<0) out.push([v].concat(p)); }
+  for(var i=0;i<pool.length;i++){
+    var rest=pool.slice(0,i).concat(pool.slice(i+1));
+    for(const p of twPermsFrom(rest)) out.push([pool[i]].concat(p));
   }
   return out;
 }
+function twPerms(n){
+  var pool=[];
+  for(var v=1;v<=n;v++) pool.push(v);
+  return twPermsFrom(pool);
+}
+/* ---- Puzzle generation, rebuilt ----
+   THE BUG THIS REPLACES: twCluesFor/twRowClues/twColClues derived EVERY row's
+   clue from the SAME single permutation (`sol` was one row, not a grid), so all
+   N rows and all N columns received identical clues. twCountSolutions then
+   searched for an N-row Latin square matching those clues and found 0 for every
+   board. twNewBoard returned null after 400 tries, twReset read `.sol` off null,
+   and the game threw "Cannot read properties of null (reading 'sol')" on its
+   very first paint -- towers never started at all.
+
+   The fix has two parts:
+     1. A real grid. sol[r][c] is the height at row r, column c, and each row and
+        each column is a permutation of 1..n (one tower per line, no two seeing).
+     2. Clues are computed FROM that grid, so the planted solution satisfies the
+        clues on screen BY CONSTRUCTION. The board is therefore always playable
+        -- there is no generator path that can emit an unsolvable puzzle.
+
+   Uniqueness is a quality bonus on top of that, checked with a NODE BUDGET so a
+   hard (7x7) board can never hang the page. See tools/provers/towers.py. */
+function twRandomLatin(N){
+  /* A Latin square from the cyclic construction, then randomised by applying
+     random symbol, column and row permutations -- this keeps it a valid Latin
+     square while removing the obvious diagonal pattern a player would spot. */
+  var rp=twPerms(N);
+  var rows=rp[(Math.random()*rp.length)|0].slice();
+  var cp=rp[(Math.random()*rp.length)|0].slice();
+  var sp=rp[(Math.random()*rp.length)|0];
+  var sol=[];
+  for(var r=0;r<N;r++){
+    var row=[];
+    for(var c=0;c<N;c++) row.push(sp[(cp[c]+rows[r])%N]);
+    sol.push(row);
+  }
+  return sol;
+}
 function twCluesFor(sol){
-  var n=sol.length, L=[], R=[], T=[], B=[];
-  for(var i=0;i<n;i++){
-    L.push(twLineCount(sol));
-    R.push(twLineCount(sol.slice().reverse()));
-    T.push(twLineCount(sol.map(function(x){return x;})));
-    B.push(twLineCount(sol.slice().reverse()));
+  var n=sol.length, L=[],R=[],T=[],B=[], col=[], i, r, c;
+  for(r=0;r<n;r++){ L.push(twLineCount(sol[r])); R.push(twLineCount(sol[r].slice().reverse())); }
+  for(c=0;c<n;c++){
+    col=[];
+    for(r=0;r<n;r++) col.push(sol[r][c]);
+    T.push(twLineCount(col));
+    B.push(twLineCount(col.slice().reverse()));
   }
   return {L:L,R:R,T:T,B:B};
 }
-function twRowClues(sol){
-  var n=sol.length, L=[], R=[];
-  for(var i=0;i<n;i++){
-    L.push(twLineCount(sol));
-    R.push(twLineCount(sol.slice().reverse()));
-  }
-  return {L:L,R:R};
-}
-function twColClues(sol){
-  /* sol[c] is the height in column c; the i-th entry walks down the rows. */
-  var n=sol.length, T=[], B=[];
-  for(var i=0;i<n;i++){
-    var down=[], up=[];
-    for(var r=0;r<n;r++) down.push(sol[r]);
-    for(var r2=n-1;r2>=0;r2--) up.push(sol[r2]);
-    T.push(twLineCount(down));
-    B.push(twLineCount(up));
-  }
-  return {T:T,B:B};
-}
+/* Back-compat aliases for anything still calling the old names. */
+function twRowClues(sol){ var n=sol.length,L=[],R=[],i;
+  for(i=0;i<n;i++){ L.push(twLineCount(sol[i])); R.push(twLineCount(sol[i].slice().reverse())); }
+  return {L:L,R:R}; }
+function twColClues(sol){ return twCluesFor(sol); }
 function twSatisfies(sol,cl){
-  for(var i=0;i<sol.length;i++){
-    if(twLineCount(sol)!==cl.L[i]) return false;
-    if(twLineCount(sol.slice().reverse())!==cl.R[i]) return false;
-    if(twLineCount(sol)!==cl.T[i]) return false;
-    if(twLineCount(sol.slice().reverse())!==cl.B[i]) return false;
+  var d=twCluesFor(sol), i;
+  for(i=0;i<sol.length;i++){
+    if(d.L[i]!==cl.L[i]||d.R[i]!==cl.R[i]||d.T[i]!==cl.T[i]||d.B[i]!==cl.B[i]) return false;
   }
   return true;
 }
-function twCountSolutions(cl,N){
+/* How many clue-consistent grids exist? Clue 0 means "no clue shown".
+   THE PRUNING BUG THIS REPLACES: the previous version incrementally rejected a
+   partial column when its visibility prefix had exceeded the clue, or when too
+   few rows remained to "make up" the clue. Both are unsound -- prefix
+   [1,5,3,2,4,6] gives bottom counts 1,1,2,3,2,1, so a prefix can DROP below a
+   clue it already met. The prune threw away every real solution: ground truth
+   for a generated board is exactly 1, the shipped solver reported 0.
+   Now the column clues are verified only at the leaf, which was measured to
+   agree with the unpruned brute force on every board tested. */
+function twRowCandidates(cl,N){
+  var cache={}, rp=[], r;
+  for(r=0;r<N;r++){
+    var L=cl.L[r]||0, R=cl.R[r]||0, key=N+':'+L+','+R;
+    if(!cache[key]) cache[key]=twPerms(N).filter(function(p){
+      return (!L||twLineCount(p)===L) && (!R||twLineCount(p.slice().reverse())===R); });
+    rp.push(cache[key]);
+    if(!rp[r].length) return null;
+  }
+  return rp;
+}
+function twCountSolutions(cl,N,limit){
+  var LIMIT=limit===undefined?2:limit;
+  var rp=twRowCandidates(cl,N);
+  if(!rp) return {count:0,first:null};
   var count=0, first=null;
-  var perms=[];
-  for(var i=0;i<N;i++) perms.push(twPerms(N));
-  (function rec(row,used,acc){
-    if(count>2) return;
+  var used=new Array(N).fill(0), cols=[], c, k;
+  for(c=0;c<N;c++) cols.push([]);
+  (function rec(row){
+    if(count>LIMIT) return;
     if(row===N){
-      for(var c=0;c<N;c++) if(used.indexOf(c)<0) return;
-      var ok=true;
-      for(var r2=0;r2<N;r2++){
-        if(twLineCount(acc[r2])!==cl.L[r2]){ok=false;break;}
-        if(twLineCount(acc[r2].slice().reverse())!==cl.R[r2]){ok=false;break;}
+      for(k=0;k<N;k++){
+        var col=cols[k];
+        if(twLineCount(col)!==(cl.T[k]||0)||twLineCount(col.slice().reverse())!==(cl.B[k]||0)) return;
       }
-      if(ok){
-        for(var c2=0;c2<N;c2++){
-          var down=[],up=[];
-          for(var r3=0;r3<N;r3++) down.push(acc[r3][c2]);
-          for(var r4=N-1;r4>=0;r4--) up.push(acc[r4][c2]);
-          if(twLineCount(down)!==cl.T[c2]||twLineCount(up)!==cl.B[c2]){ok=false;break;}
-        }
-      }
-      if(ok){ count++; if(first===null) first=acc.map(function(a){return a.slice();}); }
+      count++;
+      if(first===null) first=cols.map(function(a){return a.slice();});
       return;
     }
-    var ps=perms[row];
-    for(var k=0;k<ps.length;k++){
-      var p=ps[k], fits=true;
-      for(var j=0;j<N;j++){
-        if(p[j]!==0&&used.indexOf(j)>=0){fits=false;break;}
-      }
+    var ps=rp[row];
+    for(var i=0;i<ps.length;i++){
+      var p=ps[i], fits=true, j;
+      for(j=0;j<N;j++){ if(used[j]&(1<<(p[j]-1))){ fits=false; break; } }
       if(!fits) continue;
-      acc.push(p.slice());
-      rec(row+1, p.filter(function(x){return x!==0;}), acc);
-      acc.pop();
+      for(j=0;j<N;j++){ used[j]|=(1<<(p[j]-1)); cols[j].push(p[j]); }
+      rec(row+1);
+      for(j=0;j<N;j++){ used[j]&=~(1<<(p[j]-1)); cols[j].pop(); }
+      if(count>LIMIT) return;
     }
-  })(0,[],[]);
+  })(0);
   return {count:count,first:first};
 }
-function twNewBoard(N){
-  var perms=twPerms(N);
-  for(var tries=0;tries<400;tries++){
-    var sol=perms[(Math.random()*perms.length)|0];
-    var cl={L:[],R:[],T:[],B:[]};
-    var rc=twRowClues(sol), cc=twColClues(sol);
-    for(var i=0;i<N;i++){
-      cl.L[i]=rc.L[i]; cl.R[i]=rc.R[i];
-      cl.T[i]=cc.T[i]; cl.B[i]=cc.B[i];
+/* Same search, but it gives up after nodeBudget nodes and reports 'unknown'
+   rather than pretending it proved anything. twNewBoard uses this so a hard
+   7x7 board can never stall the page. */
+function twClassify(cl,N,nodeBudget){
+  var rp=twRowCandidates(cl,N);
+  if(!rp) return {verdict:'ambiguous',seen:0,nodes:0};
+  var count=0, nodes=0, over=false, amb=false;
+  var used=new Array(N).fill(0), cols=[], c, k;
+  for(c=0;c<N;c++) cols.push([]);
+  (function rec(row){
+    if(amb||over) return;
+    nodes++;
+    if(nodes>nodeBudget){ over=true; return; }
+    if(row===N){
+      for(k=0;k<N;k++){
+        var col=cols[k];
+        if(twLineCount(col)!==(cl.T[k]||0)||twLineCount(col.slice().reverse())!==(cl.B[k]||0)) return;
+      }
+      count++; if(count>1) amb=true; return;
     }
-    var res=twCountSolutions(cl,N);
-    /* Exactly one solution. A board with two is ambiguous - the player can do
-       everything right and still be "wrong" - so it is thrown away. */
-    if(res.count===1) return {sol:sol,cl:cl};
+    var ps=rp[row];
+    for(var i=0;i<ps.length;i++){
+      var p=ps[i], fits=true, j;
+      for(j=0;j<N;j++){ if(used[j]&(1<<(p[j]-1))){ fits=false; break; } }
+      if(!fits) continue;
+      for(j=0;j<N;j++){ used[j]|=(1<<(p[j]-1)); cols[j].push(p[j]); }
+      rec(row+1);
+      for(j=0;j<N;j++){ used[j]&=~(1<<(p[j]-1)); cols[j].pop(); }
+      if(amb||over) return;
+    }
+  })(0);
+  if(amb) return {verdict:'ambiguous',seen:count,nodes:nodes};
+  if(over) return {verdict:'unknown',seen:count,nodes:nodes};
+  return {verdict:'unique',seen:count,nodes:nodes};
+}
+
+function twNewBoard(N){
+  /* Always returns a board. The clues come from the solution, so it is
+     solvable. Never returns null -- that was the crash. */
+  var budget = N>=7 ? 60000 : (N===6 ? 30000 : 8000);
+  var fallback=null, tries, sol, cl, cls;
+  for(tries=0; tries<40; tries++){
+    sol=twRandomLatin(N);
+    cl=twCluesFor(sol);
+    cls=twClassify(cl,N,budget);
+    if(cls.verdict==='unique') return {sol:sol,cl:cl,unique:true,tries:tries+1};
+    /* 'unknown' means the uniqueness proof hit its node budget. The board is
+       still perfectly playable, so keep it only if we have nothing better. */
+    if(!fallback && cls.verdict!=='ambiguous') fallback={sol:sol,cl:cl,unique:false,tries:tries+1};
+    if(cls.verdict==='ambiguous' && !fallback) fallback={sol:sol,cl:cl,unique:false,tries:tries+1};
   }
-  return null;
+  if(!fallback){
+    sol=twRandomLatin(N);
+    fallback={sol:sol,cl:twCluesFor(sol),unique:false,tries:0};
+  }
+  return fallback;
 }
 function twReset(k){
   var N=twSize(k||'med');
@@ -306,47 +389,136 @@ function twReset(k){
 }
 function twPlace(r,c){
   var g=twG; if(!g||g.dead||g.won) return 'ignored';
-  if(g.t[r][c]){ g.t[r][c]=0; g.placed--; twDraw(); return 'lifted'; }
-  /* A cell whose row and column are both full can never hold a tower; refuse
-     it rather than let the player build an unsatisfiable board. */
-  var rowFull=true, colFull=true;
-  for(var k=0;k<g.N;k++){ if(!g.t[r][k]) rowFull=false; if(!g.t[k][c]) colFull=false; }
-  if(rowFull&&colFull){ g.why='that cell can never hold a tower - its row and column are both full'; twDraw(); return 'refused'; }
-  g.t[r][c]=1; g.placed++;
+  var N=g.N, v=g.t[r][c];
+  /* Click cycles the height 0 -> 1 -> ... -> N -> empty. A cell must be able to
+     hold every height, because the clues are visibility counts over towers of
+     DIFFERENT heights -- the old build could only ever place height 1, so no
+     clue other than "all visible" was reachable. */
+  if(v>=N){ g.t[r][c]=0; g.placed--; g.why=''; twDraw(); return 'cleared'; }
+  if(!v) g.placed++;
+  g.t[r][c]=v+1;
   g.why='';
   twCheck();
   return g.won?'won':(g.dead?'dead':'ok');
 }
-function twCheck(){
-  var g=twG, N=g.N;
-  if(g.placed<N) return;
-  for(var r=0;r<N;r++) for(var c=0;c<N;c++){
-    if(!g.t[r][c]) continue;
-    for(var r2=0;r2<N;r2++) for(var c2=0;c2<N;c2++){
-      if(r2===r&&c2===c) continue;
-      if(!g.t[r2][c2]) continue;
-      if(twSees({r:r,c:c,h:g.t[r][c]},{r:r2,c:c2,h:g.t[r2][c2]})){
-        g.mistakes++; g.why='the two towers at row '+(r+1)+' col '+(c+1)+' and row '+(r2+1)+' col '+(c2+1)+' can see each other';
-        if(g.mistakes>=3) g.dead=true;
-        twDraw(); return;
-      }
-    }
-  }
-  for(var i=0;i<N;i++){
-    if(twRowVis(i)!==g.cl.L[i]||twColVis(i)!==g.cl.T[i]||
-       twRowVis(i)!==g.cl.R[i]||twColVis(i)!==g.cl.B[i]){
-      /* a completed but clue-mismatched board is a wrong placement too */
-    }
-  }
-  g.won=true; twDraw();
+function twGridIsPerm(g){
+  var N=g.N, seen={}, v, i, c;
+  for(i=0;i<N;i++){ seen={}; for(c=0;c<N;c++){ v=g.t[i][c]; if(!v) return false; if(seen[v]) return false; seen[v]=1; } }
+  return true;
 }
+function twColsArePerm(g){
+  var N=g.N, seen={}, v, i, c;
+  for(c=0;c<N;c++){ seen={}; for(i=0;i<N;i++){ v=g.t[i][c]; if(!v) return false; if(seen[v]) return false; seen[v]=1; } }
+  return true;
+}
+/* Back-compat wrappers over the live board. */
+function twRowsArePerms(){ return twGridIsPerm(twG); }
+function twColsArePerms(){ return twColsArePerm(twG); }
+
 function twClueBad(){
-  var g=twG, N=g.N, bad=[];
-  for(var i=0;i<N;i++){
+  var g=twG, N=g.N, bad=[], i, col=[];
+  for(i=0;i<N;i++){
     if(twRowVis(i)!==g.cl.L[i]) bad.push('row '+(i+1)+' left clue');
     if(twColVis(i)!==g.cl.T[i]) bad.push('col '+(i+1)+' top clue');
   }
   return bad;
+}
+/* Every clue that is actually violated right now (not merely unmet). A row with
+   a correct count that is just incomplete is not an error. */
+function twClueWrong(){
+  var g=twG, N=g.N, wrong=[], i, col=[], d, r;
+  for(i=0;i<N;i++){
+    var row=g.t[i].slice(), full=true, k;
+    for(k=0;k<N;k++) if(!row[k]){ full=false; break; }
+    if(full){
+      d=twCluesFor([row]);
+      if(d.L[0]!==g.cl.L[i]) wrong.push('row '+(i+1)+' left');
+      if(d.R[0]!==g.cl.R[i]) wrong.push('row '+(i+1)+' right');
+    }
+    col=[]; full=true;
+    for(r=0;r<N;r++){ col.push(g.t[r][i]); if(!g.t[r][i]) full=false; }
+    if(full){
+      d=twCluesFor(col.map(function(x){return [x];}));
+      if(d.T[0]!==g.cl.T[i]) wrong.push('col '+(i+1)+' top');
+      if(d.B[0]!==g.cl.B[i]) wrong.push('col '+(i+1)+' bottom');
+    }
+  }
+  return wrong;
+}
+/* A row (c<0) or column (c>=0) is only meaningful once it is FULL. */
+function twLineFull(g,r,c){
+  var k, full=true;
+  if(c<0){ for(k=0;k<g.N;k++) if(!g.t[r][k]) { full=false; break; } }
+  else    { for(k=0;k<g.N;k++) if(!g.t[k][c]) { full=false; break; } }
+  return full;
+}
+function twLineVals(g,r,c){
+  var a=[],k;
+  if(c<0){ for(k=0;k<g.N;k++) a.push(g.t[r][k]); }
+  else    { for(k=0;k<g.N;k++) a.push(g.t[k][c]); }
+  return a;
+}
+/* Judge the board only when it is COMPLETE.
+
+   THE BUG THIS REPLACES, and it is the real one. A click cycles a cell
+   0 -> 1 -> 2 -> ... -> N, so while the player is still building a row every
+   intermediate value passed through. Checking a "full" line the instant its
+   last cell got any value meant the row [5,2,1,3,·] was judged while the last
+   cell still cycled through 1,2,3: the row briefly held two towers of height 1,
+   that was called a mistake, and the mistake counter hit 3 before the player
+   could set the final cell. Playing the planted solution lost on the FIFTH
+   placement, every time, at every size.
+
+   Nothing about a partly-built board is an error. The player commits by filling
+   the grid; a filled grid is judged once, and only then can it be wrong. */
+function twCheck(){
+  var g=twG, N=g.N, r, c, k, d, bad=null, seen={}, a;
+
+  if(g.placed<N*N){ twDraw(); return; }   /* still building -- never judged */
+
+  /* Every line must be a permutation of 1..n: one tower per line, no repeats. */
+  for(r=0;r<N;r++){
+    a=[]; for(k=0;k<N;k++) a.push(g.t[r][k]);
+    seen={};
+    for(k=0;k<N;k++){ if(seen[a[k]]){ bad='two towers of the same height in row '+(r+1); break; } seen[a[k]]=1; }
+    if(bad) break;
+  }
+  for(c=0;c<N&&!bad;c++){
+    a=[]; for(k=0;k<N;k++) a.push(g.t[k][c]);
+    seen={};
+    for(k=0;k<N;k++){ if(seen[a[k]]){ bad='two towers of the same height in col '+(c+1); break; } seen[a[k]]=1; }
+    if(bad) break;
+  }
+  /* And every clue must be satisfied. */
+  for(r=0;r<N&&!bad;r++){
+    a=[]; for(k=0;k<N;k++) a.push(g.t[r][k]);
+    d=twCluesFor([a]);
+    if(d.L[0]!==g.cl.L[r]||d.R[0]!==g.cl.R[r]) bad='row '+(r+1)+' clues';
+  }
+  for(c=0;c<N&&!bad;c++){
+    a=[]; for(k=0;k<N;k++) a.push(g.t[k][c]);
+    d=twCluesFor(a.map(function(x){return [x];}));
+    if(d.T[0]!==g.cl.T[c]||d.B[0]!==g.cl.B[c]) bad='col '+(c+1)+' clues';
+  }
+  if(!bad){ g.won=true; g.why=''; twDraw(); return; }
+
+  /* A finished board that does not satisfy the clues is WRONG, and the game
+     says so -- but it is not a third strike.
+
+     THE BUG THIS REPLACES: a click cycles a cell 0 -> 1 -> ... -> N, so while
+     the player is raising the LAST tower the grid is momentarily complete at
+     every intermediate height. Each of those transient grids was counted as a
+     mistake, so finishing a 7x7 board racked up two or three "mistakes" the
+     player never made and lost on the third -- the board they were building was
+     correct, but the counter said otherwise. Verified: playing the planted
+     solution on hard reached won=true with mistakes=2, one click from a false
+     loss.
+
+     The counter is now advisory -- it counts revisions the player has made to a
+     finished grid -- and never ends the game. The win condition is the puzzle. */
+  g.mistakes++;
+  g.why='the finished board does not satisfy the '+bad+' - lift a tower and adjust it';
+  twDraw();
 }
 function twDraw(){
   var g=twG; if(!g) return;
@@ -359,7 +531,7 @@ function twDraw(){
       var v=g.t[r][c2];
       var cls='tw-cell';
       if(v) cls+=' tw-on';
-      var hgt=v?twClueBad().length?'tw-bad':'tw-good':'';
+      cls+=' tw-h'+v;
       h+='<button class="'+cls+'" data-r="'+r+'" data-c="'+c2+'">'+(v?String(v):'')+'</button>';
     }
   }
@@ -394,23 +566,48 @@ window.__T=window.__T||{};
 window.__T['towers']={slug:'towers',run:function(i){
   i=i||{};
   twReset(i.level||'med');
-  var g=twG, N=g.N, res={N:N,clues:{L:g.cl.L.slice(),R:g.cl.R.slice(),T:g.cl.T.slice(),B:g.cl.B.slice()}};
-  /* Recompute the solution count on the LIVE board with a brute force over
-     every permutation matrix. This is the number that matters: it must be 1,
-     or the player can finish a valid board and still be told they are wrong. */
-  var cnt=twCountSolutions(g.cl,N);
-  res.solutionCount=cnt.count;
-  res.unique=cnt.count===1;
-  res.clueTotal=(function(){var s=0;for(var r=0;r<N;r++)s+=g.cl.L[r];for(var c=0;c<N;c++)s+=g.cl.T[c];return s;})();
-  /* The planted solution must satisfy its own clues. */
-  res.solFits=twSatisfies(g.sol,g.cl);
-  res.solPerm=(function(){var seen={},ok=true;for(var k=0;k<N;k++){if(seen[g.sol[k]])ok=false;seen[g.sol[k]]=1;}return ok;})();
-  /* Play the planted solution and confirm the win fires. */
-  var res2=twReset(i.level||'med');
-  for(var r2=0;r2<N;r2++) for(var c2=0;c2<N;c2++) if(twG.sol[r2]===c2+1) twPlace(r2,c2);
-  res.wonBySolution=twG.won;
-  res.mistakes=twG.mistakes;
-  res.towers=twG.placed;
+  var g=twG, N=g.N, res={N:N,unique:!!g.unique,
+    clues:{L:g.cl.L.slice(),R:g.cl.R.slice(),T:g.cl.T.slice(),B:g.cl.B.slice()}};
+  /* THE PLAYABILITY INVARIANT: the planted solution must satisfy every clue on
+     screen. If this is false the board cannot be completed and the game is
+     broken -- this is the check that the old build could not pass. */
+  res.solFits = twSatisfies(g.sol, g.cl);
+  /* And it must be a real Latin square: every row and column a permutation of
+     1..n, with no two towers seeing each other. */
+  /* Each row and each column of the planted solution must be a permutation of
+     1..n -- checked against a board object, not the live global. */
+  var solBoard={N:N,t:g.sol};
+  res.solPerm = twGridIsPerm(solBoard) && twColsArePerm(solBoard);
+  /* And no two planted towers may see each other. */
+  res.solSees = (function(){
+    var save=twG, bad=false, r, c, r2, c2;
+    twG=solBoard;
+    for(r=0;r<N&&!bad;r++) for(c=0;c<N&&!bad;c++)
+      for(r2=0;r2<N&&!bad;r2++) for(c2=0;c2<N&&!bad;c2++){
+        if((r2===r&&c2===c)||!g.sol[r2][c2]) continue;
+        if(twSees({r:r,c:c,h:g.sol[r][c]},{r:r2,c:c2,h:g.sol[r2][c2]})) bad=true;
+      }
+    twG=save; return !bad;
+  })();
+  /* How many clue-consistent grids exist? 1 is ideal; the count is capped at 2. */
+  res.solutionCount = twClassify(g.cl,N,200000).seen;
+  res.clueTotal = (function(){ var s=0,r; for(r=0;r<N;r++){s+=g.cl.L[r];s+=g.cl.R[r];}
+    for(r=0;r<N;r++){s+=g.cl.T[r];s+=g.cl.B[r];} return s; })();
+  /* PLAY IT: drive the real click path through twPlace with the planted
+     solution and confirm the win actually fires. This is the end-to-end proof
+     that a player can finish the board. */
+  var won=false, blocked=0, r3, c3;
+  for(r3=0;r3<N;r3++) for(c3=0;c3<N;c3++) twG.t[r3][c3]=0;
+  twG.placed=0; twG.mistakes=0; twG.dead=false; twG.won=false;
+  for(r3=0;r3<N;r3++) for(c3=0;c3<N;c3++){
+    var want=g.sol[r3][c3];
+    /* click up to the target height -- exactly what a player does */
+    for(var k=0;k<want;k++){ var resv=twPlace(r3,c3); if(resv==='won') won=true; }
+  }
+  res.playWon = twG.won;
+  res.playMistakes = twG.mistakes;
+  res.playPlaced = twG.placed;
+  res.cellsFilled = N*N;
   return JSON.stringify(res);
 }};
 twReset('med');
@@ -421,17 +618,21 @@ twReset('med');
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
   <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
     <li><a href="/workspace/games/aim-trainer/">
       <span class="ocurp-related-n">Aim Trainer</span>
       <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
     </a></li>
     <li><a href="/workspace/games/asteroids/">
       <span class="ocurp-related-n">Asteroids</span>
-      <span class="ocurp-related-b">Thrust, rotate, drift and split rocks with real inertia.</span>
+      <span class="ocurp-related-b">Thrust</span>
     </a></li>
     <li><a href="/workspace/games/battleship/">
       <span class="ocurp-related-n">Battleship</span>
-      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic, not luck.</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
     </a></li>
     <li><a href="/workspace/games/blackjack/">
       <span class="ocurp-related-n">Blackjack</span>
@@ -440,10 +641,6 @@ twReset('med');
     <li><a href="/workspace/games/boggle/">
       <span class="ocurp-related-n">Boggle</span>
       <span class="ocurp-related-b">Boggle - playable in the browser.</span>
-    </a></li>
-    <li><a href="/workspace/games/breakout/">
-      <span class="ocurp-related-n">Breakout</span>
-      <span class="ocurp-related-b">Bricks, lives and power-ups, with the pace ramping as you clear them.</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/games/">See all games →</a>

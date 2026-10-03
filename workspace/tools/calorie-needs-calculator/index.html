@@ -181,7 +181,13 @@ tailwind.config = { theme: { extend: {
   window.__T = window.__T || {};
 
   var CM_PER_IN = 2.54;
-  var ACT = [('sedentary', 1.2, 'desk job, little or no exercise'), ('light', 1.375, 'light exercise 1-3 days a week'), ('moderate', 1.55, 'moderate exercise 3-5 days a week'), ('active', 1.725, 'hard exercise 6-7 days a week'), ('athlete', 1.9, 'twice daily or physical job'), ('extra', 2.0, 'manual labour, or a twice-daily block')], GOALS = [('lose', -500, 'lose ~0.45 kg a week'), ('maintain', 0, 'hold the weight'), ('gain', 300, 'gain ~0.27 kg a week, lean')];
+  // NOTE: every row MUST be wrapped in [] . Writing the rows as
+  // ('sedentary', 1.2, '...') makes the comma operator collapse each row to
+  // its LAST element, so ACT[i][0] was a description string instead of the
+  // slug, the slug lookup never matched, compute() returned null and the
+  // caller threw on c.kcal - which killed the whole page on load.
+  var ACT = [['sedentary', 1.2, 'desk job, little or no exercise'], ['light', 1.375, 'light exercise 1-3 days a week'], ['moderate', 1.55, 'moderate exercise 3-5 days a week'], ['active', 1.725, 'hard exercise 6-7 days a week'], ['athlete', 1.9, 'twice daily or physical job'], ['extra', 2.0, 'manual labour, or a twice-daily block']];
+  var GOALS = [['lose', -500, 'lose ~0.45 kg a week'], ['maintain', 0, 'hold the weight'], ['gain', 300, 'gain ~0.27 kg a week, lean']];
   var KCAL_PCT = 0.5, PROT_PCT = 0.30, CARB_PCT = 0.40;
   var FAT_PCT = 0.30, PROT_GKG = 1.8;
   var KCAL_PER_G = {'protein': 4.1, 'carb': 4.1, 'fat': 9.0};
@@ -239,9 +245,12 @@ tailwind.config = { theme: { extend: {
       pPct = o.protein_pct;
     }
     var fatPct = o.fat_pct !== undefined ? o.fat_pct : FAT_PCT;
-    var cPct = 1 - KCAL_PCT - pPct - fatPct;
-    if(cPct < 0){ fatPct = Math.max(0, 1 - KCAL_PCT - pPct); cPct = 0; }
-    if(fatPct < 0){ fatPct = 0; cPct = Math.max(0, 1 - KCAL_PCT - pPct); }
+    // Carbs are the REMAINDER of the split: 100% - protein - fat. Subtracting
+    // KCAL_PCT here as well drove the carb share negative on the default
+    // 30/30 split, and the clamp below then zeroed carbs out of the result.
+    var cPct = 1 - pPct - fatPct;
+    if(cPct < 0){ fatPct = Math.max(0, 1 - pPct); cPct = 0; }
+    if(fatPct < 0){ fatPct = 0; cPct = Math.max(0, 1 - pPct); }
     out.mode = o.mode || 'pct';
     out.protein_pct = r1(pPct * 1000) / 10;
     out.carb_pct = r1(cPct * 1000) / 10;
@@ -406,9 +415,13 @@ tailwind.config = { theme: { extend: {
     if(isFinite(typed) && typed > 0){
       c.kcal = r1(typed);
       c.overridden = true;
-      c.protein_g = r1(c.kcal * c.protein_pct / KCAL_PER_G.protein);
-      c.carb_g = r1(c.kcal * c.carb_pct / KCAL_PER_G.carb);
-      c.fat_g = r1(c.kcal * c.fat_pct / KCAL_PER_G.fat);
+      // c.protein_pct / c.carb_pct / c.fat_pct are PERCENTAGES (compute() stores
+      // them that way), so they need /100 here. compute() divides by 100 inside
+      // its own gram conversion; this branch was not, which reported a user of
+      // 80 kg as needing 16,529 g of protein a day.
+      c.protein_g = r1(c.kcal * c.protein_pct / 100 / KCAL_PER_G.protein);
+      c.carb_g = r1(c.kcal * c.carb_pct / 100 / KCAL_PER_G.carb);
+      c.fat_g = r1(c.kcal * c.fat_pct / 100 / KCAL_PER_G.fat);
       c.macro_kcal = r1(c.protein_g * KCAL_PER_G.protein + c.carb_g * KCAL_PER_G.carb
                         + c.fat_g * KCAL_PER_G.fat);
       c.protein_g_per_kg = r1(c.protein_g / o.kg);
@@ -436,7 +449,6 @@ tailwind.config = { theme: { extend: {
     $(id).addEventListener('change', go);
   });
   $('kcal').addEventListener('input', function(){ kcalTouched = true; go(); });
-  go();
 
   window.__T['calorie-needs-calculator'] = {
     slug: 'calorie-needs-calculator',
@@ -456,6 +468,10 @@ tailwind.config = { theme: { extend: {
       return go();
     }
   };
+  // go() writes window.__T['calorie-needs-calculator'].last, so the object
+  // literal above must exist before the first call. Running it earlier threw
+  // "Cannot set properties of undefined (setting 'last')" on every page load.
+  go();
 })();
 </script>
 
@@ -464,29 +480,29 @@ tailwind.config = { theme: { extend: {
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
   <ul class="ocurp-related-grid">
-    <li><a href="/workspace/tools/bmi-calculator-bmr/">
-      <span class="ocurp-related-n">BMI + BMR Calculator</span>
-      <span class="ocurp-related-b">Body mass index plus basal metabolic rate, with the healthy weight range for your height.</span>
-    </a></li>
-    <li><a href="/workspace/tools/bmi/">
-      <span class="ocurp-related-n">BMI Calculator</span>
-      <span class="ocurp-related-b">Body mass index with healthy-range context.</span>
-    </a></li>
-    <li><a href="/workspace/tools/calorie-calculator/">
-      <span class="ocurp-related-n">Calorie Calculator</span>
-      <span class="ocurp-related-b">Daily calories from age, weight, activity and goal, using the Mifflin-St Jeor equation.</span>
-    </a></li>
-    <li><a href="/workspace/tools/pregnancy-due-date/">
-      <span class="ocurp-related-n">Pregnancy Due Date</span>
-      <span class="ocurp-related-b">Estimated due date from the last period, plus the current week and trimester.</span>
-    </a></li>
-    <li><a href="/workspace/tools/water-intake/">
-      <span class="ocurp-related-n">Water Intake Calculator</span>
-      <span class="ocurp-related-b">A weight-based daily water estimate in millilitres, litres, glasses and bottles, adjusted </span>
-    </a></li>
     <li><a href="/workspace/tools/kidney-stone-risk/">
       <span class="ocurp-related-n">Kidney Stone Risk Estimate</span>
-      <span class="ocurp-related-b">Water intake, urine volume, urinary calcium and urinary oxalate scored 0-100 with each fac</span>
+      <span class="ocurp-related-b">Water intake</span>
+    </a></li>
+    <li><a href="/workspace/tools/sleep-debt-calculator/">
+      <span class="ocurp-related-n">Sleep Debt Calculator</span>
+      <span class="ocurp-related-b">Bank a week of logged sleep against the hours you actually need</span>
+    </a></li>
+    <li><a href="/workspace/tools/wind-chill-calculator/">
+      <span class="ocurp-related-n">Wind Chill &amp; Heat Index</span>
+      <span class="ocurp-related-b">NWS wind chill at 50 F or below with 3 mph or more</span>
+    </a></li>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/acronym-generator/">
+      <span class="ocurp-related-n">Acronym Generator</span>
+      <span class="ocurp-related-b">Build initialisms</span>
+    </a></li>
+    <li><a href="/workspace/tools/add-line-numbers/">
+      <span class="ocurp-related-n">Add Line Numbers</span>
+      <span class="ocurp-related-b">Prefix each line with a configurable number</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/tools/">See all tools →</a>

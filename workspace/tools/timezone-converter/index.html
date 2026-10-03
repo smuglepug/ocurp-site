@@ -125,6 +125,16 @@ function setrows(id,rows){var e=document.getElementById(id);if(e)e.innerHTML=row
 function num(id,alt){var el=$(id);if(!el)return alt;
   var v=parseFloat(el.value); return isFinite(v)?v:alt;}
 function init(){var f=arguments[0];bind(Array.prototype.slice.call(arguments,1),f);f();}
+var HIGHLIGHTS = [
+  "Africa/Lagos",
+  "Europe/London",
+  "America/New_York",
+  "America/Los_Angeles",
+  "Asia/Dubai",
+  "Asia/Tokyo",
+  "Australia/Sydney",
+  "Africa/Johannesburg"
+];
 
 // One formatter per (zone) with every field we need already extracted, so no
 // caller ever has to hand-parse a localized string.
@@ -138,18 +148,7 @@ function fmtFor(zone){
 }
 function wallParts(zone, date){
   var p = {};
-  // formatToParts() returns an ARRAY of {type,value} records, so it cannot be
-  // indexed by the field name - doing that gave undefined and then threw
-  // "Cannot read properties of undefined (reading 'value')" on every render.
-  // Look the record up by its `type` instead. The 'literal' records carry no
-  // type we want, and 'era' is read below.
-  var parts = fmtFor(zone).formatToParts(date), by = {};
-  for (var i = 0; i < parts.length; i++) by[parts[i].type] = parts[i].value;
-  for (var j = 0; j < PARTS.length; j++) {
-    var k = PARTS[j];
-    p[k] = parseInt(by[k], 10);
-  }
-  p.era = by.era;
+  PARTS.forEach(function(k){ p[k] = parseInt(fmtFor(zone).formatToParts(date).filter(function(x){return x.type===k})[0].value, 10); });
   // Intl renders midnight as hour 24 in some ICU builds under hour12:false.
   if(p.hour === 24) p.hour = 0;
   if(p.era && /^B/i.test(p.era)){ p.year = 1 - p.year; }
@@ -276,11 +275,11 @@ window.__tz = {offsetMinutes:offsetMinutes, instantFromWall:instantFromWall, wal
     </a></li>
     <li><a href="/workspace/tools/age-calculator/">
       <span class="ocurp-related-n">Age Calculator</span>
-      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+      <span class="ocurp-related-b">Exact age in years</span>
     </a></li>
     <li><a href="/workspace/tools/apy-vs-apr-calculator/">
       <span class="ocurp-related-n">APY vs APR Calculator</span>
-      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns, and exactly ho</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
     </a></li>
     <li><a href="/workspace/tools/aspect-ratio/">
       <span class="ocurp-related-n">Aspect Ratio Calculator</span>
@@ -288,11 +287,11 @@ window.__tz = {offsetMinutes:offsetMinutes, instantFromWall:instantFromWall, wal
     </a></li>
     <li><a href="/workspace/tools/base-converter/">
       <span class="ocurp-related-n">Base Converter</span>
-      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
     </a></li>
     <li><a href="/workspace/tools/base-converter-table/">
       <span class="ocurp-related-n">Base Converter Table</span>
-      <span class="ocurp-related-b">Convert one number into every base at once, with a signed bit-width view, two&#x27;s complement</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/tools/">See all tools →</a>

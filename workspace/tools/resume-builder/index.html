@@ -125,6 +125,11 @@ function tr(cells){return '<tr class="border-t border-white/5">'+cells.map(funct
 function setrows(id,rows){var e=document.getElementById(id);if(e)e.innerHTML=rows.join('');}
 function num(id,alt){var el=$(id);if(!el)return alt;
   var v=parseFloat(el.value); return isFinite(v)?v:alt;}
+// get() reads a text field by id. It was MISSING entirely, so every caller
+// (`get('name')` in the sheet header, the plain-text export, the copy handler)
+// threw ReferenceError on load -- which killed the whole render, so the resume
+// preview stayed empty. Same contract as num(): missing element yields ''.
+function get(id){var el=$(id);return el?el.value:'';}
 function init(){var f=arguments[0];bind(Array.prototype.slice.call(arguments,1),f);f();}
 
 var SKILLS = [{name:'Python', level:'5'}, {name:'TypeScript', level:'4'}, {name:'PostgreSQL', level:'4'}, {name:'Docker', level:'3'}];
@@ -140,6 +145,10 @@ var EDU = [{qual:'BSc Computer Science', school:'University of Lagos', start:'20
 // quotes too, which matters here because they land inside value="...").
 // htm() exists only for text nodes, where escaping quotes would be noise.
 function htm(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// The model code below reads form fields with get('id'); the page shell's own
+// helper is $, and get() was never defined, so render() threw on load and the
+// preview + plain-text panes stayed empty.
+function get(id){ var el=$(id); return el ? el.value : ''; }
 
 function skillsHTML(){
   return SKILLS.map(function(s,i){
@@ -337,29 +346,29 @@ window.__resume = {plain:plain, data:function(){ return {skills:SKILLS, jobs:JOB
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
   <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/acronym-generator/">
+      <span class="ocurp-related-n">Acronym Generator</span>
+      <span class="ocurp-related-b">Build initialisms</span>
+    </a></li>
+    <li><a href="/workspace/tools/alarm/">
+      <span class="ocurp-related-n">Alarm Clock</span>
+      <span class="ocurp-related-b">Set an alarm a number of seconds ahead or at a wall-clock time</span>
+    </a></li>
     <li><a href="/workspace/tools/bingo-card-generator/">
       <span class="ocurp-related-n">Bingo Card Generator</span>
       <span class="ocurp-related-b">Printable 5x5 bingo cards with a proper B-I-N-G-O number range and a matching call sheet.</span>
     </a></li>
-    <li><a href="/workspace/tools/acronym-generator/">
-      <span class="ocurp-related-n">Acronym Generator</span>
-      <span class="ocurp-related-b">Build initialisms, recursive acronyms and random words from a phrase, plus a back-expander</span>
-    </a></li>
-    <li><a href="/workspace/tools/alarm/">
-      <span class="ocurp-related-n">Alarm Clock</span>
-      <span class="ocurp-related-b">Set an alarm a number of seconds ahead or at a wall-clock time, watch it count down to zer</span>
-    </a></li>
     <li><a href="/workspace/tools/bmi-calculator-bmr/">
       <span class="ocurp-related-n">BMI + BMR Calculator</span>
-      <span class="ocurp-related-b">Body mass index plus basal metabolic rate, with the healthy weight range for your height.</span>
+      <span class="ocurp-related-b">Body mass index plus basal metabolic rate</span>
     </a></li>
     <li><a href="/workspace/tools/character-count-analyzer/">
       <span class="ocurp-related-n">Character Count Analyzer</span>
-      <span class="ocurp-related-b">Live character counts against the real limits for X, LinkedIn, Instagram, TikTok, meta tit</span>
+      <span class="ocurp-related-b">Live character counts against the real limits for X</span>
     </a></li>
     <li><a href="/workspace/tools/citation-generator/">
       <span class="ocurp-related-n">Citation Generator</span>
-      <span class="ocurp-related-b">APA 7, MLA 9, Chicago 17 and Harvard from one form for books, journal articles, websites a</span>
+      <span class="ocurp-related-b">APA 7</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/tools/">See all tools →</a>

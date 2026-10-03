@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dominoes — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="Dominoes - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/dominoes/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Dominoes">
+<meta property="og:description" content="Dominoes - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/dominoes/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Dominoes on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dominoes">
+<meta name="twitter:description" content="Dominoes - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Dominoes on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Dominoes","url":"https://ocurp.com/workspace/games/dominoes/","description":"Dominoes - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Dominoes</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">CARDS</span><span class="ws-chip">AI</span><span class="ws-chip">SOLO</span><span class="ws-chip">SCORING</span></div>
+  </div>
+
+  <section class="ws-panel p-6">
+    <div class="grid gap-5 lg:grid-cols-[1fr_230px]">
+      <div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="dm-deal" class="ws-btn">New round</button>
+          <button id="dm-draw" class="ws-btn-ghost">Draw</button>
+          <select id="dm-target" class="ws-btn-ghost" style="width:auto" title="Target score">
+            <option value="50">50 points</option>
+            <option value="100" selected>100 points</option>
+            <option value="150">150 points</option>
+          </select>
+          <span class="ws-chip" id="dm-turn">YOUR MOVE</span>
+          <span class="ws-chip" id="dm-status">DEAL</span>
+        </div>
+
+        <div class="mt-4">
+          <div class="ws-label mb-2">Chain &mdash; <span id="dm-ends" class="dm-ends">0 | 0</span></div>
+          <div class="dm-chain" id="dm-chain"></div>
+        </div>
+
+        <div class="mt-4">
+          <div class="ws-label mb-1">Your hand <span id="dm-handn" class="text-white/40"></span></div>
+          <div class="dm-h" id="dm-hand"></div>
+        </div>
+
+        <p class="mt-4 text-[11px] leading-relaxed text-white/45">
+          A full <span class="text-white/70">double-six set of 28 tiles</span>. Play a tile
+          that matches either open end of the chain; the double is the two exposed pips at
+          each side and both ends score when the round closes. Six tiles each, sixteen in
+          the boneyard. Play a tile and the chain grows; no legal tile and a non-empty
+          boneyard means you <span class="text-accent">draw</span> &mdash; if the drawn tile
+          fits you play it, otherwise the turn passes, and either way a tile has left the
+          boneyard, so the round always ends. Empty hand wins the chain outright. First to
+          the target score takes the match. The AI is one-ply greedy: it takes the heaviest
+          tile it can and prefers to break its own doubles last.
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <div class="dm-stat"><div class="ws-label mb-1">Chain pips</div>
+          <div class="lg-num" id="dm-pips">0</div></div>
+        <div class="dm-stat"><div class="ws-label mb-1">Boneyard</div>
+          <div class="lg-num" id="dm-boney">16</div></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="dm-stat"><div class="ws-label mb-1">You</div>
+            <div class="lg-num" id="dm-s0">0</div></div>
+          <div class="dm-stat"><div class="ws-label mb-1">AI</div>
+            <div class="lg-num" id="dm-s1">0</div></div>
+        </div>
+        <div class="dm-stat"><div class="ws-label mb-1">AI hand</div>
+          <div class="lg-num" id="dm-aih">6</div>
+          <div class="dm-h" id="dm-ai" style="min-height:44px"></div></div>
+        <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3">
+          <div class="ws-label mb-2">Round log</div>
+          <pre id="dm-log" class="ws-out text-[10px] max-h-[170px] overflow-auto"></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="ws-panel mt-4 p-5">
+    <div class="ws-label mb-2">Set &amp; scoring</div>
+    <pre id="dm-data" class="ws-out text-[11px]"></pre>
+  </section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen’s Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+var $=function(id){return document.getElementById(id)};
+/* mulberry32: 32-bit seeded PRNG. Every game on this page draws from a
+   seeded stream, so `__<slug>.newGame(0)` in the console replays exactly. */
+function rngOf(seed){var a=seed>>>0;return function(){a=a+0x6D2B79F5|0;
+  var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;
+  return((t^t>>>14)>>>0)/4294967296}}
+function ri(rng,n){return Math.floor(rng()*n)}
+
+/* ── the double-six set: 28 tiles (a,b) with 0<=a<=b<=6 ───────────────── */
+var DM_SET=(function(){var s=[];for(var a=0;a<=6;a++)for(var b=a;b<=6;b++)s.push(a+'|'+b);return s})();
+var DM_HAND=6, DM_PIPS=function(t){var p=t.split('|');return (+p[0])+(+p[1])};
+var DM_NAME=['You','AI'];
+var DM={};
+
+function dmShuffle(arr,rng){var a=arr.slice();
+  for(var i=a.length-1;i>0;i--){var j=ri(rng,i+1);var t=a[i];a[i]=a[j];a[j]=t}return a}
+function dmEnds(chain){
+  if(!chain.length)return null;
+  var f=chain[0].split('|'),l=chain[chain.length-1].split('|');
+  return [parseInt(f[0],10),parseInt(l[1],10)];
+}
+function dmFits(tile,ends){return ends===null||tile.split('|').map(Number).indexOf(ends[0])>=0
+  ||tile.split('|').map(Number).indexOf(ends[1])>=0}
+function dmLegal(hand,chain){
+  var e=dmEnds(chain),out=[];
+  for(var i=0;i<hand.length;i++)if(dmFits(hand[i],e))out.push(i);
+  return out;
+}
+function dmPlay(hand,chain,i){
+  var t=hand[i],h=hand.slice();h.splice(i,1);return {hand:h,chain:chain.concat([t]),tile:t};
+}
+function dmChainPips(chain){var s=0;for(var i=0;i<chain.length;i++)s+=DM_PIPS(chain[i]);return s}
+
+function dmNew(seed,target){
+  var sd=(seed===undefined)?20261002:(seed|0);
+  var d=dmShuffle(DM_SET,rngOf(sd));
+  Object.assign(DM,{seed:sd,target:target||100,boney:d.slice(DM_HAND*2),chain:[],turn:0,
+      hand:[d.slice(0,DM_HAND),d.slice(DM_HAND,DM_HAND*2)],scores:[0,0],chosen:null,
+      over:false,roundOver:false,log:[],pass:0,round:0,pulls:0});
+  dmSay('New round. '+DM.boney.length+' tiles in the boneyard.');
+  dmRender();
+}
+function dmSay(s){DM.log.unshift(s);if(DM.log.length>60)DM.log.pop()}
+/* page: draw consumes exactly one tile from the boneyard.  That is what makes
+   the round finite - a turn that cannot play always shrinks the boneyard. */
+function dmDraw(){
+  if(DM.boney.length===0)return null;
+  var t=DM.boney.shift(); DM.hand[DM.turn].push(t); DM.pulls++;
+  dmSay((DM.turn===0?'You':'AI')+' drew '+t.replace('|','-')); return t;
+}
+function dmPass(){
+  DM.log.unshift('');DM.log.shift();
+  DM.chain.length===0;DM.turn=1-DM.turn;DM.pass++;DM.render();
+}
+/* one-ply greedy: heaviest tile that fits; among equals prefer a double, then
+   the lower tile so the AI does not hoard its own doubles. */
+function dmAIChoice(hand,chain){
+  var lg=dmLegal(hand,chain);
+  if(!lg.length)return null;
+  var best=null,bk=-1;
+  for(var i=0;i<lg.length;i++){var t=hand[i],a=t.split('|').map(Number);
+    var k=DM_PIPS(t)*10+(a[0]===a[1]?5:0)-a[0];
+    if(k>bk){bk=k;best=i}}
+  return best;
+}
+function dmAdvance(){
+  if(DM.roundOver)return 'round-over';
+  var p=DM.turn,lg=dmLegal(DM.hand[p],DM.chain);
+  if(lg.length){
+    var i=(p===0?DM.chosen:dmAIChoice(DM.hand[p],DM.chain));
+    if(i===null||i===undefined||i<0)i=lg[0];
+    var r=dmPlay(DM.hand[p],DM.chain,i);
+    DM.hand[p]=r.hand;DM.chain=r.chain;DM.chosen=null;
+    dmSay((p===0?'You':'AI')+' played '+r.tile.replace('|','-')+'  (ends '
+      +dmEnds(DM.chain).join(' / ')+')');
+    DM.turn=1-p;DM.pass=0;
+    if(DM.hand[p].length===0){dmEndRound(p,true);DM.render();return 'empty-hand'}
+    if(DM.hand[1-p].length===0){dmEndRound(1-p,true);DM.render();return 'empty-hand'}
+    DM.render();return 'played';
+  }
+  if(DM.boney.length>0){
+    var t=dmDraw();
+    var lg2=dmLegal(DM.hand[p],DM.chain);
+    if(lg2.length){
+      var j=(p===0?DM.chosen:dmAIChoice(DM.hand[p],DM.chain));
+      if(j===null||j===undefined||j<0)j=lg2[0];
+      var r2=dmPlay(DM.hand[p],DM.chain,j);
+      DM.hand[p]=r2.hand;DM.chain=r2.chain;DM.chosen=null;
+      dmSay((p===0?'You':'AI')+' drew and played '+r2.tile.replace('|','-'));
+      DM.turn=1-p;DM.pass=0;
+    } else { DM.turn=1-p;DM.pass++;
+      dmSay((p===0?'You':'AI')+' drew '+t.replace('|','-')+' - no fit, turn passes'); }
+    DM.render();return 'drew';
+  }
+  dmEndRound(DM.turn===0?1:0,false);DM.render();return 'blocked';
+}
+/* p won the round.  An empty hand takes the whole chain and scores nothing for
+   the pickup; a blocked round hands the chain pips to the player still holding
+   tiles.  Both are sums of non-negative pips, so no score can go negative. */
+function dmEndRound(p,empty){
+  var chain=dmChainPips(DM.chain),other=1-p;
+  var hp=[0,0];
+  for(var i=0;i<DM.hand[0].length;i++)hp[0]+=DM_PIPS(DM.hand[0][i]);
+  for(var i2=0;i2<DM.hand[1].length;i2++)hp[1]+=DM_PIPS(DM.hand[1][i]);
+  DM.scores[p]+=chain;                 /* the chain always goes to the winner */
+  DM.scores[other]+=empty?hp[other]:0; /* and the loser picks up only if stuck */
+  DM.roundOver=true;DM.round++;
+  dmSay('Round over ('+(empty?'hand emptied':'boneyard empty, blocked')+'). '
+    +(DM.turn===0?'You':'AI')+' scores the chain: '+chain
+    +'. Pickups: '+hp[0]+' / '+hp[1]+'.  Totals '+DM.scores[0]+' / '+DM.scores[1]);
+  if(DM.scores[p]>=DM.target)DM.over=true;
+}
+DM.autoRound=function(maxTurns){
+  var g=maxTurns||400,i=0;
+  while(!DM.roundOver&&i++<g){
+    if(DM.turn===0){
+      var lg=dmLegal(DM.hand[0],DM.chain);
+      DM.chosen=lg.length?lg[0]:null;
+      if(!lg.length&&DM.boney.length===0){dmAdvance();break}
+    }
+    dmAdvance();
+  }
+  return {roundOver:DM.roundOver,turns:i,chain:DM.chain.slice(),
+          scores:DM.scores.slice(),boney:DM.boney.length,over:DM.over};
+};
+DM.state=function(){return {seed:DM.seed,target:DM.target,turn:DM.turn,chain:DM.chain.slice(),
+  hand:[DM.hand[0].slice(),DM.hand[1].slice()],boney:DM.boney.length,scores:DM.scores.slice(),
+  roundOver:DM.roundOver,over:DM.over,pulls:DM.pulls,passes:DM.pass,log:DM.log.slice(0,6)}};
+
+function dmTileHTML(t,small,idx){
+  var a=t.split('|').map(Number);
+  return '<button class="dm-t'+(small?' sm':'')+'" data-i="'+idx+'" '
+    +(idx===null?'disabled':'type="button"')+'>'
+    +'<span><i>'+a[0]+'</i></span><span></span><span></span><span><i>'+a[1]+'</i></span></button>';
+}
+function dmRender(){
+  if(!DM)return;
+  var e=dmEnds(DM.chain);
+  $('dm-ends').textContent=(e?e.join(' | '):'\u2014 | \u2014');
+  $('dm-chain').innerHTML=DM.chain.length?DM.chain.map(function(t,i){
+    return dmTileHTML(t,false,i===0?null:i)}).join(''):'<span class="text-[11px] text-white/30">empty</span>';
+  $('dm-handn').textContent='('+DM.hand[0].length+')';
+  $('dm-hand').innerHTML=DM.hand[0].map(function(t,i){return dmTileHTML(t,true,i)}).join('');
+  $('dm-ai').innerHTML=DM.hand[1].map(function(t,i){return dmTileHTML(t,true,i)}).join('');
+  var hs=$('dm-hand').children;
+  for(var i=0;i<hs.length;i++)(function(el){
+    el.onclick=function(){
+      if(DM.turn!==0||DM.roundOver)return;
+      var k=+el.getAttribute('data-i');
+      DM.chosen=k; dmAdvance();
+    };
+  })(hs[i]);
+  $('dm-pips').textContent=dmChainPips(DM.chain);
+  $('dm-boney').textContent=DM.boney.length;
+  $('dm-s0').textContent=DM.scores[0];$('dm-s1').textContent=DM.scores[1];
+  $('dm-aih').textContent=DM.hand[1].length;
+  $('dm-turn').textContent=DM.over?'MATCH OVER':DM.roundOver?'ROUND OVER':(DM.turn===0?'YOUR MOVE':'AI THINKING');
+  $('dm-status').textContent=DM.log.length?DM.log[0]:'DEAL';
+  $('dm-log').textContent=DM.log.join('\n');
+  $('dm-draw').disabled=DM.boney.length===0||DM.roundOver||DM.turn!==0;
+  dmData();
+}
+function dmData(){
+  var pips=0;for(var i=0;i<DM_SET.length;i++)pips+=DM_PIPS(DM_SET[i]);
+  $('dm-data').textContent=
+    'tiles in the set   '+DM_SET.length+'   (0<=a<=b<=6, doubles included)\n'
+   +'total pips         '+pips+'   = 6*7*8/2 = 168, the double-six invariant\n'
+   +'tiles per hand     '+DM_HAND+' x 2 = 12, boneyard starts at 28-12 = 16\n'
+   +'chain scoring      sum of both pips of every tile on the board\n'
+   +'                   + your own unplayed hand when you empty it, or the\n'
+   +'                     chain pips to the non-stuck player on a block\n'
+   +'target score       '+DM.target+'\n'
+   +'boneyard left      '+DM.boney.length+'\n'
+   +'seed               '+DM.seed;
+}
+$('dm-deal').onclick=function(){dmNew(undefined,+$('dm-target').value)};
+$('dm-target').onchange=function(){dmNew(undefined,+$('dm-target').value)};
+$('dm-draw').onclick=function(){if(DM.turn===0&&!DM.roundOver)dmDraw(),dmRender()};
+dmNew(3,100);
+
+window.__dominoes={newGame:function(seed,target){dmNew(seed,target);return this.state()},
+  state:DM.state,advance:dmAdvance,draw:dmDraw,legal:function(p){return dmLegal(DM.hand[p===undefined?DM.turn:p],DM.chain)},
+  ends:dmEnds,chainPips:dmChainPips,aiChoice:dmAIChoice,autoRound:DM.autoRound,render:dmRender,
+  SET:DM_SET,setSize:DM_SET.length,pips:DM_PIPS,HAND:DM_HAND,
+  consts:{SET_SIZE:DM_SET.length,HAND:DM_HAND,TOTAL_PIPS:168,COPIES:2}};
+</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  /* Watch the usual output nodes; report a short, useful summary. */
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      /* A game node is a label like "Score 12" - read it out as it stands.
+         A tool node is raw output - a character count is the useful summary. */
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+
+<style>
+<style>
+  .dm-chain{display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-height:64px;
+    border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.025);
+    padding:.6rem}
+  .dm-t{width:34px;height:50px;border-radius:5px;background:#f2efe9;color:#0b0b0b;
+    display:grid;grid-template-columns:1fr 1fr;padding:3px;box-sizing:border-box;
+    font:800 9px 'IBM Plex Sans',monospace;line-height:1}
+  .dm-t span{display:flex;align-items:center;justify-content:center}
+  .dm-t i{font-style:normal;font-size:11px}
+  .dm-t.sel{box-shadow:0 0 0 2px #FF5F1F}
+  .dm-h{display:flex;flex-wrap:wrap;gap:4px;min-height:56px;
+    border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.025);
+    padding:.6rem;margin-top:.5rem}
+  .dm-t.sm{width:27px;height:39px;font-size:8px}
+  .dm-t.sm i{font-size:9px}
+  .dm-stat{border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);padding:.6rem .7rem}
+  .dm-ends{font:800 15px 'Manrope',sans-serif;color:#fff}
+</style>
+</style>
+<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/play.js?v=20261002c" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

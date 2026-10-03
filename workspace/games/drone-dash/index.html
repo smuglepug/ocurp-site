@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drone Dash — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="Drone Dash - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/drone-dash/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Drone Dash">
+<meta property="og:description" content="Drone Dash - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/drone-dash/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Drone Dash on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Drone Dash">
+<meta name="twitter:description" content="Drone Dash - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Drone Dash on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Drone Dash","url":"https://ocurp.com/workspace/games/drone-dash/","description":"Drone Dash - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Drone Dash</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">CANVAS</span><span class="ws-chip">KEYBOARD</span><span class="ws-chip">NO DOWNLOAD</span></div>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-[1fr_300px]">
+    <div>
+      <div class="ws-panel p-4 sm:p-5">
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <span class="ws-chip">CELLS <b id="have" class="text-accent">0</b>/4</span>
+          <span class="ws-chip">TIME <b id="clock" class="text-accent">0.0</b>s</span>
+        </div>
+        <canvas id="cv" width="760" height="520" aria-label="Drone Dash arena"></canvas>
+        <p id="verdict" class="mt-3 min-h-[1.25rem] text-sm text-white/70"></p>
+        <div class="mt-3 grid gap-3 sm:grid-cols-2">
+          <button id="start" class="ws-btn">Start run</button>
+          <button id="again" class="ws-btn-ghost" disabled>Restart</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-4">
+      <div class="ws-panel p-4">
+        <div class="ws-label mb-2">Battery</div>
+        <div class="gauge" id="bgauge"><i id="bfill" style="width:100%"></i></div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="ws-tiny">Charge</span>
+          <span id="bnum" class="font-mono text-sm text-white">100%</span>
+        </div>
+      </div>
+      <div class="ws-panel p-4">
+        <div class="ws-label mb-2">Flight</div>
+        <p class="text-xs leading-relaxed text-white/60">
+          Bank <b class="text-accent">4 energy cells</b>, then land back on the
+          pad. The battery drains as you fly and drains faster while you thrust.
+          Each cell you touch restores charge.
+        </p>
+      </div>
+      <div class="ws-panel p-4">
+        <div class="ws-label mb-2">Controls</div>
+        <ul class="space-y-1.5 text-xs text-white/60">
+          <li><b class="text-white">W A S D</b> or arrows &mdash; thrust</li>
+          <li><b class="text-white">Space</b> &mdash; all-round thrust</li>
+          <li><b class="text-white">Touch</b> &mdash; thrust toward touch</li>
+        </ul>
+      </div>
+      <div class="ws-panel p-4">
+        <div class="ws-label mb-2">Hazard</div>
+        <div class="flex items-center gap-2">
+          <span class="hazdot"></span>
+          <span class="text-xs text-white/60">Patrols a fixed box. It can
+          never cross a cell, so every cell is reachable.</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen’s Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'), cx=cv.getContext('2d');
+
+/* ===== CONSTANTS -- mirrored in tools/provers/drone-dash.py =============
+   The prover re-implements exactly this and flies it at human reaction
+   times. Do not edit one without editing the other. */
+const W=760, H=520;                  /* arena px                        */
+const PADX=W/2, PADY=H/2, PAD_R=36;  /* home pad centre + radius        */
+const DR=9;                           /* drone hit radius                */
+const THRUST=520;                     /* px/s^2                          */
+const DAMP=2.2;                       /* drag, v *= e^(-DAMP*dt)         */
+const MAXSPD=205;                     /* speed ceiling px/s              */
+const BAT_MAX=100;                    /* starting battery units          */
+const DRAIN=9.0;                      /* units/s coasting                */
+const THRUST_DRAIN=2.4;               /* x multiplier while thrusting    */
+const CELL_CHARGE=34;                 /* units a cell returns            */
+const NEED=4;                         /* cells to bank                   */
+const NCELLS=8;
+const CELL_MIN_SEP=74;
+const CELL_R_MIN=95, CELL_R_MAX=300;
+const CELL_TRIES=80;
+const EDGE=34;
+const CELL_PICK=20+DR;                /* 29px bank radius                */
+const NHAZ=5;
+const HAZ_R=9;                        /* hazard radius                   */
+const HAZ_HIT=HAZ_R+DR;               /* 18px strike radius              */
+const HAZ_SPD_MIN=18, HAZ_SPD_MAX=42;
+const HAZ_PAD_CLEAR=132;
+const HAZ_TRIES=60;
+/* A hazard patrols a box this far around its spawn instead of roaming, and
+   may never spawn within HAZ_CELL_CLEAR of a cell. Both exist because a
+   hazard on top of a cell makes that cell uncollectable: CELL_PICK (29) is
+   bigger than HAZ_HIT (18), so you would die before you could bank it. */
+const HAZ_BOX=46;
+const HAZ_CELL_CLEAR=(HAZ_R+DR)+CELL_PICK+HAZ_BOX+12;   /* = 105px */
+const STEP=1/60;
+
+let a=null, running=false, keys={}, touch=null, raf=0, last=0;
+
+function mulberry32(seed){
+  let s=seed>>>0;
+  return function(){
+    s=(s+0x6D2B79F5)>>>0;
+    let t=s;
+    t=Math.imul(t ^ (t>>>15), 1|t);
+    t=(t + Math.imul(t ^ (t>>>7), 61|t)) ^ t;
+    return ((t ^ (t>>>14))>>>0)/4294967296;
+  };
+}
+
+function placeCells(rnd){
+  const out=[];
+  for(let n=0;n<NCELLS;n++){
+    let bx=0, by=0, best=-1;
+    for(let k=0;k<CELL_TRIES;k++){
+      const ang=rnd()*Math.PI*2;
+      const rr=CELL_R_MIN+rnd()*(CELL_R_MAX-CELL_R_MIN);
+      const x=PADX+Math.cos(ang)*rr, y=PADY+Math.sin(ang)*rr;
+      /* keep the whole pickup circle on canvas */
+      if(x<CELL_PICK+DR||x>W-CELL_PICK-DR||y<CELL_PICK+DR||y>H-CELL_PICK-DR) continue;
+      let dmin=1e9;
+      for(const c of out) dmin=Math.min(dmin,Math.hypot(c[0]-x,c[1]-y));
+      if(dmin>best){ best=dmin; bx=x; by=y; }
+      if(dmin>=CELL_MIN_SEP){ bx=x; by=y; best=1e9; break; }
+    }
+    out.push([bx,by,0]);
+  }
+  return out;
+}
+
+function placeHazards(rnd, cells){
+  const out=[];
+  for(let n=0;n<NHAZ;n++){
+    let bx=W/2, by=H/2, best=-1;
+    for(let k=0;k<HAZ_TRIES;k++){
+      const x=EDGE+rnd()*(W-2*EDGE), y=EDGE+rnd()*(H-2*EDGE);
+      if(Math.hypot(x-PADX,y-PADY)<HAZ_PAD_CLEAR) continue;
+      /* never spawn within pickup range of a cell */
+      let blocked=false;
+      for(const c of cells){
+        if(Math.hypot(c[0]-x,c[1]-y)<HAZ_CELL_CLEAR){ blocked=true; break; }
+      }
+      if(blocked) continue;
+      let dmin=1e9;
+      for(const h of out) dmin=Math.min(dmin,Math.hypot(h[0]-x,h[1]-y));
+      if(dmin>best){ best=dmin; bx=x; by=y; }
+      if(dmin>=2*HAZ_R+18){ bx=x; by=y; best=1e9; break; }
+    }
+    const ang=rnd()*Math.PI*2;
+    const sp=HAZ_SPD_MIN+rnd()*(HAZ_SPD_MAX-HAZ_SPD_MIN);
+    out.push([bx,by,ang,sp, bx-HAZ_BOX, by-HAZ_BOX, bx+HAZ_BOX, by+HAZ_BOX]);
+  }
+  return out;
+}
+
+function reset(){
+  const seed=(Math.random()*4294967296)>>>0;
+  const rnd=mulberry32(seed);
+  const cells=placeCells(rnd);
+  a={ seed, x:PADX, y:PADY, vx:0, vy:0, batt:BAT_MAX, have:0,
+      cells, hazs:placeHazards(rnd, cells), over:null, thrusting:false };
+  keys={}; touch=null;
+  $('have').textContent='0';
+  $('clock').textContent='0.0';
+  $('verdict').textContent='';
+  paint();
+}
+
+function input(){
+  let ix=0, iy=0;
+  if(keys['w']||keys['arrowup'])    iy-=1;
+  if(keys['s']||keys['arrowdown'])  iy+=1;
+  if(keys['a']||keys['arrowleft'])  ix-=1;
+  if(keys['d']||keys['arrowright']) ix+=1;
+  if(ix===0&&iy===0&&keys[' ']) iy-=1;         /* space: straight up */
+  if(touch){ ix+=touch[0]; iy+=touch[1]; }
+  return [ix,iy];
+}
+
+/* the page's step(): mirrored verbatim in the prover */
+function step(dt, ix, iy){
+  if(a.over) return;
+  const m=Math.hypot(ix,iy);
+  if(m<1e-6){ ix=0; iy=0; } else { ix/=m; iy/=m; }
+  a.thrusting = m>=1e-6;
+
+  a.vx += ix*THRUST*dt;
+  a.vy += iy*THRUST*dt;
+  let sp=Math.hypot(a.vx,a.vy);
+  if(sp>MAXSPD){ const k=MAXSPD/sp; a.vx*=k; a.vy*=k; }
+  const damp=Math.exp(-DAMP*dt);
+  a.vx*=damp; a.vy*=damp;
+  a.x+=a.vx*dt; a.y+=a.vy*dt;
+  if(a.x<DR){ a.x=DR; a.vx=Math.abs(a.vx); }
+  if(a.x>W-DR){ a.x=W-DR; a.vx=-Math.abs(a.vx); }
+  if(a.y<DR){ a.y=DR; a.vy=Math.abs(a.vy); }
+  if(a.y>H-DR){ a.y=H-DR; a.vy=-Math.abs(a.vy); }
+
+  a.batt -= DRAIN*(a.thrusting?THRUST_DRAIN:1)*dt;
+
+  for(const h of a.hazs){
+    h[0]+=Math.cos(h[2])*h[3]*dt;
+    h[1]+=Math.sin(h[2])*h[3]*dt;
+    /* bounce inside the patrol box, not off the arena walls */
+    if(h[0]<h[4]+HAZ_R){ h[0]=h[4]+HAZ_R; h[2]=Math.PI-h[2]; }
+    if(h[0]>h[6]-HAZ_R){ h[0]=h[6]-HAZ_R; h[2]=Math.PI-h[2]; }
+    if(h[1]<h[5]+HAZ_R){ h[1]=h[5]+HAZ_R; h[2]=-h[2]; }
+    if(h[1]>h[7]-HAZ_R){ h[1]=h[7]-HAZ_R; h[2]=-h[2]; }
+    if(Math.hypot(h[0]-a.x,h[1]-a.y)<HAZ_HIT){ a.over='hazard'; return; }
+  }
+
+  for(const c of a.cells){
+    if(c[2]) continue;
+    if(Math.hypot(c[0]-a.x,c[1]-a.y)<CELL_PICK){
+      c[2]=1; a.have++;
+      a.batt=Math.min(BAT_MAX, a.batt+CELL_CHARGE);
+      if(a.have>=NEED && Math.hypot(a.x-PADX,a.y-PADY)<PAD_R){ a.over='win'; return; }
+    }
+  }
+
+  if(a.batt<=0){ a.batt=0; a.over='battery'; return; }
+  if(a.have>=NEED && Math.hypot(a.x-PADX,a.y-PADY)<PAD_R){ a.over='win'; }
+}
+
+function loop(ts){
+  if(!running) return;
+  if(!last) last=ts;
+  let dt=(ts-last)/1000; last=ts;
+  if(dt>0.25) dt=0.25;
+  while(dt>STEP){ step(STEP, ...input()); dt-=STEP; }
+  paint();
+  if(a.over){ finish(a.over); return; }
+  raf=requestAnimationFrame(loop);
+}
+
+function paint(){
+  cx.clearRect(0,0,W,H);
+  /* pad */
+  cx.strokeStyle='rgba(255,95,31,.85)'; cx.lineWidth=2;
+  cx.beginPath(); cx.arc(PADX,PADY,PAD_R,0,Math.PI*2); cx.stroke();
+  cx.fillStyle='rgba(255,95,31,.10)'; cx.fill();
+  if(a.have>=NEED){
+    cx.fillStyle='#FF5F1F';
+    cx.font='900 10px Inter,system-ui,sans-serif';
+    cx.textAlign='center';
+    cx.fillText('LAND HERE', PADX, PADY+PAD_R+14);
+  }
+  /* hazards + their patrol boxes */
+  for(const h of a.hazs){
+    cx.strokeStyle='rgba(185,28,28,.20)'; cx.lineWidth=1;
+    cx.strokeRect(h[4],h[5],h[6]-h[4],h[7]-h[5]);
+    cx.fillStyle='#b91c1c';
+    cx.beginPath(); cx.arc(h[0],h[1],HAZ_R,0,Math.PI*2); cx.fill();
+  }
+  /* cells */
+  for(const c of a.cells){
+    if(c[2]) continue;
+    cx.strokeStyle='#FF5F1F'; cx.lineWidth=1.5;
+    cx.beginPath(); cx.arc(c[0],c[1],13,0,Math.PI*2); cx.stroke();
+    cx.fillStyle='rgba(255,95,31,.22)'; cx.fill();
+  }
+  /* drone */
+  cx.save();
+  cx.translate(a.x,a.y);
+  const ang=Math.hypot(a.vx,a.vy)>4?Math.atan2(a.vy,a.vx):0;
+  cx.rotate(ang);
+  cx.fillStyle= a.thrusting?'#FF5F1F':'#e5e5e5';
+  cx.beginPath();
+  cx.moveTo(DR+3,0); cx.lineTo(-DR,DR*0.75); cx.lineTo(-DR*0.5,0);
+  cx.lineTo(-DR,-DR*0.75); cx.closePath(); cx.fill();
+  cx.restore();
+
+  $('have').textContent=String(a.have);
+  $('clock').textContent=(a.el||0).toFixed(1);
+  const pct=Math.max(0,a.batt/BAT_MAX*100);
+  $('bfill').style.width=pct.toFixed(1)+'%';
+  $('bgauge').className='gauge'+(pct<25?' low':'');
+  $('bnum').textContent=pct.toFixed(0)+'%';
+}
+
+function finish(kind){
+  running=false;
+  cancelAnimationFrame(raf);
+  const t=a.el||0;
+  if(kind==='win'){
+    $('verdict').innerHTML='<b class="text-accent">Recovered.</b> 4 cells banked and home in '+t.toFixed(1)+'s with '+Math.max(0,a.batt).toFixed(0)+'% battery left.';
+    announce('Recovered. Four cells banked and landed in '+t.toFixed(1)+' seconds.');
+  } else if(kind==='battery'){
+    $('verdict').innerHTML='<b class="text-accent">Battery dead.</b> Drift costs charge too. Bank a cell early.';
+    announce('Battery dead.');
+  } else {
+    $('verdict').innerHTML='<b class="text-accent">Struck a hazard.</b> Read the patrol boxes and go around.';
+    announce('Struck a hazard.');
+  }
+  $('again').disabled=false;
+  $('start').disabled=false;
+}
+
+$('start').addEventListener('click', start);
+$('again').addEventListener('click', start);
+function start(){
+  if(running) return;
+  reset();
+  running=true; last=0;
+  $('start').disabled=true;
+  $('again').disabled=true;
+  raf=requestAnimationFrame(loop);
+}
+
+addEventListener('keydown', e=>{
+  const k=e.key.toLowerCase();
+  if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)){
+    keys[k===''?' ':k]=true;
+    if(k.startsWith('arrow')||k===' ') e.preventDefault();
+    if(!running) start();
+  }
+});
+addEventListener('keyup', e=>{ keys[e.key.toLowerCase()] = e.key===' '?false:false; });
+
+function pt(e){
+  const r=cv.getBoundingClientRect();
+  const cxr=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+  const cyr=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
+  return [cxr*W/r.width, cyr*H/r.height];
+}
+cv.addEventListener('touchstart', e=>{ e.preventDefault(); touch=pt(e); if(!running) start(); }, {passive:false});
+cv.addEventListener('touchmove',  e=>{ e.preventDefault(); touch=pt(e); }, {passive:false});
+cv.addEventListener('touchend',   e=>{ e.preventDefault(); touch=null; }, {passive:false});
+cv.addEventListener('mousedown', e=>{ const p=pt(e); touch=[p[0]-a.x,p[1]-a.y]; if(!running) start(); });
+addEventListener('mouseup', ()=>{ touch=null; });
+
+/* idle preview so the arena is never a black rectangle */
+reset();
+</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  /* Watch the usual output nodes; report a short, useful summary. */
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      /* A game node is a label like "Score 12" - read it out as it stands.
+         A tool node is raw output - a character count is the useful summary. */
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+
+<style>
+
+canvas{display:block;background:#050505;border-radius:8px;touch-action:none}
+.ws-tiny{font-size:10px;font-weight:900;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+.gauge{height:6px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+.gauge > i{display:block;height:100%;background:#FF5F1F;border-radius:999px;transition:width .12s linear}
+.gauge.low > i{background:#b91c1c}
+.hazdot{width:9px;height:9px;border-radius:999px;background:#b91c1c}
+
+</style>
+<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/play.js?v=20261002c" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

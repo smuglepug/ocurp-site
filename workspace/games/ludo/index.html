@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ludo — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="Ludo - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/ludo/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Ludo">
+<meta property="og:description" content="Ludo - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/ludo/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Ludo on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Ludo">
+<meta name="twitter:description" content="Ludo - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Ludo on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Ludo","url":"https://ocurp.com/workspace/games/ludo/","description":"Ludo - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Ludo</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">BOARD</span><span class="ws-chip">DICE</span><span class="ws-chip">2-4 PLAYERS</span><span class="ws-chip">SOLO</span></div>
+  </div>
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="lg-new" class="ws-btn">New game</button>
+      <button id="lg-roll" class="ws-btn">Roll</button>
+      <button id="lg-auto" class="ws-btn-ghost">Auto-play</button>
+      <select id="lg-players" class="ws-btn-ghost" style="width:auto" title="Players">
+        <option value="2" selected>2 players</option>
+        <option value="3">3 players</option>
+        <option value="4">4 players</option>
+      </select>
+      <div class="lg-die" id="lg-die">&mdash;</div>
+      <span class="ws-chip" id="lg-turn">PLAYER 1 TO MOVE</span>
+      <span class="ws-chip" id="lg-status">ROLL THE DIE</span>
+    </div>
+
+    <div class="mt-5"><div class="lg-board" id="lg-board"></div></div>
+
+    <div class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4" id="lg-stats"></div>
+
+    <p class="mt-4 text-[11px] leading-relaxed text-white/45">
+      Four tokens each, on a <span class="text-white/70">52-cell ring</span> around a
+      15&times;15 cross board. You need a <span class="text-accent">6</span> to bring a
+      token out of the yard onto your start square; from there it walks the ring and
+      then a 5-square home column. Land on a lone opponent token and it goes back to
+      the yard &mdash; two or more tokens on a square make it safe. A token needs the
+      <span class="text-white/70">exact</span> number to stop in the home column, and
+      all four tokens home wins the game. A 6 earns another roll, up to three 6s in a
+      row. If a roll has no legal move the turn simply passes &mdash; the game can
+      never deadlock. Player 1 is you.
+    </p>
+  </section>
+  <section class="ws-panel mt-4 p-5">
+    <div class="ws-label mb-2">Ring geometry &mdash; checkable constants</div>
+    <pre id="lg-data" class="ws-out text-[11px]"></pre>
+  </section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen’s Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+var $=function(id){return document.getElementById(id)};
+/* mulberry32: 32-bit seeded PRNG. Every game on this page draws from a
+   seeded stream, so `__<slug>.newGame(0)` in the console replays exactly. */
+function rngOf(seed){var a=seed>>>0;return function(){a=a+0x6D2B79F5|0;
+  var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;
+  return((t^t>>>14)>>>0)/4294967296}}
+function ri(rng,n){return Math.floor(rng()*n)}
+
+/* ── constants, all visible in the source ─────────────────────────────── */
+var LG_RING=(function(){var c=[];
+  for(var i=1;i<=13;i++)c.push([0,i]);        /* top row    */
+  for(var r=1;r<=13;r++)c.push([r,14]);       /* right col  */
+  for(var i=13;i>=1;i--)c.push([14,i]);      /* bottom row */
+  for(var r=13;r>=1;r--)c.push([r,0]);        /* left col   */
+  return c})();                               /* 13*4 = 52 cells */
+var LG_N_RING=52;          /* LG_RING.length */
+var LG_HOME=5;             /* home column length */
+var LG_TOKENS=4;           /* tokens per player */
+var LG_MAX6=3;             /* consecutive sixes before the turn passes */
+var LG_WIN=LG_N_RING+LG_HOME;   /* 57: step 57 is the last home square */
+/* Start RING INDICES, one per player seat.  They are 13 apart, so each seat
+   exits the ring 12 squares after entering and the four exits land on the four
+   arm mouths: seat0 -> ring cell 5 (0,6) top, seat1 -> 18 (6,14) right,
+   seat2 -> 31 (14,8) bottom, seat3 -> 44 (8,0) left.  A 2-player game uses
+   seats 0 and 2 so the two tokens start opposite each other. */
+var LG_SEATS=[6,19,32,45];
+var LG_SEATSET={2:[0,2],3:[0,1,2],4:[0,1,2,3]};
+var LG_YARD=[[0,0],[0,14],[14,14],[14,0]];
+var LG_ARM={5:[[1,6],[2,6],[3,6],[4,6],[5,6]],18:[[6,13],[6,12],[6,11],[6,10],[6,9]],
+            31:[[13,8],[12,8],[11,8],[10,8],[9,8]],44:[[8,1],[8,2],[8,3],[8,4],[8,5]]};
+var LG_NAME=['You','Silver','Graphite','Slate'];
+
+var LG={};
+
+function lgStart(p){return LG_SEATS[p]}
+function lgExit(p){return (lgStart(p)+LG_N_RING-1)%LG_N_RING}
+/* step 1..52 sit on the ring, 53..57 sit in the home column */
+function lgCellPos(p,step){
+  if(step<=0)return null;
+  if(step<=LG_N_RING)return LG_RING[(lgStart(p)+step-1)%LG_N_RING];
+  return LG_ARM[lgExit(p)][step-LG_N_RING-1];
+}
+function lgOcc(){                       /* step-slot -> {p:count} map */
+  var m={};
+  for(var p=0;p<LG.n;p++)for(var t=0;t<LG_TOKENS;t++){
+    var s=LG.tok[p][t]; if(s<=0)continue;
+    var k=p+':'+s; m[k]=(m[k]||0)+1;}
+  return m;
+}
+/* page: every token that the dice value can actually move */
+function lgLegal(p,d){
+  if(d===null)return [];
+  var occ=lgOcc(),out=[];
+  for(var t=0;t<LG_TOKENS;t++){
+    var s=LG.tok[p][t],to,capture=null;
+    if(s===0){ if(d!==6)continue; to=1; }
+    else { to=s+d; if(to>LG_WIN)continue; }
+    if(to<=LG_N_RING){
+      var c=LG_RING[(lgStart(p)+to-1)%LG_N_RING],found=0,hit=0;
+      for(var q=0;q<LG.n;q++)if(q!==p){var n=occ[q+':'+to]||0;found+=n;if(n)hit=q}
+      /* exactly one opposing token on the square is captured; two or more
+         stack safely, and your own tokens simply block each other */
+      if(found===1&&hit!==null)capture=hit;
+      else if(found>1)capture=null;
+    }
+    out.push({tok:t,from:s,to:to,capture:capture});
+  }
+  return out;
+}
+function lgHomeCount(p){var c=0;for(var t=0;t<LG_TOKENS;t++)if(LG.tok[p][t]===LG_WIN)c++;return c}
+function lgAllHome(p){return lgHomeCount(p)===LG_TOKENS}
+
+function lgNew(n,seed){
+  n=n||2;
+  /* Mutate LG in place.  A fresh object here would drop every method hung
+     off it above (LG.apply, LG.step, LG.auto), which is exactly how the board
+     ends up rendering nothing at all. */
+  Object.assign(LG,{n:n,seed:(seed===undefined?20261002:seed)|0,rng:rngOf((seed===undefined?20261002:seed)|0),
+      tok:[],turn:0,die:null,pending:null,chain:0,over:false,winner:null,
+      rolls:0,turns:0,status:'ROLL THE DIE'});
+  for(var p=0;p<n;p++){var a=[];for(var t=0;t<LG_TOKENS;t++)a.push(0);LG.tok.push(a)}
+  /* One start per PLAYER (LG_SEATS), not one per token: lgExit(p) takes a
+     player index, so the old LG_STARTS[n].map(lgExit) referred to a constant
+     that no longer exists and threw on every lgNew() call - which meant the
+     whole ludo script died before window.__ludo was ever assigned. */
+  LG.exitIdx=[];for(var q=0;q<n;q++)LG.exitIdx.push(lgExit(q));
+  LG.render();lgData();
+}
+function lgRoll(){
+  if(LG.over)return null;
+  var d=ri(LG.rng,6)+1; LG.die=d; LG.rolls++; LG.chain++;
+  var moves=lgLegal(LG.turn,d);
+  if(!moves.length){
+    /* no legal move: the turn PASSES. This is the anti-deadlock rule and it
+       is unconditional - it fires whatever the dice said. */
+    LG.pending=null; LG.chain=0;
+    LG.status='PLAYER '+(LG.turn+1)+' ROLLED '+d+' - NO LEGAL MOVE, TURN PASSES';
+    LG.turn=(LG.turn+1)%LG.n; LG.turns++;
+  } else if(moves.length===1){ LG.apply(moves[0]); }
+  else { LG.pending=moves; LG.status='PLAYER '+(LG.turn+1)+' ROLLED '+d+' - PICK A TOKEN'; }
+  LG.render();
+  return d;
+}
+LG.apply=function(m){
+  var p=LG.turn;
+  LG.tok[p][m.tok]=m.to;
+  if(m.capture!==null&&m.capture!==undefined&&m.to<=LG_N_RING){
+    for(var t=0;t<LG_TOKENS;t++)if(LG.tok[m.capture][t]===m.to){LG.tok[m.capture][t]=0;break}
+    LG.status='PLAYER '+(p+1)+' CAPTURED A TOKEN';
+  } else if(m.from===0){ LG.status='PLAYER '+(p+1)+' BROUGHT A TOKEN OUT'; }
+  else { LG.status='PLAYER '+(p+1)+' MOVED TO STEP '+m.to; }
+  LG.pending=null;
+  if(lgAllHome(p)){ LG.over=true; LG.winner=p;
+    LG.status=LG_NAME[p].toUpperCase()+' GETS ALL FOUR HOME - WINS'; LG.render(); return true; }
+  if(LG.die===6&&LG.chain<LG_MAX6){ LG.status+=' - SIX, ROLL AGAIN'; return true; }
+  LG.chain=0; LG.turn=(LG.turn+1)%LG.n; LG.turns++;
+  return true;
+};
+LG.pick=function(tok){
+  if(!LG.pending)return false;
+  for(var i=0;i<LG.pending.length;i++)if(LG.pending[i].tok===tok){LG.apply(LG.pending[i]);LG.render();return true}
+  return false;
+};
+/* 1-ply greedy AI: capture > reach home > go furthest. Explicitly not
+   unbeatable - a human who reads the ring can beat it. */
+LG.aiMove=function(p,d){
+  var ms=lgLegal(p,d); if(!ms.length)return null;
+  var best=ms[0],bk=-1;
+  for(var i=0;i<ms.length;i++){var m=ms[i],k=0;
+    if(m.capture!==null&&m.capture!==undefined)k+=1000;
+    if(m.to===LG_WIN)k+=800;
+    if(m.to>LG_N_RING)k+=400;
+    if(m.from===0&&d===6)k+=250;
+    k+=m.to;
+    if(k>bk){bk=k;best=m}}
+  return best;
+};
+/* One turn for one player, whoever it is.  Used by Auto-play and by the
+   prover's JS-side mirror: roll, then if a choice is owed take the greedy
+   move, then if the dice was a 6 the SAME player rolls again. */
+LG.takeTurn=function(p){
+  if(LG.over)return null;
+  var before=LG.turn;
+  var d=lgRoll();
+  if(LG.over)return 'over';
+  if(LG.pending){
+    var m=LG.aiMove(p,d)||LG.pending[0];
+    LG.apply(m);LG.render();
+  }
+  if(!LG.over&&LG.die===6&&LG.chain<LG_MAX6&&LG.turn===before&&LG.pending===null)
+    return 'six';
+  return d;
+};
+LG.auto=function(maxTurns){
+  var g=maxTurns||6000,i=0;
+  while(!LG.over&&i++<g)LG.takeTurn(LG.turn);
+  return {over:LG.over,winner:LG.winner,turns:LG.turns,rolls:LG.rolls,iterations:i};
+};
+LG.step=function(){return LG.takeTurn(LG.turn)};
+LG.state=function(){return {n:LG.n,turn:LG.turn,die:LG.die,chain:LG.chain,over:LG.over,
+  winner:LG.winner,tok:LG.tok.map(function(a){return a.slice()}),rolls:LG.rolls,turns:LG.turns,
+  status:LG.status,pending:(LG.pending||[]).map(function(m){return m.tok})}};
+
+/* ── render ───────────────────────────────────────────────────────────── */
+LG.render=function(){
+  if(!LG)return;
+  var key={},r,c,i;
+  for(i=0;i<LG_N_RING;i++){var q=LG_RING[i];key[q[0]+','+q[1]]={t:'track',i:i}}
+  for(i=0;i<4;i++)key[LG_ARM[5][i][0]+','+LG_ARM[5][i][1]]={t:'home'};
+  for(i=0;i<4;i++)key[LG_ARM[18][i][0]+','+LG_ARM[18][i][1]]={t:'home'};
+  for(i=0;i<4;i++)key[LG_ARM[31][i][0]+','+LG_ARM[31][i][1]]={t:'home'};
+  for(i=0;i<4;i++)key[LG_ARM[44][i][0]+','+LG_ARM[44][i][1]]={t:'home'};
+  for(i=0;i<LG.n;i++){var y=LG_YARD[i];key[y[0]+','+y[1]]={t:'yard',p:i};
+    var s=LG_RING[lgStart(i)];key[s[0]+','+s[1]]={t:'start',p:i}}
+  var pens={};
+  for(i=0;i<LG.n;i++)for(var k=0;k<LG_TOKENS;k++){
+    var st=LG.tok[i][k],pos;
+    if(st===0)pos=LG_YARD[i]; else pos=lgCellPos(i,st);
+    if(!pos)continue;
+    (pens[pos[0]+','+pos[1]]=pens[pos[0]+','+pos[1]]||[]).push({p:i,s:st});
+  }
+  var legal={};
+  if(LG.pending)for(i=0;i<LG.pending.length;i++){
+    var m=LG.pending[i],pp=lgCellPos(LG.turn,m.to);if(pp)legal[pp[0]+','+pp[1]]=true;
+  }
+  var h='';
+  for(r=0;r<15;r++)for(c=0;c<15;c++){
+    var id=r+','+c,cell=key[id]||{t:'plain'},cls='lg-c '+cell.t;
+    if(cell.t==='start')cls+=' start'+cell.p;
+    if(legal[id])cls+=' legal';
+    var dots='';
+    (pens[id]||[]).forEach(function(o,k){
+      dots+='<span class="lg-p p'+o.p+(k>0?' stk':'')+'">'+(o.s===0?'&middot;':'')+'</span>'});
+    h+='<button class="lg-cel" data-r="'+r+'" data-c="'+c+'" '+((!legal[id])?'disabled':'')+'>'
+      +'<span class="'+cls+'">'+dots+'</span></button>';
+  }
+  $('lg-board').innerHTML=h;
+  var cells=$('lg-board').children;
+  for(i=0;i<cells.length;i++){(function(el){
+    el.onclick=function(){
+      var r2=+el.getAttribute('data-r'),c2=+el.getAttribute('data-c');
+      for(var j=0;j<LG.pending.length;j++){
+        var m=LG.pending[j],pp=lgCellPos(LG.turn,m.to);
+        if(pp&&pp[0]===r2&&pp[1]===c2){LG.apply(m);LG.render();return}
+      }
+    };
+  })(cells[i])}
+  $('lg-die').textContent=LG.die===null?'\u2014':LG.die;
+  $('lg-die').className='lg-die'+(LG.die===6?' hot':'');
+  $('lg-turn').textContent=LG.over?(LG.winner!==null?LG_NAME[LG.winner].toUpperCase()+' WINS':'DRAW'):
+    'PLAYER '+(LG.turn+1)+' ('+LG_NAME[LG.turn]+') TO MOVE';
+  $('lg-status').textContent=LG.status;
+  var sh='';
+  for(var p2=0;p2<LG.n;p2++){
+    var rows='<div class="lg-stat"><div class="ws-label mb-1">'+LG_NAME[p2]+'</div>'
+      +'<div class="lg-num">'+lgHomeCount(p2)+'/4</div>';
+    for(var t2=0;t2<LG_TOKENS;t2++)rows+='<div class="text-[10px] text-white/35">token '+(t2+1)
+      +(LG.tok[p2][t2]===0?' &middot; yard':' &middot; step '+LG.tok[p2][t2])+'</div>';
+    rows+='</div>'; sh+=rows;
+  }
+  $('lg-stats').innerHTML=sh;
+};
+function lgData(){
+  var s='ring cells        '+LG_N_RING+'   (13 per side, corners excluded)\n'
+   +'home column        '+LG_HOME+' squares, entered from ring cell s-1\n'
+   +'win step           '+LG_WIN+' = '+LG_N_RING+' + '+LG_HOME+'   (all four tokens)\n'
+   +'seats used         '+JSON.stringify(LG_SEATSET[LG.n])+' of [0,1,2,3]\n'
+   +'start ring cells   '+JSON.stringify(LG_SEATS.slice(0,LG.n))+'\n'
+   +'arm entrance cells '+JSON.stringify(LG.exitIdx)+'\n'
+   +'exit of seat 1     ring cell '+(LG.exitIdx[0]+1)+' = (0,6) top arm\n'
+   +'max chained sixes  '+LG_MAX6+'\n'
+   +'no-legal-move rule turn passes unconditionally\n'
+   +'seed               '+LG.seed+'\n'
+   +'distance check     each token walks start -> start-1 -> 5 home squares';
+  $('lg-data').textContent=s;
+}
+$('lg-new').onclick=function(){lgNew(+$('lg-players').value)};
+$('lg-players').onchange=function(){lgNew(+$('lg-players').value)};
+$('lg-roll').onclick=function(){if(LG.over)return;lgRoll()};
+$('lg-auto').onclick=function(){
+  $('lg-auto').disabled=true; var n=0;
+  var iv=setInterval(function(){
+    LG.step(); if(LG.over||++n>4000){clearInterval(iv);$('lg-auto').disabled=false}
+  },0);
+};
+lgNew(2,7);
+
+window.__ludo={newGame:function(n,seed){lgNew(n,seed);return this.state()},
+  state:LG.state,roll:lgRoll,pick:function(t){return LG.pick(t)},apply:function(m){return LG.apply(m)},
+  step:LG.step,takeTurn:LG.takeTurn,auto:LG.auto,aiMove:LG.aiMove,
+  legal:function(p,d){return lgLegal(p===undefined?LG.turn:p,d)},
+  cellOf:function(p,step){return lgCellPos(p,step)},exitOf:lgExit,
+  occ:lgOcc,homeCount:lgHomeCount,allHome:lgAllHome,render:LG.render,
+  consts:{RING:LG_N_RING,HOME:LG_HOME,TOKENS:LG_TOKENS,MAX6:LG_MAX6,WIN:LG_WIN,
+    SEATS:LG_SEATS,SEATSET:LG_SEATSET,YARD:LG_YARD,ARM:LG_ARM,COORDS:LG_RING,NAMES:LG_NAME,
+    startOf:lgStart}};
+</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  /* Watch the usual output nodes; report a short, useful summary. */
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      /* A game node is a label like "Score 12" - read it out as it stands.
+         A tool node is raw output - a character count is the useful summary. */
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+
+<style>
+<style>
+  .lg-board{display:grid;grid-template-columns:repeat(15,1fr);grid-template-rows:repeat(15,1fr);
+    gap:1px;width:min(100%,540px);aspect-ratio:1/1;margin:0 auto;
+    border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);
+    padding:3px;box-sizing:border-box;user-select:none}
+  .lg-c{border-radius:2px;background:rgba(255,255,255,.055);position:relative;
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .lg-c.track{background:rgba(255,255,255,.03)}
+  .lg-c.start0{background:rgba(255,95,31,.20);box-shadow:inset 0 0 0 1px rgba(255,95,31,.5)}
+  .lg-c.start1{background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.34)}
+  .lg-c.start2{background:rgba(255,255,255,.11);box-shadow:inset 0 0 0 1px rgba(255,255,255,.26)}
+  .lg-c.start3{background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+  .lg-c.home{background:rgba(255,255,255,.09)}
+  .lg-c.yard{background:rgba(255,255,255,.015);border-radius:4px}
+  .lg-p{position:absolute;width:58%;height:58%;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font:900 8px 'IBM Plex Sans',monospace}
+  .lg-p.p0{background:#FF5F1F;color:#000}
+  .lg-p.p1{background:#f2efe9;color:#0b0b0b}
+  .lg-p.p2{background:#a8a8a8;color:#0b0b0b}
+  .lg-p.p3{background:#6e6e6e;color:#f2efe9}
+  .lg-p.stk{width:34%;height:34%;border:1px solid #050505}
+  .lg-c.legal{box-shadow:inset 0 0 0 1px rgba(255,95,31,.65)}
+  .lg-c.focus{background:rgba(255,95,31,.30)}
+  .lg-cel{width:100%;height:100%;cursor:pointer;background:none;border:0;padding:0;position:relative}
+  .lg-cel:disabled{cursor:default}
+  .lg-stat{border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);padding:.6rem .7rem}
+  .lg-num{font-family:'Manrope',sans-serif;font-size:17px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+  .lg-die{width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;
+    font:800 22px 'Manrope',sans-serif;color:#fff}
+  .lg-die.hot{background:#FF5F1F;color:#000;border-color:#FF5F1F}
+</style>
+</style>
+<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/play.js?v=20261002c" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

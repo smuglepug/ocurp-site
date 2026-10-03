@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doodle Jump — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Doodle Jump - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/doodle-jump/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Doodle Jump">
+<meta property="og:description" content="Doodle Jump - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/doodle-jump/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Doodle Jump on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Doodle Jump">
+<meta name="twitter:description" content="Doodle Jump - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Doodle Jump on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Doodle Jump","url":"https://ocurp.com/workspace/games/doodle-jump/","description":"Doodle Jump - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Doodle Jump</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">PLATFORMER</span><span class="ws-chip">CANVAS</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <button id="go" class="ws-btn">Start</button>
+      <button id="rs" class="ws-btn-ghost">Restart</button>
+      <span class="ws-chip" id="score">HEIGHT 0</span>
+      <span class="ws-chip" id="best">BEST 0</span>
+      <span class="ws-chip" id="alt">ALT 0</span>
+      <span class="ws-chip" id="stat">READY</span>
+    </div>
+    <canvas id="cv" class="mx-auto block w-full touch-none rounded-xl border border-white/15" style="aspect-ratio:420/680;max-width:420px;max-height:78vh"></canvas>
+    <div class="mx-auto mt-4 flex max-w-[420px] justify-center gap-2 sm:hidden">
+      <button class="ws-btn-ghost !px-6 !py-3" data-act="left">&#9664;</button>
+      <button class="ws-btn-ghost !px-6 !py-3" data-act="right">&#9654;</button>
+    </div>
+    <p class="mt-3 text-center text-xs text-white/45">
+      <b>&#8592;</b> <b>&#8594;</b> or <b>A</b> <b>D</b> to lean. Touch: hold a side.
+      The tower is generated fresh every run. Gaps stay inside one bounce and
+      platforms slide sideways, so stop steering and the floor slides out from
+      under you. Wrap at the sides and keep climbing &mdash; there is no top,
+      only how far you get.
+    </p>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+const $ = id => document.getElementById(id);
+const cv = $('cv'), cx = cv.getContext('2d');
+const W = 420, H = 680;
+const GRAV = 0.42, JUMP = -6.9, ACC = 0.55, VMAX = 4.2;
+const FRICTION = 0.82, R = 15;
+const PLAT_W_MIN = 52, PLAT_W_MAX = 76;
+const PLAT_GAP_MIN = 26, PLAT_GAP_MAX = 48;
+const V_DRIFT = 0.5, MAX_DX = 78;
+const CAM_ANCHOR = 0.42, DEATH_MARGIN = 40;
+
+const keys = {};
+let plats, blob, camY, running, over, acc = 0, lastT = 0, best = 0, seed = 1, count = 0;
+
+function mkrnd(s0) {
+  let s = (s0 * 2654435761) >>> 0;
+  if (!s) s = 0x9E3779B9;
+  return function () {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+// Order-independent drift hash: platform i always drifts the same way.
+function hsh(i) {
+  let x = (i ^ 0x27D4EB2D) >>> 0;
+  x = Math.imul(x, 0x85EBCA6B) >>> 0;
+  x = ((x << 13) | (x >>> 19)) >>> 0;
+  x = Math.imul(x, 0xC2B2AE35) >>> 0;
+  return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
+}
+
+// The generator. One platform at a time, upward, with the two reachability
+// caps that make the tower playable:
+//   - vertical gap in [PLAT_GAP_MIN, PLAT_GAP_MAX], always under the 56.7px a single bounce lifts;
+//   - horizontal offset within +/- MAX_DX, CLAMPED inboard at the edges. A
+//     clamp can only shrink the offset it was handed; the reflection this
+//     replaced could grow a 96px request into 162px, which is wider than the
+//     138px arc of a single bounce -- see the header of tools/build_w44a_doodle_jump.py.
+// Platforms above the first two drift, so a player who stops steering is left
+// behind. The blob wraps, so the sides are a seam and not a corner.
+function genPlats(s0) {
+  const r = mkrnd(s0);
+  const out = [];
+  let y = H - 130, x = W * (0.25 + r() * 0.5);
+  out.push({ x: x, y: y, w: PLAT_W_MAX, v: 0 });
+  while (y > -H * 2) {
+    const gap = PLAT_GAP_MIN + r() * (PLAT_GAP_MAX - PLAT_GAP_MIN);
+    const ny = y - gap;
+    const w = PLAT_W_MIN + r() * (PLAT_W_MAX - PLAT_W_MIN);
+    let nx = x + (r() * 2 - 1) * MAX_DX;
+    nx = Math.max(w / 2, Math.min(W - w / 2, nx));
+    const v = out.length < 2 ? 0 : (hsh(out.length) < 0.5 ? -V_DRIFT : V_DRIFT);
+    out.push({ x: nx, y: ny, w: w, v: v });
+    x = nx; y = ny;
+  }
+  return out;
+}
+
+function reset() {
+  seed = (Math.floor(Math.random() * 1000000) + 1) >>> 0;
+  plats = genPlats(seed);
+  count = plats.length;
+  blob = { x: plats[0].x, y: plats[0].y - 70, vx: 0, vy: 0 };
+  camY = blob.y - H * CAM_ANCHOR;
+  over = false; acc = 0; lastT = 0;
+  upd();
+}
+
+// drift the world, then move the blob, then collide -- the prover runs the
+// same three things in the same order
+function drift() {
+  for (let i = 0; i < plats.length; i++) {
+    const p = plats[i];
+    p.x += p.v;
+    p.x = ((p.x % W) + W) % W;
+  }
+}
+
+function step() {
+  if (over) return;
+  drift();
+  const b = blob;
+  let dir = 0;
+  if (keys.left) dir -= 1;
+  if (keys.right) dir += 1;
+  b.vx += dir * ACC;
+  if (b.vx > VMAX) b.vx = VMAX;
+  if (b.vx < -VMAX) b.vx = -VMAX;
+  if (!dir) b.vx *= 0.82;
+  b.vy += GRAV;
+  const prevBottom = b.y + R;
+  b.x += b.vx;
+  b.y += b.vy;
+  b.x = ((b.x % W) + W) % W;
+  if (b.y < camY + H * CAM_ANCHOR) camY = b.y - H * CAM_ANCHOR;
+  if (b.vy > 0) {
+    for (let i = 0; i < plats.length; i++) {
+      const p = plats[i];
+      if (prevBottom <= p.y + 1 && b.y + R >= p.y &&
+          Math.abs(b.x - p.x) <= p.w / 2 + R * 0.6) {
+        b.y = p.y - R; b.vy = JUMP;
+        break;
+      }
+    }
+  }
+  if (b.y > camY + H + DEATH_MARGIN) over = true;
+}
+
+function upd() {
+  if (!blob) return;
+  const h = Math.max(0, Math.round(plats[0].y - blob.y));
+  $('score').textContent = 'HEIGHT ' + h;
+  $('best').textContent = 'BEST ' + best;
+  $('alt').textContent = 'ALT ' + Math.max(0, Math.round(camY + H - blob.y - R));
+  let s = 'READY';
+  if (running || over) s = over ? 'FELL' : 'CLIMBING';
+  $('stat').textContent = s;
+  $('stat').style.color = over ? '#FF5F1F' : '';
+  if (h > best) best = h;
+}
+
+function draw() {
+  cx.clearRect(0, 0, W, H);
+  cx.fillStyle = '#050505'; cx.fillRect(0, 0, W, H);
+  cx.strokeStyle = 'rgba(255,255,255,.05)'; cx.lineWidth = 1;
+  const base = plats[0].y;
+  for (let h = 200; h < base - camY + 40; h += 200) {
+    const sy = H - (base - camY - h);
+    cx.beginPath(); cx.moveTo(0, sy); cx.lineTo(W, sy); cx.stroke();
+  }
+  cx.strokeStyle = 'rgba(255,95,31,.18)';
+  cx.beginPath(); cx.moveTo(0, 0); cx.lineTo(0, H); cx.stroke();
+  cx.beginPath(); cx.moveTo(W, 0); cx.lineTo(W, H); cx.stroke();
+  for (let i = 0; i < plats.length; i++) {
+    const p = plats[i];
+    const sy = p.y - camY;
+    if (sy < -20 || sy > H + 20) continue;
+    cx.fillStyle = i === 0 ? '#FF5F1F' : '#ffffff';
+    cx.globalAlpha = i === 0 ? 0.85 : 0.32;
+    cx.beginPath();
+    if (cx.roundRect) { cx.roundRect(p.x - p.w / 2, sy - 5, p.w, 8, 4); cx.fill(); }
+    else { cx.fillRect(p.x - p.w / 2, sy - 5, p.w, 8); }
+    if (p.v) {
+      cx.fillStyle = '#FF5F1F'; cx.globalAlpha = 0.75;
+      cx.beginPath();
+      const d = p.v > 0 ? 1 : -1;
+      cx.moveTo(p.x + d * (p.w / 2 + 4), sy - 1);
+      cx.lineTo(p.x + d * (p.w / 2 + 11), sy - 5);
+      cx.lineTo(p.x + d * (p.w / 2 + 11), sy + 3);
+      cx.closePath(); cx.fill();
+    }
+  }
+  cx.globalAlpha = 1;
+  const b = blob;
+  if (!b) return;
+  const by = b.y - camY;
+  cx.fillStyle = over ? '#FF5F1F' : '#fff';
+  cx.beginPath(); cx.arc(b.x, by, R, 0, 6.2832); cx.fill();
+  cx.fillStyle = '#FF5F1F';
+  cx.beginPath(); cx.arc(b.x - 4, by - 4, R * 0.34, 0, 6.2832); cx.fill();
+  if (Math.abs(b.vx) > 0.15) {
+    cx.strokeStyle = 'rgba(255,95,31,.9)'; cx.lineWidth = 3;
+    const d = b.vx > 0 ? 1 : -1;
+    cx.beginPath(); cx.moveTo(b.x + d * (R + 3), by); cx.lineTo(b.x + d * (R + 12), by); cx.stroke();
+  }
+}
+
+function sized() {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function tick(ts) {
+  if (!lastT) lastT = ts;
+  let dt = (ts - lastT) / 1000; lastT = ts;
+  if (dt > 0.25) dt = 0.25;
+  acc += dt;
+  while (acc >= 1 / 60) { step(); acc -= 1 / 60; if (over) break; }
+  draw(); upd();
+  if (over) { running = false; $('go').style.display = ''; return; }
+  requestAnimationFrame(tick);
+}
+
+function start() {
+  reset(); running = true; $('go').style.display = 'none';
+  lastT = 0; requestAnimationFrame(tick);
+}
+
+$('go').addEventListener('click', start);
+$('rs').addEventListener('click', () => { running = false; reset(); draw(); upd(); });
+
+addEventListener('keydown', e => {
+  if (['ArrowLeft','ArrowRight','KeyA','KeyD'].includes(e.code)) e.preventDefault();
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+});
+addEventListener('keyup', e => {
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+});
+
+document.querySelectorAll('[data-act]').forEach(b => {
+  const a = b.dataset.act;
+  const on = e => { e.preventDefault(); keys[a] = true; };
+  const off = e => { e.preventDefault(); keys[a] = false; };
+  b.addEventListener('touchstart', on, {passive:false});
+  b.addEventListener('touchend', off, {passive:false});
+  b.addEventListener('mousedown', on);
+  b.addEventListener('mouseup', off);
+  b.addEventListener('mouseleave', off);
+});
+
+// The pilot the prover mirrors: the nearest platform that is still ABOVE the
+// blob's feet. Targeting the one under the blob is what stalled the first
+// draft of the harness -- the blob sat on it forever and never aimed higher.
+function pickTarget() {
+  let bestP = null;
+  for (let i = 0; i < plats.length; i++) {
+    const p = plats[i];
+    if (p.y <= blob.y + R + 1) {
+      if (bestP === null || p.y > bestP.y) bestP = p;
+    }
+  }
+  return bestP;
+}
+
+sized(); addEventListener('resize', sized);
+reset(); draw();
+
+// Test hook: lets the CDP verifier drive REAL state (real seed, real frames)
+// instead of reading a text node.
+window.__doodle_jump = {
+  state: function () {
+    return {
+      seed: seed, platforms: count,
+      height: Math.max(0, Math.round(plats[0].y - blob.y)),
+      y: blob.y, x: blob.x, vx: blob.vx, vy: blob.vy, camY: camY,
+      over: over, best: best
+    };
+  },
+  // Drive the blob with an autopilot that re-decides only every `ref` frames.
+  // `ref` is the human reaction time expressed in 60fps frames.
+  autoplay: function (frames, ref) {
+    ref = ref || 18;
+    for (let f = 0; f < frames && !over; f++) {
+      if (f % ref === 0) {
+        const t = pickTarget();
+        if (t) {
+          let dx = t.x - blob.x;
+          if (dx > W / 2) dx -= W;
+          if (dx < -W / 2) dx += W;
+          keys.left = dx < -1; keys.right = dx > 1;
+        }
+      }
+      step();
+    }
+    draw(); upd();
+    return this.state();
+  },
+  stop: function () { keys.left = keys.right = false; }
+};
+</script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

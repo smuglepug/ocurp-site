@@ -246,10 +246,27 @@ tailwind.config = { theme: { extend: {
   }
 
   function read(){
+    // Clamp to what a human body can actually be. Without this, body fat of
+    // 150% makes lean mass and Katch-McArdle BMR go negative and the page
+    // prints "-494 kcal" as if it were a measurement.
+    var bfv = raw($('b-bf').value);
+    if(!isFinite(bfv)) bfv = 20;
+    bfv = Math.min(70, Math.max(3, bfv));
     return {
-      sex: $('b-sex').value, kg: raw($('b-kg').value), cm: raw($('b-cm').value),
-      age: raw($('b-age').value), bf: raw($('b-bf').value), mult: parseFloat($('b-act').value)
+      sex: $('b-sex').value, kg: numOr($('b-kg'), 30, 300),
+      cm: numOr($('b-cm'), 100, 250),
+      age: numOr($('b-age'), 10, 100),
+      bf: bfv, mult: parseFloat($('b-act').value)
     };
+  }
+  // A blank or nonsensical entry falls back to the field's own shipped default
+  // (its value="" attribute), then to the midpoint of the plausible range,
+  // rather than poisoning every downstream number with NaN.
+  function numOr(el, lo, hi){
+    var v = raw(el.value);
+    if(!isFinite(v)) v = raw(el.getAttribute('value'));
+    if(!isFinite(v)) v = (lo + hi) / 2;
+    return Math.min(hi, Math.max(lo, v));
   }
 
   function go(){
@@ -290,21 +307,17 @@ tailwind.config = { theme: { extend: {
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
   <ul class="ocurp-related-grid">
-    <li><a href="/workspace/tools/macro-calculator/">
-      <span class="ocurp-related-n">Macro Calculator</span>
-      <span class="ocurp-related-b">Protein, fat and carb grams for a target calorie level, with real food weights.</span>
-    </a></li>
     <li><a href="/workspace/tools/a-irr-calculator/">
       <span class="ocurp-related-n">IRR Calculator</span>
       <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
     </a></li>
     <li><a href="/workspace/tools/age-calculator/">
       <span class="ocurp-related-n">Age Calculator</span>
-      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+      <span class="ocurp-related-b">Exact age in years</span>
     </a></li>
     <li><a href="/workspace/tools/apy-vs-apr-calculator/">
       <span class="ocurp-related-n">APY vs APR Calculator</span>
-      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns, and exactly ho</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
     </a></li>
     <li><a href="/workspace/tools/aspect-ratio/">
       <span class="ocurp-related-n">Aspect Ratio Calculator</span>
@@ -312,7 +325,11 @@ tailwind.config = { theme: { extend: {
     </a></li>
     <li><a href="/workspace/tools/base-converter/">
       <span class="ocurp-related-n">Base Converter</span>
-      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/tools/">See all tools →</a>

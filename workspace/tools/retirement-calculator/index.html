@@ -196,13 +196,33 @@ function run(){
     dbal=start-w; withdraws+=w;
   }
   const endBal=dbal;
-  const sustainable=postR>0?(salary*0.7-ss)/postR:0;
-  const spentTotal=targetIncome*monthsDec/12-ss*monthsDec/12;
-  const fire=sustainable;
+  // The FIRE/sustainable number must come from the DRAWDOWN RATE, not the
+  // portfolio return. Dividing the income gap by the 7% expected return gave
+  // $457,143 - a number 43% too small (and mislabelled "sustainable spend"
+  // when it is really the capital required). The 4% drawdown rate is the
+  // input that defines this: gap / draw.
+  const incomeGap=Math.max(0, targetIncome-ss);
+  const spentTotal=incomeGap*monthsDec/12;   // dollars actually drawn from the pot
+  const sustainable = draw>0 ? incomeGap/draw : 0;   // capital required, real $
+  const fire=sustainable;                              // legacy alias for output rows
   const progress=save>0?Math.min(100,save/fire*100):0;
-  const yrsToFire=preR>infl?Math.log(Math.max(1e-6,fire/save))/Math.log(1+(1+preR)/(1+infl))-1:Infinity;
-  const realAtRet=atRet/Math.pow(1+infl,ret-age);
-  const realEnd=endBal/Math.pow(1+infl,life-age);
+  // Years to FIRE: the old formula solved b = save*(1+r)^t, which IGNORED the
+  // monthly contributions entirely - it claimed 3.1 years to FIRE while the
+  // same page shows contributions running to age 65. Solve with contributions.
+  const yrsToFire=(function(){
+    if(save>=fire) return 0;
+    if(preR<=infl) return Infinity;
+    let b=save, t=0, guard=0;
+    while(b<fire && guard<2000){ b=b*(1+mp)+contrib; t++; guard++; }
+    if(b<fire) return Infinity;
+    return t/12;
+  })();
+  // atRet and endBal are already REAL (they compounded at the inflation-
+  // adjusted rate above), so deflating them again by (1+infl)^years - as the
+  // page did - double-counted inflation: $910,892 was reported a second time
+  // as $383,824 "in today's money". Only deflate when running in nominal mode.
+  const realAtRet=real?atRet:atRet/Math.pow(1+infl,ret-age);
+  const realEnd=real?endBal:endBal/Math.pow(1+infl,life-age);
   const label=real?' (today\'s money)':' (nominal)';
   $('grid').innerHTML=[
     card('Years to retirement',(ret-age)+' yrs'),
@@ -210,7 +230,7 @@ function run(){
     card('Nest egg at retirement','$'+num(atRet,0)),
     card('Contributions','$'+num(contribs,0)),
     card('Growth','$'+num(atRet-save-contribs,0)),
-    card('Sustainable spend','$'+num(fire,0)),
+    card('Portfolio needed','$'+num(fire,0)),
     card('Target income','$'+num(targetIncome,0)),
     card('Portfolio at 90','$'+num(endBal,0)),
     card('Total withdrawn','$'+num(withdraws,0)),
@@ -230,7 +250,7 @@ function run(){
     '<div><div class="mb-1 flex justify-between text-[11px]"><span class="text-white/70">Saved vs FIRE number</span><span class="font-mono text-white/50">$'+num(save,0)+' / $'+num(fire,0)+'</span></div>'
     +'<div class="h-3 rounded-full bg-white/5"><div class="h-3 rounded-full bg-accent" style="width:'+progress.toFixed(2)+'%"></div></div></div>'
     +'<div class="pt-1 text-[11px] text-white/45">At $'+num(contrib,0)+'/mo and a '+((preR-infl)*100).toFixed(1)+'% real return you reach it in '+(isFinite(yrsToFire)&&yrsToFire>0?yrsToFire.toFixed(1)+' years':'a time you have not reached yet')+'.</div>'
-    +row('FIRE number (4% rule)','$'+num(fire*25,0))
+    +row('FIRE number ('+(draw*100).toFixed(1)+'% rule)','$'+num(fire*25,0))
     +row('Target income 70% of salary','$'+num(targetIncome,0));
   $('out').textContent=[
     'ASSUMPTIONS',
@@ -250,13 +270,14 @@ function run(){
     'DECUMULATION',
     '  Target income $'+num(targetIncome,0)+'/yr  (70% of salary)',
     '  Pension       $'+num(ss,0)+'/yr',
-    '  Portfolio need$'+num(spentTotal,0),
-    '  Sustainable   $'+num(fire,0)+'  (capital for '+(targetIncome-ss)+'/yr at '+((real?rPost:postR)*100).toFixed(1)+'%)',
+    '  Portfolio need$'+num(spentTotal,0)+'  (drawn over '+(life-ret)+' yrs)',
+    '  Portfolio need$'+num(fire,0)+'  (capital for '+incomeGap+'/yr at a '+(draw*100).toFixed(1)+'% drawdown)',
     '  END BALANCE   $'+num(endBal,0)+label,
     '    in today\'s money $'+num(realEnd,0),
     '',
     'FIRE NUMBER',
-    '  25× annual gap $'+num(fire*25,0),
+    '  Capital needed  $'+num(fire,0)+'  ('+incomeGap+'/yr gap / '+(draw*100).toFixed(1)+'% draw)',
+    '  25x annual gap  $'+num(incomeGap*25,0),
     '  Progress      '+progress.toFixed(1)+'%  ($'+num(save,0)+' of $'+num(fire,0)+')'
   ].join('\n');
 }
@@ -310,29 +331,29 @@ run();
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
   <ul class="ocurp-related-grid">
-    <li><a href="/workspace/tools/budget-50-30-20-planner/">
-      <span class="ocurp-related-n">50/30/20 Budget Planner</span>
-      <span class="ocurp-related-b">Take-home pay split into needs, wants and savings, checked against real line items you edi</span>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
     </a></li>
-    <li><a href="/workspace/tools/compound-interest/">
-      <span class="ocurp-related-n">Compound Interest</span>
-      <span class="ocurp-related-b">Project savings or investments forward with optional monthly deposits.</span>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years</span>
     </a></li>
-    <li><a href="/workspace/tools/continuous-compounding/">
-      <span class="ocurp-related-n">Continuous Compounding</span>
-      <span class="ocurp-related-b">Continuous-compounding interest and the e-folding half-life that goes with it.</span>
+    <li><a href="/workspace/tools/apy-vs-apr-calculator/">
+      <span class="ocurp-related-n">APY vs APR Calculator</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
     </a></li>
-    <li><a href="/workspace/tools/discount-calculator/">
-      <span class="ocurp-related-n">Discount Calculator</span>
-      <span class="ocurp-related-b">Apply one or two stacked discounts and see the final price and what you saved.</span>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
     </a></li>
-    <li><a href="/workspace/tools/financial-health-score/">
-      <span class="ocurp-related-n">Financial Health Score</span>
-      <span class="ocurp-related-b">Score your finances out of 100 from five weighted components - savings rate, debt to incom</span>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
     </a></li>
-    <li><a href="/workspace/tools/fuel-cost-calculator/">
-      <span class="ocurp-related-n">Fuel Cost Calculator</span>
-      <span class="ocurp-related-b">What a journey really costs at the pump, with consumption and price per litre.</span>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/tools/">See all tools →</a>

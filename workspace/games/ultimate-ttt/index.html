@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Ttt — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="Ultimate Ttt - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/ultimate-ttt/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Ultimate Ttt">
+<meta property="og:description" content="Ultimate Ttt - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/ultimate-ttt/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Ultimate Ttt on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Ultimate Ttt">
+<meta name="twitter:description" content="Ultimate Ttt - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Ultimate Ttt on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Ultimate Ttt","url":"https://ocurp.com/workspace/games/ultimate-ttt/","description":"Ultimate Ttt - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Ultimate Tic-Tac-Toe</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">STRATEGY</span><span class="ws-chip">AI</span><span class="ws-chip">9 BOARDS</span><span class="ws-chip">SOLO</span></div>
+  </div>
+
+  <section class="ws-panel p-6">
+    <div class="grid gap-6 lg:grid-cols-[1fr_230px]">
+      <div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="ut-new" class="ws-btn">New game</button>
+          <button id="ut-swap" class="ws-btn-ghost">Swap sides</button>
+          <select id="ut-ai" class="ws-btn-ghost" style="width:auto" title="AI">
+            <option value="easy">AI: casual</option>
+            <option value="greedy" selected>AI: greedy</option>
+            <option value="sharp">AI: sharp</option>
+          </select>
+          <span class="ws-chip" id="ut-turn">YOUR MOVE - ANY BOARD</span>
+          <span class="ws-chip" id="ut-status">PICK A SQUARE</span>
+        </div>
+        <div class="mt-5"><div class="ut-outer" id="ut-outer"></div></div>
+        <p class="mt-4 text-[11px] leading-relaxed text-white/45">
+          Nine 3&times;3 boards in a 3&times;3 grid. Wherever you play, your opponent
+          <span class="text-accent">must answer in that same small board</span> &mdash;
+          that is the whole rule. You win by lining three up in a row on any one
+          small board, or by taking three boards that lie in a line, column or
+          diagonal across the big grid. The one escape hatch: if the board you are
+          sent to is already full, you are free to play anywhere. Without that rule
+          the game can lock, and a game that can lock is not a game.
+        </p>
+      </div>
+      <div class="flex flex-col gap-3">
+        <div class="ut-stat"><div class="ws-label mb-1">You</div><div class="lg-num" id="ut-s0">0</div>
+          <div class="text-[10px] text-white/35">boards won</div></div>
+        <div class="ut-stat"><div class="ws-label mb-1">AI</div><div class="lg-num" id="ut-s1">0</div>
+          <div class="text-[10px] text-white/35">boards won</div></div>
+        <div class="ut-stat"><div class="ws-label mb-1">Target board</div>
+          <div class="lg-num" id="ut-dir">free</div>
+          <div class="text-[10px] text-white/35" id="ut-dirsub">first move picks it</div></div>
+        <div class="ut-stat"><div class="ws-label mb-1">Squares left</div>
+          <div class="lg-num" id="ut-left">81</div></div>
+        <div class="rounded-lg border border-white/10 bg-white/[0.04] p-3">
+          <div class="ws-label mb-2">Moves</div>
+          <pre id="ut-log" class="ws-out text-[10px] max-h-[200px] overflow-auto"></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="ws-panel mt-4 p-5">
+    <div class="ws-label mb-2">Win lines</div>
+    <pre id="ut-data" class="ws-out text-[11px]"></pre>
+  </section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen’s Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+var $=function(id){return document.getElementById(id)};
+/* mulberry32: 32-bit seeded PRNG. Every game on this page draws from a
+   seeded stream, so `__<slug>.newGame(0)` in the console replays exactly. */
+function rngOf(seed){var a=seed>>>0;return function(){a=a+0x6D2B79F5|0;
+  var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;
+  return((t^t>>>14)>>>0)/4294967296}}
+function ri(rng,n){return Math.floor(rng()*n)}
+
+/* ── nine boards, 3x3 each.  Line templates, all eight per board. ─────── */
+var UT_LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+var UT_NAME=['You','AI'];
+var UT_LEVEL={easy:0,greedy:1,sharp:2};
+var UT={};
+
+function utBi(b,r){return Math.floor(b/3)*3+Math.floor(r/3)}
+function utCi(b,i){return i%3}
+function utWinLine(board,p){
+  for(var l=0;l<UT_LINES.length;l++){var a=UT_LINES[l];
+    if(board[a[0]]===p&&board[a[1]]===p&&board[a[2]]===p)return l}
+  return -1;
+}
+function utMacros(boards,p){
+  for(var l=0;l<UT_LINES.length;l++){var a=UT_LINES[l];
+    if(boards[a[0]]===p&&boards[a[1]]===p&&boards[a[2]]===p)return l}
+  return -1;
+}
+function utBoardFull(boards,b){
+  for(var i=0;i<9;i++)if(boards[b][i]===0)return false; return true;
+}
+function utFree(boards,b){return !utBoardFull(boards,b)}
+function utEmpty(boards){var c=0;
+  for(var b=0;b<9;b++)for(var i=0;i<9;i++)if(boards[b][i]===0)c++; return c}
+function utLegal(b,i,dir){
+  if(UT.boards[b][i]!==0)return false;
+  if(dir===-1||dir===null||dir===undefined)return true;
+  return b===dir;             /* the send is compulsory unless the board is full */
+}
+function utTargets(dir){var out=[];
+  for(var b=0;b<9;b++)if(dir===-1||dir===b){if(!utBoardFull(UT.boards,b))out.push(b)}
+  if(!out.length)out=utFreeBoards(UT.boards);
+  return out;
+}
+function utFreeBoards(boards){var o=[];for(var b=0;b<9;b++)if(!utBoardFull(boards,b))o.push(b);return o}
+
+function utNew(seed,level){
+  var sd=(seed===undefined)?20261002:(seed|0);
+  var boards=[];for(var b=0;b<9;b++){var r=[];for(var i=0;i<9;i++)r.push(0);boards.push(r)}
+  Object.assign(UT,{seed:sd,rng:rngOf(sd),boards:boards,dir:-1,turn:0,level:level||'greedy',
+      over:false,winner:null,kind:null,won:[0,0],moves:0,log:[],auto:false});
+  utSay('New game. You open anywhere.');
+  utRender();
+}
+function utSay(s){UT.log.unshift(s);if(UT.log.length>50)UT.log.pop()}
+function utPlay(b,i){
+  if(UT.over||UT.auto)return null;
+  if(UT.boards[b][i]!==0)return null;
+  if(UT.dir!==-1&&UT.dir!==b&&!utBoardFull(UT.boards,UT.dir))return null;
+  var p=UT.turn; UT.boards[b][i]=p+1; UT.moves++;
+  utSay((p===0?'You':'AI')+' played board '+(b+1)+' cell '+(i+1));
+  var wl=utWinLine(UT.boards[b],p+1);
+  if(wl>=0){ UT.over=true;UT.winner=p;UT.kind='local';
+    UT.won[p]++; utSay((p===0?'You':'AI')+' won board '+(b+1)+' on a line'); utRender(); return 'local'; }
+  var ml=utMacros(UT.boards,p+1);
+  if(ml>=0){ UT.over=true;UT.winner=p;UT.kind='macro';
+    utSay((p===0?'You':'AI')+' won the macro grid on line '+ml); utRender(); return 'macro'; }
+  if(utEmpty(UT.boards)===0){ UT.over=true;UT.winner=null;UT.kind='draw';
+    utSay('Board full, no line - draw'); utRender(); return 'draw'; }
+  UT.dir=utBoardFull(UT.boards,b)?-1:b;
+  UT.turn=1-p; utRender(); return 'ok';
+}
+/* 1-ply search over every legal square, scored from the opponent's point of
+   view. `sharp` also reads one level deeper, which is still bounded. */
+function utScoreMove(b,i,p){
+  var boards=UT.boards.map(function(x){return x.slice()});
+  boards[b][i]=p+1;
+  if(utWinLine(boards[b],p+1)>=0)return 100000;
+  if(utMacros(boards,p+1)>=0)return 90000;
+  if(utWinLine(boards[b],(2-p))>=0)return -80000;      /* let them take it? no */
+  var mine=utThreat(boards,b,p+1),theirs=utThreat(boards,b,2-p);
+  var myMac=utBoardNear(boards,b,p+1),thMac=utBoardNear(boards,b,2-p);
+  var s=mine*40+theirs*12+myMac*18+thMac*6;
+  if(utBoardFull(boards,b))s-=5;
+  return s;
+}
+function utThreat(boards,b,p){var n=0;
+  for(var l=0;l<UT_LINES.length;l++){var a=UT_LINES[l],c=0;
+    for(var k=0;k<3;k++)if(boards[b][a[k]]===p)c++;
+    if(c===2)n++} return n;
+}
+function utBoardNear(boards,b,p){
+  /* how close is board b to a macro win for p? count empty boards in its row,
+     column and both diagonals, scored by how many of them p already holds. */
+  var r=Math.floor(b/3),c=b%3,n=0,groups=[[[0,1,2],[3,4,5],[6,7,8]],[[0,3,6],[1,4,7],[2,5,8]],
+    [[0,4,8],[2,4,6]]];
+  for(var g=0;g<3;g++)for(var l=0;l<3;l++){var gr=groups[g][l];
+    if(gr.indexOf(b)<0)continue;
+    var have=0,empty=0;
+    for(var k=0;k<3;k++){if(gr[k]===b)continue;
+      if(boards[gr[k]][0]!==0&&utWinLine(boards[gr[k]],p)>=0)have++;
+      else if(!utBoardFull(boards,gr[k]))empty++;
+      else n-=6;}
+    if(have===2)n+=10; else if(have===1)n+=3; else n-=empty>1?2:0;}
+  return n;
+}
+function utAIMove(){
+  var p=UT.turn,dir=UT.dir,best=null,bk=-Infinity;
+  var boards=UT.boards;
+  for(var b=0;b<9;b++){
+    if(dir!==-1&&b!==dir&&!utBoardFull(boards,dir))continue;
+    for(var i=0;i<9;i++){
+      if(boards[b][i]!==0)continue;
+      var s;
+      if(UT.level==='easy') s=UT.rng()*10;
+      else if(UT.level==='greedy') s=utScoreMove(b,i,p)+UT.rng()*3;
+      else s=utScoreMove(b,i,p)*2+utDoubleLook(b,i,p)+UT.rng();
+      if(s>bk){bk=s;best=[b,i]}
+    }
+  }
+  return best;
+}
+function utDoubleLook(b,i,p){
+  /* 'sharp' only: after my square, would the opponent have an immediate win on
+     the board I just handed them?  Priced in, so the AI is beatable. */
+  var boards=UT.boards.map(function(x){return x.slice()});
+  boards[b][i]=p+1;
+  var worst=0;
+  for(var j=0;j<9;j++){if(boards[b][j]!==0)continue;
+    boards[b][j]=2-p; if(utWinLine(boards[b],2-p)>=0)worst+=12; boards[b][j]=0}
+  return -worst;
+}
+UT.autoPlay=function(maxMoves){
+  var g=maxMoves||200,i=0;
+  while(!UT.over&&i++<g){
+    if(UT.turn===0){
+      /* the "human" is a 1-ply player too, so an autopilot run is a real game */
+      var bk=-Infinity,bm=null;
+      for(var b=0;b<9;b++){ if(UT.dir!==-1&&b!==UT.dir&&!utBoardFull(UT.boards,UT.dir))continue;
+        for(var i2=0;i2<9;i2++){ if(UT.boards[b][i2]!==0)continue;
+          var s=utScoreMove(b,i2,1)+UT.rng()*4; if(s>bk){bk=s;bm=[b,i2]}}}
+      if(!bm)break;
+      UT.auto=true;utPlay(bm[0],bm[1]);UT.auto=false;
+    } else {
+      var m=utAIMove(); if(!m)break;
+      UT.auto=true;utPlay(m[0],m[1]);UT.auto=false;
+    }
+  }
+  utRender();
+  return {over:UT.over,winner:UT.winner,kind:UT.kind,moves:UT.moves,iterations:i};
+};
+UT.state=function(){return {boards:UT.boards.map(function(b){return b.slice()}),dir:UT.dir,
+  turn:UT.turn,over:UT.over,winner:UT.winner,kind:UT.kind,won:UT.won.slice(),
+  moves:UT.moves,empty:utEmpty(UT.boards),level:UT.level,seed:UT.seed}};
+
+function utRender(){
+  if(!UT)return;
+  var h='';
+  for(var b=0;b<9;b++){
+    var lock=UT.dir!==-1&&UT.dir!==b&&!utBoardFull(UT.boards,UT.dir);
+    var sb='';
+    for(var i=0;i<9;i++){
+      var v=UT.boards[b][i],mark=v===1?'p0':v===2?'p1':'';
+      sb+='<div class="ut-s '+mark+'" data-b="'+b+'" data-i="'+i+'">'
+        +(v===1?'\u2715':v===2?'\u25cb':'')+'</div>';
+    }
+    h+='<div class="ut-b'+(lock?' locked':'')+'" data-b="'+b+'">'
+      +'<span class="ut-i">'+(b+1)+'</span>'+sb+'</div>';
+  }
+  $('ut-outer').innerHTML=h;
+  /* Wire every SQUARE directly, not every board: the board wrapper gets the
+     click too, and a handler on the wrapper that only forwards to its first
+     free cell would make the page look half-broken. */
+  var cells=$('ut-outer').getElementsByClassName('ut-s');
+  for(var k=0;k<cells.length;k++){var el=cells[k];
+    var bi=+el.getAttribute('data-b'),ii=+el.getAttribute('data-i');
+    el.style.cursor=(UT.over||UT.auto)?'default':'pointer';
+    el.onclick=function(){utPlay(bi,ii)};
+  }
+  $('ut-s0').textContent=UT.won[0];$('ut-s1').textContent=UT.won[1];
+  $('ut-dir').textContent=UT.dir===-1?'free':'board '+(UT.dir+1);
+  $('ut-dirsub').textContent=UT.dir===-1?'first move picks it'
+    :(utBoardFull(UT.boards,UT.dir)?'that board is full - free choice':'you must play there');
+  $('ut-left').textContent=utEmpty(UT.boards);
+  $('ut-turn').textContent=UT.over?(UT.winner===null?'DRAW':UT_NAME[UT.winner].toUpperCase()+' WINS'):
+    (UT.turn===0?'YOUR MOVE - '+(UT.dir===-1?'ANY BOARD':'BOARD '+(UT.dir+1)):'AI THINKING');
+  $('ut-status').textContent=UT.over?UT.kind.toUpperCase():(UT.dir===-1?'PICK ANY SQUARE':'ANSWER IN BOARD '+(UT.dir+1));
+  $('ut-log').textContent=UT.log.join('\n');
+  $('ut-data').textContent=
+    'small boards        9, each 3x3 = 81 squares total\n'
+   +'local win lines     8 per board (3 rows, 3 columns, 2 diagonals) = 72\n'
+   +'macro win lines     8 across the 3x3 board grid (same 8 templates)\n'
+   +'directed rule       opponent must answer in the board you just played,\n'
+   +'                    UNLESS that board is full (the anti-lock rule)\n'
+   +'first square        board 1, square 1 - always free\n'
+   +'AI level            '+UT.level+'   (1-ply'+(UT.level==='sharp'?'+1-ply look-ahead':'')+', beatable)\n'
+   +'seed                '+UT.seed;
+}
+$('ut-new').onclick=function(){utNew(undefined,$('ut-ai').value)};
+$('ut-ai').onchange=function(){UT.level=$('ut-ai').value;utRender()};
+$('ut-swap').onclick=function(){utNew(undefined,UT.level)};
+utNew(5,'greedy');
+
+window.__ultimate_ttt={newGame:function(seed,level){utNew(seed,level);return this.state()},
+  state:UT.state,play:utPlay,aiMove:utAIMove,autoPlay:UT.autoPlay,render:utRender,
+  lines:UT_LINES,winLine:utWinLine,macros:utMacros,boardFull:utBoardFull,
+  empty:utEmpty,scoreMove:utScoreMove,
+  consts:{BOARDS:9,CELLS:81,LOCAL_LINES:8*9,MACRO_LINES:8,LEVELS:UT_LEVEL}};
+</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  /* Watch the usual output nodes; report a short, useful summary. */
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      /* A game node is a label like "Score 12" - read it out as it stands.
+         A tool node is raw output - a character count is the useful summary. */
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+
+<style>
+<style>
+  .ut-outer{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+    gap:7px;width:min(100%,540px);aspect-ratio:1/1;margin:0 auto}
+  .ut-b{border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);
+    display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2px;
+    padding:3px;box-sizing:border-box;position:relative;cursor:pointer}
+  .ut-b.locked{opacity:.55}
+  .ut-b.won{border-color:rgba(255,95,31,.75);background:rgba(255,95,31,.09)}
+  .ut-b .ut-i{position:absolute;top:1px;right:3px;font:900 6px 'IBM Plex Sans',monospace;
+    color:rgba(255,255,255,.22)}
+  .ut-s{border-radius:3px;background:rgba(255,255,255,.05);display:flex;align-items:center;
+    justify-content:center;font:800 15px 'Manrope',sans-serif}
+  .ut-s.p0{color:#FF5F1F}.ut-s.p1{color:#f2efe9}
+  .ut-s.a0{color:#FF5F1F}.ut-s.a1{color:#a8a8a8}
+  .ut-s.win{background:rgba(255,95,31,.3)}
+  .ut-s.legal{box-shadow:inset 0 0 0 1px rgba(255,95,31,.7)}
+  .ut-stat{border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);padding:.6rem .7rem}
+</style>
+</style>
+<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/play.js?v=20261002c" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

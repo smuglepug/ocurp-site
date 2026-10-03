@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KenKen — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Calcudoku: every row and column holds 1..n once. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/kenken/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="KenKen">
+<meta property="og:description" content="Calcudoku: every row and column holds 1..n once. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/kenken/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="KenKen on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="KenKen">
+<meta name="twitter:description" content="Calcudoku: every row and column holds 1..n once. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="KenKen on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"KenKen","url":"https://ocurp.com/workspace/games/kenken/","description":"Calcudoku: every row and column holds 1..n once. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">KenKen</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">MATH</span></div>
+        </div>
+      
+<style>
+  .kk-board{ display:grid; gap:0; width:100%; max-width:520px;
+    border:2px solid rgba(255,255,255,.55); background:rgba(255,255,255,.55); }
+  .kk-cell{ position:relative; display:flex; align-items:center; justify-content:center;
+    background:#0b0b0b; cursor:pointer; user-select:none; min-height:52px; overflow:hidden; }
+  .kk-cell:hover{ background:#151515; }
+  .kk-lab{ position:absolute; top:2px; left:4px;
+    font-family:'IBM Plex Sans',monospace; font-weight:700; line-height:1;
+    color:rgba(255,255,255,.55); pointer-events:none; white-space:nowrap; }
+  .kk-val{ font-family:'IBM Plex Sans',monospace; font-weight:800; line-height:1;
+    color:#fff; }
+  .kk-sel{ box-shadow:inset 0 0 0 2px #FF5F1F; }
+  .kk-dup{ background:rgba(255,95,31,.16); }
+  .kk-dup .kk-val{ color:#FF5F1F; }
+  .kk-okcage{ background:#0f0f0f; }
+  .kk-badcage{ background:rgba(255,95,31,.28); }
+  .kk-win{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(5,5,5,.92); font-family:'Manrope',sans-serif; font-weight:800;
+    letter-spacing:.2em; color:#FF5F1F; text-align:center; padding:1rem; font-size:13px; }
+</style>
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="kk-s3" class="ws-btn">3x3</button>
+      <button id="kk-s4" class="ws-btn-ghost">4x4</button>
+      <button id="kk-s5" class="ws-btn-ghost">5x5</button>
+      <button id="kk-s6" class="ws-btn-ghost">6x6</button>
+      <button id="kk-new" class="ws-btn-ghost">New puzzle</button>
+      <button id="kk-check" class="ws-btn-ghost">Check</button>
+      <span class="ws-chip">CLICK A CELL THEN TYPE 1-6</span>
+    </div>
+
+    <p class="mt-4 max-w-2xl text-sm text-white/50">
+      Every row and every column holds 1 to n once each. The little label in
+      each cage is the arithmetic its cells must satisfy: <span class="text-white/80">12+</span>
+      sums to twelve, <span class="text-white/80">3&times;</span> multiplies to three,
+      <span class="text-white/80">7&minus;</span> differ by seven and
+      <span class="text-white/80">4&divide;</span> divides evenly into four. A cage
+      of one cell is just that cell's own number.
+    </p>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+      <div>
+        <div id="kk-board" class="kk-board"></div>
+        <p class="mt-2 text-[10px] text-white/35">
+          Click a cell to select it, then type a digit. Backspace clears it,
+          arrow keys move. Every puzzle is checked for a single solution before
+          it reaches you.
+        </p>
+      </div>
+
+      <div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Filled</div>
+            <div class="font-display text-xl font-black text-white" id="kk-filled">0/0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Cages</div>
+            <div class="font-display text-xl font-black text-white" id="kk-cages">0/0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Time</div>
+            <div class="font-display text-xl font-black text-white" id="kk-time">0:00</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Status</div>
+            <div class="font-display text-sm font-black text-white" id="kk-status">Loading</div></div>
+        </div>
+
+        <div class="mt-4">
+          <div class="ws-label mb-1">Report</div>
+          <div id="kk-check-out" class="ws-out"></div>
+        </div>
+        <div class="mt-4">
+          <div class="ws-label mb-1">Last finding</div>
+          <div id="kk-why" class="text-xs text-white/45">Pick a cell and start typing.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+var $=function(id){return document.getElementById(id)};
+var kkG=null, kkT0=0, kkTick=null, kkSel=0;
+
+function kkShuffle(a){
+  for(var i=a.length-1;i>0;i--){var j=(Math.random()*(i+1))|0,t=a[i];a[i]=a[j];a[j]=t;}
+  return a;
+}
+function kkIdx(n){var o=[];for(var i=0;i<n*n;i++)o.push(i);return kkShuffle(o);}
+
+/* A Latin square of order n: every row and every column holds 1..n exactly
+   once, by construction. The player's row/column rule is therefore a property
+   of the ANSWER, not something the generator has to repair afterwards. */
+function kkLatin(n){
+  var base=[],r,c;
+  for(r=0;r<n;r++){base.push([]);for(c=0;c<n;c++)base[r].push((r+c)%n);}
+  var rows=kkShuffle(base.slice(0,n).map(function(_,i){return i;}));
+  var cols=kkShuffle(base.slice(0,n).map(function(_,i){return i;}));
+  var syms=kkShuffle(base.slice(0,n).map(function(_,i){return i;}));
+  var out=[];
+  for(r=0;r<n;r++){out.push([]);for(c=0;c<n;c++)out[r].push(syms[base[rows[r]][cols[c]]]+1);}
+  return out;
+}
+
+/* Grow each cage one orthogonally adjacent cell at a time, so every cage is a
+   connected blob and no cage can be a shape the player cannot read off the
+   borders. */
+function kkPartition(n,maxSize){
+  var order=kkIdx(n), cageOf=new Array(n*n).fill(-1), cages=[];
+  for(var k=0;k<order.length;k++){
+    var seed=order[k];
+    if(cageOf[seed]>=0) continue;
+    var id=cages.length;
+    var want=1+((Math.random()*maxSize)|0);
+    var cells=[seed]; cageOf[seed]=id;
+    var guard=0;
+    while(cells.length<want && guard++<400){
+      var cand=[];
+      for(var m=0;m<cells.length;m++){
+        var c=cells[m]%n, r=(cells[m]/n)|0;
+        if(r>0&&cageOf[cells[m]-n]<0) cand.push(cells[m]-n);
+        if(r<n-1&&cageOf[cells[m]+n]<0) cand.push(cells[m]+n);
+        if(c>0&&cageOf[cells[m]-1]<0) cand.push(cells[m]-1);
+        if(c<n-1&&cageOf[cells[m]+1]<0) cand.push(cells[m]+1);
+      }
+      if(!cand.length) break;
+      var pick=cand[(Math.random()*cand.length)|0];
+      cageOf[pick]=id; cells.push(pick);
+    }
+    cages.push(cells);
+  }
+  return {cageOf:cageOf,cages:cages};
+}
+
+/* Every (operation, target) pair this cage's own values can actually produce.
+   Nothing is ever published that the cells cannot deliver. */
+function kkOpsFor(vals){
+  var out=[],i,sum=0,prod=1;
+  for(i=0;i<vals.length;i++){sum+=vals[i];prod*=vals[i];}
+  /* A one-cell cage is that cell's own number. It is published as a single
+     entry, because sum and product of one value are the same number and a
+     two-way-true clue is exactly the ambiguity this generator rejects. */
+  if(vals.length===1) return [{op:'+',target:vals[0]}];
+  out.push({op:'+',target:sum});
+  if(vals.length===2){
+    var a=vals[0],b=vals[1];
+    out.push({op:'*',target:a*b});
+    var d=Math.abs(a-b);
+    out.push({op:'-',target:d});
+    if(d!==0){ /* a difference of 0 is legal but makes a useless clue */
+      var hi=Math.max(a,b), lo=Math.min(a,b);
+      if(hi%lo===0) out.push({op:'/',target:hi/lo});
+    }
+  }else{
+    out.push({op:'*',target:prod});
+  }
+  return out;
+}
+/* Drop any operation whose target another operation already delivers, keeping
+   the first in preference order (+, then *, then -, then /). A 2-cell cage
+   holding 1 and b is the case that matters: 1*b and b/1 are the SAME number,
+   so the cage publishes the sum or the difference instead. Publishing one
+   true label beats throwing the whole attempt away. */
+function kkUniqueOps(vals){
+  var pairs=kkOpsFor(vals), out=[], seen={};
+  for(var i=0;i<pairs.length;i++){
+    var t=pairs[i].target;
+    if(seen[t]!==undefined) continue;
+    seen[t]=1; out.push(pairs[i]);
+  }
+  return out;
+}
+function kkOpHolds(op,target,vals){
+  var i,s=0,p=1;
+  for(i=0;i<vals.length;i++){s+=vals[i];p*=vals[i];}
+  if(op==='+') return s===target;
+  if(op==='*') return p===target;
+  if(op==='-'){
+    if(vals.length===1) return vals[0]===target;
+    var acc=vals[0];
+    for(i=1;i<vals.length;i++) acc=Math.abs(acc-vals[i]);
+    return acc===target;
+  }
+  if(op==='/'){
+    if(vals.length<2) return false;
+    /* A two-cell cage divides the larger by the smaller, which is the same
+       thing kkOpsFor published the target from. Folding left to right instead
+       would reject 2/6 as a non-integer while the label said 6/2 = 3, which is
+       how a cage with a valid answer was made unsatisfiable. */
+    if(vals.length===2){
+      var hi=Math.max(vals[0],vals[1]), lo=Math.min(vals[0],vals[1]);
+      if(lo===0||hi%lo!==0) return false;
+      return hi/lo===target;
+    }
+    var r=vals[0];
+    for(i=1;i<vals.length;i++){ if(r%vals[i]!==0) return false; r=r/vals[i]; }
+    return r===target;
+  }
+  return false;
+}
+
+/* Independent solution counter: assign one cage at a time, most-constrained
+   first, and stop at two solutions. Two is all it takes to know a puzzle is
+   ambiguous. */
+function kkCountSolutions(cageLists,cages,n,limit){
+  var order=[],i;
+  for(i=0;i<cages.length;i++) order.push(i);
+  order.sort(function(a,b){return cageLists[a].length-cageLists[b].length;});
+  var grid=new Array(n*n).fill(0), count=0, first=null;
+  function fits(cells,opt){
+    for(var t=0;t<cells.length;t++){
+      var idx=cells[t], r=(idx/n)|0, c=idx%n, v=opt[t];
+      if(grid[idx]!==0) return false;
+      for(var k=0;k<n;k++){
+        if(grid[r*n+k]===v) return false;
+        if(grid[k*n+c]===v) return false;
+      }
+    }
+    return true;
+  }
+  function rec(k){
+    if(count>=limit) return;
+    if(k===order.length){ count++; if(first===null) first=grid.slice(); return; }
+    var ci=order[k], cells=cages[ci], opts=cageLists[ci];
+    for(var oi=0;oi<opts.length;oi++){
+      var o=opts[oi];
+      if(!fits(cells,o)) continue;
+      for(var t2=0;t2<cells.length;t2++) grid[cells[t2]]=o[t2];
+      rec(k+1);
+      for(var t3=0;t3<cells.length;t3++) grid[cells[t3]]=0;
+      if(count>=limit) return;
+    }
+  }
+  rec(0);
+  return {count:count,first:first};
+}
+
+/* One puzzle: Latin square -> cage partition -> labels -> uniqueness proof. */
+function kkGenerate(n){
+  var maxSize=(n<=4)?3:4;
+  /* 6x6 rejects most attempts as ambiguous, so the budget is generous; the
+     cost is milliseconds and it buys a puzzle with exactly one answer. */
+  for(var attempt=0;attempt<2500;attempt++){
+    var sol=kkLatin(n);
+    var part=kkPartition(n,maxSize);
+    var cages=[], seen={}, bad=false;
+    for(var ci=0;ci<part.cages.length;ci++){
+      var cells=part.cages[ci];
+      var vals=[];
+      for(var q=0;q<cells.length;q++) vals.push(sol[(cells[q]/n)|0][cells[q]%n]);
+      /* Every published label is one the cage's own cells can produce, and no
+         two operations produce that same number (kkUniqueOps prunes those). */
+      var pairs=kkUniqueOps(vals);
+      if(pairs.length<1){ bad=true; break; }
+      var pick=pairs[(Math.random()*pairs.length)|0];
+      var key=pick.op+'|'+pick.target;
+      if(seen[key]) bad=true;      /* a repeated label reads as a repeat clue */
+      if(bad) break;
+      seen[key]=1;
+      cages.push({cells:cells,target:pick.target,op:pick.op});
+    }
+    if(bad) continue;
+    var lists=[], listsOK=true;
+    for(var li=0;li<cages.length;li++){
+      var opts=kkOptionsFor(cages[li].cells,cages[li].op,cages[li].target,n);
+      if(!opts.length){ listsOK=false; break; }
+      lists.push(opts);
+    }
+    if(!listsOK) continue;
+    var res=kkCountSolutions(lists,cages.map(function(cg){return cg.cells;}),n,2);
+    /* Exactly one solution, or throw the whole grid away. */
+    if(res.count===1) return {sol:sol,cages:cages,cageOf:part.cageOf,solutions:res.count};
+  }
+  return null;
+}
+function kkOptionsFor(cells,op,target,n){
+  var size=cells.length, opts=[], co=[];
+  for(var i=0;i<size;i++) co.push({r:(cells[i]/n)|0,c:cells[i]%n});
+  (function rec(k,acc){
+    if(k===size){ if(kkOpHolds(op,target,acc)) opts.push(acc.slice()); return; }
+    for(var v=1;v<=n;v++){
+      var ok=true;
+      for(var t=0;t<k;t++)
+        if((co[t].r===co[k].r||co[t].c===co[k].c)&&acc[t]===v){ok=false;break;}
+      if(!ok) continue;
+      acc.push(v); rec(k+1,acc); acc.pop();
+    }
+  })(0,[]);
+  return opts;
+}
+
+/* ---------------------------------------------------------------- the game */
+function kkLabel(cg){
+  if(cg.cells.length===1) return String(cg.target);
+  return cg.target+({'+':'+','*':String.fromCharCode(215),'-':String.fromCharCode(8722),'/':String.fromCharCode(247)})[cg.op];
+}
+function kkHeadCell(cg,n){
+  var best=cg.cells[0];
+  for(var i=1;i<cg.cells.length;i++){
+    var a=(best/n)|0, b=(cg.cells[i]/n)|0;
+    if(b<a||(b===a&&(cg.cells[i]%n)<(best%n))) best=cg.cells[i];
+  }
+  return best;
+}
+function kkRowDup(i){
+  var g=kkG,n=g.n,c=i%n,r=(i/n)|0,k,seen={},d=0;
+  for(k=0;k<n;k++){ var a=g.grid[r*n+k]; if(a){ if(seen[a]) d=1; seen[a]=1; } }
+  for(k=0;k<n;k++){ var b=g.grid[k*n+c]; if(b){ if(seen[b]) d=1; seen[b]=1; } }
+  return d;
+}
+function kkCageState(ci){
+  var g=kkG,cg=g.cages[ci],filled=0,i;
+  for(i=0;i<cg.cells.length;i++) if(g.grid[cg.cells[i]]) filled++;
+  if(filled<cg.cells.length) return 'open';
+  var vals=[];
+  for(i=0;i<cg.cells.length;i++) vals.push(g.grid[cg.cells[i]]);
+  return kkOpHolds(cg.op,cg.target,vals)?'ok':'bad';
+}
+function kkSolved(){
+  /* The win test, derived from the grid in front of the player and never from
+     the stored answer: full grid AND every row/column a permutation of 1..n
+     AND every cage satisfied. A full grid with one wrong digit fails here. */
+  var g=kkG,n=g.n,r,c,k,filled=0;
+  for(var i=0;i<n*n;i++) if(g.grid[i]) filled++;
+  if(filled<n*n) return false;
+  for(r=0;r<n;r++){
+    var seen={};
+    for(c=0;c<n;c++){ var v=g.grid[r*n+c]; if(!v||seen[v]) return false; seen[v]=1; }
+  }
+  for(c=0;c<n;c++){
+    var seen2={};
+    for(r=0;r<n;r++){ var v2=g.grid[r*n+c]; if(!v2||seen2[v2]) return false; seen2[v2]=1; }
+  }
+  for(k=0;k<g.cages.length;k++) if(kkCageState(k)!=='ok') return false;
+  return true;
+}
+function kkEnter(i,v){
+  var g=kkG; if(!g||g.won) return 'ignored';
+  g.grid[i]=v||0;
+  g.why=(v&&kkRowDup(i))?'that digit already sits in this row or column':'';
+  kkDraw();
+  if(kkSolved()){ g.won=true; g.why=''; kkDraw(); }
+  return g.won?'won':'ok';
+}
+function kkCheck(){
+  var g=kkG; if(!g) return '';
+  var r,c,k,i,first='';
+  for(r=0;r<g.n;r++) for(c=0;c<g.n;c++){ i=r*g.n+c; if(kkRowDup(i)&&!first) first='row '+(r+1)+' and column '+(c+1)+' both hold a repeated digit'; }
+  for(k=0;k<g.cages.length;k++){
+    if(kkCageState(k)==='bad'&&!first){
+      var cg=g.cages[k];
+      first='the cage reading '+kkLabel(cg)+' does not come out at '+cg.target;
+    }
+  }
+  var empty=-1;
+  for(i=0;i<g.n*g.n;i++) if(!g.grid[i]){ empty=i; break; }
+  if(!first){
+    if(g.won) return 'every row, every column and every cage checks out';
+    if(empty>=0){
+      var r2=(empty/g.n)|0, c2=empty%g.n;
+      return 'nothing is wrong yet - the first empty cell is row '+(r2+1)+' column '+(c2+1);
+    }
+    return 'nothing is wrong yet - but a cage is still open';
+  }
+  return first;
+}
+function kkDraw(){
+  var g=kkG; if(!g) return;
+  var n=g.n,board=$('kk-board'),h='',r,c,i,fs;
+  fs=n<=3?26:(n===4?22:16);
+  board.style.gridTemplateColumns='repeat('+n+',minmax(0,1fr))';
+  for(r=0;r<n;r++) for(c=0;c<n;c++){
+    i=r*n+c;
+    var ci=g.cageOf[i], cg=g.cages[ci];
+    var cls='kk-cell';
+    if(kkRowDup(i)) cls+=' kk-dup';
+    else if(kkCageState(ci)==='ok') cls+=' kk-okcage';
+    else if(kkCageState(ci)==='bad') cls+=' kk-badcage';
+    if(i===kkSel) cls+=' kk-sel';
+    /* thick border = a different cage is next door, thin border = same cage */
+    var st='';
+    var t=(r===0)?2:(g.cageOf[i-n]!==ci?2:1);
+    var l=(c===0)?2:(g.cageOf[i-1]!==ci?2:1);
+    var b=(r===n-1)?2:(g.cageOf[i+n]!==ci?2:1);
+    var rt=(c===n-1)?2:(g.cageOf[i+1]!==ci?2:1);
+    var col=t===2?'rgba(255,255,255,.6)':'rgba(255,255,255,.16)';
+    st+='border-top:'+t+'px solid '+col+';';
+    st+='border-left:'+l+'px solid '+col+';';
+    st+='border-bottom:'+b+'px solid rgba(255,255,255,.6);';
+    st+='border-right:'+rt+'px solid rgba(255,255,255,.6);';
+    var lab=(kkHeadCell(cg,n)===i)?'<span class="kk-lab" style="font-size:'+Math.max(9,fs-9)+'px">'+kkLabel(cg)+'</span>':'';
+    h+='<button class="'+cls+'" data-i="'+i+'" style="'+st+'">'+lab
+      +'<span class="kk-val" style="font-size:'+fs+'px">'+(g.grid[i]||'')+'</span></button>';
+  }
+  if(g.won) h+='<div class="kk-win">SOLVED - every row, every column and every cage checks out</div>';
+  board.innerHTML=h;
+  var filled=0;
+  for(i=0;i<n*n;i++) if(g.grid[i]) filled++;
+  $('kk-filled').textContent=filled+'/'+(n*n);
+  var okc=0;
+  for(i=0;i<g.cages.length;i++) if(kkCageState(i)==='ok') okc++;
+  $('kk-cages').textContent=okc+'/'+g.cages.length;
+  $('kk-status').textContent=g.won?'Solved':'Playing';
+  $('kk-check-out').textContent=
+      'size      '+n+' x '+n+'\n'
+    +'cages     '+g.cages.length+'\n'
+    +'filled    '+filled+' of '+(n*n)+'\n'
+    +'cages met '+okc+' of '+g.cages.length+'\n'
+    +'solutions '+g.solutions+'\n'
+    +'check     '+kkCheck()+'\n'
+    +'status    '+(g.won?'solved':'in play');
+  $('kk-why').textContent=g.why||'Pick a cell and start typing.';
+}
+function kkReset(n){
+  var made=null,tries=0;
+  while(!made&&tries<4){ made=kkGenerate(n); tries++; }
+  if(!made){ kkG=null; return null; }
+  kkG={n:n,sol:made.sol,cages:made.cages,cageOf:made.cageOf,solutions:made.solutions,
+       grid:new Array(n*n).fill(0),won:false,why:''};
+  kkSel=0; kkT0=Date.now();
+  if(kkTick) clearInterval(kkTick);
+  kkTick=setInterval(function(){
+    if(!kkG||kkG.won) return;
+    var s=Math.floor((Date.now()-kkT0)/1000);
+    var e=$('kk-time');
+    if(e) e.textContent=Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);
+  },1000);
+  kkDraw();
+  return kkG;
+}
+$('kk-board').addEventListener('click',function(e){
+  var b=e.target.closest('[data-i]'); if(!b) return;
+  kkSel=+b.getAttribute('data-i'); kkDraw();
+});
+document.addEventListener('keydown',function(e){
+  if(!kkG||kkG.won) return;
+  var n=kkG.n, r=(kkSel/n)|0, c=kkSel%n, k=e.key;
+  if(k>='1'&&k<=String(n)){ e.preventDefault(); kkEnter(kkSel,+k); return; }
+  if(k==='Backspace'||k==='Delete'||k==='0'){ e.preventDefault(); kkEnter(kkSel,0); return; }
+  if(k==='ArrowUp'){ r=(r+n-1)%n; }
+  else if(k==='ArrowDown'){ r=(r+1)%n; }
+  else if(k==='ArrowLeft'){ c=(c+n-1)%n; }
+  else if(k==='ArrowRight'){ c=(c+1)%n; }
+  else return;
+  e.preventDefault(); kkSel=r*n+c; kkDraw();
+});
+$('kk-s3').addEventListener('click',function(){kkReset(3)});
+$('kk-s4').addEventListener('click',function(){kkReset(4)});
+$('kk-s5').addEventListener('click',function(){kkReset(5)});
+$('kk-s6').addEventListener('click',function(){kkReset(6)});
+$('kk-new').addEventListener('click',function(){kkReset(kkG?kkG.n:4)});
+$('kk-check').addEventListener('click',function(){
+  if(!kkG) return;
+  var r=kkCheck();
+  kkG.why = r.indexOf('does not come out')>=0 ? r : (r.indexOf('repeated')>=0 ? r : '');
+  kkDraw();
+});
+
+/* Test hook. The solution is exposed for the browser test only; nothing in the
+   page reads it to judge the grid -- kkSolved() derives everything from what
+   the player typed. */
+window.__kenken={
+  size:function(n){ return !!kkReset(n); },
+  state:function(){
+    if(!kkG) return {ready:false};
+    var g=kkG,filled=0,i,labels=[];
+    for(i=0;i<g.n*g.n;i++) if(g.grid[i]) filled++;
+    for(i=0;i<g.cages.length;i++) labels.push(kkLabel(g.cages[i]));
+    return {ready:true,n:g.n,cages:g.cages.length,labels:labels,
+            solutionCount:g.solutions,filled:filled,cells:g.n*g.n,
+            won:g.won,check:kkCheck(),
+            text:(document.body.innerText||'')};
+  },
+  solution:function(){ if(!kkG) return null; return g_flat(); },
+  set:function(i,v){ kkSel=i; return kkEnter(i,v); },
+  reset:function(n){ return !!kkReset(n||4); }
+};
+function g_flat(){
+  var g=kkG,o=[],r,c;
+  for(r=0;r<g.n;r++){ var row=[]; for(c=0;c<g.n;c++) row.push(g.sol[r][c]); o.push(row); }
+  return o;
+}
+kkReset(4);
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

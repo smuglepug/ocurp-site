@@ -94,9 +94,12 @@ tailwind.config = { theme: { extend: {
      the page instead of steering the game), a Fullscreen control that requests
      real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
      desktop. Regenerate every game page after editing either file. -->
-<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
-<script src="/workspace/play.js?v=20261002c" defer></script>
-<script>
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>var TERMS = [["10","10 years"],["15","15 years"],["20","20 years"],
+           ["25","25 years"],["30","30 years"],["35","35 years"],
+           ["40","40 years"]];
+
 function cp(btn){
   var el=document.getElementById(btn.getAttribute('data-t')||'out');
   var t=el?el.textContent:'';
@@ -151,17 +154,25 @@ function schedule(principal, annualRatePct, years, extra){
   var n = Math.max(1, Math.round(years*12));
   var i = annualRatePct/100/12;
   var m = payment(principal, annualRatePct, years);
-  var bal = principal, out = [], totInt = 0, totPrin = 0;
-  for(var k=0;k<n;k++){
+  // An extra principal payment clears the loan EARLY. The loop used to run a
+  // fixed n months regardless, so the balance went deeply negative and
+  // interest accrued on the NEGATIVE balance - which subtracted itself from
+  // total interest (300k/6.5%/30y + 500/mo extra reported 9,544 of interest
+  // instead of the correct 202,874). Stop at payoff instead.
+  var bal = principal, out = [], totInt = 0, totPrin = 0, k = 0;
+  for(;k<n;k++){
     var interest = bal*i;
     var prin, payAmt;
     if(k === n-1){ prin = bal; payAmt = bal+interest; }
     else { prin = m+extra-interest; payAmt = prin+interest; }
+    if(prin > bal) prin = bal;                  // never overpay the balance
+    payAmt = prin + interest;
     bal = bal-prin;
     out.push({n:k+1, interest:interest, principal:prin, payment:payAmt, balance:bal});
     totInt += interest; totPrin += prin;
+    if(bal <= 0.005) break;
   }
-  return {rows:out, months:n, payment:m, totalInterest:totInt,
+  return {rows:out, months:out.length, scheduledMonths:n, payment:m, totalInterest:totInt,
           totalPrincipal:totPrin, totalPaid:totInt+totPrin, finalBalance:bal};
 }
 window.__mortgage = {payment:payment, schedule:schedule};
@@ -216,8 +227,10 @@ function paint(){
     '\n' +
     'CHECK  final balance      ' + fmt(s.finalBalance) + '\n' +
     'CHECK  sum of principal  ' + fmt(sumPrin) + '  (loan was ' + fmt(P) + ')\n' +
-    'CHECK  payment - interest = principal on every row: ' +
-      (Math.abs(s.payment - s.rows[0].interest - s.rows[0].principal) < 0.005 ? 'yes' : 'NO');
+    'CHECK  each row: payment - interest = principal  ' +
+      (s.rows.every(function(x){ return Math.abs(x.payment - x.interest - x.principal) < 0.005; }) ? 'yes' : 'NO') + '\n' +
+    'CHECK  each regular row: payment = base + extra  ' +
+      (s.rows.slice(0, Math.max(0,s.rows.length-1)).every(function(x){ return Math.abs(x.payment - (s.payment + extra)) < 0.005; }) ? 'yes' : 'NO');
 }
 bind(['principal','rate','years','extra'], paint);
 paint();
@@ -228,29 +241,29 @@ paint();
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
   <ul class="ocurp-related-grid">
-    <li><a href="/workspace/tools/budget-50-30-20-planner/">
-      <span class="ocurp-related-n">50/30/20 Budget Planner</span>
-      <span class="ocurp-related-b">Take-home pay split into needs, wants and savings, checked against real line items you edi</span>
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
     </a></li>
-    <li><a href="/workspace/tools/compound-interest/">
-      <span class="ocurp-related-n">Compound Interest</span>
-      <span class="ocurp-related-b">Project savings or investments forward with optional monthly deposits.</span>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years</span>
     </a></li>
-    <li><a href="/workspace/tools/continuous-compounding/">
-      <span class="ocurp-related-n">Continuous Compounding</span>
-      <span class="ocurp-related-b">Continuous-compounding interest and the e-folding half-life that goes with it.</span>
+    <li><a href="/workspace/tools/apy-vs-apr-calculator/">
+      <span class="ocurp-related-n">APY vs APR Calculator</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
     </a></li>
-    <li><a href="/workspace/tools/discount-calculator/">
-      <span class="ocurp-related-n">Discount Calculator</span>
-      <span class="ocurp-related-b">Apply one or two stacked discounts and see the final price and what you saved.</span>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
     </a></li>
-    <li><a href="/workspace/tools/fuel-cost-calculator/">
-      <span class="ocurp-related-n">Fuel Cost Calculator</span>
-      <span class="ocurp-related-b">What a journey really costs at the pump, with consumption and price per litre.</span>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
     </a></li>
-    <li><a href="/workspace/tools/gst-calculator/">
-      <span class="ocurp-related-n">GST Calculator</span>
-      <span class="ocurp-related-b">Add or remove GST at any rate, with the amount and the net both shown.</span>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/tools/">See all tools →</a>

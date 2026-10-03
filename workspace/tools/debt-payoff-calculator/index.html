@@ -111,14 +111,20 @@ looping forever.</p>
   function set(id,v){document.getElementById(id).textContent=v;}
   function fmt(n){return n.toLocaleString('en-US',{maximumFractionDigits:2});}
   function schedule(B,rate,pay,cap){
-    var out=[],i=0;
+    // `paid` accumulated every payment. It used to be rebuilt in the caller as
+    // sum of REMAINING BALANCES + interest, which double-counts: for
+    // 24,000 @ 18.9% with 700/mo it printed 671,523 of "total repaid" against
+    // an actual payoff of 34,784.64. Track the payments themselves.
+    var out=[],i=0,paid=0;
     while(B>0.005 && i<cap){
-      var it=B*rate; B = B + it - pay;
-      out.push({m:i+1,interest:it,balance:Math.max(0,B)});
-      if(!(B<B)) { if(out.length>1 && B>=out[out.length-2].balance) return {rows:out,never:true}; }
+      var it=B*rate, amt=Math.min(pay,B+it);
+      B = B + it - amt;
+      paid += amt;
+      out.push({m:i+1,interest:it,paid:amt,balance:Math.max(0,B)});
+      if(!(B<B)) { if(out.length>1 && B>=out[out.length-2].balance) return {rows:out,paid:paid,never:true}; }
       i++;
     }
-    return {rows:out, never: B>0.005};
+    return {rows:out, paid:paid, never: B>0.005};
   }
   function calc(){
     // The field is APR in PERCENT, so /100 first. Dividing 18.9 by 12 alone
@@ -133,7 +139,7 @@ looping forever.</p>
     var totI=r.rows.reduce(function(a,x){return a+x.interest;},0);
     set('o_m', r.never? 'never (payment < interest)': r.rows.length+' months');
     set('o_i', r.never? '&mdash;': fmt(totI));
-    set('o_t', r.never? '&mdash;': fmt(r.rows.reduce(function(a,x){return a+x.balance;},0)+totI));
+    set('o_t', r.never? '&mdash;': fmt(r.paid));
     var baseM=base.never?null:base.rows.length;
     set('o_s', (baseM===null||r.never)?'&mdash;': Math.max(0,baseM-r.rows.length)+' months');
     window.__payoff={balance:B,monthlyRate:rate,payment:pay,lateDays:dl,
@@ -149,25 +155,22 @@ looping forever.</p>
 </div>
 <script src="/workspace/related.js" defer></script>
 
+
 <!--ocurp-related-->
 <nav aria-label="Related tools" class="ocurp-related">
   <h2 class="ocurp-related-h">Related</h2>
   <ul class="ocurp-related-grid">
-    <li><a href="/workspace/tools/sleep-debt-calculator/">
-      <span class="ocurp-related-n">Sleep Debt Calculator</span>
-      <span class="ocurp-related-b">Bank a week of logged sleep against the hours you actually need, then read the recovery sc</span>
-    </a></li>
     <li><a href="/workspace/tools/a-irr-calculator/">
       <span class="ocurp-related-n">IRR Calculator</span>
       <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
     </a></li>
     <li><a href="/workspace/tools/age-calculator/">
       <span class="ocurp-related-n">Age Calculator</span>
-      <span class="ocurp-related-b">Exact age in years, months, weeks, days and hours, plus the countdown to the next birthday</span>
+      <span class="ocurp-related-b">Exact age in years</span>
     </a></li>
     <li><a href="/workspace/tools/apy-vs-apr-calculator/">
       <span class="ocurp-related-n">APY vs APR Calculator</span>
-      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns, and exactly ho</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
     </a></li>
     <li><a href="/workspace/tools/aspect-ratio/">
       <span class="ocurp-related-n">Aspect Ratio Calculator</span>
@@ -175,7 +178,11 @@ looping forever.</p>
     </a></li>
     <li><a href="/workspace/tools/base-converter/">
       <span class="ocurp-related-n">Base Converter</span>
-      <span class="ocurp-related-b">Convert any number between bases 2 and 36, with binary, octal, decimal and hex side by sid</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
     </a></li>
   </ul>
   <a class="ocurp-related-all" href="/tools/">See all tools →</a>
