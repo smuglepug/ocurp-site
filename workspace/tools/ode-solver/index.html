@@ -422,15 +422,17 @@ function run(){
   if(d2>0&&dE>0) L.push('  observed ratio Euler/RK2 = '+(dE/d2).toFixed(3)+'  (expected ~2 for orders 1 vs 2)');
   if(d4>0&&d2>0) L.push('  observed ratio RK2/RK4   = '+(d2/d4).toFixed(3)+'  (expected ~4 for orders 2 vs 4)');
   if(exact){
+    /* exact() returns a scalar (1 variable) or {name:value}; the code below indexes by position */
+    var exv=function(t,yy){var r=exact(t,yy);if(typeof r==='number')return [r];if(Array.isArray(r))return r;return sys.names.map(function(nm){return r[nm]});};
     L.push('');
     L.push('Against the closed-form solution:');
     for(i=0;i<sys.names.length;i++){
-      var ex=exact(main.path[main.path.length-1].t, y0);
+      var ex=exv(main.path[main.path.length-1].t, y0);
       L.push('  '+sys.names[i]+': RK4 = '+lastY[i].toPrecision(14)
         +'   exact = '+ex[i].toPrecision(14)
         +'   |Δ| = '+Math.abs(lastY[i]-ex[i]).toExponential(6));
     }
-    var eEu=exact(eu.path[eu.path.length-1].t, y0);
+    var eEu=exv(eu.path[eu.path.length-1].t, y0);
     L.push('  Euler  |Δ| = '+Math.max.apply(null, eu.path[eu.path.length-1].y.map(function(v,i){return Math.abs(v-eEu[i])}))
       .toExponential(6)+'  (far larger, as expected for a 1st-order method)');
   }
