@@ -171,18 +171,23 @@ function _clueHtml(str){
   const cl=_clues(str);
   return cl.map(n=>'<div class="clue">'+(n===0?'0':n)+'</div>').join('');}
 function render(){
-  const rc=renderClues(),tall=Math.max.apply(null,rc.rows.map(r=>r.length));
-  let h='<div class="nb">';
+  const rc=renderClues();
+  /* size the clue gutters by the NUMBER of clues, not the length of their HTML
+     (that gave 900px-tall column gutters and pushed the grid off-screen) */
+  const nClues=str=>_clues(str).length;
+  const tallR=Math.max.apply(null,Array.from({length:NG.N},(_,r)=>nClues(NG.PICS[ng.pic][r])));
+  const tallC=Math.max.apply(null,Array.from({length:NG.N},(_,c)=>nClues(NG.PICS[ng.pic].map(x=>x[c]).join(''))));
+  let h='<div class="nb" style="grid-template-columns:'+(tallR*20+10)+'px repeat('+NG.N+',30px);grid-template-rows:'+(tallC*18+8)+'px">';
   h+='<div class="ncorner"></div>';
   for(let c=0;c<NG.N;c++){
-    h+='<div class="ncol" style="height:'+(tall*18+8)+'px">'+rc.cols[c]+'</div>'}
+    h+='<div class="ncol" style="height:'+(tallC*18+8)+'px">'+rc.cols[c]+'</div>'}
   for(let r=0;r<NG.N;r++){
-    h+='<div class="nrow" style="width:'+(tall*20+10)+'px">'+rc.rows[r]+'</div>';
+    h+='<div class="nrow">'+rc.rows[r]+'</div>';
     for(let c=0;c<NG.N;c++){
       const k=r*NG.N+c;
       h+='<button class="ncell'+(k===ng.sel?' sel':'')+'" data-k="'+k+'" style="'+
         paint(r,c)+'">'+((ng.cells[k]===2)?'&#10007;':'')+'</button>'}
-    h+='</div>'}
+  }
   h+='</div>';
   $('wrap').innerHTML=h;
   $('wrap').querySelectorAll('.ncell').forEach(b=>{
@@ -199,7 +204,10 @@ function render(){
   const right=ng.cells.filter((s,k)=>s!==0&&((s===1)===sol(Math.floor(k/NG.N),k%NG.N))).length;
   const filled=ng.cells.filter(s=>s===1).length;
   if(ng.status==='playing'&&bad>=NG.LIMIT)ng.status='lost';
-  if(ng.status==='playing'&&ng.cells.every((s,k)=>s!==0&&((s===1)===sol(Math.floor(k/NG.N),k%NG.N))))
+  /* solved = the filled cells are exactly the picture; crossing out the empty
+     squares is optional (requiring every cell to be marked meant a correct
+     picture never registered as solved) */
+  if(ng.status==='playing'&&ng.cells.every((s,k)=>(s===1)===sol(Math.floor(k/NG.N),k%NG.N)))
     ng.status='won';
   $('bad').textContent=bad+'/'+NG.LIMIT;
   $('fill').textContent=filled;
