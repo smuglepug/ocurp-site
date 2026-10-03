@@ -182,10 +182,12 @@ function hand(cards){
   return {total:t,soft:soft,bust:t>21,natural:(cards.length===2&&t===21)};
 }
 function dealerDraw(){
-  const h=hand(S.dealer);
+  let h=hand(S.dealer);
+  /* recompute after every card: the old loop tested a stale total, so a dealer
+     on 16 or less drew until the array overflowed instead of stopping at 17 */
   while(h.total<DEALER_STAND||(DEALER_HIT_SOFT17&&h.total===DEALER_STAND&&h.soft)){
-    S.dealer.push(S.deck[S.pos++]);}
-  return hand(S.dealer);
+    S.dealer.push(S.deck[S.pos++]);h=hand(S.dealer);}
+  return h;
 }
 function newHand(cards,bet,fromSplit){
   return {cards:cards,bet:bet,done:false,stood:false,fromSplit:!!fromSplit,result:null,
@@ -196,9 +198,10 @@ function betAmt(){
   return Math.max(1,Math.min(500,isFinite(v)?v:25));
 }
 function start(){
-  if(S.phase!=='betting')return false;
+  if(S.phase!=='betting'&&S.phase!=='done')return false;
+  if(S.bankroll<1){S.bankroll=START_BANKROLL;S.log=[];say('Out of chips - bankroll reset to '+START_BANKROLL+'.')}
   const b=betAmt();
-  if(S.bankroll<b)return false;
+  if(S.bankroll<b){say('Bet '+b+' is more than your bankroll ('+S.bankroll+').');render();return false}
   S.deck=shuffle(mkDeck());S.pos=0;S.dealer=[];S.hands=[];S.insurance=0;
   S.dealerBJ=false;S.phase='player';S.cur=0;S.log=[];
   S.hands.push(newHand([S.deck[S.pos++],S.deck[S.pos++]],b,false));
@@ -206,25 +209,34 @@ function start(){
   S.bankroll-=b;
   S.settled=false;
   const dl=hand(S.hands[0].cards);
-  if(dl.natural&&(S.dealer[1].r==='A'||cardVal(S.dealer[1])===10)){
-    /* Insurance is live and the round is about to end on the peek. */
+  if(S.dealer[0].r==='A'){
+    /* The dealer's up-card is an ace: insurance is offered. Taking it is the
+       Insurance button; any other action declines it. */
     S.phase='insurance';
-    say('Dealer shows an ace. Insurance costs half your bet and pays 2:1.');
+    say('Dealer shows an ace. Insurance costs half your bet and pays 2:1 - or just play on.');
   }else{
     say('Your hand: '+dl.total+(dl.natural?' - blackjack!':'.'));
     afterPeekCheck();
+    if(S.phase==='player')autoNatural();
   }
   render();return true;
 }
+/* a player blackjack ends the hand at once (it pays 3:2 unless the dealer matches) */
+function autoNatural(){
+  const h=S.hands[0];
+  if(S.phase==='player'&&h&&hand(h.cards).natural&&!h.done){h.done=true;h.stood=true;h.result='stand';next()}
+}
 function afterPeekCheck(){
-  if(PEEK&&(S.dealer[1].r==='A'||cardVal(S.dealer[1])===10)&&hand(S.dealer).natural){
+  if(PEEK&&(S.dealer[0].r==='A'||cardVal(S.dealer[0])===10)&&hand(S.dealer).natural){
     S.dealerBJ=true;S.phase='done';settleRound();
   }
 }
 function say(t){S.log.push(t);if(S.log.length>7)S.log.shift()}
 function curHand(){return S.hands[S.cur]}
 /* --- player actions --- */
-function canAct(){return S.phase==='player'&&S.hands[S.cur]&&!curHand().done}
+function canAct(){
+  if(S.phase==='insurance')insure(false);   /* acting declines insurance */
+  return S.phase==='player'&&S.hands[S.cur]&&!curHand().done}
 function hit(){
   if(!canAct())return false;
   const h=curHand();
@@ -257,10 +269,10 @@ function split(){
   if(!canAct())return false;
   const h=curHand();
   if(h.cards.length!==2||h.cards[0].r!==h.cards[1].r)return false;
-  if(S.hands.length>=MAX_HANDS||S.hands.filter(x=>x.fromSplit).length>=MAX_SPLITS)return false;
+  if(S.hands.length>=MAX_HANDS)return false;
+  if(S.bankroll<h.bet)return false;
   const a=h.cards[0],b=h.cards[1];
   h.cards=[a,S.deck[S.pos++]];h.result=null;h.fromSplit=true;h.splits=h.splits+1;
-  if(S.bankroll<h.bet)return false;
   S.bankroll-=h.bet;
   const nh=newHand([b,S.deck[S.pos++]],h.bet,true);nh.splits=h.splits;
   S.hands.splice(S.cur+1,0,nh);
@@ -275,11 +287,12 @@ function insure(take){
   const h=S.hands[0];
   if(take){
     const c=Math.floor(h.bet/2);
-    if(S.bankroll>=c){S.bankroll-=c;S.insurance=c;say('Insurance taken: '+c+'.')}
+    if(c>=1&&S.bankroll>=c){S.bankroll-=c;S.insurance=c;say('Insurance taken: '+c+'.')}
     else say('Not enough to insure.');
   }else say('Insurance declined.');
   S.phase='player';
-  if(S.hands[0].done&&S.hands.length===1)next();
+  afterPeekCheck();                 /* the dealer peeks once insurance is settled */
+  if(S.phase==='player')autoNatural();
   render();return true;
 }
 /* advance to the next live hand, or run the dealer */
@@ -297,8 +310,10 @@ function settleRound(){
   const d=hand(S.dealer);
   let insNet=0;
   if(S.insurance){
-    /* insurance staked S.insurance, pays 2:1 on a dealer blackjack */
-    if(d.natural)insNet=S.insurance*INS_PAY;
+    /* insurance staked S.insurance (already out of the bankroll): on a dealer
+       blackjack the stake comes back plus INS_PAY times it, otherwise it is lost */
+    if(d.natural){insNet=S.insurance*INS_PAY;S.bankroll+=S.insurance*(1+INS_PAY)}
+    else insNet=-S.insurance;
     say(d.natural?('Insurance pays '+S.insurance*INS_PAY):'Insurance lost.');
   }
   for(const h of S.hands){
@@ -309,7 +324,7 @@ function settleRound(){
       else{payout(h,Math.round(h.bet*(1+BJ_PAY)));say('Blackjack! +'+h.bet*BJ_PAY)}
       continue;
     }
-    if(d.natural){payout(h,h.bet);say('Dealer blackjack - push');continue}
+    if(d.natural){say('Dealer blackjack - lose '+h.bet);continue}
     if(d.bust){payout(h,h.bet+h.bet);say('Dealer bust '+d.total+' - win '+h.bet);continue}
     const dt=d.total;
     if(t.total>dt){payout(h,h.bet*2);say('Win '+t.total+' vs '+dt)}
@@ -326,10 +341,11 @@ function settleRound(){
 }
 function render(){
   const dh=hand(S.dealer);
+  const holeDown=S.dealer.length>1&&(S.phase==='insurance'||S.phase==='player');
   $('dealer').innerHTML=S.dealer.map((c,i)=>cardHTML(c,
-    (i===1&&S.phase==='insurance'&&!S.dealerBJ)?'dn':'up')).join('');
-  $('dval').innerHTML=!S.dealer.length?'':S.phase==='insurance'&&!S.dealerBJ
-    ? 'A + ?'
+    (i===1&&holeDown)?'dn':'up')).join('');
+  $('dval').innerHTML=!S.dealer.length?'':holeDown
+    ? S.dealer[0].r+' + ?'
     : (dh.soft?'soft ':'')+'<b>'+dh.total+'</b>'+(dh.bust?' bust':'');
   $('dcount').textContent=S.deck.length-S.pos+' cards left';
   $('phands').innerHTML=S.hands.map((h,i)=>{
@@ -346,14 +362,14 @@ function render(){
     +'dealer  '+(S.last?(S.last.dealerBust?'bust '+S.last.dealer:String(S.last.dealer)):'\u2014')+'\n'
     +'last    '+(S.last?S.last.hands.map(h=>h.total+':'+h.result).join('  '):'\u2014');
   $('bank').textContent=S.bankroll;
-  const p=S.phase==='player',h=curHand();
-  $('deal').disabled=S.phase!=='betting';
+  const p=S.phase==='player'||S.phase==='insurance',h=curHand();
+  $('deal').disabled=S.phase!=='betting'&&S.phase!=='done';
   $('hit').disabled=!p;$('stand').disabled=!p;
   $('dbl').disabled=!p||!h||h.cards.length!==2||(NO_DOUBLE_AFTER_SPLIT&&h.fromSplit)||S.bankroll<h.bet;
   $('spl').disabled=!p||!h||h.cards.length!==2||h.cards[0].r!==h.cards[1].r
-    ||S.hands.length>=MAX_HANDS;
+    ||S.hands.length>=MAX_HANDS||S.bankroll<h.bet;
   $('ins').disabled=S.phase!=='insurance';
-  $('bet').disabled=S.phase!=='betting';
+  $('bet').disabled=S.phase!=='betting'&&S.phase!=='done';
 }
 function cardHTML(c,face){
   if(face==='dn')return '<div class="bj-card face"></div>';
