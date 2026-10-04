@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loan Amortization — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Every payment of a loan split into principal and interest. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/loan-amortization/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Loan Amortization">
+<meta property="og:description" content="Every payment of a loan split into principal and interest. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/loan-amortization/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Loan Amortization on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Loan Amortization">
+<meta name="twitter:description" content="Every payment of a loan split into principal and interest. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Loan Amortization on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Loan Amortization","url":"https://ocurp.com/workspace/tools/loan-amortization/","description":"Every payment of a loan split into principal and interest. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Loan Amortization Schedule</h1>
+      <p class="mt-1 text-xs text-white/40">finance &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">A fully amortising loan, worked month by month. Give it a principal, a nominal annual rate and a term in months and it returns the level monthly payment, the total interest, the total paid, and a year-by-year table of interest, principal and remaining balance. The schedule is a loop you can read: interest is the opening balance times the monthly rate, principal is whatever is left of the payment, and the last payment absorbs the rounding residue so the balance closes on zero instead of a few cents. An interest-free loan is handled as the limit case it is, not as a division by zero.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">STANDARD AMORTISATION</span>
+    <span class="ws-chip">MONTHLY</span>
+  </div>
+  <label class="ws-label mb-2 block" for="ln-p">Principal</label>
+  <input id="ln-p" class="ws-input" type="number" value="300000" min="0" step="1000">
+  <label class="ws-label mb-2 mt-3 block" for="ln-rate">Annual interest rate (%)</label>
+  <input id="ln-rate" class="ws-input" type="number" value="6.5" min="0" step="0.05">
+  <label class="ws-label mb-2 mt-3 block" for="ln-n">Term in months</label>
+  <input id="ln-n" class="ws-input" type="number" value="360" min="1" step="12">
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="ln-c1" class="ws-btn-ghost" style="width:auto">30 yr, 6.5%</button>
+    <button id="ln-c2" class="ws-btn-ghost" style="width:auto">15 yr, 4%</button>
+    <button id="ln-c3" class="ws-btn-ghost" style="width:auto">7 yr, 9%</button>
+    <button id="ln-c4" class="ws-btn-ghost" style="width:auto">Interest free</button>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="ln-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Monthly payment</div>
+  <div id="ln-out" class="ws-out"></div>
+  <button id="ln-copy" class="ws-btn-ghost mt-3" style="width:auto">Copy</button>
+</div>
+<div class="md:col-span-2 ws-panel p-5">
+  <div class="ws-label mb-2">Year by year</div>
+  <div id="ln-tab" style="max-height:24rem;overflow:auto"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Numbers</div>
+  <div id="ln-kv"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Where the payment goes</div>
+  <div id="ln-work" class="ws-out"></div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||n===undefined) return 0;
+  if(typeof n!=='number') return String(n);
+  if(!isFinite(n)) return n>0?'infinity':(n<0?'-infinity':'undefined');
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id){ var el=$(id); if(!el) return NaN; return parseFloat(el.value); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function wireCopy(btnId,getText){
+  var b=$(btnId); if(!b) return;
+  b.addEventListener('click',function(){
+    var t=getText();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){
+        b.textContent='Copied'; },function(){ b.textContent='Copy failed'; });
+    }else{ b.textContent='Copy unavailable'; }
+    setTimeout(function(){ b.textContent='Copy'; },1400);
+  });
+}
+
+var LN=(function(){
+  /* Level payment for a fully amortising loan. At r = 0 the formula collapses
+     to 0/0, so the limit case P/n is taken directly instead of producing a NaN
+     that would poison every downstream number. */
+  function amortize(P,annual,n){
+    if(!(P>0)) return {ok:false,why:'principal must be greater than 0'};
+    if(!(n>=1)) return {ok:false,why:'term must be at least 1 month'};
+    if(annual<0) return {ok:false,why:'a negative interest rate is outside this calculator'};
+    var i, m=Math.round(n), r=annual/100/12;
+    var pay;
+    if(r===0) pay=P/m;
+    else{
+      var g=Math.pow(1+r,m);
+      pay=P*r*g/(g-1);
+    }
+    if(!isFinite(pay)||pay<=0) return {ok:false,why:'no finite payment for those inputs'};
+    var bal=P, interest=0, principal=0, firstInterest=null, firstPrincipal=null,
+      balAfter1=null, sy=-1, rows=[];
+    for(i=1;i<=m;i++){
+      var open=bal;
+      var it=open*r, pr=pay-it;
+      /* The last payment absorbs the rounding residue so the balance closes
+         on exactly 0 rather than on a few cents of nothing. */
+      if(i===m){ pr=open; bal=0; } else bal=open-pr;
+      if(i===1){ firstInterest=it; firstPrincipal=pr; balAfter1=bal; }
+      interest+=it; principal+=pr;
+      var y=Math.ceil(i/12);
+      if(y!==sy){ rows.push({year:y,months:0,interest:0,principal:0,
+        open:open,balance:bal}); sy=y; }
+      var row=rows[rows.length-1];
+      row.months++; row.interest+=it; row.principal+=pr; row.balance=bal;
+    }
+    return {ok:true,P:P,annual:annual,n:m,r:r,payment:pay,
+      totalInterest:interest,totalPrincipal:principal,totalPaid:interest+principal,
+      firstInterest:firstInterest,firstPrincipal:firstPrincipal,
+      balAfter1:balAfter1,rows:rows,finalBalance:bal,
+      rateIsZero:(r===0)};
+  }
+  function render(){
+    var P=num('ln-p'), annual=num('ln-rate'), n=num('ln-n'), err=$('ln-err');
+    err.textContent='';
+    var v=amortize(P,annual,n);
+    if(!v.ok){
+      $('ln-out').textContent='NO SCHEDULE\n\n'+v.why+'.';
+      $('ln-tab').innerHTML=''; $('ln-work').textContent=''; $('ln-kv').innerHTML='';
+      err.textContent=v.why;
+      return v;
+    }
+    var yr=v.n/12;
+    $('ln-out').textContent=
+        'principal    '+r(v.P,2)+'\n'
+      +'annual rate  '+r(v.annual,4)+'%  ->  r = '+r(v.r,9)+' per month\n'
+      +'term         '+v.n+' months ('+r(yr,2)+' years)\n\n'
+      +'payment      '+r(v.payment,2)+' every month\n\n'
+      +'interest     '+r(v.totalInterest,2)+'\n'
+      +'paid in all  '+r(v.totalPaid,2);
+    var h='<table class="w72-table"><thead><tr><th>Year</th><th>Interest</th>'
+      +'<th>Principal</th><th>Balance</th><th>Interest share</th></tr></thead><tbody>';
+    var totInt=v.totalInterest, i, yi=0, yp=0, rb=v.rows[v.rows.length-1];
+    h+='<tr><td>0</td><td>-</td><td>-</td><td>'+r(v.P,2)+'</td><td>-</td></tr>';
+    for(i=0;i<v.rows.length;i++){
+      yi+=v.rows[i].interest; yp+=v.rows[i].principal;
+      h+='<tr><td>'+v.rows[i].year+'</td>'
+        +'<td>'+r(v.rows[i].interest,2)+'</td>'
+        +'<td>'+r(v.rows[i].principal,2)+'</td>'
+        +'<td>'+r(v.rows[i].balance,2)+'</td>'
+        +'<td>'+r((totInt>0)?(v.rows[i].interest/totInt)*100:0,2)+'%</td></tr>';
+    }
+    h+='</tbody></table>'
+      +'<div style="margin-top:.6rem;font-size:.7rem;color:rgba(255,255,255,.45)">'
+      +'cumulative interest '+r(yi,2)+' &middot; cumulative principal '
+      +r(yp,2)+' &middot; closing balance '+r(rb.balance,2)+'</div>';
+    $('ln-tab').innerHTML=h;
+    $('ln-work').textContent=
+        'interest on the opening balance, principal paid down by\n'
+      +'whatever is left of the payment. That is the whole loop:\n\n'
+      +'  interest_m = balance_(m-1) * r\n'
+      +'  principal_m = payment - interest_m\n'
+      +'  balance_m  = balance_(m-1) - principal_m\n\n'
+      +'month 1:  balance '+r(v.P,2)+'  x  r '+r(v.r,9)+'\n'
+      +'         interest  '+r(v.P*v.r,2)+'\n'
+      +'         principal '+r(v.payment-v.P*v.r,2)+'\n'
+      +'         balance   '+r(v.P-(v.payment-v.P*v.r),2)+'\n\n'
+      +'month '+v.n+':  closing balance '
+      +(Math.abs(v.finalBalance)<0.005?'0.00 (paid off)':r(v.finalBalance,4))+'\n'
+      +'interest over the whole term  '+r(v.totalInterest,2)+'\n'
+      +'principal repaid               '+r(v.totalPrincipal,2)
+      +(Math.abs(v.totalPrincipal-v.P)<0.05?'\n  = the original principal, exactly':'');
+    fill('ln-kv',[
+      ['Monthly payment',r(v.payment,2)],
+      ['Nominal monthly rate r',r(v.r,9)],
+      ['Total interest',r(v.totalInterest,2)],
+      ['Total paid',r(v.totalPaid,2)],
+      ['Total principal repaid',r(v.totalPrincipal,2)],
+      ['Interest as share of all payments',r((v.totalPaid>0)?v.totalInterest/v.totalPaid:0,6)],
+      ['Interest as multiple of principal',r((v.P>0)?v.totalInterest/v.P:0,6)],
+      ['First month interest',r(v.P*v.r,2)],
+      ['First month principal',r(v.payment-v.P*v.r,2)],
+      ['Balance after month 1',r(v.P-(v.payment-v.P*v.r),2)],
+      ['Balance after month 12',(v.rows.length?v.rows[0].balance:null)],
+      ['Closing balance',r(v.finalBalance,2)],
+      ['Years',r(v.n/12,2)],
+      ['Rate is zero',v.rateIsZero]]);
+    return v;
+  }
+  $('ln-p').addEventListener('input',render);
+  $('ln-rate').addEventListener('input',render);
+  $('ln-n').addEventListener('input',render);
+  $('ln-c1').addEventListener('click',function(){
+    put('ln-p',300000); put('ln-rate',6.5); put('ln-n',360); render(); });
+  $('ln-c2').addEventListener('click',function(){
+    put('ln-p',250000); put('ln-rate',4); put('ln-n',180); render(); });
+  $('ln-c3').addEventListener('click',function(){
+    put('ln-p',150000); put('ln-rate',9); put('ln-n',84); render(); });
+  $('ln-c4').addEventListener('click',function(){
+    put('ln-p',100000); put('ln-rate',0); put('ln-n',120); render(); });
+  wireCopy('ln-copy',function(){ return $('ln-out').textContent; });
+  render();
+  return {amortize:amortize,render:render};
+})();
+
+/* Hook: amortize() is the shared core the UI renders from, not a copy. */
+window.__loan_amortization = {
+  amortize: function(P,annual,n){ return LN.amortize(P,annual,n); },
+  run: function(i){
+    i=i||{};
+    if(i.p!==undefined) put('ln-p',i.p);
+    if(i.rate!==undefined) put('ln-rate',i.rate);
+    if(i.n!==undefined) put('ln-n',i.n);
+    var v=LN.render();
+    if(!v||!v.ok) return JSON.stringify({ok:false,why:v?v.why:'bad input'});
+    return JSON.stringify({ok:true,payment:r(v.payment,6),r:r(v.r,9),
+      totalInterest:r(v.totalInterest,6),totalPaid:r(v.totalPaid,6),
+      totalPrincipal:r(v.totalPrincipal,6),finalBalance:r(v.finalBalance,6),
+      firstInterest:r(v.P*v.r,6),firstPrincipal:r(v.payment-v.P*v.r,6),
+      balAfter1:r(v.P-(v.payment-v.P*v.r),6),
+      yearRows:v.rows.length,
+      yearInterestSum:r(v.rows.reduce(function(s,q){return s+q.interest;},0),6),
+      yearPrincipalSum:r(v.rows.reduce(function(s,q){return s+q.principal;},0),6),
+      yearFirstInterest:(v.rows.length?v.rows[0].interest:null),
+      yearFirstPrincipal:(v.rows.length?v.rows[0].principal:null),
+      yearFirstBalance:(v.rows.length?v.rows[0].balance:null),
+      yearLastBalance:(v.rows.length?v.rows[v.rows.length-1].balance:null),
+      rateIsZero:v.rateIsZero});
+  }
+};
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years</span>
+    </a></li>
+    <li><a href="/workspace/tools/apy-vs-apr-calculator/">
+      <span class="ocurp-related-n">APY vs APR Calculator</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

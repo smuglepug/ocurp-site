@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recipe Scaler — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+
+<style>
+  html, body { overflow-x:hidden; }
+  .qs-row, .rs-row { display:grid; gap:.5rem; align-items:center;
+    grid-template-columns:1fr 7rem 1.3fr auto; margin-bottom:.5rem; }
+  .qs-row .qs-k, .rs-row .rs-q { font-family:'IBM Plex Sans',monospace; }
+  .qs-del, .rs-del { border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04);
+    color:rgba(255,255,255,.6); width:2rem; height:2rem; border-radius:.6rem;
+    font-size:1.05rem; line-height:1; cursor:pointer; transition:all .15s ease; }
+  .qs-del:hover, .rs-del:hover { border-color:rgba(255,95,31,.55); color:#FF5F1F; }
+  @media (max-width:560px) {
+    .qs-row, .rs-row { grid-template-columns:1fr 6rem auto; }
+    .qs-row .qs-v, .rs-row .rs-n { grid-column:1 / -1; }
+  }
+</style>
+<meta name="description" content="Scale a recipe up or down by ingredient. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/recipe-scaler/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Recipe Scaler">
+<meta property="og:description" content="Scale a recipe up or down by ingredient. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/recipe-scaler/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Recipe Scaler on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Recipe Scaler">
+<meta name="twitter:description" content="Scale a recipe up or down by ingredient. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Recipe Scaler on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Recipe Scaler","url":"https://ocurp.com/workspace/tools/recipe-scaler/","description":"Scale a recipe up or down by ingredient. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Recipe Scaler</h1>
+      <p class="mt-1 text-xs text-white/40">Food &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Scale a whole ingredient list by target over base servings using exact rational arithmetic, so a half cup doubles to one cup and a third of a cup triples to one cup rather than to 0.9999999. Converts metric and imperial where the conversion is real, and names the units where it is not.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">EXACT FRACTIONS</span>
+    <span class="ws-chip">METRIC / IMPERIAL</span>
+    <span class="ws-chip">NO SILENT GUESSES</span>
+  </div>
+  <p class="mt-0 mb-3 text-[11px] leading-relaxed text-white/40">
+    Every quantity is held as an exact fraction and multiplied as a fraction,
+    so nothing is ever rounded into a lie. Doubling
+    <span class="text-white/70">1/2 cup</span> gives
+    <span class="text-white/70">1 cup</span> and tripling
+    <span class="text-white/70">1/3 cup</span> gives
+    <span class="text-white/70">1 cup</span> exactly &mdash; not
+    <span class="font-mono">0.666667</span>. Anything that genuinely will not
+    convert is named in the row instead of being given a made-up number.
+  </p>
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="ws-label mb-2 block" for="rs-base">Base servings</label>
+      <input id="rs-base" class="ws-input" type="text" value="2">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="rs-target">Target servings</label>
+      <input id="rs-target" class="ws-input" type="text" value="6">
+    </div>
+  </div>
+  <div class="mt-4">
+    <div class="ws-label mb-2">Ingredients</div>
+    <div id="rs-rows"></div>
+    <div class="mt-2 flex flex-wrap gap-2">
+      <button id="rs-add" class="ws-btn-ghost" style="width:auto">Add ingredient</button>
+      <button id="rs-demo" class="ws-btn-ghost" style="width:auto">Load demo</button>
+      <button id="rs-clear" class="ws-btn-ghost" style="width:auto">Clear</button>
+    </div>
+  </div>
+  <div class="mt-4 grid grid-cols-2 gap-3">
+    <div>
+      <label class="ws-label mb-2 block" for="rs-sys">Convert to</label>
+      <select id="rs-sys" class="ws-input">
+        <option value="keep" selected>Keep as written</option>
+        <option value="metric">Metric</option>
+        <option value="imperial">Imperial</option>
+      </select>
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="rs-round">Round decimals</label>
+      <select id="rs-round" class="ws-input">
+        <option value="0" selected>0 (cooks prefer this)</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="4">4</option>
+      </select>
+    </div>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="rs-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Scale factor</div>
+  <div id="rs-out" class="ws-out"></div>
+</div>
+<div class="ws-panel p-5 md:col-span-2 lg:col-span-3">
+  <div class="ws-label mb-2">Scaled ingredients</div>
+  <div id="rs-tab" class="ws-out" style="max-height:26rem;overflow:auto"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">What will not convert</div>
+  <div id="rs-bad" class="ws-out" style="max-height:18rem;overflow:auto"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Copy</div>
+  <button id="rs-copy" class="ws-btn" style="width:auto">Copy list</button>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||n===undefined) return 0;
+  if(!isFinite(n)) return n>0?'infinity':(n<0?'-infinity':'undefined');
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function NL(){ return String.fromCharCode(10); }
+function copyBtn(id,txt){
+  var b=$(id); if(!b) return;
+  b.addEventListener('click',function(){
+    var s=(typeof txt==='function')?txt():txt;
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(s).catch(function(){});
+    }
+    var old=b.getAttribute('data-label')||b.textContent;
+    b.setAttribute('data-label',old);
+    b.textContent='Copied';
+    setTimeout(function(){ b.textContent=old; },1100);
+  });
+}
+
+var RS=(function(){
+  function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ var t=b; b=a%b; a=t; } return a; }
+  /* Exact rational as {n,d} with d>0. parseQty accepts 1/2, 1 1/2, 1.5, 3 and
+     a few kitchen words. Everything is converted to an integer pair IMMEDIATELY
+     so no float ever touches the arithmetic. */
+  function mk(n,d){
+    if(d===undefined) d=1;
+    if(d<0){ n=-n; d=-d; }
+    if(d===0) return null;
+    var g=gcd(n,d)||1;
+    return {n:n/g,d:d/g};
+  }
+  function parseQty(s){
+    s=String(s==null?'':s).trim().toLowerCase().replace(/,/g,' ');
+    if(s==='') return null;
+    /* unicode vulgar fractions, because a recipe pasted off the web has them */
+    var UNI={'\u00bc':'1/4','\u00bd':'1/2','\u00be':'3/4','\u2153':'1/3',
+      '\u2154':'2/3','\u2155':'1/5','\u215b':'1/8','\u215c':'3/8','\u215d':'5/8'};
+    for(var u in UNI) if(s.indexOf(u)!==-1) s=s.replace(new RegExp(u,'g'),' '+UNI[u]+' ');
+    var m=/^([0-9]+)\s+([0-9]+)\s*\/\s*([0-9]+)$/.exec(s);
+    if(m){
+      var den=parseInt(m[3],10);
+      if(!den) return null;
+      return mk(parseInt(m[1],10)*den+parseInt(m[2],10),den);
+    }
+    m=/^([0-9]+)\s*\/\s*([0-9]+)$/.exec(s);
+    if(m){
+      var d2=parseInt(m[2],10);
+      return d2?mk(parseInt(m[1],10),d2):null;
+    }
+    if(/^(x|times)\s*/.test(s)) s=s.replace(/^(x|times)\s*/,'');
+    m=/^[0-9]*\.?[0-9]+$/.exec(s);
+    if(m){
+      var parts=s.split('.'), ip=parseInt(parts[0]||'0',10), fp=parts[1]||'';
+      var den3=Math.pow(10,fp.length), num3=ip*den3+parseInt(fp||'0',10);
+      return mk(num3,den3);
+    }
+    var words={one:1,two:2,three:3,half:mk(1,2),quarter:mk(1,4),third:mk(1,3),
+      'a':1,an:1,a_half:'1 1/2',none:0};
+    if(s in words){
+      var wv=words[s];
+      return (wv&&wv.n!==undefined)?wv:mk(wv,1);
+    }
+    return null;
+  }
+  function mul(a,b){ return mk(a.n*b.n,a.d*b.d); }
+  function div(a,b){ return (b.n===0)?null:mk(a.n*b.d,a.d*b.n); }
+  function cmp(a,b){ return a.n*b.d-b.n*a.d; }
+  function toFloat(a){ return a.n/a.d; }
+  function fmt(x,dp){
+    if(x.d===1) return String(x.n);
+    var neg=x.n<0, a=Math.abs(x.n), whole=Math.floor(a/x.d), rem=a%x.d;
+    var tail='';
+    if(rem===0) tail='';
+    else{
+      /* Prefer an exact common fraction. Anything that is NOT a tidy kitchen
+         fraction falls back to a decimal at the requested precision, which is
+         the honest thing to show rather than pretending 5/16 is 1/3. */
+      var COMMON=[1,2,3,4,8,16];
+      var got=null;
+      for(var i=0;i<COMMON.length;i++){
+        var k=COMMON[i];
+        if((rem*k)%x.d===0){ got=(rem*k)/x.d; break; }
+      }
+      if(got&&got>0&&got<k||false){}
+      if(got){
+        var g2=gcd(rem,x.d);
+        tail=' '+String(rem/g2)+'/'+String(x.d/g2);
+      }else{
+        /* No tidy kitchen fraction, so this is a decimal quantity. It must be
+           rendered as a DECIMAL TOTAL, never glued onto the whole part as if it
+           were a fraction remainder: that printed "354 1" for 354.882 (remainder
+           rounded to 0 dp) and "4 0.929" for 4.9289 (0 added to 4). */
+        var f=Math.pow(10,dp===undefined?2:dp);
+        var tot=Math.round((x.n/x.d)*f)/f;
+        return (neg?'-':'')+String(tot);
+      }
+    }
+    var s=(whole>0||tail==='')?String(whole)+(tail?' '+tail.trim():''):tail.trim();
+    return (neg?'-':'')+s;
+  }
+  /* Volume factors to millilitres, exact as US-liquid measure. */
+  var VOL={'tsp':mk(4929,1000),'tbsp':mk(14787,1000),'floz':mk(29574,1000),
+    'cup':mk(236588,1000),'pint':mk(473176,1000),'quart':mk(946353,1000),
+    'gallon':mk(3785412,1000),'ml':mk(1,1),'l':mk(1000,1),'dl':mk(100,1)};
+  /* Mass factors to grams, exact as the international avoirdupois pound. */
+  var MASS={'g':mk(1,1),'kg':mk(1000,1),'mg':mk(1,1000),
+    'oz':mk(28349523,1000000),'lb':mk(45359237,100000),'grain':mk(6479891,1000000000)};
+  var DIM={tsp:'volume',tbsp:'volume',floz:'volume',cup:'volume',pint:'volume',
+    quart:'volume',gallon:'volume',ml:'volume',l:'volume',dl:'volume',
+    g:'mass',kg:'mass',mg:'mass',oz:'mass',lb:'mass',grain:'mass'};
+  /* Units a cook writes that carry NO convertible dimension. Guessing a
+     number for any of these would be a lie, so they are reported instead. */
+  var NONE={clove:'count (cloves)',pinch:'pinch, unscaled',sprig:'sprig, unscaled',
+    'to taste':'to taste','dash':'dash, unscaled','slice':'slice, unscaled',
+    'handful':'handful, unscaled',drop:'drop, unscaled'};
+  var IMPERIAL={'ml':'floz','l':'quart','g':'oz','kg':'lb','dl':'floz'};
+  /* Keyed by unit name, not by the rational itself. An object key stringifies
+       to "[object Object]" for EVERY entry, so a table keyed by factor held
+       exactly one value - whichever unit was inserted last - and converting
+       1 1/2 cup to metric returned NaN/NaN. The choice is by magnitude:
+       for each dimension keep the unit whose factor is closest to 1, which is
+       tsp/oz (small) -> g/ml (small), tbsp -> ml, cup/floz -> ml, lb -> kg,
+       pint/quart/gallon -> l. */
+  var METRIC={};
+  (function(){
+    var sets=[[VOL,'tsp','floz','cup','pint','quart','gallon','ml','l','dl'],
+              [MASS,'g','kg','mg','oz','lb','grain']];
+    for(var s=0;s<sets.length;s++){
+      var tbl=sets[s][0], pref=sets[s][1], pick=null, best=Infinity;
+      for(var i in tbl){
+        var d=Math.abs(cmp(tbl[i],mk(1,1)));
+        if(d<best){ best=d; pick=i; }
+      }
+      if(pick) METRIC[pick]=(s===0?'ml':'g');
+    }
+  })();
+  function unitKey(u){
+    return String(u==null?'':u).trim().toLowerCase()
+      .replace(/\.$/,'').replace(/\s+/g,' ')
+      .replace(/^(tablespoons?|teaspoons?|cups?|tbsps?|tsps?|fl\.? ?oz\.?|ounces?|pounds?|lbs?|grams?|gms?|kgs?|milliliters?|millilitres?|liters?|litres?|milligrams?)\b/,
+        function(m){
+          var t=m.toLowerCase();
+          if(/^tablespoon/.test(t)) return 'tbsp';
+          if(/^teaspoon/.test(t)) return 'tsp';
+          if(/^cup/.test(t)) return 'cup';
+          if(/^tbsp/.test(t)) return 'tbsp';
+          if(/^tsp/.test(t)) return 'tsp';
+          if(/fl/.test(t)) return 'floz';
+          if(/^ounce/.test(t)) return 'oz';
+          if(/^pounds?|^lbs?/.test(t)) return 'lb';
+          if(/^grams?|^gms?/.test(t)) return 'g';
+          if(/^kg/.test(t)) return 'kg';
+          if(/^milli/.test(t)) return 'ml';
+          if(/^lite/.test(t)) return 'l';
+          return t;
+        });
+  }
+  function convert(qty,unit,to){
+    var u=unitKey(unit);
+    if(!u||u==='-'||u==='unit') return {ok:true,qty:qty,unit:u||'',converted:false};
+    if(u in NONE) return {ok:false,why:'no convertible dimension',label:NONE[u],raw:u};
+    if(!(u in DIM)) return {ok:false,why:'unrecognised unit',label:'unknown unit: '+u,raw:u};
+    var dim=DIM[u];
+    /* Already in the requested system? still fine, but say so. */
+    if((to==='metric'&&u in MASS&&(u==='g'||u==='kg'||u==='mg'))
+      ||(to==='metric'&&u in VOL&&(u==='ml'||u==='l'||u==='dl')))
+      return {ok:true,qty:qty,unit:u,converted:false,dim:dim};
+    if((to==='imperial'&&u in VOL&&(u==='tsp'||u==='tbsp'||u==='cup'||u==='floz'
+      ||u==='pint'||u==='quart'||u==='gallon'))
+      ||(to==='imperial'&&u in MASS&&(u==='oz'||u==='lb')))
+      return {ok:true,qty:qty,unit:u,converted:false,dim:dim};
+    var base=(dim==='volume')?VOL:MASS;
+    var ml=mul(qty,base[u]);
+    var target=(to==='metric')
+      ? ((dim==='volume')?'ml':(ml.n>=1000*ml.d?'kg':'g'))
+      : ((dim==='volume')?(ml.n*1>=473*ml.d?'quart':'cup'):(ml.n>=45359237*ml.d?'lb':'oz'));
+    /* div(), never `1/base[target]`. The rationals are plain objects, so a
+       plain `/` on one coerces it with valueOf/toString and yields NaN - the
+       whole metric conversion printed NaN/NaN for every quantity. */
+    return {ok:true,qty:div(ml,base[target]),unit:target,converted:true,dim:dim};
+  }
+  function rowsFromDom(){
+    var qs=document.querySelectorAll('#rs-rows .rs-q');
+    var us=document.querySelectorAll('#rs-rows .rs-u');
+    var ns=document.querySelectorAll('#rs-rows .rs-n');
+    var out=[], i;
+    for(i=0;i<qs.length;i++){
+      if(!(ns[i]&&ns[i].value.trim()!=='')) continue;
+      out.push({raw:qs[i].value,qty:parseQty(qs[i].value),unit:us[i].value,
+        name:ns[i].value.trim()});
+    }
+    return out;
+  }
+  function writeRows(rows){
+    var h='', i, u;
+    for(i=0;i<rows.length;i++){
+      u=rows[i][1]||'';
+      h+='<div class="rs-row">'
+        +'<input class="ws-input rs-q" type="text" value="'+esc(rows[i][0])+'"'
+        +' placeholder="1/2" aria-label="Ingredient '+(i+1)+' quantity">'
+        +'<select class="ws-input rs-u" aria-label="Ingredient '+(i+1)+' unit">'
+        +uopt(u)+'</select>'
+        +'<input class="ws-input rs-n" type="text" value="'+esc(rows[i][2])+'"'
+        +' placeholder="name" aria-label="Ingredient '+(i+1)+' name">'
+        +'<button class="rs-del" type="button" data-i="'+i+'"'
+        +' aria-label="Remove ingredient '+(i+1)+'">&times;</button>'
+        +'</div>';
+    }
+    $('rs-rows').innerHTML=h;
+  }
+  function uopt(sel){
+    var all=['','cup','tbsp','tsp','floz','pint','quart','gallon','ml','l','dl',
+      'g','kg','mg','oz','lb','clove','pinch','sprig','slice','dash','handful',
+      'drop','to taste'];
+    var h='', i;
+    for(i=0;i<all.length;i++){
+      h+='<option value="'+all[i]+'"'+((unitKey(sel)===all[i])?' selected':'')+'>'
+        +(all[i]===''?'(none)':all[i])+'</option>';
+    }
+    return h;
+  }
+  function render(){
+    var base=parseQty($('rs-base').value), target=parseQty($('rs-target').value);
+    var rows=rowsFromDom(), to=$('rs-sys').value;
+    var dp=parseInt($('rs-round').value,10); if(isNaN(dp)) dp=0;
+    var err=$('rs-err'); err.textContent='';
+    if(!base||base.n===0){ err.textContent='base servings must be a number above zero';
+      $('rs-out').textContent=''; $('rs-tab').textContent=''; $('rs-bad').textContent='';
+      return null; }
+    if(!target||target.n===0){ err.textContent='target servings must be a number above zero';
+      $('rs-out').textContent=''; $('rs-tab').textContent=''; $('rs-bad').textContent='';
+      return null; }
+    /* mk() reduces; this raw cross-multiplication did not, so a 6-serving recipe
+       scaled to 8 printed "exact 6 / 2" to the user. Reduce before use - the
+       arithmetic is exact either way, but "6 / 2" is not how you write 3. */
+    var factor=mk(target.n*base.d, target.d*base.n);
+    var exact=cmp(factor,mk(1,1))===0;
+    var lines=[], bad=[], i;
+    for(i=0;i<rows.length;i++){
+      var row=rows[i];
+      if(!row.qty){
+        lines.push({name:row.name,raw:row.raw,ok:false,
+          why:'quantity "'+row.raw+'" is not a number I can scale'});
+        continue;
+      }
+      var scaled=mul(row.qty,factor);
+      var shown=scaled, shownUnit=row.unit, note='', bad2=null;
+      if(to!=='keep'){
+        var c=convert(scaled,row.unit,to);
+        if(!c.ok){ bad2=c.why+' ('+row.name+')'; }
+        else{
+          if(c.converted){ shown=c.qty; shownUnit=c.unit; note=c.dim+' converted'; }
+          else { shownUnit=c.unit; }
+        }
+      }
+      lines.push({name:row.name,raw:row.raw,exact:scaled,exactText:fmt(scaled,dp),
+        shown:shown,shownText:fmt(shown,dp),unit:shownUnit,unitRaw:row.unit,
+        note:note,ok:!bad2,why:bad2,convertedUnit:shownUnit!==row.unit});
+    }
+    $('rs-out').textContent=
+        'base      '+fmt(base,4)+NL()
+      +'target    '+fmt(target,4)+NL()
+      +'factor    '+fmt(factor,4)+NL()
+      +'exact     '+factor.n+' / '+factor.d+NL()
+      +'decimal   '+r(toFloat(factor),6)+NL()
+      +NL()+(exact?'factor is exactly 1 - nothing changes':'every quantity is '
+        +'multiplied by '+fmt(factor,4)+' as a fraction')+NL()
+      +'(no quantity is ever rounded before it is scaled)';
+    var t='', anyBad=0;
+    for(i=0;i<lines.length;i++){
+      var L=lines[i];
+      if(!L.ok){
+        anyBad++;
+        t+=('  '+L.name).slice(-18)+NL()+'     ?? '+L.why+NL();
+      }else{
+        t+=('  '+L.name).slice(-18)+NL()
+          +'     '+L.raw+' '+(L.unitRaw||'(none)')+NL()
+          +'   = '+L.exactText+' '+(L.unitRaw||'(none)')+'  (exact)'
+          +(L.convertedUnit?('  ->  '+L.shownText+' '+L.unit+' '+L.note):'')+NL();
+      }
+    }
+    t+=NL()+(rows.length?((rows.length-anyBad)+' of '+rows.length
+      +' rows scaled exactly'):'add an ingredient')+NL()
+      +target.n+'/'+base.n+' of the original recipe'
+      +(exact?' (the original itself)':'');
+    $('rs-tab').textContent=t;
+    var bb='';
+    for(i=0;i<lines.length;i++){
+      if(lines[i].ok) continue;
+      bb+=(lines[i].name||'(unnamed)')+': '+lines[i].why+NL();
+    }
+    $('rs-bad').textContent=bb?bb:'nothing in this list fails to convert';
+    return {factor:factor,lines:lines,rows:rows,dp:dp,to:to,
+      badCount:anyBad,base:base,target:target};
+  }
+  $('rs-demo').addEventListener('click',function(){
+    writeRows([['1/2','cup','all-purpose flour'],['1/3','cup','cocoa powder'],
+      ['1 1/2','tsp','vanilla extract'],['2','tbsp','butter'],
+      ['7/8','cup','granulated sugar'],['1/8','tsp','active yeast'],
+      ['2','clove','garlic'],['3/4','cup','heavy cream']]);
+    render(); });
+  $('rs-clear').addEventListener('click',function(){ writeRows([['','','flour']]); render(); });
+  $('rs-add').addEventListener('click',function(){
+    var rows=document.querySelectorAll('#rs-rows .rs-n'), last=null, i;
+    for(i=0;i<rows.length;i++) last=rows[i].value;
+    writeRows([['','','']]); render(); });
+  $('rs-rows').addEventListener('input',render);
+  $('rs-rows').addEventListener('change',render);
+  $('rs-rows').addEventListener('click',function(e){
+    var b=e.target.closest('.rs-del');
+    if(!b) return;
+    var i=parseInt(b.getAttribute('data-i'),10);
+    var rows=rowsFromDom(); rows.splice(i,1);
+    writeRows(rows.map(function(x){ return [x.raw,x.unit,x.name]; }));
+    render(); });
+  $('rs-base').addEventListener('input',render);
+  $('rs-target').addEventListener('input',render);
+  $('rs-sys').addEventListener('change',render);
+  $('rs-round').addEventListener('change',render);
+  copyBtn('rs-copy',function(){
+    var st=render(); if(!st) return '';
+    var out=[], i;
+    for(i=0;i<st.lines.length;i++){
+      var L=st.lines[i];
+      out.push(L.ok?(L.exactText+' '+(L.unitRaw||'')+'  '+L.name)
+        :('??  '+L.name+'  ('+L.why+')'));
+    }
+    return out.join(NL()); });
+  writeRows([['1/2','cup','all-purpose flour'],['1/3','cup','cocoa powder'],
+    ['1 1/2','tsp','vanilla extract'],['2','tbsp','butter'],
+    ['7/8','cup','granulated sugar'],['1/8','tsp','active yeast'],
+    ['2','clove','garlic'],['3/4','cup','heavy cream']]);
+  render();
+  return {render:render,parseQty:parseQty,mul:mul,fmt:fmt,convert:convert,
+    unitKey:unitKey,writeRows:writeRows,NONE:NONE,VOL:VOL,MASS:MASS};
+})();
+
+window.__recipe_scaler = {
+  parseQty: function(s){ return RS.parseQty(s); },
+  fmt: function(q,dp){ return RS.fmt(q,dp); },
+  scale: function(qty,factor){
+    var a=RS.parseQty(qty), b=RS.parseQty(factor);
+    if(!a||!b) return null;
+    var s=RS.mul(a,b);
+    return {n:s.n,d:s.d,text:RS.fmt(s,4),decimal:s.n/s.d};
+  },
+  convert: function(qty,unit,to){
+    var a=RS.parseQty(qty); if(!a) return null;
+    var c=RS.convert(a,unit,to);
+    return {ok:c.ok,why:c.why||null,label:c.label||null,
+      text:c.ok?RS.fmt(c.qty,4):null,unit:c.ok?c.unit:null,
+      converted:c.ok?!!c.converted:false,dim:c.dim||null};
+  },
+  render: function(){
+    var st=RS.render();
+    if(!st) return JSON.stringify({ok:false});
+    return JSON.stringify({ok:true,
+      factor:st.factor.n+'/'+st.factor.d,factorText:RS.fmt(st.factor,4),
+      lines:st.lines.map(function(L){
+        return {name:L.name,raw:L.raw,ok:!!L.ok,why:L.why||null,
+          exact:L.ok?L.exact.n+'/'+L.exact.d:null,
+          exactText:L.ok?L.exactText:null,
+          unitRaw:L.unitRaw||null,shownUnit:L.unit||null,
+          shown:L.ok?L.shown.n+'/'+L.shown.d:null,
+          shownText:L.ok?L.shownText:null,
+          converted:!!L.convertedUnit};
+      }),
+      badCount:st.badCount,rowCount:st.lines.length});
+  },
+  run: function(i){
+    i=i||{};
+    if(i.base!==undefined) put('rs-base',String(i.base));
+    if(i.target!==undefined) put('rs-target',String(i.target));
+    if(i.rows!==undefined) RS.writeRows(i.rows);
+    if(i.to!==undefined) put('rs-sys',i.to);
+    if(i.dp!==undefined) put('rs-round',String(i.dp));
+    return window.__recipe_scaler.render();
+  }
+};
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/acronym-generator/">
+      <span class="ocurp-related-n">Acronym Generator</span>
+      <span class="ocurp-related-b">Build initialisms</span>
+    </a></li>
+    <li><a href="/workspace/tools/alarm/">
+      <span class="ocurp-related-n">Alarm Clock</span>
+      <span class="ocurp-related-b">Set an alarm a number of seconds ahead or at a wall-clock time</span>
+    </a></li>
+    <li><a href="/workspace/tools/bingo-card-generator/">
+      <span class="ocurp-related-n">Bingo Card Generator</span>
+      <span class="ocurp-related-b">Printable 5x5 bingo cards with a proper B-I-N-G-O number range and a matching call sheet.</span>
+    </a></li>
+    <li><a href="/workspace/tools/bmi-calculator-bmr/">
+      <span class="ocurp-related-n">BMI + BMR Calculator</span>
+      <span class="ocurp-related-b">Body mass index plus basal metabolic rate</span>
+    </a></li>
+    <li><a href="/workspace/tools/character-count-analyzer/">
+      <span class="ocurp-related-n">Character Count Analyzer</span>
+      <span class="ocurp-related-b">Live character counts against the real limits for X</span>
+    </a></li>
+    <li><a href="/workspace/tools/citation-generator/">
+      <span class="ocurp-related-n">Citation Generator</span>
+      <span class="ocurp-related-b">APA 7</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

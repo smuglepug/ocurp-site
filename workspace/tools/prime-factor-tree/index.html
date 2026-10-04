@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prime Factor Tree — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<style>
+  :root{--accent:#FF5F1F;--bg:#050505;--line:rgba(255,255,255,.08);--dim:rgba(255,255,255,.42)}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;overflow-x:hidden}
+  body{background:var(--bg);color:#fff;
+    font-family:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    -webkit-font-smoothing:antialiased;line-height:1.6}
+  .noise-overlay{position:fixed;inset:0;pointer-events:none;opacity:.03;z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .wrap{position:relative;z-index:10;max-width:64rem;margin:0 auto;padding:2rem 1.25rem 4rem}
+  .topbar{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-bottom:2rem}
+  .back{display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--line);background:rgba(255,255,255,.03);
+    padding:.55rem .9rem;border-radius:.65rem;font-size:10px;font-weight:800;letter-spacing:.22em;
+    text-transform:uppercase;color:rgba(255,255,255,.7);text-decoration:none}
+  .back:hover{color:#fff;border-color:rgba(255,95,31,.5)}
+  h1{font-size:1.35rem;font-weight:800;margin:0;letter-spacing:-.01em}
+  .kicker{margin:.25rem 0 0;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+  .lede{max-width:44rem;color:rgba(255,255,255,.55);font-size:.92rem;margin:0 0 2rem}
+  .panel{border:1px solid var(--line);background:rgba(255,255,255,.02);border-radius:1rem;padding:1.25rem}
+  .label{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+  input{width:100%;border-radius:.75rem;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);
+    padding:.8rem .95rem;color:#fff;font:inherit;font-size:.9rem}
+  input:focus{outline:none;border-color:rgba(255,95,31,.5)}
+  button{font:inherit;border-radius:.75rem;cursor:pointer}
+  .btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#000;
+    padding:.7rem 1.1rem;font-size:.82rem;font-weight:800;border:0}
+  .btn:hover{opacity:.9}
+  .btn-ghost{display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.12);
+    background:transparent;color:rgba(255,255,255,.8);padding:.7rem 1rem;font-size:.82rem;font-weight:600}
+  .btn-ghost:hover{background:rgba(255,255,255,.06)}
+  .chip{display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.12);border-radius:999px;
+    padding:.28rem .65rem;font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.55)}
+  .out{border:1px solid rgba(255,95,31,.28);background:rgba(255,95,31,.06);border-radius:.75rem;
+    padding:1rem 1.1rem;font-size:.92rem;line-height:1.8;word-break:break-word}
+  .out.bad{border-color:rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:rgba(255,255,255,.6)}
+  .row{display:flex;justify-content:space-between;gap:1rem;padding:.55rem 0;border-bottom:1px solid rgba(255,255,255,.06)}
+  .row:last-child{border-bottom:0}
+  .row .k{color:var(--dim);font-size:.78rem}
+  .row .v{color:#fff;font-size:.86rem;text-align:right}
+  .big{font-size:1.15rem;font-weight:800;color:var(--accent)}
+  ul.tree{list-style:none;margin:0;padding:0;font-size:.84rem}
+  ul.tree ul{list-style:none;margin:.3rem 0 .3rem 1.1rem;padding-left:1rem;border-left:1px dashed rgba(255,255,255,.14)}
+  ul.tree li{margin:.2rem 0}
+  .pm{color:var(--accent);font-weight:800}
+  .cols{display:grid;gap:1rem;grid-template-columns:1fr;margin-bottom:1rem}
+  @media(min-width:820px){.cols{grid-template-columns:1.15fr .85fr}}
+  .stack{display:grid;gap:1rem}
+  h2.sect{font-size:.7rem;font-weight:900;letter-spacing:.26em;text-transform:uppercase;
+    color:rgba(255,255,255,.32);margin:2.5rem 0 1rem}
+  footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--line);
+    font-size:11px;color:rgba(255,255,255,.3)}
+</style>
+<meta name="description" content="Break a whole number into primes by repeated division. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/prime-factor-tree/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Prime Factor Tree">
+<meta property="og:description" content="Break a whole number into primes by repeated division. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/prime-factor-tree/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Prime Factor Tree on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Prime Factor Tree">
+<meta name="twitter:description" content="Break a whole number into primes by repeated division. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Prime Factor Tree on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Prime Factor Tree","url":"https://ocurp.com/workspace/tools/prime-factor-tree/","description":"Break a whole number into primes by repeated division. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body>
+<div class="noise-overlay"></div>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="/workspace/tools/">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div>
+      <h1>Prime Factor Tree</h1>
+      <p class="kicker">Number theory &mdash; client-side</p>
+    </div>
+  </div>
+
+  <p class="lede">Type an integer and it is peeled apart one smallest-prime division at a time until
+  nothing but primes is left. The tree shows the split, the line shows the exponents, and anything that is
+  not a whole number of at least 2 is refused rather than quietly coerced.</p>
+
+  <div class="cols">
+    <div class="panel">
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem">
+        <span class="chip">EXACT</span><span class="chip">NO ROUNDING</span><span class="chip">REJECTS BAD INPUT</span>
+      </div>
+      <label class="label" for="inp" style="display:block;margin-bottom:.5rem">Integer to factor</label>
+      <input id="inp" type="text" inputmode="numeric" value="360" autocomplete="off" spellcheck="false">
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.9rem">
+        <button id="go" class="btn">Factor it</button>
+        <button class="btn-ghost demo" data-n="360">360</button>
+        <button class="btn-ghost demo" data-n="84">84</button>
+        <button class="btn-ghost demo" data-n="1024">1024</button>
+        <button class="btn-ghost demo" data-n="97">97</button>
+      </div>
+      <div id="err" style="margin-top:.8rem;font-size:11px;color:rgba(255,95,31,.9);min-height:1.2rem"></div>
+    </div>
+
+    <div class="panel">
+      <div class="label" style="margin-bottom:.6rem">Result</div>
+      <div id="out" class="out"></div>
+    </div>
+  </div>
+
+  <h2 class="sect">Factor tree</h2>
+  <div class="panel"><div id="tree" class="out"></div></div>
+
+  <h2 class="sect">How it was decided</h2>
+  <div class="panel"><div id="steps" class="out"></div></div>
+
+  <footer>Computed in this tab with integer division only. Nothing is uploaded, and no result is estimated.</footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---- pure core -----------------------------------------------------------
+  // Trial division by 2 then odd candidates. No floating point anywhere: the
+  // input is an integer or it is refused, so every split is exact.
+  function factorTree(n) {
+    if (typeof n !== 'number' || !isFinite(n)) return { ok: false, error: 'not a number' };
+    if (!Number.isInteger(n)) return { ok: false, error: 'not an integer' };
+    if (n < 2) return { ok: false, error: 'needs a whole number of at least 2' };
+
+    var factors = [];
+    var steps = [];
+    var rest = n;
+    for (var d = 2; d * d <= rest; d += (d === 2 ? 1 : 2)) {
+      while (rest % d === 0) {
+        factors.push(d);
+        steps.push({ split: rest, divisor: d, product: rest / d });
+        rest /= d;
+      }
+    }
+    if (rest > 1) {
+      factors.push(rest);
+      steps.push({ split: rest, divisor: rest, product: 1 });
+      rest = 1;
+    }
+
+    // collapse repeated factors into base^exponent
+    var primes = [];
+    for (var i = 0; i < factors.length; i++) {
+      var last = primes[primes.length - 1];
+      if (last && last.p === factors[i]) last.exp += 1;
+      else primes.push({ p: factors[i], exp: 1 });
+    }
+
+    // verify by independent multiplication, so a bug here cannot pass silently
+    var product = 1;
+    for (var j = 0; j < factors.length; j++) product *= factors[j];
+
+    return {
+      ok: true,
+      n: n,
+      factors: factors,
+      primes: primes,
+      product: product,
+      distinct: primes.length,
+      total: factors.length,
+      squarefree: primes.length === factors.length,
+      steps: steps,
+      text: primes.map(function (p) { return p.p + '^' + p.exp; }).join(' * '),
+      nodeCount: 1 + factors.length
+    };
+  }
+
+  // Build the nested <ul> tree from the flat split log: each step takes one
+  // existing node and hangs two children under it.
+  function treeHTML(res) {
+    var root = { label: String(res.n), children: [] };
+    var nodes = [root];
+    for (var i = 0; i < res.steps.length; i++) {
+      var s = res.steps[i];
+      // find the node still holding the value being split
+      var target = null;
+      for (var j = 0; j < nodes.length; j++) {
+        if (nodes[j].label === String(s.split) && !nodes[j].done) { target = nodes[j]; break; }
+      }
+      if (!target) target = root;
+      target.done = true;
+      target.children = [
+        { label: String(s.divisor), prime: true, done: true },
+        { label: String(s.product), prime: s.product <= 1, done: s.product <= 1 }
+      ];
+      nodes = nodes.concat(target.children);
+    }
+    function render(node) {
+      var cls = node.prime ? ' class="pm"' : '';
+      var li = '<li><span' + cls + '>' + node.label + '</span>';
+      if (node.children && node.children.length) {
+        li += '<ul>' + node.children.map(render).join('') + '</ul>';
+      }
+      return li + '</li>';
+    }
+    return '<ul class="tree">' + render(root) + '</ul>';
+  }
+
+  // ---- view ----------------------------------------------------------------
+  var inp = document.getElementById('inp');
+  var out = document.getElementById('out');
+  var tree = document.getElementById('tree');
+  var steps = document.getElementById('steps');
+  var err = document.getElementById('err');
+
+  function row(k, v) { return '<div class="row"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>'; }
+
+  function render() {
+    var raw = inp.value.trim();
+    var errMsg = '';
+    var n = raw === '' ? NaN : Number(raw);
+    if (raw === '') errMsg = 'Type a whole number of at least 2.';
+    else if (!/^[+-]?\d+$/.test(raw)) errMsg = 'Digits only, please. No decimals, no fractions.';
+    else if (!isFinite(n) || !Number.isInteger(n)) errMsg = 'Digits only, please. No decimals, no fractions.';
+    else if (n < 2) errMsg = 'A factor tree needs a whole number of at least 2. 0 and 1 have no prime factors.';
+    err.textContent = errMsg;
+
+    if (errMsg) {
+      out.className = 'out bad';
+      out.innerHTML = '<div>No factorisation.</div><div style="font-size:.78rem;margin-top:.4rem">' + errMsg + '</div>';
+      tree.className = 'out bad';
+      tree.innerHTML = '<div style="font-size:.82rem">Nothing drawn.</div>';
+      steps.className = 'out bad';
+      steps.innerHTML = '<div style="font-size:.82rem">No splits performed.</div>';
+      return null;
+    }
+
+    var res = factorTree(n);
+    if (!res.ok) {
+      out.className = 'out bad';
+      out.innerHTML = '<div>No factorisation: ' + res.error + '</div>';
+      tree.className = 'out bad'; tree.innerHTML = '<div style="font-size:.82rem">Nothing drawn.</div>';
+      steps.className = 'out bad'; steps.innerHTML = '<div style="font-size:.82rem">No splits performed.</div>';
+      return null;
+    }
+
+    out.className = 'out';
+    var h = '<div class="big">' + res.n + ' = ' + res.text + '</div>';
+    h += row('Prime factors (repeated)', res.factors.join(' &times; ') || 'none');
+    h += row('Distinct primes', res.distinct);
+    h += row('Total prime factors', res.total);
+    h += row('Product check', res.product + (res.product === res.n ? ' &check; equals input' : ' MISMATCH'));
+    h += row('Squarefree?', res.squarefree ? 'yes, no repeats' : 'no, repeats present');
+    h += row('Tree nodes', res.nodeCount);
+    out.innerHTML = h;
+
+    tree.className = 'out';
+    tree.innerHTML = treeHTML(res);
+
+    steps.className = 'out';
+    var s = '<div class="label" style="margin-bottom:.5rem">Split log</div>';
+    if (res.steps.length === 0) {
+      s += '<div>No splits needed.</div>';
+    } else {
+      for (var i = 0; i < res.steps.length; i++) {
+        var st = res.steps[i];
+        s += '<div>' + st.split + ' &divide; ' + st.divisor + ' = ' + st.product +
+             (st.product === 1 ? ' &nbsp;<span style="color:var(--dim)">(leaf: ' + st.divisor + ' is prime)</span>' : '') + '</div>';
+      }
+    }
+    s += '<div style="margin-top:.6rem;color:var(--dim);font-size:.8rem">' +
+         'Candidates tested in order 2, 3, 5, 7, 9, 11 &hellip; and never past the square root of what is left.</div>';
+    steps.innerHTML = s;
+    return res;
+  }
+
+  document.getElementById('go').addEventListener('click', render);
+  inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') render(); });
+  Array.prototype.forEach.call(document.querySelectorAll('.demo'), function (b) {
+    b.addEventListener('click', function () { inp.value = b.getAttribute('data-n'); render(); });
+  });
+
+  render();
+
+  // synchronous test hook: pure functions only, no timers
+  window.__prime_factor_tree = {
+    factorTree: factorTree,
+    treeHTML: treeHTML,
+    defaultInput: function () { return inp.value; }
+  };
+})();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years</span>
+    </a></li>
+    <li><a href="/workspace/tools/apy-vs-apr-calculator/">
+      <span class="ocurp-related-n">APY vs APR Calculator</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

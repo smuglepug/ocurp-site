@@ -107,4 +107,9 @@ const RAW = [
   {slug:"skyscrapers",name:"Skyscrapers",cat:"game",blurb:"Skyscrapers - playable in the browser.",tags:["GAMES"],ready:true},
   {slug:"star-battle",name:"Star Battle",cat:"game",blurb:"Star Battle - playable in the browser.",tags:["GAMES"],ready:true},
   {slug:"tile-pan",name:"Tile Pan",cat:"game",blurb:"Tile Pan - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"digit-lock",name:"Digit Lock",cat:"game",blurb:"Digit Lock - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"hex-connect",name:"Hex Connect",cat:"game",blurb:"Hex Connect - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"stream-stepper",name:"Stream Stepper",cat:"game",blurb:"Stream Stepper - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"knight-tour",name:"Knight Tour",cat:"game",blurb:"Knight Tour - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"lantern-path",name:"Lantern Path",cat:"game",blurb:"Lantern Path - playable in the browser.",tags:["GAMES"],ready:true},
 ];

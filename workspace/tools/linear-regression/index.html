@@ -180,8 +180,13 @@ function betacf(a,b,x){
 }
 function betai(a,b,x){
   if(x<=0) return 0; if(x>=1) return 1;
-  var lb=Math.log(Math.exp(logGamma(a+b)-logGamma(a)-logGamma(b))
-      +a*Math.log(x)+b*Math.log(1-x));
+  /* The log-beta must be a SUM of log terms. The old line put the whole
+     expression inside Math.log(), which made the argument -4.09 for the
+     default dataset: log() of a negative is NaN, the whole significance
+     column silently vanished, and the page reported "p = undefined" while
+     looking completely healthy. betacf() and logGamma() are unchanged. */
+  var lb=(logGamma(a+b)-logGamma(a)-logGamma(b))
+      +a*Math.log(x)+b*Math.log(1-x);
   if(x<(a+1)/(a+b+2)) return Math.exp(lb)*betacf(a,b,x)/a;
   return 1-Math.exp(lb)*betacf(b,a,1-x)/b;
 }
@@ -216,15 +221,20 @@ var LR=(function(){
     var r2=r*r, adj=1-(1-r2)*(n-1)/(n-2);
     var sse=Syy-slope*Sxy, sst=Syy, df=n-2;
     var see=Math.sqrt(Math.max(sse,0)/df);
-    var pts=[], ssr=0;
+    var pts=[], ssr=0, resSum=0;
     for(i=0;i<n;i++){
       var yh=inter+slope*xs[i], res=ys[i]-yh;
       ssr+=res*res;
+      resSum+=res;   /* The PLAIN sum of residuals, which least squares drives to
+                        0. `ssr` is the sum of SQUARED residuals and is a
+                        different, non-zero number - labelling it "sum of
+                        residuals" printed 0.175 next to "(least squares makes
+                        this 0)", which is a visible contradiction. */
       pts.push({x:xs[i],y:ys[i],yh:yh,res:res});
     }
     var out={ok:true,n:n,sx:sx,sy:sy,sxx:sxx,sxy:sxy,syy:syy,mx:mx,my:my,
       Sxx:Sxx,Syy:Syy,Sxy:Sxy,slope:slope,inter:inter,r:r,r2:r2,adj:adj,
-      sse:sse,sst:sst,ssr:ssr,see:see,df:df,pts:pts,perfect:see===0};
+      sse:sse,sst:sst,ssr:ssr,resSum:resSum,see:see,df:df,pts:pts,perfect:see===0};
     if(see===0){
       /* Zero residual variance. The standard error of the slope is 0, so t is
          undefined rather than 0 - printing "t = 0, not significant" here would
@@ -306,16 +316,16 @@ var LR=(function(){
       ['F statistic',f.perfect?'undefined':r(f.F,6)],
       ['p-value',f.perfect?0:r(f.p,9)],
       ['Slope significant at 5%',f.perfect?true:!!f.sig],
-      ['Sum of squares residual',r(f.sse,6)],
+      ['Squared residuals sum to',r(f.sse,6)],
       ['Sum of squares total',r(f.sst,6)],
-      ['Residuals sum to',r(f.ssr,9)]]);
+      ['Residuals sum to',r(f.resSum,9)]]);
     var h='', pad=6;
     for(i=0;i<f.pts.length;i++){
       var q=f.pts[i];
       h+='x '+r(q.x,4)+'   y '+r(q.y,4)+'   y-hat '+r(q.yh,4)
         +'   res '+r(q.res,4)+'\n';
     }
-    h+='\nsum of residuals = '+r(f.ssr,9)+'  (least squares makes this 0)';
+    h+='\nsum of residuals = '+r(f.resSum,9)+'  (least squares makes this 0)';
     $('lr-tab').textContent=h;
     return f;
   }
@@ -345,7 +355,7 @@ window.__linear_regression = {
       see:r(f.see,6),t:(f.perfect?null:r(f.t,6)),F:(f.perfect?null:r(f.F,6)),
       p:(f.perfect?0:r(f.p,9)),perfect:f.perfect,
       sig:(f.perfect?true:!!f.sig),
-      ssrSum:Math.round(f.ssr*1e9)/1e9,sst:r(f.sst,6),sse:r(f.sse,6)});
+      ssrSum:Math.round(f.resSum*1e9)/1e9,sst:r(f.sst,6),sse:r(f.sse,6)});
   }
 };
 

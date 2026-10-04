@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Query String Builder — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+
+<style>
+  html, body { overflow-x:hidden; }
+  .qs-row, .rs-row { display:grid; gap:.5rem; align-items:center;
+    grid-template-columns:1fr 7rem 1.3fr auto; margin-bottom:.5rem; }
+  .qs-row .qs-k, .rs-row .rs-q { font-family:'IBM Plex Sans',monospace; }
+  .qs-del, .rs-del { border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04);
+    color:rgba(255,255,255,.6); width:2rem; height:2rem; border-radius:.6rem;
+    font-size:1.05rem; line-height:1; cursor:pointer; transition:all .15s ease; }
+  .qs-del:hover, .rs-del:hover { border-color:rgba(255,95,31,.55); color:#FF5F1F; }
+  @media (max-width:560px) {
+    .qs-row, .rs-row { grid-template-columns:1fr 6rem auto; }
+    .qs-row .qs-v, .rs-row .rs-n { grid-column:1 / -1; }
+  }
+</style>
+<meta name="description" content="Build a query string from key and value rows. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/query-string-builder/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Query String Builder">
+<meta property="og:description" content="Build a query string from key and value rows. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/query-string-builder/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Query String Builder on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Query String Builder">
+<meta name="twitter:description" content="Build a query string from key and value rows. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Query String Builder on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Query String Builder","url":"https://ocurp.com/workspace/tools/query-string-builder/","description":"Build a query string from key and value rows. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Query String Builder</h1>
+      <p class="mt-1 text-xs text-white/40">Dev &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Assemble a URL from a scheme, host, path and key/value table with correct percent-encoding, or paste a URL and read every parameter back out as a table. Build and parse round-trip exactly, repeated keys included.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">BUILD</span>
+    <span class="ws-chip">PARSE</span>
+    <span class="ws-chip">ROUND TRIP</span>
+  </div>
+  <p class="mt-0 mb-3 text-[11px] leading-relaxed text-white/40">
+    Build a query string from a key/value table, or paste a URL and read its
+    parameters back out. Non-ASCII is percent-encoded as UTF-8, so
+    <span class="text-white/70">caf&eacute;</span> becomes
+    <span class="font-mono text-white/60">caf%C3%A9</span> &mdash; four
+    characters in, nine out, because the single byte 0xC3 is not valid on its
+    own.
+  </p>
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="ws-label mb-2 block" for="qs-scheme">Scheme</label>
+      <select id="qs-scheme" class="ws-input">
+        <option value="https" selected>https</option>
+        <option value="http">http</option>
+        <option value="ws">ws</option>
+        <option value="wss">wss</option>
+      </select>
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="qs-host">Host</label>
+      <input id="qs-host" class="ws-input" type="text" value="example.com">
+    </div>
+  </div>
+  <div class="mt-3">
+    <label class="ws-label mb-2 block" for="qs-path">Path</label>
+    <input id="qs-path" class="ws-input" type="text" value="/p">
+  </div>
+  <div class="mt-4">
+    <div class="ws-label mb-2">Parameters</div>
+    <div id="qs-rows"></div>
+    <div class="mt-2 flex flex-wrap gap-2">
+      <button id="qs-add" class="ws-btn-ghost" style="width:auto">Add row</button>
+      <button id="qs-demo" class="ws-btn-ghost" style="width:auto">Load demo</button>
+      <button id="qs-utf" class="ws-btn-ghost" style="width:auto">Non-ASCII</button>
+    </div>
+  </div>
+  <div class="mt-4 grid grid-cols-2 gap-3">
+    <div>
+      <label class="ws-label mb-2 block" for="qs-enc">Space encoding</label>
+      <select id="qs-enc" class="ws-input">
+        <option value="pct" selected>%20 (percent)</option>
+        <option value="plus">+ (application/x-www-form-urlencoded)</option>
+      </select>
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="qs-arr">Repeat-key style</label>
+      <select id="qs-arr" class="ws-input">
+        <option value="rep" selected>tags=a&amp;tags=b</option>
+        <option value="csv">tags=a,b</option>
+        <option value="idx">tags[]=a&amp;tags[]=b</option>
+      </select>
+    </div>
+  </div>
+  <div class="mt-4">
+    <label class="ws-label mb-2 block" for="qs-in">Paste a URL to parse</label>
+    <input id="qs-in" class="ws-input" type="text"
+      value="https://example.com/p?q=hello%20world&amp;tags=a&amp;tags=b&amp;n=3">
+    <div class="mt-2 flex flex-wrap gap-2">
+      <button id="qs-parse" class="ws-btn" style="width:auto">Parse into table</button>
+      <button id="qs-both" class="ws-btn-ghost" style="width:auto">Round trip</button>
+    </div>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="qs-err"></div>
+</div>
+<div class="ws-panel p-5 md:col-span-2 lg:col-span-3">
+  <div class="ws-label mb-2">Built URL</div>
+  <div id="qs-out" class="ws-out" style="word-break:break-all"></div>
+  <div class="mt-4 ws-label mb-2">Query string only</div>
+  <div id="qs-qs" class="ws-out" style="word-break:break-all"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Encoding detail</div>
+  <div id="qs-kv"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Parsed table</div>
+  <div id="qs-tab" class="ws-out" style="max-height:20rem;overflow:auto"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Round trip</div>
+  <div id="qs-rt" class="ws-out"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Copy</div>
+  <button id="qs-copy" class="ws-btn" style="width:auto">Copy URL</button>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||n===undefined) return 0;
+  if(!isFinite(n)) return n>0?'infinity':(n<0?'-infinity':'undefined');
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function NL(){ return String.fromCharCode(10); }
+function copyBtn(id,txt){
+  var b=$(id); if(!b) return;
+  b.addEventListener('click',function(){
+    var s=(typeof txt==='function')?txt():txt;
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(s).catch(function(){});
+    }
+    var old=b.getAttribute('data-label')||b.textContent;
+    b.setAttribute('data-label',old);
+    b.textContent='Copied';
+    setTimeout(function(){ b.textContent=old; },1100);
+  });
+}
+
+var QS=(function(){
+  /* Percent-encode one component. encodeURIComponent leaves !'()* alone and
+     does NOT escape +, so both are corrected by hand or the round trip breaks:
+     an unescaped '+' would decode back to a space. The unreserved set is
+     A-Z a-z 0-9 - _ . ! ~ * ' ( )  per RFC 3986. */
+  function enc(s){
+    return encodeURIComponent(String(s)).replace(/[!'()*]/g,function(c){
+      return '%'+c.charCodeAt(0).toString(16).toUpperCase();
+    }).replace(/\+/g,'%2B');
+  }
+  function encSpace(s,plus){ return plus?enc(s).replace(/%20/g,'+'):enc(s); }
+  function dec(s){
+    try{ return decodeURIComponent(String(s).replace(/\+/g,'%20')); }
+    catch(e){ return String(s); }
+  }
+  function rowsFromDom(){
+    var out=[], i, k, v;
+    var ks=document.querySelectorAll('#qs-rows .qs-k');
+    var vs=document.querySelectorAll('#qs-rows .qs-v');
+    for(i=0;i<ks.length;i++){
+      k=ks[i].value; v=vs[i]?vs[i].value:'';
+      if(k==='') continue;
+      out.push([k,v]);
+    }
+    return out;
+  }
+  function writeRows(rows){
+    var h='', i;
+    for(i=0;i<rows.length;i++){
+      h+='<div class="qs-row">'
+        +'<input class="ws-input qs-k" type="text" value="'+esc(rows[i][0])+'"'
+        +' placeholder="key" aria-label="Parameter '+(i+1)+' key">'
+        +'<input class="ws-input qs-v" type="text" value="'+esc(rows[i][1])+'"'
+        +' placeholder="value" aria-label="Parameter '+(i+1)+' value">'
+        +'<button class="qs-del" type="button" data-i="'+i+'"'
+        +' aria-label="Remove parameter '+(i+1)+'">&times;</button>'
+        +'</div>';
+    }
+    $('qs-rows').innerHTML=h;
+  }
+  function build(){
+    var rows=rowsFromDom();
+    var scheme=$('qs-scheme').value, host=$('qs-host').value;
+    var path=$('qs-path').value;
+    var plus=$('qs-enc').value==='plus';
+    var style=$('qs-arr').value;
+    var i, j, parts=[], grouped={}, order=[];
+    /* Group by key so the repeat styles have something to collapse; single
+       occurrences keep the caller's order exactly. */
+    for(i=0;i<rows.length;i++){
+      if(!(rows[i][0] in grouped)){ grouped[rows[i][0]]=[]; order.push(rows[i][0]); }
+      grouped[rows[i][0]].push(rows[i][1]);
+    }
+    for(i=0;i<order.length;i++){
+      var key=order[i], vals=grouped[key], ek=enc(key);
+      if(vals.length===1){
+        parts.push(ek+'='+encSpace(vals[0],plus));
+      }else if(style==='csv'){
+        var joined=[];
+        for(j=0;j<vals.length;j++) joined.push(encSpace(vals[j],plus));
+        parts.push(ek+'='+joined.join(','));
+      }else if(style==='idx'){
+        for(j=0;j<vals.length;j++) parts.push(ek+'[]='+encSpace(vals[j],plus));
+      }else{
+        for(j=0;j<vals.length;j++) parts.push(ek+'='+encSpace(vals[j],plus));
+      }
+    }
+    var qs=parts.join('&');
+    var p=String(path||'');
+    if(p&&p.charAt(0)!=='/') p='/'+p;
+    var base=scheme+'://'+host+p;
+    return {rows:rows,scheme:scheme,host:host,path:p,qs:qs,
+      url:qs?base+'?'+qs:base,base:base,plus:plus,style:style,count:parts.length};
+  }
+  function parseUrl(u){
+    var s=String(u||'').trim(), m=/^([A-Za-z][A-Za-z0-9+.-]*):\/\/([^/?#]*)([^?#]*)(?:\?([^#]*))?(?:#(.*))?$/.exec(s);
+    var out={scheme:null,host:null,path:'',fragment:null,pairs:[],hadQuery:false,raw:s};
+    if(m){
+      out.scheme=m[1]; out.host=m[2]; out.path=m[3]||'';
+      out.fragment=(m[5]===undefined)?null:m[5];
+      if(m[4]!==undefined&&m[4]!==null){
+        out.hadQuery=true;
+        var chunks=m[4].split('&');
+        for(var i=0;i<chunks.length;i++){
+          if(chunks[i]==='') continue;
+          var eq=chunks[i].indexOf('=');
+          var k=eq===-1?chunks[i]:chunks[i].slice(0,eq);
+          var v=eq===-1?'':chunks[i].slice(eq+1);
+          k=k.replace(/\[\]$/,'');
+          out.pairs.push([dec(k),dec(v)]);
+        }
+      }
+    }else{
+      var eq2=s.indexOf('?');
+      if(eq2!==-1){
+        out.path=s.slice(0,eq2); out.hadQuery=true;
+        var ch2=s.slice(eq2+1).split('&');
+        for(var j=0;j<ch2.length;j++){
+          if(ch2[j]==='') continue;
+          var e2=ch2[j].indexOf('=');
+          out.pairs.push([dec(e2===-1?ch2[j]:ch2[j].slice(0,e2)),
+            dec(e2===-1?'':ch2[j].slice(e2+1))]);
+        }
+      }else{ out.path=s; }
+    }
+    return out;
+  }
+  function eq(a,b){
+    if(a.length!==b.length) return false;
+    for(var i=0;i<a.length;i++) if(a[i][0]!==b[i][0]||a[i][1]!==b[i][1]) return false;
+    return true;
+  }
+  function render(){
+    var b=build(), err=$('qs-err');
+    err.textContent='';
+    $('qs-out').textContent=b.url;
+    $('qs-qs').textContent=b.qs?b.qs:'(no parameters)';
+    var rawChars=0, utf8=0, i;
+    for(i=0;i<b.rows.length;i++){
+      rawChars+=(b.rows[i][0]+b.rows[i][1]).length;
+      utf8+=unenc(b.rows[i][0]).length+unenc(b.rows[i][1]).length;
+    }
+    function unenc(s){ var t='',j; for(j=0;j<s.length;j++) t+=s[j]; return t; }
+    var encLen=(b.qs?b.qs.length:0);
+    fill('qs-kv',[
+      ['Scheme',b.scheme],['Host',b.host],['Path',b.path],
+      ['Parameters',b.count],
+      ['Space mode',b.plus?'+ (form-encoded)':'%20 (percent)'],
+      ['Repeat style',b.style],
+      ['Raw chars in keys+values',rawChars],
+      ['Encoded query length',encLen],
+      ['Expansion',(rawChars>0)?'+'+(encLen-rawChars):'0'],
+      ['UTF-8 bytes (unencoded)',utf8]]);
+    /* Parse whatever is in the parse box, independently of the table. */
+    var p=parseUrl($('qs-in').value);
+    var t='', i2;
+    for(i2=0;i2<p.pairs.length;i2++){
+      t+=('  '+p.pairs[i2][0]).slice(-16)+' = '+p.pairs[i2][1]+NL();
+    }
+    $('qs-tab').textContent=p.pairs.length?t:'(nothing to parse)';
+    return b;
+  }
+  function doRoundTrip(){
+    var b=build();
+    var p=parseUrl(b.url);
+    var same=eq(b.rows,p.pairs);
+    $('qs-rt').textContent=
+        'built    '+b.url+NL()
+      +'parsed   '+(p.pairs.length?p.pairs.map(function(x){ return x[0]+'='+x[1]; }).join('&'):'(none)')+NL()
+      +NL()+(same?'MATCH - the pairs survive the trip'
+                    +NL()+'       exactly, order included'
+                    :'MISMATCH - input and output differ')+NL()
+      +(b.qs?('fragment  '+(p.fragment===null?'none':p.fragment)):'');
+    return {same:same,built:b.url,parsed:p.pairs,expected:b.rows};
+  }
+  $('qs-go')&&$('qs-go').addEventListener('click',render);
+  $('qs-add').addEventListener('click',function(){
+    writeRows(rowsFromDom().concat([['key','']])); render(); });
+  $('qs-demo').addEventListener('click',function(){
+    writeRows([['q','hello world'],['tags','a'],['tags','b'],['n','3']]);
+    put('qs-enc','pct'); render(); });
+  $('qs-utf').addEventListener('click',function(){
+    writeRows([['q','caf\u00e9 au lait'],['lang','fr-FR'],['empty','']]);
+    put('qs-enc','pct'); render(); });
+  $('qs-parse').addEventListener('click',function(){
+    var p=parseUrl($('qs-in').value);
+    if(p.pairs.length){
+      if(p.scheme) put('qs-scheme',p.scheme);
+      if(p.host) put('qs-host',p.host);
+      if(p.path) put('qs-path',p.path);
+      writeRows(p.pairs);
+      $('qs-err').textContent='';
+    }else{ $('qs-err').textContent='no parameters found in that URL'; }
+    render(); });
+  $('qs-both').addEventListener('click',function(){ doRoundTrip(); render(); });
+  $('qs-rows').addEventListener('input',render);
+  $('qs-rows').addEventListener('click',function(e){
+    var b=e.target.closest('.qs-del');
+    if(!b) return;
+    var i=parseInt(b.getAttribute('data-i'),10), rows=rowsFromDom();
+    rows.splice(i,1);
+    writeRows(rows); render(); });
+  $('qs-scheme').addEventListener('change',render);
+  $('qs-host').addEventListener('input',render);
+  $('qs-path').addEventListener('input',render);
+  $('qs-enc').addEventListener('change',render);
+  $('qs-arr').addEventListener('change',render);
+  $('qs-in').addEventListener('input',render);
+  copyBtn('qs-copy',function(){ return build().url; });
+  writeRows([['q','hello world'],['tags','a'],['tags','b'],['n','3']]);
+  render();
+  return {build:build,parseUrl:parseUrl,render:render,enc:enc,dec:dec,
+    encSpace:encSpace,roundTrip:doRoundTrip,eq:eq,writeRows:writeRows};
+})();
+
+window.__query_string_builder = {
+  encode: function(s,plus){ return QS.encSpace(s,!!plus); },
+  decode: function(s){ return QS.dec(s); },
+  parse: function(u){ return QS.parseUrl(u); },
+  buildUrl: function(o){
+    o=o||{};
+    var plus=!!o.plus, style=o.style||'rep', parts=[], i, grouped={}, order=[];
+    var rows=o.rows||[];
+    for(i=0;i<rows.length;i++){
+      var k=rows[i][0], v=(rows[i][1]===undefined?'':rows[i][1]);
+      if(!(k in grouped)){ grouped[k]=[]; order.push(k); }
+      grouped[k].push(v);
+    }
+    for(i=0;i<order.length;i++){
+      var key=order[i], vals=grouped[key], ek=QS.enc(key);
+      if(vals.length===1){ parts.push(ek+'='+QS.encSpace(vals[0],plus)); }
+      else if(style==='csv'){
+        var j2=[]; for(var j=0;j<vals.length;j++) j2.push(QS.encSpace(vals[j],plus));
+        parts.push(ek+'='+j2.join(','));
+      }else if(style==='idx'){
+        for(var k2=0;k2<vals.length;k2++) parts.push(ek+'[]='+QS.encSpace(vals[k2],plus));
+      }else{
+        for(var m=0;m<vals.length;m++) parts.push(ek+'='+QS.encSpace(vals[m],plus));
+      }
+    }
+    var qs=parts.join('&');
+    var path=String(o.path||'');
+    if(path&&path.charAt(0)!=='/') path='/'+path;
+    var base=String(o.scheme||'https')+'://'+String(o.host||'example.com')+path;
+    return {qs:qs,url:qs?base+'?'+qs:base,base:base,count:parts.length};
+  },
+  render: function(){
+    var b=QS.render();
+    return JSON.stringify({ok:true,url:b.url,qs:b.qs,base:b.base,path:b.path,
+      count:b.count,plus:b.plus,style:b.style,mode:b.plus?'plus':'pct'});
+  },
+  roundTrip: function(){
+    var t=QS.roundTrip();
+    return JSON.stringify({ok:true,same:t.same,built:t.built,
+      parsed:t.parsed.map(function(p){ return [p[0],p[1]]; }),
+      expected:t.expected});
+  },
+  run: function(i){
+    i=i||{};
+    if(i.scheme!==undefined) put('qs-scheme',i.scheme);
+    if(i.host!==undefined) put('qs-host',i.host);
+    if(i.path!==undefined) put('qs-path',i.path);
+    if(i.rows!==undefined) QS.writeRows(i.rows);
+    if(i.enc!==undefined) put('qs-enc',i.enc);
+    if(i.style!==undefined) put('qs-arr',i.style);
+    if(i.url!==undefined) put('qs-in',i.url);
+    return window.__query_string_builder.render();
+  }
+};
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/bandwidth-calculator/">
+      <span class="ocurp-related-n">Bandwidth Calculator</span>
+      <span class="ocurp-related-b">How long a transfer really takes</span>
+    </a></li>
+    <li><a href="/workspace/tools/chmod-calculator/">
+      <span class="ocurp-related-n">chmod Calculator</span>
+      <span class="ocurp-related-b">Turn an octal file mode into the symbolic form</span>
+    </a></li>
+    <li><a href="/workspace/tools/cors-explainer/">
+      <span class="ocurp-related-n">CORS Preflight Explainer</span>
+      <span class="ocurp-related-b">Paste the OPTIONS request and the response headers of a CORS preflight and walk every rule</span>
+    </a></li>
+    <li><a href="/workspace/tools/cron-parser/">
+      <span class="ocurp-related-n">Cron Expression Parser</span>
+      <span class="ocurp-related-b">Expand a crontab into its fields</span>
+    </a></li>
+    <li><a href="/workspace/tools/css-grid-builder/">
+      <span class="ocurp-related-n">CSS Grid Template Builder</span>
+      <span class="ocurp-related-b">Drag out a grid definition and get the CSS with media queries attached.</span>
+    </a></li>
+    <li><a href="/workspace/tools/data-usage-planner/">
+      <span class="ocurp-related-n">Data Usage Planner</span>
+      <span class="ocurp-related-b">See how much mobile data streaming</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

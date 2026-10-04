@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fraction Mixer — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<style>
+  :root{--accent:#FF5F1F;--bg:#050505;--line:rgba(255,255,255,.08);--dim:rgba(255,255,255,.42)}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;overflow-x:hidden}
+  body{background:var(--bg);color:#fff;
+    font-family:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    -webkit-font-smoothing:antialiased;line-height:1.6}
+  .noise-overlay{position:fixed;inset:0;pointer-events:none;opacity:.03;z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .wrap{position:relative;z-index:10;max-width:64rem;margin:0 auto;padding:2rem 1.25rem 4rem}
+  .topbar{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-bottom:2rem}
+  .back{display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--line);background:rgba(255,255,255,.03);
+    padding:.55rem .9rem;border-radius:.65rem;font-size:10px;font-weight:800;letter-spacing:.22em;
+    text-transform:uppercase;color:rgba(255,255,255,.7);text-decoration:none}
+  .back:hover{color:#fff;border-color:rgba(255,95,31,.5)}
+  h1{font-size:1.35rem;font-weight:800;margin:0}
+  .kicker{margin:.25rem 0 0;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+  .lede{max-width:44rem;color:rgba(255,255,255,.55);font-size:.92rem;margin:0 0 2rem}
+  .panel{border:1px solid var(--line);background:rgba(255,255,255,.02);border-radius:1rem;padding:1.25rem}
+  .label{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+  input{width:100%;border-radius:.75rem;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);
+    padding:.7rem .9rem;color:#fff;font:inherit;font-size:.9rem;text-align:center}
+  input:focus{outline:none;border-color:rgba(255,95,31,.5)}
+  select{width:100%;border-radius:.75rem;border:1px solid rgba(255,255,255,.1);background:#141414;color:#fff;
+    padding:.7rem .9rem;font:inherit;font-size:.85rem}
+  select:focus{outline:none;border-color:rgba(255,95,31,.5)}
+  select option{background-color:#141414;color:#fff}
+  button{font:inherit;border-radius:.75rem;cursor:pointer}
+  .btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#000;
+    padding:.7rem 1.1rem;font-size:.82rem;font-weight:800;border:0}
+  .btn:hover{opacity:.9}
+  .btn-ghost{display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.12);
+    background:transparent;color:rgba(255,255,255,.8);padding:.7rem 1rem;font-size:.82rem;font-weight:600}
+  .btn-ghost:hover{background:rgba(255,255,255,.06)}
+  .chip{display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.12);border-radius:999px;
+    padding:.28rem .65rem;font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.55)}
+  .out{border:1px solid rgba(255,95,31,.28);background:rgba(255,95,31,.06);border-radius:.75rem;
+    padding:1rem 1.1rem;font-size:.92rem;line-height:1.8;word-break:break-word}
+  .out.bad{border-color:rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:rgba(255,255,255,.6)}
+  .row{display:flex;justify-content:space-between;gap:1rem;padding:.55rem 0;border-bottom:1px solid rgba(255,255,255,.06)}
+  .row:last-child{border-bottom:0}
+  .row .k{color:var(--dim);font-size:.78rem}
+  .row .v{color:#fff;font-size:.86rem;text-align:right}
+  .big{font-size:1.25rem;font-weight:800;color:var(--accent);text-align:center;line-height:1.5}
+  .cols{display:grid;gap:1rem;grid-template-columns:1fr;margin-bottom:1rem}
+  @media(min-width:820px){.cols{grid-template-columns:1.05fr .95fr}}
+  .frac{display:flex;align-items:center;gap:.6rem;justify-content:center;margin:.4rem 0}
+  .frac .st{display:flex;flex-direction:column;align-items:center;gap:.35rem}
+  .frac .bar{width:3.2rem;border-top:2px solid rgba(255,255,255,.55)}
+  .frac .num{font-size:1.3rem;font-weight:800}
+  .frac .den{font-size:1.3rem;font-weight:800}
+  .ops{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+  h2.sect{font-size:.7rem;font-weight:900;letter-spacing:.26em;text-transform:uppercase;
+    color:rgba(255,255,255,.32);margin:2.5rem 0 1rem}
+  footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--line);
+    font-size:11px;color:rgba(255,255,255,.3)}
+</style>
+<meta name="description" content="Add. Free fraction mixer that runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/fraction-mixer/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Fraction Mixer">
+<meta property="og:description" content="Add. Free fraction mixer that runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/fraction-mixer/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Fraction Mixer on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fraction Mixer">
+<meta name="twitter:description" content="Add. Free fraction mixer that runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Fraction Mixer on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Fraction Mixer","url":"https://ocurp.com/workspace/tools/fraction-mixer/","description":"Add. Free fraction mixer that runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body>
+<div class="noise-overlay"></div>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="/workspace/tools/">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div>
+      <h1>Fraction Mixer</h1>
+      <p class="kicker">Arithmetic &mdash; client-side</p>
+    </div>
+  </div>
+
+  <p class="lede">Two fractions go in, one reduced fraction comes out, and the reduction is shown as the
+  Euclidean steps that produced it. A half plus a third is 5/6 because 6 is the smallest common multiple,
+  not because a decimal was rounded.</p>
+
+  <div class="cols">
+    <div class="panel">
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem">
+        <span class="chip">EXACT RATIONALS</span><span class="chip">GCD SHOWN</span><span class="chip">DIVISION GUARDED</span>
+      </div>
+      <div class="grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+        <div>
+          <label class="label" for="an" style="display:block;margin-bottom:.45rem">First numerator</label>
+          <input id="an" type="text" inputmode="numeric" value="1" autocomplete="off">
+          <label class="label" for="ad" style="display:block;margin:.7rem 0 .45rem">First denominator</label>
+          <input id="ad" type="text" inputmode="numeric" value="2" autocomplete="off">
+        </div>
+        <div>
+          <label class="label" for="bn" style="display:block;margin-bottom:.45rem">Second numerator</label>
+          <input id="bn" type="text" inputmode="numeric" value="1" autocomplete="off">
+          <label class="label" for="bd" style="display:block;margin:.7rem 0 .45rem">Second denominator</label>
+          <input id="bd" type="text" inputmode="numeric" value="3" autocomplete="off">
+        </div>
+      </div>
+      <div style="margin-top:1rem">
+        <label class="label" for="op" style="display:block;margin-bottom:.45rem">Operation</label>
+        <select id="op">
+          <option value="add" selected>Add (+)</option>
+          <option value="sub">Subtract (-)</option>
+          <option value="mul">Multiply (x)</option>
+          <option value="div">Divide (/)</option>
+          <option value="mix">Mix (a:b blend ratio)</option>
+        </select>
+      </div>
+      <div class="ops">
+        <button id="go" class="btn">Mix it</button>
+        <button class="btn-ghost demo" data-a="1/2" data-b="1/3" data-op="add">1/2 + 1/3</button>
+        <button class="btn-ghost demo" data-a="2/3" data-b="1/4" data-op="sub">2/3 - 1/4</button>
+        <button class="btn-ghost demo" data-a="3/4" data-b="2/5" data-op="mul">3/4 x 2/5</button>
+        <button class="btn-ghost demo" data-a="1/2" data-b="1/4" data-op="div">1/2 / 1/4</button>
+        <button class="btn-ghost demo" data-a="2/3" data-b="1/6" data-op="mix">2:1 / 1:3</button>
+      </div>
+      <div id="err" style="margin-top:.8rem;font-size:11px;color:rgba(255,95,31,.9);min-height:1.2rem"></div>
+    </div>
+
+    <div class="panel">
+      <div class="label" style="margin-bottom:.6rem">Result</div>
+      <div id="out" class="out"></div>
+    </div>
+  </div>
+
+  <h2 class="sect">Reduction, step by step</h2>
+  <div class="panel"><div id="gcd" class="out"></div></div>
+
+  <h2 class="sect">Working</h2>
+  <div class="panel"><div id="work" class="out"></div></div>
+
+  <footer>Every value here is an exact rational. The decimal is a view of it, never the source of it.</footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  function gcdSteps(a, b) {
+    // Euclidean algorithm, logged. Inputs are made positive first so a
+    // negative operand cannot spin the loop.
+    var x = Math.abs(a), y = Math.abs(b), steps = [];
+    while (y !== 0) {
+      var q = Math.floor(x / y), r = x % y;
+      steps.push({ a: x, b: y, q: q, r: r });
+      x = y; y = r;
+    }
+    return { gcd: x, steps: steps };
+  }
+  function gcd(a, b) { return gcdSteps(a, b).gcd; }
+  function lcm(a, b) { return Math.abs(a * b) / gcd(a, b); }
+
+  // Accept "a", "a/b", "-a/b", "a/-b". Returns null when it cannot be read.
+  function parseFraction(text) {
+    if (typeof text === 'number') {
+      if (!isFinite(text) || !Number.isInteger(text)) return null;
+      return { n: text, d: 1 };
+    }
+    if (typeof text !== 'string') return null;
+    var s = text.trim();
+    if (!s) return null;
+    var neg = false;
+    if (s.charAt(0) === '-') { neg = true; s = s.slice(1); }
+    else if (s.charAt(0) === '+') s = s.slice(1);
+    var parts = s.split('/');
+    if (parts.length > 2) return null;
+    var nStr = parts[0].trim(), dStr = parts.length === 2 ? parts[1].trim() : '1';
+    if (!/^\d+$/.test(nStr) || !/^\d+$/.test(dStr)) return null;
+    var n = parseInt(nStr, 10), d = parseInt(dStr, 10);
+    if (d === 0) return null;
+    return { n: neg ? -n : n, d: d };
+  }
+
+  function normalize(f) {
+    if (f.d < 0) { f.n = -f.n; f.d = -f.d; }
+    var g = gcd(f.n, f.d) || 1;
+    return { n: f.n / g, d: f.d / g };
+  }
+
+  function fracStr(f) {
+    if (f.d === 1) return String(f.n);
+    return f.n + '/' + f.d;
+  }
+
+  // Pure. mix() takes the two fractions and returns structured JSON.
+  function mix(a, b, op) {
+    op = op || 'add';
+    var A = parseFraction(a), B = parseFraction(b);
+    if (!A) return { ok: false, error: 'first fraction is not readable' };
+    if (!B) return { ok: false, error: 'second fraction is not readable' };
+    if (B.d === 0) return { ok: false, error: 'cannot divide by zero' };
+    if ((op === 'div' || op === 'mix') && B.n === 0) return { ok: false, error: 'cannot divide by zero' };
+
+    var work = [];
+    var raw = { n: 0, d: 1 };
+    if (op === 'add' || op === 'sub') {
+      var L = lcm(A.d, B.d);
+      var an = A.n * (L / A.d), bn = B.n * (L / B.d);
+      raw = { n: op === 'add' ? an + bn : an - bn, d: L };
+      work.push('least common multiple of ' + A.d + ' and ' + B.d + ' is ' + L);
+      work.push(fracStr(A) + ' = ' + an + '/' + L);
+      work.push(fracStr(B) + ' = ' + bn + '/' + L);
+      work.push((op === 'add' ? an + ' + ' + bn : an + ' - ' + bn) + ' = ' + raw.n);
+    } else if (op === 'mul') {
+      raw = { n: A.n * B.n, d: A.d * B.d };
+      work.push(A.n + ' x ' + B.n + ' = ' + raw.n);
+      work.push(A.d + ' x ' + B.d + ' = ' + raw.d);
+    } else if (op === 'div') {
+      raw = { n: A.n * B.d, d: A.d * B.n };
+      work.push('flip the second fraction: ' + fracStr(B) + ' becomes ' + B.n + '/' + B.d + ' inverted');
+      work.push(A.n + ' x ' + B.d + ' = ' + raw.n);
+      work.push(A.d + ' x ' + B.n + ' = ' + raw.d);
+    } else { // mix: interpret a and b as two-part blends aA:bA and aB:bB, combine by cross ratio
+      var total = A.n * B.d + B.n * A.d;
+      if (total === 0) return { ok: false, error: 'the two parts cancel to nothing' };
+      raw = { n: A.n * B.d, d: total };
+      work.push('first blend contributes ' + A.n + '/' + A.d + ', second ' + B.n + '/' + B.d);
+      work.push('cross multiply: ' + A.n + ' x ' + B.d + ' = ' + raw.n);
+      work.push('combined parts: ' + A.n + ' x ' + B.d + ' + ' + B.n + ' x ' + A.d + ' = ' + total);
+    }
+
+    var g = gcd(raw.n, raw.d);
+    var reduced = { n: raw.n / g, d: raw.d / g };
+    var dec = raw.d === 0 ? null : raw.n / raw.d;
+    var gs = gcdSteps(raw.n, raw.d);
+
+    return {
+      ok: true,
+      op: op,
+      a: A, b: B,
+      raw: raw,
+      gcd: g,
+      reduced: reduced,
+      num: reduced.n,
+      den: reduced.d,
+      text: fracStr(reduced),
+      decimal: dec,
+      repeating: dec !== null && /[\d]{15}/.test(String(dec)),
+      proper: reduced.d !== 0 && Math.abs(reduced.n) < reduced.d,
+      isInteger: reduced.d === 1,
+      coprime: gcd(reduced.n, reduced.d) === 1,
+      steps: gs.steps,
+      work: work
+    };
+  }
+
+  function format(x) {
+    if (x === null || x === undefined) return 'n/a';
+    var s = String(x);
+    if (s.indexOf('e') >= 0) return x.toFixed(12).replace(/0+$/, '').replace(/\.$/, '');
+    if (s.length > 18) s = x.toFixed(15).replace(/0+$/, '').replace(/\.$/, '');
+    return s;
+  }
+
+  // ---- view ----------------------------------------------------------------
+  var ids = ['an', 'ad', 'bn', 'bd', 'op'];
+  var el = {};
+  ids.forEach(function (k) { el[k] = document.getElementById(k); });
+  var out = document.getElementById('out');
+  var gcdEl = document.getElementById('gcd');
+  var workEl = document.getElementById('work');
+  var err = document.getElementById('err');
+
+  function row(k, v) { return '<div class="row"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>'; }
+
+  function render() {
+    var as = el.an.value.trim() + '/' + el.ad.value.trim();
+    var bs = el.bn.value.trim() + '/' + el.bd.value.trim();
+    var op = el.op.value;
+    var res = mix(as, bs, op);
+    err.textContent = res.ok ? '' : res.error;
+
+    if (!res.ok) {
+      out.className = 'out bad';
+      out.innerHTML = '<div style="text-align:center">No result.</div>' +
+        '<div style="font-size:.78rem;text-align:center;margin-top:.5rem">' + res.error + '</div>';
+      gcdEl.className = 'out bad'; gcdEl.innerHTML = '<div style="font-size:.82rem">No reduction performed.</div>';
+      workEl.className = 'out bad'; workEl.innerHTML = '<div style="font-size:.82rem">No working shown.</div>';
+      return null;
+    }
+
+    out.className = 'out';
+    var h = '<div class="big">' + fracStr(res.a) + ' ' +
+      ({ add: '+', sub: '&minus;', mul: '&times;', div: '&divide;', mix: ':' })[res.op] + ' ' +
+      fracStr(res.b) + ' = ' + res.text + '</div>';
+    if (res.raw.n / res.raw.d !== res.reduced.n / res.reduced.d) {
+      h += '<div style="text-align:center;color:var(--dim);font-size:.78rem">reduced from ' + fracStr(res.raw) + '</div>';
+    }
+    h += row('Before reducing', fracStr(res.raw));
+    h += row('Greatest common divisor', res.gcd);
+    h += row('Numerator', res.reduced.n);
+    h += row('Denominator', res.reduced.d);
+    h += row('Decimal', format(res.decimal) + (res.repeating ? ' (repeating)' : ''));
+    h += row('In lowest terms?', res.coprime ? 'yes, coprime' : 'no');
+    h += row('Proper fraction?', res.proper ? 'yes' : 'no, improper or whole');
+    h += row('Decimal repeats?', res.repeating ? 'yes' : 'no');
+    out.innerHTML = h;
+
+    gcdEl.className = 'out';
+    var g = '<div class="label" style="margin-bottom:.5rem">Euclidean steps for gcd(' + Math.abs(res.raw.n) + ', ' + res.raw.d + ')</div>';
+    if (res.steps.length === 0) {
+      g += '<div>Trivial: ' + (res.raw.d === 1 ? 'the denominator is already 1.' : 'one value divides the other.') + '</div>';
+    } else {
+      for (var i = 0; i < res.steps.length; i++) {
+        var s = res.steps[i];
+        g += '<div>' + s.a + ' = ' + (s.q + 1) + ' x ' + s.b + ' + ' + s.r + '</div>';
+      }
+      g += '<div style="margin-top:.6rem">last non-zero remainder is <span class="big" style="font-size:1rem">' +
+           res.gcd + '</span>, so ' + fracStr(res.raw) + ' &divide; ' + res.gcd + ' = ' + res.text + '</div>';
+    }
+    gcdEl.innerHTML = g;
+
+    workEl.className = 'out';
+    var w = '';
+    for (var j = 0; j < res.work.length; j++) w += '<div>' + res.work[j] + '</div>';
+    workEl.innerHTML = w || '<div>Nothing to show.</div>';
+    return res;
+  }
+
+  document.getElementById('go').addEventListener('click', render);
+  ids.forEach(function (k) {
+    el[k].addEventListener('change', render);
+    el[k].addEventListener('keydown', function (e) { if (e.key === 'Enter') render(); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.demo'), function (b) {
+    b.addEventListener('click', function () {
+      var a = b.getAttribute('data-a').split('/');
+      var c = b.getAttribute('data-b').split('/');
+      el.an.value = a[0]; el.ad.value = a[1];
+      el.bn.value = c[0]; el.bd.value = c[1];
+      el.op.value = b.getAttribute('data-op');
+      render();
+    });
+  });
+
+  render();
+
+  window.__fraction_mixer = {
+    mix: mix,
+    gcd: gcd,
+    gcdSteps: gcdSteps,
+    lcm: lcm,
+    parseFraction: parseFraction,
+    normalize: normalize,
+    state: function () { return { a: el.an.value + '/' + el.ad.value, b: el.bn.value + '/' + el.bd.value, op: el.op.value }; }
+  };
+})();
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years</span>
+    </a></li>
+    <li><a href="/workspace/tools/apy-vs-apr-calculator/">
+      <span class="ocurp-related-n">APY vs APR Calculator</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
