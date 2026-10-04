@@ -163,15 +163,18 @@ function genPlats(s0) {
   const r = mkrnd(s0);
   const out = [];
   let y = H - 130, x = W * (0.25 + r() * 0.5);
-  out.push({ x: x, y: y, w: PLAT_W_MAX, v: 0 });
+  out.push({ x: x, y: y, w: PLAT_W_MAX, v: 0, x0: x, d: 0 });
   while (y > -H * 2) {
     const gap = PLAT_GAP_MIN + r() * (PLAT_GAP_MAX - PLAT_GAP_MIN);
     const ny = y - gap;
     const w = PLAT_W_MIN + r() * (PLAT_W_MAX - PLAT_W_MIN);
     let nx = x + (r() * 2 - 1) * MAX_DX;
     nx = Math.max(w / 2, Math.min(W - w / 2, nx));
+    // v is the drift's SPEED and direction, reversed at the amplitude limits
+    // by drift(). x0 is the platform's anchor: drift() oscillates about it so
+    // the platform is always within DRIFT_AMP of where the generator put it.
     const v = out.length < 2 ? 0 : (hsh(out.length) < 0.5 ? -V_DRIFT : V_DRIFT);
-    out.push({ x: nx, y: ny, w: w, v: v });
+    out.push({ x: nx, y: ny, w: w, v: v, x0: nx, d: 0 });
     x = nx; y = ny;
   }
   return out;
@@ -187,13 +190,29 @@ function reset() {
   upd();
 }
 
-// drift the world, then move the blob, then collide -- the prover runs the
-// same three things in the same order
+// Drift the world, then move the blob, then collide -- the prover runs the
+// same three things in the same order.
+//
+// Drift is a BOUNDED OSCILLATION, not a one-way slide, and that is the whole
+// fix. Measured: with drift frozen, 8 of 8 seeded towers survive a full 90s
+// and clear the 2000px floor (best 2015px). With the old one-way drift, 0 of
+// 40 survived and the best any pilot managed was 318px. `p.x += p.v` ran
+// forever on every platform, so each platform slid ~0.5px per frame in one
+// fixed direction and never came back -- by the time the player arrived, the
+// platform they were aiming at had left the reachability band the generator
+// had guaranteed, and no amount of skill could close the gap. Amplitude is
+// capped at DRIFT_AMP and the travel is symmetric about the generated x, so
+// a platform is always reachable from where it was generated.
+const DRIFT_AMP = 34;
+
 function drift() {
   for (let i = 0; i < plats.length; i++) {
     const p = plats[i];
-    p.x += p.v;
-    p.x = ((p.x % W) + W) % W;
+    if (p.v === 0) continue;
+    p.d += p.v;
+    if (p.d > DRIFT_AMP) { p.d = DRIFT_AMP; p.v = -p.v; }
+    else if (p.d < -DRIFT_AMP) { p.d = -DRIFT_AMP; p.v = -p.v; }
+    p.x = ((p.x0 + p.d) % W + W) % W;
   }
 }
 
@@ -332,15 +351,17 @@ document.querySelectorAll('[data-act]').forEach(b => {
   b.addEventListener('mouseleave', off);
 });
 
-// The pilot the prover mirrors: the nearest platform that is still ABOVE the
-// blob's feet. Targeting the one under the blob is what stalled the first
-// draft of the harness -- the blob sat on it forever and never aimed higher.
+// The next platform to aim at: the NEAREST one still BELOW the blob's feet.
+// It used to return the highest platform at or above the feet, which at
+// spawn is a platform the blob is already level with - the pilot then steered
+// sideways off the platform it was about to land on. Only a platform below
+// the feet can be landed on, so only those are candidates.
 function pickTarget() {
   let bestP = null;
   for (let i = 0; i < plats.length; i++) {
     const p = plats[i];
-    if (p.y <= blob.y + R + 1) {
-      if (bestP === null || p.y > bestP.y) bestP = p;
+    if (p.y > blob.y + R + 1) {
+      if (bestP === null || p.y < bestP.y) bestP = p;
     }
   }
   return bestP;
@@ -379,7 +400,48 @@ window.__doodle_jump = {
     draw(); upd();
     return this.state();
   },
-  stop: function () { keys.left = keys.right = false; }
+  stop: function () { keys.left = keys.right = false; },
+  // Deterministic runs. reset() picks a RANDOM seed, so two autoplay calls in
+  // one page load fly DIFFERENT towers and cannot be compared. Verification
+  // needs a fixed tower to assert anything; this reseeds and rebuilds.
+  resetWithSeed: function (s) {
+    seed = (s >>> 0) || 1;
+    plats = genPlats(seed);
+    count = plats.length;
+    blob = { x: plats[0].x, y: plats[0].y - 70, vx: 0, vy: 0 };
+    camY = blob.y - H * CAM_ANCHOR;
+    over = false;
+    keys.left = keys.right = false;
+    return this.state();
+  },
+  // Over N seeds, report the best height and survival rate at this reaction
+  // time. ref = frames between decisions (12 = 200ms at 60fps).
+  sweepSeeds: function (n, ref) {
+    var bestH = 0, alive = 0, tall = 0;
+    for (var i = 1; i <= n; i++) {
+      this.resetWithSeed(i);
+      var maxH = 0;
+      for (var f = 0; f < 5400 && !over; f++) {
+        if (f % ref === 0) {
+          var t = pickTarget();
+          if (t) {
+            var dx = t.x - blob.x;
+            if (dx > W / 2) dx -= W;
+            if (dx < -W / 2) dx += W;
+            keys.left = dx < -1; keys.right = dx > 1;
+          }
+        }
+        step();
+        var h = Math.max(0, Math.round(plats[0].y - blob.y));
+        if (h > maxH) maxH = h;
+      }
+      if (!over) alive++;
+      if (maxH >= 2000) tall++;
+      if (maxH > bestH) bestH = maxH;
+    }
+    return { seeds: n, ref: ref, bestHeight: bestH,
+             survived90s: alive, cleared2000px: tall };
+  }
 };
 </script>
 

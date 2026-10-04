@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Light Up — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Light Up - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/light-up/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Light Up">
+<meta property="og:description" content="Light Up - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/light-up/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Light Up on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Light Up">
+<meta name="twitter:description" content="Light Up - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Light Up on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Light Up","url":"https://ocurp.com/workspace/games/light-up/","description":"Light Up - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Light Up</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">LOGIC</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="easy" class="ws-btn">Easy</button>
+      <button id="med" class="ws-btn-ghost">Medium</button>
+      <button id="hard" class="ws-btn-ghost">Hard</button>
+      <button id="new" class="ws-btn-ghost">New puzzle</button>
+      <span class="ws-chip">5x5 &middot; 6x6 &middot; 7x7</span>
+    </div>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+      <div>
+        <div id="board" class="grid w-full max-w-[460px] gap-px"></div>
+        <p class="mt-2 text-[10px] text-white/35">Click an open square to place or remove a bulb. Numbered walls count their adjacent bulbs.</p>
+      </div>
+
+      <div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Bulbs</div>
+            <div class="font-display text-xl font-black text-accent" id="bulbs">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Dark</div>
+            <div class="font-display text-xl font-black text-white" id="dark">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Off-answer</div>
+            <div class="font-display text-xl font-black text-white" id="mis">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Status</div>
+            <div class="font-display text-sm font-black text-white" id="status">Playing</div></div>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="check" class="ws-btn-ghost">Check</button>
+          <button id="hint" class="ws-btn-ghost">Reveal one</button>
+        </div>
+        <div id="msg" class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">New puzzle loads on start.</div>
+      </div>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+  const DIFF = {easy:5, med:6, hard:7};
+  const ATTEMPTS = 80, MORE_EVERY = 20, CARVE_TRIES = 60;
+
+  function idx(r,c){ return r*100+c; }
+  function isWall(g,r,c){
+    return r<0||c<0||r>=g.n||c>=g.n||g.walls[r][c]!==0;
+  }
+  function openNeighbours(g,r,c){
+    const out=[], d=[[-1,0],[1,0],[0,-1],[0,1]];
+    for(let i=0;i<4;i++){
+      const rr=r+d[i][0], cc=c+d[i][1];
+      if(!isWall(g,rr,cc)) out.push([rr,cc]);
+    }
+    return out;
+  }
+  // The run of open squares containing (r,c) in each of the four directions.
+  // A bulb lights exactly its own square plus these four runs, and two bulbs
+  // conflict when they share one. Both the rule and the win check call this
+  // one function, so the page cannot disagree with itself.
+  function segments(g,r,c){
+    const d=[[-1,0],[1,0],[0,-1],[0,1]], res=[];
+    for(let i=0;i<4;i++){
+      const seg=[];
+      let rr=r+d[i][0], cc=c+d[i][1];
+      while(!isWall(g,rr,cc)){ seg.push([rr,cc]); rr+=d[i][0]; cc+=d[i][1]; }
+      res.push(seg);
+    }
+    return res;
+  }
+  function litSet(g,bulbs){
+    const lit=new Set();
+    for(let i=0;i<bulbs.length;i++){
+      lit.add(idx(bulbs[i][0],bulbs[i][1]));
+      const seg=segments(g,bulbs[i][0],bulbs[i][1]);
+      for(let k=0;k<seg.length;k++)
+        for(let m=0;m<seg[k].length;m++) lit.add(idx(seg[k][m][0],seg[k][m][1]));
+    }
+    return lit;
+  }
+  function bulbAt(g,bulbs,r,c){
+    for(let i=0;i<bulbs.length;i++) if(bulbs[i][0]===r&&bulbs[i][1]===c) return true;
+    return false;
+  }
+  function sees(g,a,b){
+    const sa=segments(g,a[0],a[1]), sb=segments(g,b[0],b[1]);
+    for(let i=0;i<4;i++) for(let j=0;j<4;j++)
+      if(sa[i].length && sb[j].length &&
+         sa[i][0][0]===sb[j][0][0] && sa[i][0][1]===sb[j][0][1]) return true;
+    return false;
+  }
+  function conflicts(g,bulbs,r,c){
+    for(let i=0;i<bulbs.length;i++) if(sees(g,[r,c],bulbs[i])) return true;
+    return false;
+  }
+  function darkList(g,bulbs){
+    const lit=litSet(g,bulbs), out=[];
+    for(let r=0;r<g.n;r++) for(let c=0;c<g.n;c++)
+      if(g.walls[r][c]===0 && !lit.has(idx(r,c))) out.push([r,c]);
+    return out;
+  }
+  function cluesOK(g,bulbs){
+    for(let r=0;r<g.n;r++) for(let c=0;c<g.n;c++){
+      const v=g.walls[r][c];
+      if(v>0){
+        let k=0;
+        const nb=openNeighbours(g,r,c);
+        for(let i=0;i<nb.length;i++) if(bulbAt(g,bulbs,nb[i][0],nb[i][1])) k++;
+        if(k!==v) return false;
+      }
+    }
+    return true;
+  }
+  function winOn(g,bulbs){
+    if(!g || !bulbs.length) return false;
+    // no two bulbs may see each other
+    for(let i=0;i<bulbs.length;i++) for(let j=i+1;j<bulbs.length;j++)
+      if(sees(g,bulbs[i],bulbs[j])) return false;
+    if(darkList(g,bulbs).length) return false;
+    return cluesOK(g,bulbs);
+  }
+
+  // --- generation ---------------------------------------------------------
+  // Greedy construction. Place a bulb on a random candidate square and strike
+  // off every square it sees, so no two bulbs can ever share a run.
+  function carve(n,rng){
+    const g={n:n, walls:[]};
+    for(let r=0;r<n;r++){ g.walls.push([]); for(let c=0;c<n;c++) g.walls[r].push(0); }
+    const cand=[];
+    for(let r=0;r<n;r++) for(let c=0;c<n;c++) cand.push([r,c]);
+    for(let i=cand.length-1;i>0;i--){
+      const j=(rng()*(i+1))|0, t=cand[i]; cand[i]=cand[j]; cand[j]=t;
+    }
+    const bulbs=[], dead=new Set();
+    let k=0;
+    while(k<cand.length && dead.size<cand.length){
+      const cell=cand[k];
+      if(dead.has(idx(cell[0],cell[1]))){ k++; continue; }
+      bulbs.push(cell);
+      dead.add(idx(cell[0],cell[1]));
+      const seg=segments(g,cell[0],cell[1]);
+      for(let i=0;i<seg.length;i++)
+        for(let m=0;m<seg[i].length;m++) dead.add(idx(seg[i][m][0],seg[i][m][1]));
+      k++;
+    }
+    return {walls:g.walls, bulbs:bulbs};
+  }
+  function validCarve(n,rng){
+    for(let t=0;t<CARVE_TRIES;t++){
+      const built=carve(n,rng);
+      const g={n:n,walls:built.walls};
+      if(darkList(g,built.bulbs).length===0) return built;
+    }
+    return null;
+  }
+
+  function wallsFrom(g,bulbs,drop,rng){
+    const n=g.n, walls=[];
+    for(let r=0;r<n;r++){ walls.push([]); for(let c=0;c<n;c++) walls[r].push(0); }
+    for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+      // a cell that holds a bulb can never be a wall - a bulb sits on open floor
+      if(bulbAt(g,bulbs,r,c)) continue;
+      let k=0;
+      const nb=openNeighbours(g,r,c);
+      for(let i=0;i<nb.length;i++) if(bulbAt(g,bulbs,nb[i][0],nb[i][1])) k++;
+      // A wall only becomes one if its clue is not a freebie: k===1 is next to
+      // a bulb the generator itself placed, so it constrains nothing. k===0 and
+      // k>=2 are real information and are kept here.
+      if(k===0 || k>=2) walls[r][c]=k;
+    }
+    // A wall BLOCKS light, so removing one is not free: it can strand a square
+    // that only the bulbs beyond it used to reach, and it changes the neighbour
+    // count of every wall around it. Drop them ONE at a time and keep a drop
+    // only if the board STILL HAS AT LEAST ONE SOLUTION - verified by the
+    // solver, not by asking whether the generator's bulbs still work, because
+    // those bulbs stop being a solution the moment a wall is added.
+    const cand=[];
+    for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(walls[r][c]>0) cand.push([r,c]);
+    for(let i=cand.length-1;i>0;i--){ const j=(rng()*(i+1))|0, t=cand[i]; cand[i]=cand[j]; cand[j]=t; }
+    let dropped=0;
+    const budget=Math.round(cand.length*drop);
+    for(let i=0;i<cand.length && dropped<budget;i++){
+      const r=cand[i][0], c=cand[i][1], keep=walls[r][c];
+      walls[r][c]=0;
+      if(findSolutions(walls,n,1).solutions.length>=1) dropped++;
+      else walls[r][c]=keep;
+    }
+    let info=0;
+    for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(walls[r][c]>0) info++;
+    if(info < Math.max(2, Math.ceil(n*n/8))) return null;
+    return walls;
+  }
+
+  // Independent solver, pruning at the first unlit square: any solution must
+  // light it, so it must place a bulb either on the square itself or somewhere
+  // along one of its four open runs. Collects up to `limit` complete solutions.
+  // Returned rather than merely counted, because the generator's own bulb set
+  // is NOT automatically a solution once walls are added.
+  function findSolutions(walls,n,limit,nodeCap){
+    const g={n:n,walls:walls};
+    const B=[], found=[];
+    const cap=nodeCap||200000;
+    let nodes=0, capped=false;
+    function rec(){
+      if(found.length>=limit){ capped=true; return; }
+      if(nodes>=cap){ capped=true; return; }
+      nodes++;
+      const dark=darkList(g,B);
+      if(dark.length===0){ if(cluesOK(g,B)) found.push(B.map(function(b){return [b[0],b[1]];})); return; }
+      const u=dark[0];
+      const reach=[[u[0],u[1]]];
+      const seg=segments(g,u[0],u[1]);
+      for(let i=0;i<seg.length;i++) for(let m=0;m<seg[i].length;m++) reach.push(seg[i][m]);
+      const key={};
+      for(let i=0;i<reach.length;i++){
+        const cell=reach[i];
+        if(conflicts(g,B,cell[0],cell[1])) continue;
+        const kid=idx(cell[0],cell[1]);
+        if(key[kid]) continue;
+        key[kid]=1;
+        B.push(cell);
+        rec();
+        B.pop();
+        if(found.length>=limit) return;
+      }
+    }
+    rec();
+    return {solutions:found, nodes:nodes, capped:capped};
+  }
+  function countSolutions(walls,n,limit){ return findSolutions(walls,n,limit).solutions.length; }
+
+  function makePuzzle(n,rng){
+    let drop=0.12;
+    for(let a=1;a<=ATTEMPTS;a++){
+      if(a>1 && (a-1)%MORE_EVERY===0) drop=Math.min(0.48, drop+0.06);
+      const cv=validCarve(n,rng);
+      if(!cv) continue;
+      const g={n:n,walls:cv.walls};
+      if(darkList(g,cv.bulbs).length) continue;
+      const walls=wallsFrom(g,cv.bulbs,drop,rng);
+      if(!walls) continue;
+      // The solver - not the generator's own bulb set - decides whether this
+      // board is playable. Adding a wall can strand a square, so the old
+      // shortcut of trusting the generating bulbs produced boards with ZERO
+      // solutions and every puzzle was silently thrown away.
+      const fs=findSolutions(walls,n,2);
+      // capped=true means the search hit its node budget before exhausting the
+      // board, so "exactly one solution found" is NOT proof of uniqueness - it
+      // may have been cut off mid-branch. Reject rather than ship an ambiguous
+      // puzzle; makePuzzle simply tries another carve.
+      if(fs.capped || fs.solutions.length!==1) continue;
+      return {n:n, walls:walls, sol:fs.solutions[0], drop:drop};
+    }
+    return null;
+  }
+
+  // --- game state ---------------------------------------------------------
+  let G=null;
+
+  function emptyWalls(n){
+    const w=[]; for(let r=0;r<n;r++){ w.push([]); for(let c=0;c<n;c++) w[r].push(0); } return w;
+  }
+  function newGame(level){
+    const n=DIFF[level]||DIFF.easy;
+    let pz=null;
+    for(let t=0;t<8 && !pz;t++) pz=makePuzzle(n,Math.random);
+    if(pz) G={level:level,n:n,walls:pz.walls,sol:pz.sol,bulbs:[],status:'Playing',fallback:!!pz.fallback};
+    else   G={level:level,n:n,walls:emptyWalls(n),sol:[],bulbs:[],status:'Playing',fallback:true,empty:true};
+    render();
+  }
+  function place(r,c){
+    if(!G || G.status==='Solved') return 'inactive';
+    if(G.walls[r][c]>0) return 'rejected-wall';
+    const at=bulbAt(G,G.bulbs,r,c);
+    if(at){
+      G.bulbs=G.bulbs.filter(function(b){ return !(b[0]===r&&b[1]===c); });
+      G.status='Playing';
+      render();
+      return 'removed';
+    }
+    if(conflicts(G,G.bulbs,r,c)) return 'rejected-see';
+    G.bulbs.push([r,c]);
+    checkWin();
+    render();
+    return 'placed';
+  }
+  function checkWin(){
+    if(!G) return false;
+    if(winOn(G,G.bulbs)){ G.status='Solved'; return true; }
+    return false;
+  }
+  function stats(){
+    if(!G) return null;
+    let off=0, walls=0;
+    for(let r=0;r<G.n;r++) for(let c=0;c<G.n;c++) if(G.walls[r][c]>0) walls++;
+    for(let i=0;i<G.bulbs.length;i++) if(!bulbAt(G,G.sol,G.bulbs[i][0],G.bulbs[i][1])) off++;
+    return {bulbs:G.bulbs.length, dark:darkList(G,G.bulbs).length, walls:walls,
+            offAnswer:off, status:G.status, solvedBulbs:G.sol.length};
+  }
+  function hint(){
+    if(!G || !G.sol.length) return null;
+    for(let i=0;i<G.sol.length;i++){
+      const r=G.sol[i][0], c=G.sol[i][1];
+      if(bulbAt(G,G.bulbs,r,c)) continue;
+      if(conflicts(G,G.bulbs,r,c)) continue;
+      G.bulbs.push([r,c]);
+      checkWin(); render();
+      return {r:r,c:c};
+    }
+    return null;
+  }
+  function revealAll(){
+    if(!G) return 0;
+    G.bulbs=G.sol.map(function(b){ return [b[0],b[1]]; });
+    checkWin(); render();
+    return G.bulbs.length;
+  }
+
+  function render(){
+    const b=document.getElementById('board');
+    if(!b || !G) return;
+    const n=G.n;
+    b.style.gridTemplateColumns='repeat('+n+', minmax(0,1fr))';
+    b.innerHTML='';
+    const lit=litSet(G,G.bulbs);
+    for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+      const d=document.createElement('div'), w=G.walls[r][c];
+      if(w>0){
+        d.className='flex aspect-square items-center justify-center rounded-[6px] bg-white/[0.14] font-display text-lg font-black text-white';
+        d.textContent=String(w);
+      } else if(bulbAt(G,G.bulbs,r,c)){
+        d.className='flex aspect-square cursor-pointer items-center justify-center rounded-[6px] bg-accent/25';
+        const dot=document.createElement('span');
+        dot.className='block h-[42%] w-[42%] rounded-full bg-accent';
+        d.appendChild(dot);
+        d.addEventListener('click',function(){ place(r,c); });
+      } else {
+        const on=lit.has(idx(r,c));
+        d.className='flex aspect-square cursor-pointer items-center justify-center rounded-[6px] '+(on?'bg-white/[0.07]':'bg-white/[0.02]');
+        d.addEventListener('click',function(){ place(r,c); });
+      }
+      b.appendChild(d);
+    }
+    const s=stats();
+    document.getElementById('bulbs').textContent=s.bulbs;
+    document.getElementById('dark').textContent=s.dark;
+    document.getElementById('mis').textContent=s.offAnswer;
+    document.getElementById('status').textContent=s.status;
+    const msg=document.getElementById('msg');
+    msg.textContent = G.empty ? 'No puzzle could be generated for this size.'
+      : (s.status==='Solved' ? 'Solved. Every square is lit, no two bulbs see each other and every wall counts correctly.'
+      : (G.fallback ? 'Fully clued puzzle: this layout could not be made unique with walls removed.'
+                    : 'Light every square. '+s.walls+' numbered walls to satisfy.'));
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    document.getElementById('easy').onclick=function(){ newGame('easy'); };
+    document.getElementById('med').onclick=function(){ newGame('med'); };
+    document.getElementById('hard').onclick=function(){ newGame('hard'); };
+    document.getElementById('new').onclick=function(){ newGame(G?G.level:'easy'); };
+    document.getElementById('check').onclick=function(){ checkWin(); render(); };
+    document.getElementById('hint').onclick=function(){ hint(); };
+    newGame('easy');
+  });
+
+  // Synchronous test hook: a backgrounded headless tab has throttled timers,
+  // so tests drive this object directly instead of waiting on real time.
+  window.__lightup = {
+    get G(){ return G; },
+    DIFF: DIFF, ATTEMPTS: ATTEMPTS, MORE_EVERY: MORE_EVERY, CARVE_TRIES: CARVE_TRIES,
+    place: place, stats: stats, checkWin: checkWin, hint: hint, revealAll: revealAll,
+    newGame: newGame, makePuzzle: makePuzzle, countSolutions: countSolutions,
+    findSolutions: findSolutions,
+    carve: carve, validCarve: validCarve, wallsFrom: wallsFrom,
+    isWon: function(bulbs){ return winOn(G,bulbs); },
+    segments: segments, sees: sees, litSet: litSet, darkList: darkList, cluesOK: cluesOK,
+    bulbAt: bulbAt, idx: idx
+  };
+</script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

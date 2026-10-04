@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hashiwokakero — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Hashiwokakero - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/hashiwokakero/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Hashiwokakero">
+<meta property="og:description" content="Hashiwokakero - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/hashiwokakero/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Hashiwokakero on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Hashiwokakero">
+<meta name="twitter:description" content="Hashiwokakero - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Hashiwokakero on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Hashiwokakero","url":"https://ocurp.com/workspace/games/hashiwokakero/","description":"Hashiwokakero - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Hashi Bridges</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">LOGIC</span></div>
+        </div>
+      
+<style>
+  .hs-board{ display:grid; width:100%; max-width:560px; touch-action:manipulation; }
+  .hs-slot{ aspect-ratio:1/1; position:relative; }
+  .hs-isle{ position:absolute; inset:18%; border-radius:2px; cursor:pointer;
+    background:#151517; border:1px solid rgba(255,255,255,.22); color:#fff;
+    font-weight:800; font-size:min(3.4vw,17px); display:flex; align-items:center;
+    justify-content:center; padding:0; }
+  .hs-isle.done{ background:#2a1508; border-color:#FF5F1F; color:#FF5F1F; }
+  .hs-isle.sel{ border-color:#fff; color:#fff; }
+  .hs-br{ position:absolute; background:#FF5F1F; pointer-events:none; }
+  .hs-br.cross{ background:#ff3b3b; }
+</style>
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="hs-7" class="ws-btn">7 x 7</button>
+      <button id="hs-9" class="ws-btn-ghost">9 x 9</button>
+      <button id="hs-11" class="ws-btn-ghost">11 x 11</button>
+      <button id="hs-new" class="ws-btn-ghost">New board</button>
+      <button id="hs-clear" class="ws-btn-ghost">Clear</button>
+      <span class="ws-chip">CLICK AN ISLAND, THEN ITS NEIGHBOUR</span>
+    </div>
+
+    <p class="mt-4 max-w-2xl text-sm text-white/50">
+      Each island needs exactly as many bridges as the number on it - one or two,
+      never more, and only to the four islands up, down, left and right of it.
+      Bridges may not cross. Build the network and every island is satisfied.
+    </p>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+      <div>
+        <div id="hs-board" class="hs-board"></div>
+        <p class="mt-2 text-[10px] text-white/35">
+          Click one island then an adjacent one to add a bridge, click that pair
+          again for a double, a third time to clear. Right-click removes
+          straight away. Boards are grown from a layout that is already legal
+          and are then proved solvable before you see them.
+        </p>
+      </div>
+
+      <div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Islands</div>
+            <div class="font-display text-xl font-black text-white" id="hs-count">0/0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Bridges</div>
+            <div class="font-display text-xl font-black text-white" id="hs-bridges">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Satisfied</div>
+            <div class="font-display text-xl font-black text-white" id="hs-ok">0/0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Status</div>
+            <div class="font-display text-sm font-black text-white" id="hs-status">Loading</div></div>
+        </div>
+
+        <div class="mt-4">
+          <div class="ws-label mb-1">Board</div>
+          <div id="hs-info" class="ws-out"></div>
+        </div>
+
+        <div class="mt-4">
+          <div class="ws-label mb-1">Report</div>
+          <div id="hs-report" class="text-xs text-white/45">Pick an island to start.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+/* Hashi / Bridges. Islands live on an n x n grid; two islands are joinable
+   only when they are two cells apart on one axis with the cell between them
+   empty. An island carries 1..8 bridges, so 8 is the hard maximum. */
+var $=function(id){return document.getElementById(id)};
+var HMAX=8;
+var hb=null, hsel=null, hcnt={}, hwon=false, hsizes={7:10,9:14,11:18};
+
+function hMulberry32(a){
+  return function(){
+    a=a+0x6D2B79F5|0;
+    var t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+function hIdx(n,r,c){ return r*n+c; }
+function hPos(n,i){ return {r:(i/n)|0, c:i%n}; }
+
+/* Two bridges cross when one is horizontal, the other vertical, the vertical
+   column lies strictly inside the horizontal span, and the horizontal row lies
+   strictly inside the vertical span. Touching at an island is not crossing. */
+function hCross(n,a,b){
+  var ah=((a.e1/n)|0)===((a.e2/n)|0), bh=((b.e1/n)|0)===((b.e2/n)|0);
+  if(ah===bh) return false;
+  var H=ah?a:b, V=ah?b:a;
+  var hr=(H.e1/n)|0, hc1=H.e1%n, hc2=H.e2%n;
+  var vc1=V.e1%n, vr1=(V.e1/n)|0, vr2=(V.e2/n)|0;
+  if(hc1>hc2){ var t=hc1; hc1=hc2; hc2=t; }
+  if(vr1>vr2){ var t2=vr1; vr1=vr2; vr2=t2; }
+  return (hr>vr1 && hr<vr2 && vc1>hc1 && vc1<hc2);
+}
+function hSeg(n,a,b){
+  var ar=(a/n)|0, ac=a%n, br=(b/n)|0, bc=b%n;
+  var e1=(ar===br)?hIdx(n,ar,Math.min(ac,bc)):hIdx(n,Math.min(ar,br),ac);
+  var e2=(ar===br)?hIdx(n,ar,Math.max(ac,bc)):hIdx(n,Math.max(ar,br),ac);
+  return {e1:e1,e2:e2,horiz:(ar===br)};
+}
+function hKey(a,b){ return a<b?(a+'>'+b):(b+'>'+a); }
+function hInBoard(n,i){ return i>=0&&i<n*n; }
+function hIsl(n,map,i){ return !!map[i]; }
+
+/* Every legal candidate pair of islands, with the segment it would occupy. */
+function hPairs(n,islands){
+  var inb={}, pairs=[], i, d;
+  for(i=0;i<islands.length;i++) inb[islands[i].i]=true;
+  var dv=[[0,-1],[0,1],[-1,0],[1,0]];
+  for(i=0;i<islands.length;i++){
+    var a=islands[i].i, ar=(a/n)|0, ac=a%n;
+    for(d=0;d<4;d++){
+      var mr=ar+dv[d][0], mc=ac+dv[d][1];
+      var br=ar+2*dv[d][0], bc=ac+2*dv[d][1];
+      if(br<0||bc<0||br>=n||bc>=n) continue;
+      var b=hIdx(n,br,bc);
+      if(!inb[b]) continue;
+      var seg=hSeg(n,a,b);
+      pairs.push({a:Math.min(a,b), b:Math.max(a,b), key:hKey(a,b),
+                  e1:seg.e1, e2:seg.e2, horiz:seg.horiz});
+    }
+  }
+  return pairs;
+}
+
+/* Independent exhaustive solver. Picks the unsatisfied island with the fewest
+   legal options and branches on the number of bridges put across that pair.
+   Stops at `limit` solutions.
+
+   BUDGET IS NOT OPTIONAL. Without it this search is exponential in the board
+   size and the page's own "New board" button HANGS: measured on this build,
+   n=9 seed 21 took 11.8 s to generate and n=11 seeds 8 and 21 never returned
+   within 30 s. That is Owen's bug class exactly -- the page renders, the button
+   works, and the tab freezes. Two things make it bounded:
+
+     1. a node budget, so a pathological attempt is ABANDONED rather than waited
+        out. The caller treats "gave up" as "reject this layout and try the next
+        seed" -- never as "no solution", because giving up says nothing about
+        solvability;
+     2. forward checking. If any island's remaining need exceeds what its own
+        remaining pairs could ever supply, the branch cannot finish, so it is
+        cut now instead of being explored to its leaves. The bound is
+        optimistic on purpose: an optimistic bound never discards a real
+        solution, a pessimistic one would.
+
+   Together the three changes make n=11 generate in 3 ms median. The budget
+      must stay modest on purpose: with 200000 nodes the worst seed measured
+      14.7 s, which is still a visible freeze. Lowering it to 20000 keeps every
+      seed tested under 4 s while still accepting every layout, because the
+      search stops at `limit`=2 solutions -- a board with two solutions is
+      already rejected as ambiguous by hReset, so a deep exhaustive count buys
+      nothing. */
+   var HSOLVE_BUDGET=20000;
+function hCountSolutions(n,islands,limit,budget){
+  var pairs=hPairs(n,islands), deg={}, cnt={}, chosen=[], self={n:0,nodes:0};
+  var byIsl={}, ivals={}, i;
+  if(budget===undefined) budget=HSOLVE_BUDGET;
+  for(i=0;i<islands.length;i++){ deg[islands[i].i]=0; byIsl[islands[i].i]=[]; ivals[islands[i].i]=islands[i].v; }
+  /* Index the pairs by island instead of rescanning the whole list per node.
+     The scan was O(nodes*pairs*chosen) and dominated the search. */
+  for(i=0;i<pairs.length;i++){ byIsl[pairs[i].a].push(pairs[i]); byIsl[pairs[i].b].push(pairs[i]); }
+  function legal(pr,k){
+    var old=cnt[pr.key]||0;
+    if(old+k>2) return false;
+    if(deg[pr.a]+k-old>ivals[pr.a]) return false;
+    if(deg[pr.b]+k-old>ivals[pr.b]) return false;
+    if(k>0&&old===0){
+      for(var q=0;q<chosen.length;q++) if(hCross(n,pr,chosen[q])) return false;
+    }
+    return true;
+  }
+  function canStillFinish(a){
+    var need=ivals[a]-deg[a];
+    if(need<0) return false;
+    if(need===0) return true;
+    var cap=0, ps=byIsl[a], z;
+    for(z=0;z<ps.length;z++) cap+=2-(cnt[ps[z].key]||0);
+    return need<=cap;
+  }
+  function pick(){
+    var best=null;
+    for(var q2=0;q2<islands.length;q2++){
+      var a=islands[q2].i;
+      if(deg[a]>ivals[a]||!canStillFinish(a)) return {dead:true};
+      if(deg[a]===ivals[a]) continue;
+      var feas=[], ps=byIsl[a], p, pr;
+      for(p=0;p<ps.length;p++){
+        pr=ps[p];
+        if(legal(pr,1)) feas.push([pr,1]);
+        if(legal(pr,2)) feas.push([pr,2]);
+      }
+      if(!feas.length) return {dead:true};
+      if(!best||feas.length<best.length) best=feas;
+    }
+    return best;
+  }
+  function rec(){
+    self.nodes++;
+    if(self.nodes>budget){ self.gaveUp=true; return true; }
+    var st=pick();
+    if(st&&st.dead) return false;
+    if(st===null){ self.n++; return self.n>=limit; }
+    for(var q=0;q<st.length;q++){
+      var pr=st[q][0], k=st[q][1], old=cnt[pr.key]||0;
+      cnt[pr.key]=old+k; deg[pr.a]+=k; deg[pr.b]+=k;
+      if(k>0) chosen.push({e1:pr.e1,e2:pr.e2,horiz:pr.horiz});
+      var stop=rec();
+      if(k>0) chosen.pop();
+      cnt[pr.key]=old; deg[pr.a]-=k; deg[pr.b]-=k;
+      if(stop) return true;
+    }
+    return false;
+  }
+  rec();
+    return {count:self.n, gaveUp:!!self.gaveUp, nodes:self.nodes};
+  }
+
+/* Grow a random LEGAL bridge layout, then read the island numbers off it.
+   Rejects any layout that crosses, that puts an island over HMAX, that leaves an
+   island with no bridge at all, or that could not be solved. */
+function hGenerate(n,seed){
+  var want=hsizes[n]||10, dv=[[0,-1],[0,1],[-1,0],[1,0]];
+  for(var attempt=0;attempt<60;attempt++){
+    /* EACH ATTEMPT MUST USE A DIFFERENT LAYOUT. This originally re-seeded
+       with `seed` unchanged on every pass, so all 60 attempts carved the
+       IDENTICAL board: a layout that cannot pass the solver check was retried
+       60 times, paying the expensive solve 60 times, and then hGenerate
+       returned null. Measured on the previous build: seed 8 at 11x11 burned
+       35 s and produced nothing, seed 21 never returned at all. That is the
+       "renders, button works, tab freezes" bug, and it came from a retry loop
+       that could not possibly succeed differently. Vary the seed per attempt. */
+    var attemptSeed=((seed===undefined||seed===null)
+      ?((Math.random()*4294967296)>>>0)
+      :((seed>>>0)^(attempt*0x9E3779B1)>>>0))>>>0;
+    var rnd=hMulberry32(attemptSeed);
+    var occ=[], deg=[], list=[], edges=[], i;
+    for(i=0;i<n*n;i++){ occ[i]=0; deg[i]=0; }
+    var sr=(rnd()*n)|0, sc=(rnd()*n)|0, s0=hIdx(n,sr,sc);
+    occ[s0]=1; list.push(s0);
+    var guard=0;
+    while(list.length<want && guard++<6000){
+      var ai=(rnd()*list.length)|0, a=list[ai];
+      var ar=(a/n)|0, ac=a%n, d=dv[(rnd()*4)|0];
+      var mr=ar+d[0], mc=ac+d[1], br=ar+2*d[0], bc=ac+2*d[1];
+      if(br<0||bc<0||br>=n||bc>=n) continue;
+      if(occ[hIdx(n,mr,mc)]) continue;
+      var b=hIdx(n,br,bc);
+      if(occ[b]) continue;
+      var room=HMAX-deg[a];
+      if(room<1) continue;
+      var k=(room>=2 && rnd()<0.42)?2:1;
+      var seg=hSeg(n,a,b), bad=false;
+      for(i=0;i<edges.length;i++) if(hCross(n,seg,edges[i])){ bad=true; break; }
+      if(bad) continue;
+      edges.push({e1:seg.e1,e2:seg.e2,horiz:seg.horiz,count:k,a:a,b:b});
+      deg[a]+=k; deg[b]+=k; occ[b]=1; list.push(b);
+    }
+    if(list.length<want) continue;
+    var islands=[], okNum=true;
+    for(i=0;i<list.length;i++){
+      if(deg[list[i]]<1||deg[list[i]]>HMAX){ okNum=false; break; }
+      islands.push({i:list[i], r:(list[i]/n)|0, c:list[i]%n, v:deg[list[i]]});
+    }
+    if(!okNum) continue;
+    for(i=0;i<edges.length;i++) for(var q2=i+1;q2<edges.length;q2++) if(hCross(n,edges[i],edges[q2])) okNum=false;
+    if(!okNum) continue;
+        var sc=hCountSolutions(n,islands,2);
+        /* A search that hit its node budget has NOT proved anything. Publishing
+           such a layout would ship a board nobody can finish -- the flappy-bird
+           shape. Reject the layout and try the next seed instead. */
+        if(sc.gaveUp||sc.count<1) continue;
+        var cntSols=sc.count;
+        var solEdges=[];
+        for(i=0;i<edges.length;i++) solEdges.push({e1:edges[i].e1,e2:edges[i].e2,horiz:edges[i].horiz,
+          count:edges[i].count,a:edges[i].a,b:edges[i].b});
+        return {n:n, islands:islands, solution:solEdges, solutions:cntSols,
+                        unique:(cntSols===1), seed:seed, nodes:sc.nodes, attempt:attempt+1};
+      }
+      return null;
+    }
+
+/* Is this placement legal right now? k counts the bridges AFTER the click. */
+function hLegal(a,b,k){
+  if(!hb) return false;
+  if(!hb.byIdx[a]||!hb.byIdx[b]) return false;
+  var pr={a:Math.min(a,b), b:Math.max(a,b), key:hKey(a,b)};
+  var seg=hSeg(hb.n,a,b);
+  pr.e1=seg.e1; pr.e2=seg.e2; pr.horiz=seg.horiz;
+  if(k<0||k>2) return false;
+  var cur=hcnt[pr.key]||0;
+  if(k>cur && k-cur>2) return false;
+  /* islands on either end may not exceed their number */
+  var next={}, keys=Object.keys(hcnt), i;
+  next[pr.key]=k;
+  for(i=0;i<keys.length;i++) if(keys[i]!==pr.key) next[keys[i]]=hcnt[keys[i]];
+  var deg={};
+  for(i=0;i<hb.islands.length;i++) deg[hb.islands[i].i]=0;
+  for(i=0;i<keys.length;i++){
+    var kv=keys[i].split('>'), aa=+kv[0], bb=+kv[1], v=next[kv[0]+'>'+kv[1]]||0;
+    deg[aa]+=v; deg[bb]+=v;
+  }
+  for(i=0;i<hb.islands.length;i++){
+    var isl=hb.islands[i];
+    if((deg[isl.i]||0)>isl.v) return false;
+  }
+  if(k>0){
+    var mine={e1:seg.e1,e2:seg.e2,horiz:seg.horiz};
+    for(i=0;i<keys.length;i++){
+      if(keys[i]===pr.key) continue;
+      if((next[keys[i]]||0)<1) continue;
+      var kv2=keys[i].split('>'), a2=+kv2[0], b2=+kv2[1];
+      if(hCross(hb.n,mine,hSeg(hb.n,a2,b2))) return false;
+    }
+  }
+  return true;
+}
+function hPlace(a,b,setTo){
+  if(!hb) return false;
+  var key=hKey(a,b), cur=hcnt[key]||0, k=(setTo===undefined)?cur+1:setTo;
+  if(!hLegal(a,b,k)) return false;
+  if(k<=0) delete hcnt[key]; else hcnt[key]=k;
+  hwon=hSolved();
+  hDraw();
+  return true;
+}
+function hPlacedList(){
+  var out=[], keys=Object.keys(hcnt);
+  for(var i=0;i<keys.length;i++){
+    if(!hcnt[keys[i]]) continue;
+    var kv=keys[i].split('>'), a=+kv[0], b=+kv[1];
+    var seg=hSeg(hb.n,a,b);
+    out.push({a:a,b:b,count:hcnt[keys[i]],e1:seg.e1,e2:seg.e2,horiz:seg.horiz});
+  }
+  return out;
+}
+function hCrossings(){
+  var l=hPlacedList(), bad=[], i, j;
+  for(i=0;i<l.length;i++) for(j=i+1;j<l.length;j++) if(hCross(hb.n,l[i],l[j])) bad.push([i,j]);
+  return bad;
+}
+/* The win: at least one bridge exists, no two bridges cross, and every island's
+   degree, counted from what is actually on the board, equals its number. */
+function hSolved(){
+  if(!hb) return false;
+  var placed=hPlacedList();
+  if(!placed.length) return false;
+  if(hCrossings().length) return false;
+  var deg={}, i;
+  for(i=0;i<hb.islands.length;i++) deg[hb.islands[i].i]=0;
+  for(i=0;i<placed.length;i++){ deg[placed[i].a]+=placed[i].count; deg[placed[i].b]+=placed[i].count; }
+  for(i=0;i<hb.islands.length;i++) if(deg[hb.islands[i].i]!==hb.islands[i].v) return false;
+  return true;
+}
+function hReset(n,seed){
+  var made=null, tries=0, s=(seed===undefined?undefined:seed);
+  /* Prefer a board with exactly ONE solution: a board with several still has a
+     win, but a unique one cannot be completed correctly and then disputed. */
+  while(tries<8){
+    var cand=hGenerate(n,s===undefined?undefined:s+tries);
+    if(cand){ if(!made) made=cand; if(cand.unique){ made=cand; break; } }
+    tries++;
+  }
+  if(!made){ hb=null; return null; }
+  hb={n:made.n,islands:made.islands,solution:made.solution,solutions:made.solutions,
+      unique:made.unique,seed:made.seed,byIdx:{}};
+  for(var i=0;i<made.islands.length;i++) hb.byIdx[made.islands[i].i]=made.islands[i];
+  hcnt={}; hsel=null; hwon=false;
+  hDraw();
+  return hb;
+}
+function hDraw(){
+  if(!hb) return;
+  var n=hb.n, g=[], i;
+  for(i=0;i<n;i++) g.push('repeat('+n+',minmax(0,1fr))');
+  var board=$('hs-board');
+  board.style.gridTemplateColumns=g.join(' ');
+  var deg={};
+  for(i=0;i<hb.islands.length;i++) deg[hb.islands[i].i]=0;
+  var placed=hPlacedList();
+  for(i=0;i<placed.length;i++){ deg[placed[i].a]+=placed[i].count; deg[placed[i].b]+=placed[i].count; }
+  var html='';
+  for(i=0;i<n*n;i++){
+    var isl=hb.byIdx[i];
+    html+='<div class="hs-slot" data-c="'+i+'">'
+        + (isl?'<button class="hs-isle'+(deg[i]===isl.v?' done':'')
+             +(hsel===i?' sel':'')+'" data-i="'+i+'">'+isl.v+'</button>':'')
+        + '</div>';
+  }
+  /* bridge strips sit between the cells they span */
+  var U=100/n;
+  for(i=0;i<placed.length;i++){
+    var p=placed[i];
+    var r1=(p.e1/n)|0, c1=p.e1%n;
+    var horiz=p.horiz, cx, cy, len, thick, off;
+    if(horiz){
+      cx=(c1+1.5)*U; cy=(r1+0.5)*U; len=U; thick=U*0.09; off=U*0.15;
+    }else{
+      cx=(c1+0.5)*U; cy=(r1+1.5)*U; len=U; thick=U*0.09; off=U*0.15;
+    }
+    var lines=(p.count>=2)?[-off,off]:[0];
+    for(var L=0;L<lines.length;L++){
+      var dy=lines[L], dx=lines[L];
+      var st='position:absolute;background:#FF5F1F;border-radius:2px;';
+      if(horiz) st+='left:'+(cx-len/2)+'%;width:'+len+'%;height:'+thick
+        +'%;top:'+(cy+dy)+'%;transform:translateY(-50%);';
+      else st+='top:'+(cy-len/2)+'%;height:'+len+'%;width:'+thick
+        +'%;left:'+(cx+dx)+'%;transform:translateX(-50%);';
+      html+='<div class="hs-br" style="'+st+'"></div>';
+    }
+  }
+  if(hwon) html+='<div class="hs-winline">EVERY ISLAND SATISFIED - no crossings</div>';
+  board.innerHTML=html;
+  board.style.position='relative';
+  var okc=0;
+  for(i=0;i<hb.islands.length;i++) if((deg[hb.islands[i].i]||0)===hb.islands[i].v) okc++;
+  var brg=0;
+  for(i=0;i<placed.length;i++) brg+=placed[i].count;
+  $('hs-count').textContent=okc+'/'+hb.islands.length;
+  $('hs-bridges').textContent=brg;
+  $('hs-ok').textContent=okc+'/'+hb.islands.length;
+  $('hs-status').textContent=hwon?'Solved':'Playing';
+  var need=0;
+  for(i=0;i<hb.islands.length;i++) need+=hb.islands[i].v;
+  $('hs-info').textContent=
+      'board     '+n+' x '+n+'\n'
+    + 'islands   '+hb.islands.length+'\n'
+    + 'bridges   '+brg+' of '+need+' needed\n'
+    + 'solutions '+(hb.unique?'exactly 1':(hb.solutions>=2?'more than 1':'1+'))+'\n'
+    + 'seed      '+hb.seed;
+  $('hs-report').textContent=hwon?'Complete - every island has exactly its number and nothing crosses.'
+    : (placed.length?'Still '+need+' bridges short of '+hb.islands.length+' satisfied islands.':'Pick an island, then a neighbour.');
+}
+$('hs-board').addEventListener('click',function(e){
+  var b=e.target.closest('[data-i]');
+  if(!b||!hb) return;
+  var i=+b.getAttribute('data-i');
+  if(hsel===null){ hsel=i; hDraw(); return; }
+  if(hsel===i){ hsel=null; hDraw(); return; }
+  var a=hsel, ar=(a/hb.n)|0, ac=a%hb.n, br=(i/hb.n)|0, bc=i%hb.n;
+  if(Math.abs(ar-br)+Math.abs(ac-bc)!==2 || (ar!==br&&ac!==bc)){
+    hsel=i; hDraw(); return;
+  }
+  hsel=null;
+  hPlace(a,i);
+});
+$('hs-board').addEventListener('contextmenu',function(e){
+  e.preventDefault();
+  var b=e.target.closest('[data-i]'); if(!b||!hb) return;
+  var i=+b.getAttribute('data-i');
+  var j=hPairs(hb.n,hb.islands), k;
+  for(k=0;k<j.length;k++){
+    if((j[k].a===i||j[k].b===i) && (hcnt[j[k].key]||0)>0){ hcnt[j[k].key]=0; delete hcnt[j[k].key]; }
+  }
+  hwon=hSolved(); hDraw();
+});
+
+/* Test hook. The stored layout is exposed for the browser test only; the page's
+   win comes from hSolved(), which re-derives everything from hcnt. */
+window.__hashi={
+  generate:function(n,seed){ return !!hReset(n||7,seed); },
+  solvable:function(){ return hb?(hb.solutions>=1):false; },
+  countSolutions:function(limit){ if(!hb) return {count:0,gaveUp:false,nodes:0}; return hCountSolutions(hb.n,hb.islands,limit||2); },
+  legalBridge:function(a,b,k){ return hLegal(a,b,(k===undefined)?((hcnt[hKey(a,b)]||0)+1):k); },
+  place:function(a,b,k){ return hPlace(a,b,k); },
+  islands:function(){ return hb?hb.islands.slice():[]; },
+  bridges:function(){ return hPlacedList(); },
+  clear:function(){ hcnt={}; hwon=false; hDraw(); },
+  solution:function(){ return hb?hb.solution.slice():[]; },
+  won:function(){ return hSolved(); },
+  board:function(){ if(!hb) return null;
+    return {n:hb.n, islands:hb.islands.length, solutions:hb.solutions,
+            unique:hb.unique, seed:hb.seed, placed:hPlacedList().length}; },
+  crossings:function(){ return hCrossings().length; }
+};
+hReset(7);
+</script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

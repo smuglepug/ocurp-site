@@ -192,8 +192,33 @@ function dmLegal(hand,chain){
   for(var i=0;i<hand.length;i++)if(dmFits(hand[i],e))out.push(i);
   return out;
 }
+/* Tiles are stored ORIENTED: "a|b" always reads with a on the left of the
+   chain and b on the right. A tile may present EITHER of its numbers to
+   either end, so the end it matches is tested against both halves - testing
+   only a[0] silently refused 4|0 onto a chain whose low end is 0, and only
+   appended, which is what froze dmEnds at chain[0].a forever. */
+function dmMatch(t,e){var a=t.split('|').map(Number);
+  return {hi:a.indexOf(e[1])>=0,lo:a.indexOf(e[0])>=0};}
 function dmPlay(hand,chain,i){
-  var t=hand[i],h=hand.slice();h.splice(i,1);return {hand:h,chain:chain.concat([t]),tile:t};
+  var t=hand[i],h=hand.slice();
+  var e=dmEnds(chain);
+  /* Reject a tile that reaches neither end instead of silently forcing it
+     somewhere. dmAdvance only ever passes indices from dmLegal, so the UI
+     never hits this, but an unguarded play would corrupt the chain. */
+  if(e!==null&&!dmFits(t,e))return null;
+  h.splice(i,1);
+  if(e===null)return {hand:h,chain:[t],tile:t,oriented:t,end:'high'};
+  var a=t.split('|'),m=dmMatch(t,e);
+  /* Join on the high end if the tile reaches it, else the low end. The half
+     that matches must face the MIDDLE of the chain: on the tile's left when
+     appending high, on its right when prepending low. Everything else is a
+     180-degree flip. */
+  var hi=m.hi,want=hi?e[1]:e[0];
+  var wantIdx=a.map(Number).indexOf(want);
+  var wantSlot=hi?0:1;
+  var nt=(wantIdx===wantSlot)?t:a[1]+'|'+a[0];
+  var nc=hi?chain.concat([nt]):[nt].concat(chain);
+  return {hand:h,chain:nc,tile:t,oriented:nt,end:hi?'high':'low'};
 }
 function dmChainPips(chain){var s=0;for(var i=0;i<chain.length;i++)s+=DM_PIPS(chain[i]);return s}
 
@@ -236,6 +261,10 @@ function dmAdvance(){
     var i=(p===0?DM.chosen:dmAIChoice(DM.hand[p],DM.chain));
     if(i===null||i===undefined||i<0)i=lg[0];
     var r=dmPlay(DM.hand[p],DM.chain,i);
+    /* dmPlay refuses a tile that reaches neither end. Indices come from
+       dmLegal so this should be unreachable; if it ever fires, fall through
+       to the draw branch rather than dereferencing null. */
+    if(!r){DM.chosen=null;DM.turn=1-p;DM.pass++;DM.render();return 'illegal';}
     DM.hand[p]=r.hand;DM.chain=r.chain;DM.chosen=null;
     dmSay((p===0?'You':'AI')+' played '+r.tile.replace('|','-')+'  (ends '
       +dmEnds(DM.chain).join(' / ')+')');
@@ -251,6 +280,7 @@ function dmAdvance(){
       var j=(p===0?DM.chosen:dmAIChoice(DM.hand[p],DM.chain));
       if(j===null||j===undefined||j<0)j=lg2[0];
       var r2=dmPlay(DM.hand[p],DM.chain,j);
+      if(!r2){DM.chosen=null;DM.turn=1-p;DM.pass++;DM.render();return 'illegal';}
       DM.hand[p]=r2.hand;DM.chain=r2.chain;DM.chosen=null;
       dmSay((p===0?'You':'AI')+' drew and played '+r2.tile.replace('|','-'));
       DM.turn=1-p;DM.pass=0;
@@ -272,8 +302,10 @@ function dmEndRound(p,empty){
   DM.scores[other]+=empty?hp[other]:0; /* and the loser picks up only if stuck */
   DM.roundOver=true;DM.round++;
   dmSay('Round over ('+(empty?'hand emptied':'boneyard empty, blocked')+'). '
-    +(DM.turn===0?'You':'AI')+' scores the chain: '+chain
+    +(p===0?'You':'AI')+' scores the chain: '+chain
     +'. Pickups: '+hp[0]+' / '+hp[1]+'.  Totals '+DM.scores[0]+' / '+DM.scores[1]);
+  /* NB: the line above names p, not DM.turn. turn has already flipped by the
+     time the round ends, so printing it credited the chain to the loser. */
   if(DM.scores[p]>=DM.target)DM.over=true;
 }
 DM.autoRound=function(maxTurns){

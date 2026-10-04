@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Star Battle — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+</style>
+<meta name="description" content="Star Battle - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/star-battle/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Star Battle">
+<meta property="og:description" content="Star Battle - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/star-battle/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Star Battle on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Star Battle">
+<meta name="twitter:description" content="Star Battle - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Star Battle on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Star Battle","url":"https://ocurp.com/workspace/games/star-battle/","description":"Star Battle - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Star Battle</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+    </div>
+    <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">LOGIC</span></div>
+  </div>
+<style>
+  .sb-board{ display:grid; gap:2px; width:100%; max-width:440px; background:rgba(255,255,255,.05);
+    padding:6px; border-radius:12px; }
+  .sb-cell{ position:relative; aspect-ratio:1/1; border-radius:3px; background:#0b0b0c;
+    cursor:pointer; font-family:'Manrope',sans-serif; font-size:1.1rem; font-weight:800; line-height:1; }
+  .sb-cell.given{ background:#14141a; color:#FF5F1F; }
+  .sb-cell.star{ background:rgba(255,95,31,.16); color:#FF5F1F; }
+  .sb-cell.x{ color:rgba(255,255,255,.28); }
+  .sb-cell.win{ box-shadow:inset 0 0 0 1px rgba(255,95,31,.45); }
+  .sb-key{ display:inline-grid; place-items:center; width:26px; height:26px; border-radius:6px;
+    border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04);
+    font-family:'IBM Plex Sans',monospace; font-size:12px; color:rgba(255,255,255,.6); }
+</style>
+
+<section class="ws-panel p-6">
+  <div class="flex flex-wrap items-center gap-2">
+    <button id="sb-5" class="ws-btn">6 x 6 &middot; 2 stars</button>
+    <button id="sb-6" class="ws-btn-ghost">7 x 7 &middot; 3 stars</button>
+    <button id="sb-7" class="ws-btn-ghost">8 x 8 &middot; 3 stars</button>
+    <button id="sb-new" class="ws-btn-ghost">New puzzle</button>
+    <button id="sb-solve" class="ws-btn-ghost">Solve</button>
+    <span class="ws-chip">CLICK CYCLES EMPTY &rarr; STAR &rarr; CROSS</span>
+  </div>
+
+  <p class="mt-4 max-w-2xl text-sm text-white/50">
+    Put exactly <em>K</em> stars in every row and every column, and never let two
+    stars touch &mdash; not side to side, not corner to corner, not even
+    diagonally. Orange stars were given to you as a starting point. Fill the
+    grid so the rule holds everywhere.
+  </p>
+
+  <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+    <div>
+      <div id="sb-board" class="sb-board"></div>
+      <p class="mt-2 text-[10px] text-white/35">
+        Crosses are only your own notes &mdash; the solver ignores them entirely.
+      </p>
+    </div>
+
+    <div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+          <div class="ws-label mb-1">Stars</div>
+          <div id="sb-count" class="font-display text-2xl font-extrabold text-accent">0</div>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+          <div class="ws-label mb-1">Target</div>
+          <div id="sb-target" class="font-display text-2xl font-extrabold text-white">0</div>
+        </div>
+      </div>
+
+      <div class="mt-5">
+        <div class="ws-label mb-2">Row stars</div>
+        <div id="sb-rows" class="flex flex-wrap gap-1.5"></div>
+        <div class="ws-label mt-4 mb-2">Column stars</div>
+        <div id="sb-cols" class="flex flex-wrap gap-1.5"></div>
+      </div>
+
+      <div id="sb-msg" class="mt-4 text-xs text-white/45"></div>
+    </div>
+  </div>
+</section>
+</div>
+<script src="/workspace/related.js" defer></script>
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+/* Star Battle. A row-major NxN grid where every state is one of
+   EMPTY(-1), CROSS(0) or STAR(1).
+
+   GENERATION is the part that matters for fairness: rather than planting stars
+   and hoping, sbPlant() builds a full valid star set with a constraint-checked
+   random walk, then sbCount() runs the SAME row-pattern backtracker the page
+   would use and rejects any grid with a second solution. So the puzzle the
+   player receives is always uniquely solvable by the rules - never by luck. */
+var $=function(id){return document.getElementById(id)};
+var SB_EMPTY=-1, SB_CROSS=0, SB_STAR=1;
+var SB_SIZES={five:{n:6,k:2}, six:{n:7,k:3}, seven:{n:8,k:3}};
+var SB_TRIES=160;
+
+/* A seeded mulberry32 stream. Returns a FUNCTION, not a number: every draw has
+   to advance one shared state, so the generator takes `rnd` and pulls from it
+   repeatedly. */
+function sbRng(seed){
+  var a=seed|0;
+  return function(){
+    a=(a+0x6D2B79F5)|0;
+    var t=Math.imul(a^(a>>>15),1|a);
+    t=(t+Math.imul(t^(t>>>7),61|t))^t;
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+
+function sbAdjacent(r1,c1,r2,c2){ return Math.abs(r1-r2)<=1 && Math.abs(c1-c2)<=1; }
+
+/* A star set is valid when every row and column holds exactly k stars and no
+   two stars are adjacent in any of the eight directions. */
+function sbValid(star, n, k){
+  var i, j, rc, cc;
+  rc=new Array(n).fill(0); cc=new Array(n).fill(0);
+  for(i=0;i<n;i++) for(j=0;j<n;j++) if(star[i*n+j]){ rc[i]++; cc[j]++; }
+  for(i=0;i<n;i++) if(rc[i]!==k||cc[i]!==k) return false;
+  for(i=0;i<n*n;i++) if(star[i]){
+    var r=Math.floor(i/n), c=i%n;
+    for(j=i+1;j<n*n;j++) if(star[j] && sbAdjacent(r,c,Math.floor(j/n),j%n)) return false;
+  }
+  return true;
+}
+
+/* Random construction. Start from an empty grid and repeatedly try to drop a
+   star somewhere that keeps every row and column UNDER its quota and stays
+   clear of existing stars. Restart on a stuck board. Always terminates with a
+   valid set because the last star to satisfy a quota is accepted. */
+function sbPlant(n, k, rnd){
+  var attempt, i, j;
+  for(attempt=0; attempt<SB_TRIES; attempt++){
+    var star=new Array(n*n).fill(false);
+    var rc=new Array(n).fill(0), cc=new Array(n).fill(0), left=n*k;
+    var guard=0;
+    while(left>0 && guard++ < 4000){
+      var r=Math.floor(rnd()*n), c=Math.floor(rnd()*n);
+      var idx=r*n+c;
+      if(star[idx]) continue;
+      if(rc[r]>=k || cc[c]>=k) continue;
+      var okSpot=true;
+      for(i=0;i<n && okSpot;i++) for(j=0;j<n;j++){
+        if(sbAdjacent(r,c,i,j) && star[i*n+j]){ okSpot=false; break; }
+      }
+      if(!okSpot) continue;
+      star[idx]=true; rc[r]++; cc[c]++; left--;
+    }
+    if(left!==0) continue;
+    if(sbValid(star,n,k)) return star;
+  }
+  return null;
+}
+
+/* Row patterns: every length-n row with exactly k stars and none adjacent in
+   the row. Enumerated once per size and reused by every solve. */
+var sbPatCache={};
+function sbPatterns(n,k){
+  var key=n+':'+k;
+  if(sbPatCache[key]) return sbPatCache[key];
+  var out=[];
+  (function rec(c, chosen){
+    if(chosen.length===k){
+      out.push(chosen.slice()); return;
+    }
+    for(var j=c;j<n;j++){
+      if(chosen.length && chosen[chosen.length-1]===j-1) continue;
+      chosen.push(j);
+      rec(j+1, chosen);
+      chosen.pop();
+    }
+  })(0, []);
+  sbPatCache[key]=out;
+  return out;
+}
+
+/* Depth-first row solver with column-count and vertical/diagonal conflict
+   pruning. `limit` caps how many solutions are looked for (2 is enough to
+   detect ambiguity). Returns {count, sol} where sol is a row->array solution
+   or null. */
+function sbSolve(given, n, k, limit){
+  var pats=sbPatterns(n,k);
+  var cc=new Array(n).fill(0);
+  var chosenRows=new Array(n).fill(null);
+  var found=null, count=0;
+
+  function okRow(r, cols){
+    var i, c;
+    for(i=0;i<cols.length;i++){
+      c=cols[i];
+      if(cc[c]>=k) return false;
+      if(r>0){
+        var prev=chosenRows[r-1];
+        for(var z=0;z<prev.length;z++) if(sbAdjacent(r,c,r-1,prev[z])) return false;
+      }
+    }
+    /* Column prune. Rows r..n-1 are still unassigned and each can add AT MOST
+       one star to a column, so a column whose remaining rows cannot cover its
+       quota kills the branch. A weaker bound than a real feasibility check but
+       sound - it never rejects a branch that has a solution. */
+    var left=n-r;
+    for(c=0;c<n;c++) if(cc[c]+left<k) return false;
+    return true;
+  }
+
+  function rec(r){
+    if(count>=limit) return;
+    if(r===n){
+      for(var c2=0;c2<n;c2++) if(cc[c2]!==k) return;
+      count++;
+      if(!found){
+        found={};
+        for(var r2=0;r2<n;r2++) found[r2]=chosenRows[r2].slice();
+      }
+      return;
+    }
+    for(var p=0;p<pats.length;p++){
+      var cols=pats[p];
+      var bad=false;
+      for(var gi=0;gi<n;gi++) if(given[gi]>=0 && given[gi]!==SB_CROSS){
+        var gc=gi%n;
+        if(given[gi]===SB_STAR && cols.indexOf(gc)<0){ bad=true; break; }
+        if(given[gi]===SB_EMPTY && cols.indexOf(gc)>=0){ bad=true; break; }
+      }
+      if(bad) continue;
+      if(!okRow(r, cols)) continue;
+      for(var z2=0;z2<cols.length;z2++) cc[cols[z2]]++;
+      chosenRows[r]=cols;
+      rec(r+1);
+      for(var z3=0;z3<cols.length;z3++) cc[cols[z3]]--;
+      chosenRows[r]=null;
+      if(count>=limit) return;
+    }
+  }
+  rec(0);
+  return {count:count, sol:found};
+}
+
+function sbFromRows(sol, n){
+  var g=new Array(n*n).fill(SB_EMPTY);
+  for(var r=0;r<n;r++) for(var c=0;c<n;c++)
+    if(sol[r].indexOf(c)>=0) g[r*n+c]=SB_STAR;
+  return g;
+}
+
+function sbGenerate(size, seed){
+  var cfg=SB_SIZES[size];
+  var rnd=sbRng(seed|0);
+  for(var t=0;t<40;t++){
+    var full=sbPlant(cfg.n, cfg.k, rnd);
+    if(!full) continue;
+    /* Confirm the PLANTED star set is a real solution before using it. sbValid
+       checks it directly, so a bad plant is dropped here rather than shipped
+       with no solution at all. */
+    if(!sbValid(full, cfg.n, cfg.k)) continue;
+    /* Require the puzzle with NO givens to have exactly one solution, so the
+       grid is genuinely unique rather than merely solvable. */
+    var free=sbSolve(new Array(cfg.n*cfg.n).fill(SB_EMPTY), cfg.n, cfg.k, 2);
+    if(free.count!==1) continue;
+    var target=full.map(function(v){return v?SB_STAR:SB_CROSS;});
+    var want=Math.max(1, Math.round(cfg.n*cfg.n*0.10));
+    var idx=[];
+    for(var i=0;i<cfg.n*cfg.n;i++) if(target[i]===SB_STAR) idx.push(i);
+    for(var i2=idx.length-1;i2>0;i2--){ var j=Math.floor(rnd()*(i2+1)); var t2=idx[i2]; idx[i2]=idx[j]; idx[j]=t2; }
+    var given=new Array(cfg.n*cfg.n).fill(SB_EMPTY);
+    for(var q=0;q<Math.min(want, idx.length);q++) given[idx[q]]=SB_STAR;
+    var s2=sbSolve(given, cfg.n, cfg.k, 2);
+    if(s2.count!==1 || !s2.sol) continue;
+    var sol=sbFromRows(s2.sol, cfg.n);
+    return {n:cfg.n, k:cfg.k, given:given, sol:sol};
+  }
+  return null;
+}
+
+/* --- runtime ------------------------------------------------------------ */
+var sbG=null, sbGrid=null, sbWon=false;
+
+function sbReset(size, seed){
+  sbG=sbGenerate(size||'five', seed===undefined?((Math.random()*1e9)|0):seed);
+  if(!sbG){ sbMsg('could not build a puzzle'); return; }
+  sbGrid=sbG.given.slice();
+  sbWon=false;
+  sbDraw();
+}
+
+function sbCount(){ var n=0,i; for(i=0;i<sbGrid.length;i++) if(sbGrid[i]===SB_STAR) n++; return n; }
+
+function sbSolved(){
+  if(!sbG) return false;
+  /* Independent of the solver: recompute the rules directly from the grid.
+     Exactly k stars per row and per column, no two adjacent, and no cell left
+     ambiguous in a way that breaks it. */
+  var n=sbG.n, i, j;
+  var rc=new Array(n).fill(0), cc=new Array(n).fill(0);
+  for(i=0;i<n;i++) for(j=0;j<n;j++){
+    if(sbGrid[i*n+j]===SB_STAR){ rc[i]++; cc[j]++; }
+  }
+  for(i=0;i<n;i++) if(rc[i]!==sbG.k || cc[i]!==sbG.k) return false;
+  for(i=0;i<n*n;i++) if(sbGrid[i]===SB_STAR)
+    for(j=i+1;j<n*n;j++) if(sbGrid[j]===SB_STAR &&
+      sbAdjacent(Math.floor(i/n), i%n, Math.floor(j/n), j%n)) return false;
+  return sbCount()===n*sbG.k;
+}
+
+function sbCycle(i){
+  if(!sbGrid) return SB_EMPTY;
+  /* A given star is locked; a given cell that the answer says is empty may
+     still be marked as a cross by the player. */
+  if(sbG.given[i]===SB_STAR && sbGrid[i]===SB_STAR) return sbGrid[i];
+  sbGrid[i] = sbGrid[i]===SB_EMPTY ? SB_STAR : (sbGrid[i]===SB_STAR ? SB_CROSS : SB_EMPTY);
+  sbWon=sbSolved();
+  sbDraw();
+  return sbGrid[i];
+}
+
+function sbMsg(t){ var m=$('sb-msg'); if(m) m.textContent=t; }
+
+function sbDraw(){
+  var b=$('sb-board'); if(!b||!sbG) return;
+  var n=sbG.n;
+  if(b.childNodes.length!==n*n){
+    b.innerHTML=''; b.style.gridTemplateColumns='repeat('+n+',1fr)';
+    for(var k=0;k<n*n;k++){
+      var d=document.createElement('div');
+      d.className='sb-cell'; d.setAttribute('data-i',k);
+      d.addEventListener('click',function(e){ sbCycle(+e.currentTarget.getAttribute('data-i')); });
+      b.appendChild(d);
+    }
+  }
+  var bad=sbViolations();
+  for(var i=0;i<n*n;i++){
+    var el=b.childNodes[i], v=sbGrid[i], g=sbG.given[i];
+    el.textContent = v===SB_STAR?'\u2605' : (v===SB_CROSS?'\u00d7':'');
+    el.className='sb-cell'
+      + (v===SB_STAR?' star':'')
+      + (v===SB_CROSS?' x':'')
+      + (g===SB_STAR&&v!==SB_STAR?' given':'')
+      + (bad.indexOf(i)>=0?' win':'');
+  }
+  var c=$('sb-count'), tg=$('sb-target');
+  if(c) c.textContent=sbCount();
+  if(tg) tg.textContent=sbG.n*sbG.k;
+  var rows=$('sb-rows'), cols=$('sb-cols');
+  if(rows){
+    if(rows.childNodes.length!==n){
+      rows.innerHTML=''; cols.innerHTML='';
+      for(var q=0;q<n;q++){
+        var a=document.createElement('span'); a.className='sb-key'; rows.appendChild(a);
+        var b2=document.createElement('span'); b2.className='sb-key'; cols.appendChild(b2);
+      }
+    }
+    for(var r=0;r<n;r++){
+      var rc2=0; for(var j2=0;j2<n;j2++) if(sbGrid[r*n+j2]===SB_STAR) rc2++;
+      rows.childNodes[r].textContent=rc2+'/'+sbG.k;
+    }
+    for(var c2=0;c2<n;c2++){
+      var cc2=0; for(var j3=0;j3<n;j3++) if(sbGrid[j3*n+c2]===SB_STAR) cc2++;
+      cols.childNodes[c2].textContent=cc2+'/'+sbG.k;
+    }
+  }
+  if(sbWon) sbMsg('Solved. Every row and column holds its stars and no two touch.');
+  else sbMsg(sbCount()>sbG.n*sbG.k ? 'Too many stars for the quota.' :
+            'Highlighted cells break a row, column or adjacency rule.');
+}
+
+/* Cells that currently violate the rules - purely a reading aid for the
+   player; the win test above does not depend on it. */
+function sbViolations(){
+  var n=sbG.n, out=[], i, j, r, c, cnt;
+  for(r=0;r<n;r++){
+    cnt=0; for(j=0;j<n;j++) if(sbGrid[r*n+j]===SB_STAR) cnt++;
+    if(cnt>sbG.k) for(j=0;j<n;j++) if(sbGrid[r*n+j]===SB_STAR) out.push(r*n+j);
+  }
+  for(c=0;c<n;c++){
+    cnt=0; for(i=0;i<n;i++) if(sbGrid[i*n+c]===SB_STAR) cnt++;
+    if(cnt>sbG.k) for(i=0;i<n;i++) if(sbGrid[i*n+c]===SB_STAR) out.push(i*n+c);
+  }
+  for(i=0;i<n*n;i++) if(sbGrid[i]===SB_STAR){
+    r=Math.floor(i/n); c=i%n;
+    for(j=i+1;j<n*n;j++) if(sbGrid[j]===SB_STAR &&
+      sbAdjacent(r,c,Math.floor(j/n),j%n)){ out.push(i); out.push(j); }
+  }
+  return out;
+}
+
+$('sb-5').addEventListener('click',function(){ sbReset('five'); });
+$('sb-6').addEventListener('click',function(){ sbReset('six'); });
+$('sb-7').addEventListener('click',function(){ sbReset('seven'); });
+$('sb-new').addEventListener('click',function(){ sbReset(sbG?sizeName(sbG.n):'five'); });
+$('sb-solve').addEventListener('click',function(){
+  if(!sbG) return;
+  var r=sbSolve(sbG.given, sbG.n, sbG.k, 1);
+  if(r.sol){ sbGrid=sbFromRows(r.sol, sbG.n); sbWon=sbSolved(); sbDraw(); }
+});
+function sizeName(n){ return n===6?'five':n===7?'six':'seven'; }
+
+/* Test hook. The win above is sbSolved's own rule check - this never feeds it. */
+window.__starbattle={
+  sizes:function(){ var o={}; for(var k in SB_SIZES) o[k]={n:SB_SIZES[k].n,k:SB_SIZES[k].k}; return o; },
+  generate:function(size, seed){ sbReset(size||'five', seed); return sbG ? {
+    n:sbG.n, k:sbG.k, givens:sbG.given.filter(function(v){return v===1;}).length,
+    solutions:sbSolve(sbG.given, sbG.n, sbG.k, 5).count } : null; },
+  board:function(){ return sbGrid?sbGrid.slice():null; },
+  solution:function(){ return sbG?sbG.sol:null; },
+  rowStars:function(r){ if(!sbG) return -1; var n=0,c; for(c=0;c<sbG.n;c++) if(sbGrid[r*sbG.n+c]===SB_STAR) n++; return n; },
+  colStars:function(c){ if(!sbG) return -1; var n=0,r; for(r=0;r<sbG.n;r++) if(sbGrid[r*sbG.n+c]===SB_STAR) n++; return n; },
+  count:function(){ return sbCount(); },
+  toggle:function(i){ if(!sbGrid||i<0||i>=sbGrid.length) return null; return sbCycle(i); },
+  solve:function(){
+    if(!sbG) return false;
+    var r=sbSolve(sbG.given, sbG.n, sbG.k, 2);
+    if(!r.sol) return false;
+    sbGrid=sbFromRows(r.sol, sbG.n); sbWon=sbSolved(); sbDraw();
+    return sbWon;
+  },
+  playSolution:function(){ if(!sbG) return false; sbGrid=sbG.sol?sbFromRows(sbG.sol,sbG.n):sbG.given.slice();
+    sbWon=sbSolved(); sbDraw(); return sbWon; },
+  solutions:function(){ return sbG?sbSolve(sbG.given,sbG.n,sbG.k,5).count:-1; },
+  valid:function(){ return sbValid(function(i){return sbGrid[i]===SB_STAR;}, sbG.n, sbG.k); },
+  solved:function(){ sbWon=sbSolved(); return sbWon; },
+  won:function(){ return sbWon; }
+};
+sbReset('five', 20260904);
+</script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hungarian Assignment Solver — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+  table.hu { border-collapse:collapse; width:100%; font-family:'IBM Plex Sans',monospace; font-size:.8rem; }
+  table.hu th, table.hu td { border:1px solid rgba(255,255,255,.09); padding:.4rem .5rem; text-align:right; }
+  table.hu th { color:rgba(255,255,255,.5); font-weight:700; }
+  table.hu td.pick { background:rgba(255,95,31,.22); color:#fff; }
+  table.hu tr.hd td { color:rgba(255,255,255,.55); }
+</style>
+<meta name="description" content="Solve the minimum-cost assignment problem with the Hungarian algorithm and get the optimal one-to-one matching. Runs entirely in your browser - nothing is...">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/hungarian-assignment-solver/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Hungarian Assignment Solver">
+<meta property="og:description" content="Solve the minimum-cost assignment problem with the Hungarian algorithm and get the optimal one-to-one matching. Runs entirely in your browser - nothing is...">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/hungarian-assignment-solver/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Hungarian Assignment Solver on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Hungarian Assignment Solver">
+<meta name="twitter:description" content="Solve the minimum-cost assignment problem with the Hungarian algorithm and get the optimal one-to-one matching. Runs entirely in your browser - nothing is...">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Hungarian Assignment Solver on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Hungarian Assignment Solver","url":"https://ocurp.com/workspace/tools/hungarian-assignment-solver/","description":"Solve the minimum-cost assignment problem with the Hungarian algorithm and get the optimal one-to-one matching. Runs entirely in your browser - nothing is...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Hungarian Assignment Solver</h1>
+      <p class="mt-1 text-xs text-white/40">mathematics &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Give it a square cost matrix and it returns the cheapest one-to-one matching: one worker per job, nobody used twice. The search is the Hungarian algorithm in O(n cubed), and because an algorithm being clever is no evidence it is right, every matrix of eight or fewer gets its answer re-derived by enumerating all n! permutations and comparing. Matrices with ties get their tie count reported too.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">KUHN-MUNKRES</span>
+    <span class="ws-chip">BRUTE-FORCE CHECK</span>
+    <span class="ws-chip">TIE DETECTION</span>
+  </div>
+  <p class="mt-0 mb-3 text-[11px] leading-relaxed text-white/40">
+    Rows separated by spaces, columns by commas or spaces:
+    <span class="text-white/70">4 1 3 / 2 0 5 / 3 2 2</span>. Row i column j is the cost of
+    putting i on j. All costs may be negative.
+  </p>
+  <label class="ws-label mb-2 block" for="hu-in">Cost matrix</label>
+  <textarea id="hu-in" class="ws-input" rows="4" spellcheck="false">4,1,3
+2,0,5
+3,2,2</textarea>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="hu-go" class="ws-btn" style="width:auto">Solve</button>
+    <button id="hu-c1" class="ws-btn-ghost" style="width:auto">3x3</button>
+    <button id="hu-c2" class="ws-btn-ghost" style="width:auto">4x4</button>
+    <button id="hu-c3" class="ws-btn-ghost" style="width:auto">Ties</button>
+    <button id="hu-c4" class="ws-btn-ghost" style="width:auto">6x6</button>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="hu-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Verdict</div>
+  <div id="hu-out" class="ws-out"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">The matching, on the matrix</div>
+  <div id="hu-grid"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Numbers</div>
+  <div id="hu-kv"></div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+
+var HU = (function(){
+  function parse(txt){
+    var rows=[], raw=String(txt).split(/[\n;]+/);
+    for(var i=0;i<raw.length;i++){
+      var s=raw[i].trim();
+      if(!s) continue;
+      var cells=s.split(/[,\s]+/).filter(function(x){return x.length>0;});
+      var row=[];
+      for(var j=0;j<cells.length;j++){
+        var v=parseFloat(cells[j]);
+        if(!isFinite(v)) return {error:'row '+(rows.length+1)+' column '+(j+1)+' is not a number: "'+cells[j]+'"'};
+        row.push(v);
+      }
+      if(row.length) rows.push(row);
+    }
+    if(!rows.length) return {error:'no rows found'};
+    var w=rows[0].length;
+    for(var k=0;k<rows.length;k++) if(rows[k].length!==w)
+      return {error:'row '+(k+1)+' has '+rows[k].length+' entries but row 1 has '+w+' - the matrix must be square'};
+    return {m:rows};
+  }
+
+  /* Kuhn-Munkres on a 1-indexed padding. Row potentials u and column
+     potentials v are maintained so that u[i]+v[j] <= cost[i][j] always, so the
+     total cost of any matching is >= sum(u)+sum(v) - and the algorithm stops
+     the moment the matching has that cost, which proves optimality. */
+  function solve(M){
+    var n=M.length, INF=Infinity;
+    /* 1-indexed padding: a[i][j] for i,j in 1..n. This array MUST have n+1
+       rows - the loop below only fills indices 1..n-1, so building it with n
+       rows left a[n] undefined and every solve threw "Cannot read properties
+       of undefined (reading '1')" on the very first row. A 1-indexed cost
+       matrix needs a dummy row 0. */
+    var a=[[0]];
+    for(var i=0;i<n;i++) a.push([0].concat(M[i]));
+    var u=new Array(n+1).fill(0), v=new Array(n+1).fill(0);
+    var p=new Array(n+1).fill(0), way=new Array(n+1).fill(0);
+    for(var r=1;r<=n;r++){
+      p[0]=r;
+      var j0=0, minv=new Array(n+1).fill(INF), used=new Array(n+1).fill(false);
+      for(;;){
+        used[j0]=true;
+        var i0=p[j0], delta=INF, j1=-1;
+        for(var j=1;j<=n;j++){
+          if(used[j]) continue;
+          var cur=a[i0][j]-u[i0]-v[j];
+          if(cur<minv[j]){ minv[j]=cur; way[j]=j0; }
+          if(minv[j]<delta){ delta=minv[j]; j1=j; }
+        }
+        for(var j2=0;j2<=n;j2++){
+          if(used[j2]){ u[p[j2]]+=delta; v[j2]-=delta; }
+          else minv[j2]-=delta;
+        }
+        j0=j1;
+        if(p[j0]===0) break;
+      }
+      while(j0){ var j3=way[j0]; p[j0]=p[j3]; j0=j3; }
+    }
+    var assign=new Array(n).fill(-1);
+    for(var j4=1;j4<=n;j4++) if(p[j4]) assign[p[j4]-1]=j4-1;
+    var cost=0, i5, ok=true;
+    for(i5=0;i5<n;i5++){
+      if(assign[i5]<0){ ok=false; continue; }
+      cost+=M[i5][assign[i5]];
+    }
+    var tight=[];
+    for(i5=0;i5<n;i5++){
+      var row=[];
+      for(var j6=0;j6<n;j6++)
+        row.push(Math.abs(M[i5][j6]-u[i5+1]-v[j6+1])<1e-7?1:0);
+      tight.push(row);
+    }
+    /* sum(u) + sum(v) is the optimal dual value and therefore a valid lower
+       bound on any perfect matching's cost. It equals the returned cost
+       exactly when the matching is optimal. */
+    var su=0, sv=0, ti;
+    for(ti=1;ti<=n;ti++){ su+=u[ti]; sv+=v[ti]; }
+    return {cost:cost, assign:assign, u:u.slice(1), v:v.slice(1), tight:tight,
+            perfect:ok, lowerBound:su+sv};
+  }
+
+  /* Every optimal matching must use only tight edges (M[i][j] == u[i]+v[j]),
+     so counting perfect matchings inside the tight graph counts the optima
+     exactly - no float comparison against the cost, which is what makes this
+     reliable when costs are large or negative. */
+  function countOptimal(M, tight, cap){
+    var n=M.length, count=0, LIMIT=(cap||9);
+    var rowsUsed=new Array(n).fill(false);
+    (function dfs(i){
+      if(count>=LIMIT) return;
+      if(i===n){ count++; return; }
+      for(var j=0;j<n;j++){
+        if(!rowsUsed[j] && tight[i][j]){ rowsUsed[j]=true; dfs(i+1); rowsUsed[j]=false; }
+      }
+    })(0);
+    return count;
+  }
+
+  /* Independent ground truth: enumerate every permutation and take the min.
+     Only affordable up to 8x8 (40320 perms), which is exactly why it is a
+     check and not the solver. */
+  function brute(M){
+    var n=M.length;
+    if(n>8) return null;
+    var idx=[]; for(var i=0;i<n;i++) idx.push(i);
+    var best=null, count=0, bestPerm=null;
+    (function perm(k, used, acc, cost){
+      // No cost-based pruning: a partial cost equal to the incumbent may still
+      // tie it, and tie counting is half of what this page reports. n <= 8 keeps
+      // the full enumeration at 40320 leaves, which is instant anyway.
+      if(k===n){
+        if(best===null||cost<best){ best=cost; count=1; bestPerm=acc.slice(); }
+        else if(cost===best) count++;
+        return;
+      }
+      for(var j=0;j<n;j++){
+        if(used[j]) continue;
+        used[j]=true; acc.push(j);
+        perm(k+1, used, acc, cost+M[k][j]);
+        acc.pop(); used[j]=false;
+      }
+    })(0, new Array(n).fill(false), [], 0);
+    return {cost:best, count:count, perm:bestPerm};
+  }
+
+  function num(x){ return (Object.is(x,-0)?0:x); }
+
+  function compute(M){
+    var s=solve(M);
+    var ties=countOptimal(M, s.tight, 9);
+    var b=brute(M);
+    var agree=null;
+    if(b) agree = (Math.abs(b.cost-s.cost)<1e-9) && (ties===b.count);
+    var usedAll={};
+    for(var i=0;i<M.length;i++) usedAll[s.assign[i]]=1;
+    var distinct=s.assign.every(function(v){ return v>=0; }) &&
+      Object.keys(usedAll).length===M.length;
+    return {s:s, ties:ties, brute:b, agree:agree, distinct:distinct};
+  }
+
+  function render(){
+    var err=$('hu-err'), p=parse($('hu-in').value);
+    if(p.error){ err.textContent=p.error; return null; }
+    err.textContent='';
+    var M=p.m, c=compute(M), s=c.s;
+    var html='<table class="hu"><tr><th></th>';
+    for(var j=0;j<M.length;j++) html+='<th>col '+(j+1)+'</th>';
+    html+='</tr>';
+    for(var i=0;i<M.length;i++){
+      html+='<tr><th>row '+(i+1)+'</th>';
+      for(var j2=0;j2<M.length;j2++){
+        var pick=s.assign[i]===j2;
+        html+='<td class="'+(pick?'pick':'')+'">'+esc(num(M[i][j2]))+'</td>';
+      }
+      html+='</tr>';
+    }
+    html+='</table>';
+    $('hu-grid').innerHTML=html;
+
+    var o='';
+    o+='total cost:  '+num(s.cost)+'\n';
+    o+='matching:    row i -> col '+s.assign.map(function(v){return v+1;}).join(', ')+'\n';
+    o+='LP bound:    '+num(s.lowerBound)+(Math.abs(s.lowerBound-s.cost)<1e-9?'  (equals the cost, so this is provably optimal)':'')+'\n';
+    o+='optima:      '+c.ties+(c.ties>1?'  ('+c.ties+' distinct minimum-cost matchings)':'')+'\n';
+    o+='brute force: '+(c.brute? num(c.brute.cost)+', '+c.brute.count+' optimum'+(c.brute.count===1?'':'a')+(c.brute.perm?' ['+c.brute.perm.map(function(v){return v+1;}).join(',')+']':'') : 'skipped (n > 8)')+'\n';
+    o+='agreement:   '+(c.brute? (c.agree?'yes - both agree':'NO - MISMATCH') : 'n/a')+'\n';
+    $('hu-out').textContent=o;
+
+    fill('hu-kv',[
+      ['size', M.length+' x '+M.length],
+      ['permutations checked', c.brute? (function(n){var f=1;for(var i=2;i<=n;i++)f*=i;return f;})(M.length) : 'n/a (n>8)'],
+      ['optimal cost', num(s.cost)],
+      ['LP lower bound', num(s.lowerBound)],
+      ['row minima sum', num(M.map(function(r){return Math.min.apply(null,r);}).reduce(function(a,b){return a+b;},0))],
+      ['column minima sum', num((function(){
+          var t=new Array(M.length).fill(0);
+          for(var i=0;i<M.length;i++) for(var j=0;j<M.length;j++) t[j]=Math.min(t[j],M[i][j]);
+          return t;})().reduce(function(a,b){return a+b;},0))],
+      ['distinct optima', c.ties],
+      ['brute force agrees', c.brute? (c.agree?'yes':'NO') : 'not run'],
+      ['one row per column', c.distinct?'yes':'NO']
+    ]);
+    return {M:M, c:c};
+  }
+
+  $('hu-go').addEventListener('click',render);
+  $('hu-c1').addEventListener('click',function(){ put('hu-in','4,1,3\n2,0,5\n3,2,2'); render(); });
+  $('hu-c2').addEventListener('click',function(){ put('hu-in','9,2,7,8\n6,4,3,7\n5,8,1,8\n7,6,9,4'); render(); });
+  $('hu-c3').addEventListener('click',function(){ put('hu-in','5,5,5,5\n1,3,9,3\n2,1,8,1\n4,2,7,2'); render(); });
+  $('hu-c4').addEventListener('click',function(){ put('hu-in','8,4,7,5,3,9\n5,2,9,1,7,4\n3,8,2,6,4,7\n7,1,5,9,2,8\n2,6,4,7,5,1\n9,3,6,8,1,5'); render(); });
+  $('hu-in').addEventListener('input',render);
+  render();
+  return {render:render, parse:parse, solve:solve, brute:brute,
+          countOptimal:countOptimal, compute:compute};
+})();
+
+window.__hungarian_assignment_solver = {
+  run: function(i){
+    var M;
+    if(i.m){ M=i.m.map(function(r){return r.map(Number);}); }
+    else { var p=HU.parse(i.matrix!==undefined? i.matrix : $('hu-in').value);
+      if(p.error) return JSON.stringify({error:p.error});
+      M=p.m; }
+    var c=HU.compute(M), s=c.s;
+    return JSON.stringify({
+      n: M.length,
+      cost: s.cost,
+      assign: s.assign.join(','),
+      lowerBound: s.lowerBound,
+      optimal: Math.abs(s.lowerBound-s.cost)<1e-9,
+      ties: c.ties,
+      distinct: c.distinct,
+      bruteCost: c.brute? c.brute.cost : null,
+      bruteCount: c.brute? c.brute.count : null,
+      agree: c.brute? c.agree : null,
+      rowMinSum: M.map(function(r){return Math.min.apply(null,r);}).reduce(function(a,b){return a+b;},0),
+      colMinSum: (function(){
+        var t=new Array(M.length).fill(0), i, j;
+        for(i=0;i<M.length;i++) for(j=0;j<M.length;j++) t[j]=Math.min(t[j],M[i][j]);
+        return t.reduce(function(a,b){return a+b;},0);})()
+    });
+  }
+};
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years</span>
+    </a></li>
+    <li><a href="/workspace/tools/apy-vs-apr-calculator/">
+      <span class="ocurp-related-n">APY vs APR Calculator</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

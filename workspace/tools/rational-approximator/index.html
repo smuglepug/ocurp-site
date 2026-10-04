@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rational Approximator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Best rational p/q for a real number under a denominator cap. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/rational-approximator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Rational Approximator">
+<meta property="og:description" content="Best rational p/q for a real number under a denominator cap. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/rational-approximator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Rational Approximator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Rational Approximator">
+<meta name="twitter:description" content="Best rational p/q for a real number under a denominator cap. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Rational Approximator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Rational Approximator","url":"https://ocurp.com/workspace/tools/rational-approximator/","description":"Best rational p/q for a real number under a denominator cap. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Rational Approximator</h1>
+      <p class="mt-1 text-xs text-white/40">mathematics &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Continued fractions, convergents, and the tightest rational you can write with a denominator under your cap. Feed it an irrational and it hands back the ladder of fractions that bracket it ever more tightly - the reason 355 over 113 is still the best pi you can write on one line.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">CONTINUED FRACTIONS</span>
+    <span class="ws-chip">CONVERGENTS</span>
+    <span class="ws-chip">BOUNDED DENOMINATOR</span>
+  </div>
+  <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
+    <div>
+      <label class="ws-label mb-2 block" for="ra-x">Real number x</label>
+      <input id="ra-x" type="number" step="any" class="ws-input" value="1.4142135623730951">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="ra-n">Largest denominator allowed</label>
+      <input id="ra-n" type="number" step="any" class="ws-input" value="29">
+    </div>
+  </div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="ra-go" class="ws-btn" style="width:auto">Approximate</button>
+    <button id="ra-p1" class="ws-btn-ghost" style="width:auto">sqrt 2</button>
+    <button id="ra-p2" class="ws-btn-ghost" style="width:auto">pi</button>
+    <button id="ra-p3" class="ws-btn-ghost" style="width:auto">e</button>
+    <button id="ra-p4" class="ws-btn-ghost" style="width:auto">phi</button>
+  </div>
+  <p class="mt-4 max-w-3xl text-[11px] leading-relaxed text-white/40">
+    Every real number has a continued fraction: you subtract the whole part,
+    invert the remainder, and repeat. The convergents that fall out are the
+    best rational approximations there are - a theorem, not a guess, which is
+    why <span class="text-white/70">7/5</span> and
+    <span class="text-white/70">17/12</span> bracket sqrt 2 so tightly. The
+    bounded search below then checks every denominator up to your cap by hand
+    and reports the tightest fraction above and below, so the two halves of
+    the tool can be compared against each other.
+  </p>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="ra-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Report</div>
+  <div id="ra-out" class="ws-out"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Convergents, each with its own error</div>
+  <div id="ra-conv" class="ws-out"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Numbers</div>
+  <div id="ra-kv"></div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||n===undefined||!isFinite(n)) return 0;
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function list(id){ var el=$(id); if(!el) return [];
+  return el.value.split(/[\s,;]+/).map(function(s){return s.trim();})
+    .filter(function(s){return s.length>0;})
+    .map(function(s){return parseInt(s,10);})
+    .filter(function(v){return isFinite(v)&&v>0;}); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b);
+  while(b){ var t=a%b; a=b; b=t; } return a; }
+
+var RA = (function(){
+  function expand(x,maxTerms){
+    var terms=[], v=x, guard=0;
+    while(terms.length<maxTerms && guard<400){
+      guard++;
+      var a=Math.floor(v);
+      terms.push(a);
+      var frac=v-a;
+      if(frac<1e-15) break;
+      v=1/frac;
+      if(!isFinite(v)) break;
+    }
+    return terms;
+  }
+  function convergents(terms){
+    var ps=[0,1], qs=[1,0], out=[];
+    for(var i=0;i<terms.length;i++){
+      var p=terms[i]*ps[ps.length-1]+ps[ps.length-2];
+      var q=terms[i]*qs[qs.length-1]+qs[qs.length-2];
+      out.push({p:p,q:q});
+      ps.push(p); qs.push(q);
+    }
+    return out;
+  }
+  /* Exhaustive: every reduced fraction p/q with 1 <= q <= N, keeping the
+     largest one below x and the smallest one above it. Bounded N keeps this
+     honest and exact. */
+  function bound(x,N){
+    var lo=null, hi=null, i, p, q, val, g;
+    for(q=1;q<=N;q++){
+      var top=Math.floor(x*q);
+      for(p=Math.max(0,top-1);p<=top+1;p++){
+        if(p<0) continue;
+        g=gcd(p,q)||1;
+        val=p/g/(q/g);
+        if(val<x && (lo===null||val>lo.v)) lo={p:p/g,q:q/g,v:val};
+        if(val>x && (hi===null||val<hi.v)) hi={p:p/g,q:q/g,v:val};
+      }
+    }
+    return {lo:lo,hi:hi};
+  }
+  function render(){
+    var x=parseFloat($('ra-x').value), N=parseInt($('ra-n').value,10);
+    var err=$('ra-err');
+    err.textContent='';
+    if(!isFinite(x)){ err.textContent='x must be a real number'; return null; }
+    if(!isFinite(N)||N<1){ err.textContent='denominator cap must be at least 1'; return null; }
+    if(N>4000){ err.textContent='cap above 4000 is not searched here; keep it small enough to be exact'; return null; }
+    var terms=expand(x,12);
+    var conv=convergents(terms).slice(0,7);
+    var b=bound(x,N);
+    var h='';
+    for(var i=0;i<conv.length;i++){
+      h+=(conv[i].p)+'/'+conv[i].q+'  = '+r(conv[i].p/conv[i].q,12)
+        +'   error '+Math.abs(conv[i].p/conv[i].q-x).toExponential(3)+'\n';
+    }
+    $('ra-conv').textContent=h;
+    fill('ra-kv',[
+      ['x',x],
+      ['Denominator cap',N],
+      ['Continued fraction',terms.slice(0,6).join(', ')+' ...'],
+      ['Best fraction below',b.lo?(b.lo.p+'/'+b.lo.q):'none'],
+      ['Its value',b.lo?r(b.lo.v,12):'none'],
+      ['Best fraction above',b.hi?(b.hi.p+'/'+b.hi.q):'none'],
+      ['Its value',b.hi?r(b.hi.v,12):'none'],
+      ['Width of the bracket',(b.lo&&b.hi)?r(b.hi.v-b.lo.v,12):'n/a']]);
+    $('ra-out').textContent=
+        'x                    '+x+'\n'
+      +'cf terms             '+terms.slice(0,6).join(', ')+'\n'
+      +'below, q <= '+N+'     '+(b.lo?(b.lo.p+'/'+b.lo.q):'none')+'  = '+(b.lo?r(b.lo.v,12):'-')+'\n'
+      +'above, q <= '+N+'     '+(b.hi?(b.hi.p+'/'+b.hi.q):'none')+'  = '+(b.hi?r(b.hi.v,12):'-')+'\n'
+      +'bracket width        '+((b.lo&&b.hi)?r(b.hi.v-b.lo.v,12):'n/a')+'\n'
+      +'closer side          '+((b.lo&&b.hi)?(x-b.lo.v<=b.hi.v-x?'below':'above'):'n/a');
+    return {x:x,N:N,terms:terms,
+      lo:b.lo?b.lo.p:null,loq:b.lo?b.lo.q:null,
+      hi:b.hi?b.hi.p:null,hiq:b.hi?b.hi.q:null,
+      width:(b.lo&&b.hi)?(b.hi.v-b.lo.v):null,
+      conv0:conv.length?conv[0].p:null,conv0q:conv.length?conv[0].q:null,
+      term0:terms.length?terms[0]:null,term1:terms.length>1?terms[1]:null};
+  }
+  $('ra-go').addEventListener('click',render);
+  $('ra-p1').addEventListener('click',function(){ put('ra-x',1.4142135623730951); put('ra-n',29); render(); });
+  $('ra-p2').addEventListener('click',function(){ put('ra-x',3.141592653589793); put('ra-n',113); render(); });
+  $('ra-p3').addEventListener('click',function(){ put('ra-x',2.718281828459045); put('ra-n',10); render(); });
+  $('ra-p4').addEventListener('click',function(){ put('ra-x',1.618033988749895); put('ra-n',8); render(); });
+  ['ra-x','ra-n'].forEach(function(id){ $(id).addEventListener('input',render); });
+  render();
+  return {render:render,expand:expand,convergents:convergents,bound:bound};
+})();
+window.__rational_approximator = {
+  run:function(i){
+    if(i.x!==undefined) put('ra-x',i.x);
+    if(i.N!==undefined) put('ra-n',i.N);
+    var v=RA.render();
+    if(!v) return JSON.stringify({error:'invalid input'});
+    return JSON.stringify({x:v.x,N:v.N,term0:v.term0,term1:v.term1,
+      lo:v.lo,loq:v.loq,hi:v.hi,hiq:v.hiq,
+      width:v.width===null?null:r(v.width,10)});
+  }};
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years</span>
+    </a></li>
+    <li><a href="/workspace/tools/apy-vs-apr-calculator/">
+      <span class="ocurp-related-n">APY vs APR Calculator</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

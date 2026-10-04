@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCD & LCM Visualiser — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="A grid of numbers shaded by their real greatest common divisor with a chosen base. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/lcm-gcd-visualiser/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="GCD &amp; LCM Visualiser">
+<meta property="og:description" content="A grid of numbers shaded by their real greatest common divisor with a chosen base. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/lcm-gcd-visualiser/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="GCD &amp; LCM Visualiser on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="GCD &amp; LCM Visualiser">
+<meta name="twitter:description" content="A grid of numbers shaded by their real greatest common divisor with a chosen base. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="GCD &amp; LCM Visualiser on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"GCD & LCM Visualiser","url":"https://ocurp.com/workspace/tools/lcm-gcd-visualiser/","description":"A grid of numbers shaded by their real greatest common divisor with a chosen base. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">GCD & LCM Visualiser</h1>
+      <p class="mt-1 text-xs text-white/40">MATHEMATICS &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">A grid of numbers shaded by their real greatest common divisor with a base you choose: the shade rises with the divisor, so multiples of the base stand out darkest. The gcd and lcm of the whole run are computed alongside it, and the legend lists the divisors actually present.</p>
+  <div class="ws-grid2">
+<div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]"><section class="ws-panel p-5"><span class="ws-label">Input</span><label class="ws-label mb-2 mt-4 block" for="lv-base">Colour cells by their gcd with</label><input id="lv-base" type="number" min="1" max="9999" value="12" class="ws-input"><label class="ws-label mb-2 mt-3 block" for="lv-max">Grid runs 1 to</label><input id="lv-max" type="number" min="10" max="600" value="120" class="ws-input"><p class="mt-4 text-xs leading-relaxed text-white/40">Each cell is shaded from the single accent hue by its own computed gcd with the base: shade rises with the divisor, so the multiples of the base itself read darkest. Every highlight in the grid is arithmetic, not a drawn pattern.</p><div class="mt-4"><span class="ws-label">Key</span><div id="lv-key" class="mt-2 flex flex-wrap gap-2"></div></div></section><section class="ws-panel p-5"><div class="mb-3 flex items-center justify-between gap-3"><span class="ws-label">Result</span><button class="ws-btn-ghost !w-auto !px-3 !py-1.5 !text-xs" onclick="cp(this)">Copy</button></div><div id="ov"></div><div class="mt-4 border-t border-white/5 pt-3"><span class="ws-label">Text output</span><pre id="out" class="ws-out mt-2 min-h-[120px] whitespace-pre-wrap"></pre></div></section></div>
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function rows(list){return list.map(function(p){
+  return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join('');}
+function fill(id,list){var e=$(id); if(e) e.innerHTML=rows(list);}
+function say(id,text){var e=$(id); if(e) e.textContent=text;}
+function cp(b){var t=$('out'); if(!t) return; navigator.clipboard.writeText(t.textContent);
+  b.classList.add('ok'); setTimeout(function(){b.classList.remove('ok')},1200);}
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){var t=a%b;a=b;b=t;}return a;}
+function lcm(a,b){if(!a||!b) return 0; return Math.abs(a*b)/gcd(a,b);}
+function nums(id){var e=$(id); if(!e) return [];
+  return e.value.split(/[\s,;]+/).map(function(s){return s.trim();})
+    .filter(function(s){return s.length>0;})
+    .map(function(s){return parseInt(s,10);})
+    .filter(function(v){return isFinite(v)&&v!==0;});}
+function chain(id,text,cls){var e=$(id);
+  e.innerHTML='<pre class="ws-out" style="margin:0">'+esc(text)+'</pre>';}
+
+function shade(d,base){
+  if(d===base) return 'rgba(255,95,31,0.55)';
+  if(d<2) return 'transparent';
+  var t=d/base;                        // 0..1 share of the base
+  return 'rgba(255,95,31,'+(0.06+0.42*Math.pow(t,0.7)).toFixed(3)+')';
+}
+function run(){
+  var base=Math.abs(parseInt($('lv-base').value,10))||1;
+  var max=parseInt($('lv-max').value,10)||120;
+  max=Math.max(10,Math.min(600,max));
+  var cols=Math.min(24, Math.ceil(Math.sqrt(max))+4);
+  // The lcm of 1..120 overflows a double (about 135 digits), so the lcm folds
+  // as a BigInt and the count of its digits is what gets reported.
+  var g=0, l=1n, i;
+  function bgcd(a,b){ while(b){ var t=a%b; a=b; b=t; } return a; }
+  for(i=1;i<=max;i++){ g=gcd(g,i);
+    if(i===1) l=BigInt(i);
+    else { var q=BigInt(i)/bgcd(l,BigInt(i)); l=l*q; } }
+  // guard: the fold must actually grow, or the displayed lcm is 1
+  // the distinct gcds actually present, largest first, as the legend
+  var seen={}, order=[];
+  for(i=1;i<=max;i++){ var d=gcd(i,base); if(!seen[d]){seen[d]=1; order.push(d);} }
+  order.sort(function(a,b){return b-a;});
+  var key=$('lv-key'), k='';
+  for(i=0;i<order.length && i<14;i++){
+    k+='<span class="ws-chip" style="border-color:rgba(255,95,31,'+
+      (order[i]===base?0.8:(0.15+0.5*(order[i]/base))).toFixed(2)+')">gcd '+order[i]+'</span>';
+  }
+  key.innerHTML=k;
+  var h='<div class="grid gap-1" style="grid-template-columns:repeat('+cols+',minmax(0,1fr))">';
+  for(i=1;i<=max;i++){
+    var d=gcd(i,base);
+    var on=(d===base);
+    h+='<div title="gcd('+i+', '+base+') = '+d+'" style="border:1px solid '+shade(d,base)+
+      ';background:'+shade(d,base)+';border-radius:4px;padding:.35rem 0;text-align:center;'+
+      'font-family:IBM Plex Sans,monospace;font-size:9px;color:'+
+      (on?'#000':'rgba(255,255,255,0.6)')+'">'+i+'</div>';
+  }
+  h+='</div>';
+  $('ov').innerHTML='<div class="mb-3"><span class="ws-label">Grid 1 to '+max+'</span></div>'+h;
+  var lstr=l.toString();
+  fill('lv-kv',[
+    ['Base', String(base)],
+    ['GCD of 1..'+max, String(g)],
+    ['LCM of 1..'+max, lstr.length+' digits (first 24: '+lstr.slice(0,24)+'...)'],
+    ['Multiples of base in range', String(Math.floor(max/base))],
+    ['Cells coloured', String(order.length)+' distinct divisors'],
+    ['Shading', 'single accent, opacity from gcd/base']
+  ]);
+  var txt='Base '+base+'\nGCD(1..'+max+') = '+g+'\nLCM(1..'+max+') = '+lstr+
+    '\nMultiples of '+base+' up to '+max+': '+Math.floor(max/base)+'\n';
+  say('out',txt);
+  return {base:base, gridMax:max, gcdOfRange:g, lcmDigits:lstr.length,
+          lcmHead:lstr.slice(0,12),
+          distinctDivisors:order.length, cells:max};
+}
+['lv-base','lv-max'].forEach(function(id){
+  var e=$(id); e.addEventListener('input',run); e.addEventListener('change',run);
+});
+window.__lcmgcdvisualiser={run:run,
+  set:function(base,max){ $('lv-base').value=base;
+    if(max!==undefined)$('lv-max').value=max; run(); }};
+run();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years</span>
+    </a></li>
+    <li><a href="/workspace/tools/apy-vs-apr-calculator/">
+      <span class="ocurp-related-n">APY vs APR Calculator</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

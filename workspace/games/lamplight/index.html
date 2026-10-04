@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lamplight — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Lamplight - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/lamplight/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Lamplight">
+<meta property="og:description" content="Lamplight - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/lamplight/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Lamplight on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Lamplight">
+<meta name="twitter:description" content="Lamplight - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Lamplight on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Lamplight","url":"https://ocurp.com/workspace/games/lamplight/","description":"Lamplight - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Lamplight</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">LOGIC</span></div>
+        </div>
+      
+<style>
+  .ll-board { display:grid; gap:2px; justify-content:center; }
+  .ll-cell { width:38px; height:38px; border:0; padding:0; cursor:pointer;
+    background:rgba(255,255,255,.05); color:#fff; position:relative;
+    font-family:'IBM Plex Sans',monospace; font-weight:800; font-size:15px; line-height:1 }
+  .ll-cell:hover { background:rgba(255,255,255,.12) }
+  .ll-wall { background:#1c1c1c; box-shadow:inset 0 0 0 1px rgba(255,255,255,.09) }
+  .ll-lit { background:rgba(255,95,31,.20) }
+  .ll-mark { background:rgba(255,95,31,.42); color:#000 }
+  .ll-bad  { background:rgba(255,95,31,.85); color:#050505 }
+</style>
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button data-size="7" class="ws-btn-ghost sz">7 x 7</button>
+      <button data-size="8" class="ws-btn-ghost sz">8 x 8</button>
+      <button data-size="9" class="ws-btn-ghost sz">9 x 9</button>
+      <button id="new" class="ws-btn">New puzzle</button>
+      <button id="undo" class="ws-btn-ghost">Undo</button>
+      <button id="hint" class="ws-btn-ghost">Hint</button>
+    </div>
+    <div class="mt-6 flex justify-center"><div id="board" class="ll-board"></div></div>
+    <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Bulbs</div><div class="font-display text-xl font-black text-accent" id="bulbs">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Walls</div><div class="font-display text-xl font-black text-white" id="walls">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Lit</div><div class="font-display text-xl font-black text-white" id="lit">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Moves</div><div class="font-display text-xl font-black text-white" id="moves">0</div></div>
+    </div>
+    <div id="msg" class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Click an empty cell to place a bulb. Click a bulb to take it back.</div>
+    <p class="mt-4 text-[10px] leading-relaxed text-white/45">A bulb lights its whole row and column until a wall. Two bulbs may
+      never see each other along a clear line, and every open cell must end up lit. Dark cells are unlit;
+      orange cells are lit. Every puzzle is generated by lighting one arrangement and then blanking bulbs
+      off it, and is kept only when an exhaustive check finds exactly one solution - so each board has one
+      right answer, never zero and never two.</p>
+  </section>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+// LAMPLIGHT_RULES: the page's exact generator budget. Mirrored verbatim in
+// tools/provers/lamplight.py - if you change one, change the other.
+const LAMPLIGHT_RULES={WALL:1,BULB:2,FREE:0,
+  sizes:{7:{n:7,extra:7},8:{n:8,extra:12},9:{n:9,extra:14}},
+  maxTries:600};
+const LLR=LAMPLIGHT_RULES;
+let ll={n:0,wall:[],bulb:[],history:[],moves:0,status:'playing',seed:0};
+const llCell=(r,c)=>r*ll.n+c;
+
+// segments: a free cell's light is stopped by walls, so light is a property of
+// the ROW SEGMENT and COLUMN SEGMENT a cell belongs to. Two bulbs see each other
+// exactly when they share one of those ids.
+function llSegments(){
+  const n=ll.n,rs=[],cs=[];
+  for(let r=0;r<n;r++)rs.push(new Array(n).fill(-1));
+  for(let r=0;r<n;r++)cs.push(new Array(n).fill(-1));
+  let k=0;
+  for(let r=0;r<n;r++){let c=0;
+    while(c<n){
+      if(ll.wall[r][c]){c++;continue}
+      let j=c; while(j<n&&!ll.wall[r][j]){rs[r][j]=k;j++}
+      k++; c=j}}
+  k=0;
+  for(let c=0;c<n;c++){let r=0;
+    while(r<n){
+      if(ll.wall[r][c]){r++;continue}
+      let j=r; while(j<n&&!ll.wall[j][c]){cs[j][c]=k;j++}
+      k++; r=j}}
+  return {rs,cs}}
+// llIllum: recompute which cells are lit by the current bulb set.
+function llIllum(bs){
+  const n=ll.n,{rs,cs}=llSegments(),lit=new Array(n*n).fill(false);
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++)
+    if(bs[r][c]){let j=c; while(j<n&&!ll.wall[r][j]){lit[r*n+j]=true;j++}
+      j=r; while(j<n&&!ll.wall[j][c]){lit[j*n+c]=true;j++}}
+  return lit}
+// llCount: how many bulb layouts satisfy the rules, capped at `limit`.
+// EXACT - this is what makes a board provably unique rather than probably so.
+function llCount(limit,bs0){
+  const n=ll.n,{rs,cs}=llSegments();
+  const cells=[]; for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(!ll.wall[r][c])cells.push([r,c]);
+  let litR=0,litC=0;
+  const base=bs0||Array.from({length:n},()=>new Array(n).fill(0));
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(base[r][c]){
+    if((litR>>rs[r][c]&1)||(litC>>cs[r][c]&1))return 0;   // two givens already see
+    litR|=1<<rs[r][c]; litC|=1<<cs[r][c]}
+  let found=0;
+  function rec(k,litR,litC,usedR,usedC){
+    if(found>=limit)return;
+    if(k===cells.length){
+      for(const [r,c] of cells)
+        if(!(litR>>rs[r][c]&1)&&!(litC>>cs[r][c]&1))return;
+      found++; return}
+    const [r,c]=cells[k],a=rs[r][c],b=cs[r][c];
+    if(litR>>a&1 || litC>>b&1) rec(k+1,litR,litC,usedR,usedC);
+    if(!(usedR>>a&1)&&!(usedC>>b&1)) rec(k+1,litR|(1<<a),litC|(1<<b),usedR|(1<<a),usedC|(1<<b));
+  }
+  rec(0,litR,litC,litR,litC);
+  return found}
+// llSolve: one bulb layout satisfying the rules, or null.
+function llSolve(bs0){
+  const n=ll.n,{rs,cs}=llSegments();
+  const cells=[]; for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(!ll.wall[r][c])cells.push([r,c]);
+  let litR=0,litC=0;
+  const base=bs0||Array.from({length:n},()=>new Array(n).fill(0));
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(base[r][c]){
+    if((litR>>rs[r][c]&1)||(litC>>cs[r][c]&1))return null;
+    litR|=1<<rs[r][c]; litC|=1<<cs[r][c]}
+  let out=null;
+  function rec(k,litR,litC,usedR,usedC,acc){
+    if(out)return;
+    if(k===cells.length){
+      for(const [r,c] of cells)
+        if(!(litR>>rs[r][c]&1)&&!(litC>>cs[r][c]&1))return;
+      out=acc.map(a=>a.slice()); return}
+    const [r,c]=cells[k],a=rs[r][c],b=cs[r][c];
+    if(litR>>a&1 || litC>>b&1){rec(k+1,litR,litC,usedR,usedC,acc); if(out)return}
+    if(!(usedR>>a&1)&&!(usedC>>b&1)){
+      acc[r][c]=1;
+      rec(k+1,litR|(1<<a),litC|(1<<b),usedR|(1<<a),usedC|(1<<b),acc);
+      acc[r][c]=0}
+  }
+  rec(0,litR,litC,litR,litC,Array.from({length:n},()=>new Array(n).fill(0)));
+  return out}
+// llWalls: the wall layout. Skeleton walls on every odd/odd cell, then `extra`
+// more walls dropped on random free cells. LLR.sizes[n].extra is the count.
+function llWalls(rng){
+  const {n,extra}=LLR.sizes[ll.n];
+  const w=Array.from({length:n},()=>new Array(n).fill(0));
+  for(let r=1;r<n;r+=2)for(let c=1;c<n;c+=2)w[r][c]=LLR.WALL;
+  const skel=[]; for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(!w[r][c])skel.push([r,c]);
+  for(let i=skel.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));const t=skel[i];skel[i]=skel[j];skel[j]=t}
+  for(let i=0;i<extra&&i<skel.length;i++)w[skel[i][0]][skel[i][1]]=LLR.WALL;
+  return w}
+// llBuild: generate a board that has EXACTLY ONE solution (by construction).
+function llBuild(n,seed){
+  ll.n=n;
+  let s=seed>>>0;
+  const rng=()=>{s=(s*1664525+1013904223)>>>0; return s/4294967296};
+  for(let t=0;t<LLR.maxTries;t++){
+    ll.wall=llWalls(rng);
+    if(llCount(2)!==1) continue;                 // must be uniquely solvable
+    const sol=llSolve(); if(!sol) continue;
+    const given=sol.map(r=>r.slice());
+    const order=[]; for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(given[r][c])order.push([r,c]);
+    for(let i=order.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));const t=order[i];order[i]=order[j];order[j]=t}
+    for(const [r,c] of order){
+      given[r][c]=0;
+      if(llCount(2,given)!==1) given[r][c]=LLR.BULB;   // blank it only if still unique
+    }
+    ll.bulb=given; ll.history=[]; ll.moves=0; ll.status='playing'; ll.seed=seed>>>0;
+    return true}
+  return false}
+// llVictory: the win test. All free cells lit AND no two bulbs share a segment.
+function llVictory(bs){
+  const n=ll.n,{rs,cs}=llSegments();
+  const usedR=new Set(),usedC=new Set(); let bulbs=0;
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(bs[r][c]){
+    bulbs++;
+    const a=rs[r][c],b=cs[r][c];
+    if(usedR.has(a)||usedC.has(b))return false;   // two bulbs see each other
+    usedR.add(a); usedC.add(b)}
+  const lit=llIllum(bs);
+  for(let i=0;i<n*n;i++) if(!ll.wall[Math.floor(i/n)][i%n] && !lit[i]) return false;
+  return true}
+function llClick(r,c){
+  if(ll.status!=='playing')return {ok:false,why:'solved'};
+  if(ll.wall[r][c])return {ok:false,why:'wall'};
+  ll.bulb[r][c]=ll.bulb[r][c]?0:LLR.BULB;
+  ll.history.push([r,c]);
+  ll.moves++;
+  if(llVictory(ll.bulb)){
+    ll.status='solved';
+    $('msg').textContent='Solved in '+ll.moves+' move'+(ll.moves===1?'':'s')+'. Every cell is lit and no two bulbs see each other.'}
+  else $('msg').textContent=ll.moves+' move'+(ll.moves===1?'':'s')+' placed.';
+  render();
+  return {ok:true,status:ll.status,moves:ll.moves}}
+function llUndo(){
+  if(ll.status!=='playing'||!ll.history.length)return {ok:false,why:'nothing to undo'};
+  const [r,c]=ll.history.pop();
+  ll.bulb[r][c]=0; ll.moves=Math.max(0,ll.moves-1);
+  render(); return {ok:true,moves:ll.moves}}
+function llHint(){
+  const sol=llSolve(ll.bulb); if(!sol)return null;
+  for(let r=0;r<ll.n;r++)for(let c=0;c<ll.n;c++)if(sol[r][c]&&!ll.bulb[r][c])return [r,c];
+  return null}
+function llRender(){
+  const n=ll.n,b=$('board');
+  b.style.gridTemplateColumns='repeat('+n+',38px)';
+  let h='';
+  const lit=llIllum(ll.bulb);
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+    const i=llCell(r,c);
+    let cls='ll-cell',lbl='';
+    if(ll.wall[r][c]){cls+=' ll-wall'}
+    else if(ll.bulb[r][c]){cls+=' ll-mark'; lbl='&#9679;'}
+    else if(lit[i])cls+=' ll-lit';
+    h+='<button class="'+cls+'" data-r="'+r+'" data-c="'+c+'" data-i="'+i+'">'+lbl+'</button>'}
+  b.innerHTML=h;
+  b.querySelectorAll('button').forEach(el=>el.onclick=()=>{
+    llClick(+el.dataset.r,+el.dataset.c)});
+  let bulbs=0; for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(ll.bulb[r][c])bulbs++;
+  let walls=0,free=0; for(let r=0;r<n;r++)for(let c=0;c<n;c++){if(ll.wall[r][c])walls++;else free++}
+  let litn=0; for(let i=0;i<n*n;i++)if(lit[i])litn++;
+  $('bulbs').textContent=bulbs; $('walls').textContent=walls;
+  $('lit').textContent=litn; $('moves').textContent=ll.moves;
+  document.querySelectorAll('.sz').forEach(el=>
+    el.className=('sz'+(+el.dataset.size===ll.n?' ws-btn':' ws-btn-ghost')));
+}
+function render(){llRender()}
+function llNew(n,seed){
+  const size=n||ll.n||7;
+  const s=seed===undefined?((Math.random()*4294967295)>>>0):seed;
+  if(!llBuild(size,s)){
+    // maxTries exhausted: a uniquely-solvable layout with this seed failed.
+    // Falling back to a smaller board would ship a game the player did not
+    // ask for, so keep retrying with a fresh seed instead.
+    return llNew(size,((s+1)>>>0))}
+  render(); return ll.n}
+$('new').onclick=()=>llNew(ll.n);
+$('undo').onclick=llUndo;
+$('hint').onclick=()=>{const h=llHint(); if(h){ll.bulb[h[0]][h[1]]=LLR.BULB; ll.moves++; render()}};
+document.querySelectorAll('.sz').forEach(el=>el.onclick=()=>llNew(+el.dataset.size));
+llNew(7,20240517);
+window.__lamplight={RULES:LLR,ll,
+  get G(){return {n:ll.n,wall:ll.wall.map(r=>r.slice()),
+    bulb:ll.bulb.map(r=>r.slice()),moves:ll.moves,status:ll.status,
+    bulbs:ll.bulb.flat().filter(v=>v===LLR.BULB).length,
+    seed:ll.seed}},
+  newGame:llNew,click:llClick,undo:llUndo,victory:llVictory,count:llCount,
+  solve:llSolve,build:llBuild,illum:llIllum,segments:llSegments,hint:llHint};
+</script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
