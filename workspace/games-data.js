@@ -114,4 +114,5 @@ const RAW = [
   {slug:"lantern-path",name:"Lantern Path",cat:"game",blurb:"Lantern Path - playable in the browser.",tags:["GAMES"],ready:true},
   {slug:"prism-splitter",name:"Prism Splitter",cat:"game",blurb:"Prism Splitter - playable in the browser.",tags:["GAMES"],ready:true},
   {slug:"tide-runner",name:"Tide Runner",cat:"game",blurb:"Tide Runner - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"watermelon-merge",name:"Watermelon Merge",cat:"game",blurb:"Watermelon Merge - playable in the browser.",tags:["GAMES"],ready:true},
 ];

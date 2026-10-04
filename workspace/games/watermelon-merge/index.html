@@ -41,11 +41,11 @@ tailwind.config = { theme: { extend: {
   .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
   .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
 </style>
-<meta name="description" content="Drop fruit into a jar, merge equals, grow the melon before the jar fills. Deterministic, seeded, and proven winnable.">
+<meta name="description" content="Watermelon Merge - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
 <link rel="canonical" href="https://ocurp.com/workspace/games/watermelon-merge/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Watermelon Merge">
-<meta property="og:description" content="Drop fruit into a jar, merge equals, grow the melon before the jar fills. Deterministic, seeded, and proven winnable.">
+<meta property="og:description" content="Watermelon Merge - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
 <meta property="og:url" content="https://ocurp.com/workspace/games/watermelon-merge/">
 <meta property="og:site_name" content="Ocurp">
 <meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
@@ -54,10 +54,10 @@ tailwind.config = { theme: { extend: {
 <meta property="og:image:alt" content="Watermelon Merge on Ocurp - free, runs in your browser">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Watermelon Merge">
-<meta name="twitter:description" content="Drop fruit into a jar, merge equals, grow the melon before the jar fills. Deterministic, seeded, and proven winnable.">
+<meta name="twitter:description" content="Watermelon Merge - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
 <meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
 <meta name="twitter:image:alt" content="Watermelon Merge on Ocurp - free, runs in your browser">
-<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"Watermelon Merge","url":"https://ocurp.com/workspace/games/watermelon-merge/","description":"Drop fruit into a jar, merge equals, grow the melon before the jar fills. Deterministic, seeded, and proven winnable.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Watermelon Merge","url":"https://ocurp.com/workspace/games/watermelon-merge/","description":"Watermelon Merge - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -126,8 +126,8 @@ tailwind.config = { theme: { extend: {
     <p class="mt-4 text-[11px] text-white/40">Pick a lane (or use the arrow keys) to drop the
       next fruit. Two fruits of the same rank that end up touching merge into the next
       rank up, and merges cascade. Grow a fruit of the <em class="not-italic text-white/70">target
-      rank</em> within the drop budget and you win; fill the jar past the rim, or run out of
-      drops, and you lose. The drop order is seeded and fixed &mdash; the level you read is
+      rank</em> within the drop budget and you win; run out of drops before you make
+            it, and you lose. The drop order is seeded and fixed &mdash; the level you read is
       the level you play.</p>
   </section>
   <section class="ws-panel mt-4 p-5">
@@ -143,11 +143,14 @@ tailwind.config = { theme: { extend: {
 <script>
 // ---- constants: the prover reads THIS block out of the shipped file by regex,
 // so a change here is a change the prover measures, not one it misses.
+// SPAWN_W is the drop table. It tops out well BELOW the level targets on
+// purpose: only seeds and plums drop, so every level has to be won by merging
+// and the jar has to be managed over many drops. An earlier table also spawned
+// rank-2 fruit, and level 1's rank-3 target was then satisfied in three drops.
 const WM = {FPS:60, INNER_W:300, FLOOR_Y:520, RIM_Y:96, LANES:5, R0:11, RSTEP:6,
   MAX_RANK:6, G:0.55, FALL_V:4, TOL:0.5, MERGE_PTS:[1,2,4,8,16,32],
-  SPAWN_W:[34,30,22,14,0,0], SEED:20261004};
-const WM_LV = [{"i":1,"target":3,"budget":70},{"i":2,"target":4,"budget":110},
-  {"i":3,"target":5,"budget":170}];
+  SPAWN_W:[52,48,0,0,0,0], SEED:20261004};
+const WM_LV = [{"i":1,"target":3,"budget":12},{"i":2,"target":4,"budget":19},{"i":3,"target":5,"budget":30}];
 const WM_COLOR = ['#e2e8f0','#94a3b8','#fca5a5','#fdba74','#a3e635','#34d399','#FF5F1F'];
 const SPD = id=>document.getElementById(id);
 
@@ -173,19 +176,29 @@ function wmClampLane(lane, rank){
   return best;
 }
 
-// Closed-form rest height against the resting pile: the highest contact point,
-// or the floor. Exact and order-independent, which is why the whole game is a
-// deterministic function of (seed, lane sequence) instead of a chaotic solve.
+// Where a fruit is released: clear of the whole pile. Spawning above the
+// topmost point is what guarantees a fruit is never created inside the pile.
+function wmReleaseY(pile, r){
+  if(!pile.length) return WM.RIM_Y - r;
+  return wmTopY(pile) - r;
+}
+
+// Closed-form rest height against the resting pile. A falling fruit stops at
+// the FIRST thing below it, so the answer is the MAXIMUM contact y that is
+// still below the release point - not the minimum. Exact and
+// order-independent, which is why the whole game is a deterministic function
+// of (seed, lane sequence) instead of a chaotic solve.
 function wmRestY(x, r, pile, y){
-  let best = (y===undefined ? WM.FLOOR_Y - r : y);
+  const spawn = (y===undefined ? WM.RIM_Y : y);
+  let best = WM.FLOOR_Y - r;
   for(const f of pile){
     const s = r + f.r + WM.TOL, dx = x - f.x;
     if(Math.abs(dx) < s){
       const v = f.y - Math.sqrt(s*s - dx*dx);
-      if(v < best) best = v;
+      if(v >= spawn && v > best) best = v;
     }
   }
-  return best;
+  return Math.max(best, spawn);
 }
 function wmTouch(a,b){
   const s = a.r + b.r + WM.TOL, dx = a.x - b.x, dy = a.y - b.y;
@@ -200,7 +213,14 @@ function wmSpawnRank(dropIndex){
   h ^= h>>>15; h = Math.imul(h, 2246822519) >>> 0;
   h ^= h>>>13; h = Math.imul(h, 3266489917) >>> 0;
   h ^= h>>>16;
-  const pick = (h % 10000) / 100;
+    // `h` is SIGNED here - the >>>0 casts above sit on the imul lines, not on
+    // this xor - so roughly half the drops produced a negative hash. A negative
+    // pick fails every `pick < acc` test in a way that silently matched the FIRST
+    // bucket, so ~49% of all drops spawned rank 0 regardless of the table and the
+    // 52/48 split never happened. The prover masked to unsigned and therefore
+    // disagreed with the page about the entire spawn order. Cast once, here,
+    // after the last mix step, and the two agree drop for drop.
+    const pick = ((h >>> 0) % 10000) / 100;
   let acc = 0;
   for(let i=0;i<WM.SPAWN_W.length;i++){ acc += WM.SPAWN_W[i]; if(pick < acc) return i; }
   return WM.SPAWN_W.length - 1;
@@ -212,14 +232,21 @@ function wmSpawnRank(dropIndex){
 function wmSimulate(pile, rank, lane){
   lane = wmClampLane(lane, rank);
   const x = wmLaneX(lane), r = wmR(rank);
-  const top = WM.RIM_Y + r;
+  const top = wmReleaseY(pile, r);
   let cur = {x, y: wmRestY(x, r, pile, top), r, rank};
   let work = pile.concat([cur]);
   let points = 0, made = rank;
   for(let pass=0; pass<16; pass++){
     let hit = null;
-    for(const f of work)
-      if(f.rank < WM.MAX_RANK && f !== cur && wmTouch(f, cur)){ hit = f; break; }
+        // Merges only happen between two fruits of the SAME rank. An earlier build
+        // merged with anything it touched and set the result to hit.rank+1, which
+        // quietly ignored the incoming fruit's rank: a rank-0 seed touching a rank-3
+        // fruit became rank 4. Mass was not conserved, the top fruit was reachable
+        // in 7 drops from a table that only ever drops rank 0 and 1, and losing was
+        // nearly impossible - the exact "loads, animates, scores, impossible to
+        // progress" defect class. Same-rank keeps 2^r + 2^r == 2^(r+1) exact.
+        for(const f of work)
+          if(f.rank === cur.rank && f.rank < WM.MAX_RANK && f !== cur && wmTouch(f, cur)){ hit = f; break; }
     if(!hit) break;
     work = work.filter(f => f !== hit && f !== cur);
     made = hit.rank + 1;
@@ -228,7 +255,12 @@ function wmSimulate(pile, rank, lane){
     cur = {x:mx, y: wmRestY(mx, mr, work, my), r:mr, rank:made};
     work = work.concat([cur]);
   }
-  return {pile:work, points, made, lane, x, r};
+  // releaseY/restY/descentFrames are reported so the autopilot and the prover can
+  // account for the fixed-timestep fall without re-deriving it.
+  const dy = (WM.FLOOR_Y - top);
+  const d = dy <= 0 ? 0 : Math.ceil((Math.sqrt(WM.FALL_V*WM.FALL_V + 2*WM.G*dy) - WM.FALL_V)/WM.G);
+  return {pile:work, points, made, lane, x, r, releaseY:top, restY:cur.y,
+          descentFrames:d};
 }
 
 // How a fruit's descent is integrated: fixed timestep, so the fall is
@@ -266,8 +298,9 @@ function wmDrop(lane){
   if(!wmCanDrop()) return null;
   lane = wmClampLane(lane, wmNextRank());
   const rank = wmNextRank(), r = wmR(rank), x = wmLaneX(lane);
-  const rest = wmRestY(x, r, wm.pile, WM.RIM_Y + r);
-  wm.falling = {x, r, rank, y: WM.RIM_Y + r, rest, v: WM.FALL_V, lane};
+  const top = wmReleaseY(wm.pile, r);
+  const rest = wmRestY(x, r, wm.pile, top);
+  wm.falling = {x, r, rank, y: top, rest, v: WM.FALL_V, lane};
   wmRender();
   return {lane, rank, restY: rest};
 }
@@ -325,8 +358,11 @@ function wmAutopilot(opt){
   const reaction = opt.reaction===undefined ? 420 : opt.reaction;
   const jitter = opt.jitter===undefined ? 80 : opt.jitter;
   const err = opt.err===undefined ? 0.06 : opt.err;
-  const target = opt.target===undefined ? WM_LV[0].target : opt.target;
-  const budget = opt.budget===undefined ? WM_LV[0].budget : opt.budget;
+    // opt.level was accepted but ignored - it always flew WM_LV[0], so a test
+    // asking for level 3 silently got level 1's target and budget. Honour it.
+    const level = Math.max(0, Math.min(WM_LV.length-1, opt.level===undefined ? 0 : opt.level|0));
+    const target = opt.target===undefined ? WM_LV[level].target : opt.target;
+    const budget = opt.budget===undefined ? WM_LV[level].budget : opt.budget;
   const rng = wmRng(opt.seed===undefined ? 0 : opt.seed);
   let pile = [], drops = 0, score = 0, best = -1, frames = 0;
   while(drops < budget){
@@ -334,8 +370,7 @@ function wmAutopilot(opt){
     const lane = wmBestLane(pile, rank, err, rng);
     const o = wmSimulate(pile, rank, lane);
     pile = o.pile; score += o.points; drops += 1; best = Math.max(best, o.made);
-    const d = wmDescentFrames(WM.RIM_Y + o.r, o.pile.length ? o.pile[0].y : WM.FLOOR_Y);
-    frames += d.frames + Math.round(reaction/1000*WM.FPS);
+    frames += (o.descentFrames||0) + Math.round(reaction/1000*WM.FPS);
     if(best >= target) return {status:'won', drops, score, best_rank:best,
       headroom_px:+(wmTopY(pile)-WM.RIM_Y).toFixed(2), frames};
     if(wmTopY(pile) < WM.RIM_Y) return {status:'lost', drops, score,
@@ -420,7 +455,7 @@ function wmRender(){
       headroom_px:+(wmTopY(wm.pile)-WM.RIM_Y).toFixed(2),
       next_rank:wmNextRank()},
     win:'make a fruit of the target rank inside the drop budget',
-    fail:'pile clears the rim, or the drop budget runs out below target',
+    fail:'the drop budget runs out below the target rank',
     deterministic:'rank of drop n = wmSpawnRank(n) over SEED '+WM.SEED
   },null,1);
 }
@@ -491,5 +526,57 @@ window.__watermelon_merge = {
 
 <link rel="stylesheet" href="/workspace/play.css?v=20261002c">
 <script src="/workspace/play.js?v=20261002c" defer></script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
 </body>
 </html>
