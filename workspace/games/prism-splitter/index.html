@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prism Splitter — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Prism Splitter - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/prism-splitter/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Prism Splitter">
+<meta property="og:description" content="Prism Splitter - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/prism-splitter/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Prism Splitter on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Prism Splitter">
+<meta name="twitter:description" content="Prism Splitter - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Prism Splitter on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Prism Splitter","url":"https://ocurp.com/workspace/games/prism-splitter/","description":"Prism Splitter - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Prism Splitter</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">LOGIC</span></div>
+        </div>
+      
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="prev" class="ws-btn-ghost">&larr;</button>
+      <span class="ws-chip" id="which">LEVEL 1 / 14</span>
+      <button id="next" class="ws-btn-ghost">&rarr;</button>
+      <button id="restart" class="ws-btn">Restart level</button>
+      <span class="ws-chip" id="solinfo">&mdash;</span>
+    </div>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)]">
+      <div class="flex justify-center">
+        <canvas id="cv" width="490" height="490" class="max-w-full"></canvas>
+      </div>
+      <div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Moves left</div>
+            <div class="font-display text-xl font-black text-accent" id="moves">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Mirrors</div>
+            <div class="font-display text-xl font-black text-white" id="mirrors">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Levels cleared</div>
+            <div class="font-display text-xl font-black text-white" id="cleared">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Status</div>
+            <div class="font-display text-sm font-black text-white" id="status">Playing</div></div>
+        </div>
+        <p class="mt-4 text-[11px] leading-relaxed text-white/60">
+          Click a mirror to flip it. The beam leaves the orange port on the grid edge,
+          turns wherever it meets a mirror, and stops at a blocker.
+          <span class="text-accent">Land it on the target ring to clear the level.</span>
+        </p>
+        <div id="msg" class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Loading&hellip;</div>
+      </div>
+    </div>
+  </section>
+  <p class="mx-auto mt-6 max-w-2xl text-[10px] leading-relaxed text-white/45"><span class="font-black tracking-[0.2em] text-white/60">THE EXACT RULES</span><br>
+    Rotate mirrors, do not move anything. <span class="text-white/70">WIN</span> = the beam reaches the
+    target ring. <span class="text-accent">A level you cannot read within its move budget
+    resets itself</span>, with its mirrors back where they started, and each reset costs one of
+    your three lives on that level. <span class="text-accent">FAIL</span> = a fourth reset &mdash; the
+    run restarts from level 1. Each level's budget is <span class="text-white/70">three moves per mirror
+    plus six</span>, and every level was built from a solution that a brute-force search proved is
+    the <span class="text-white/70">only</span> solution on the board.</p>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>const PS={GRID:7,MAX_RESETS:3,MOVES_PER_MIRROR:3,MOVE_SLACK:6};
+const LEVELS=[{"n":7,"start":[6,2,0],"target":[0,4],"mirrors":[[3,2,1],[3,4,1]],"blocks":[[0,5],[0,3],[4,5],[0,1],[6,3]],"moves":12,"id":1},{"n":7,"start":[2,0,1],"target":[1,4],"mirrors":[[2,2,1],[1,2,1]],"blocks":[[4,6],[5,0],[0,1],[1,6],[1,0]],"moves":12,"id":2},{"n":7,"start":[6,2,0],"target":[3,5],"mirrors":[[5,2,1],[5,5,1]],"blocks":[[6,4],[1,4],[6,1],[0,6],[3,1],[2,2]],"moves":12,"id":3},{"n":7,"start":[3,0,1],"target":[4,3],"mirrors":[[3,2,1],[1,2,1],[1,3,0]],"blocks":[[1,6],[2,5],[5,3]],"moves":15,"id":4},{"n":7,"start":[4,6,3],"target":[0,4],"mirrors":[[4,3,0],[2,3,1],[2,4,1]],"blocks":[[6,3],[1,6],[2,1]],"moves":15,"id":5},{"n":7,"start":[4,0,1],"target":[6,5],"mirrors":[[4,3,1],[3,3,1],[3,5,0]],"blocks":[[4,4],[3,0],[0,5],[5,3]],"moves":15,"id":6},{"n":7,"start":[0,5,2],"target":[4,2],"mirrors":[[3,5,1],[3,4,1],[4,4,1]],"blocks":[[1,1],[2,1],[6,3],[1,2]],"moves":15,"id":7},{"n":7,"start":[6,4,0],"target":[3,5],"mirrors":[[5,4,0],[5,3,0],[3,3,1]],"blocks":[[0,0],[1,3],[4,1],[5,5],[5,1],[5,6]],"moves":15,"id":8},{"n":7,"start":[0,3,2],"target":[3,6],"mirrors":[[2,3,0],[2,5,1],[1,5,1],[1,6,0]],"blocks":[[0,2],[3,3],[2,0],[6,1],[5,3]],"moves":18,"id":9},{"n":7,"start":[6,2,0],"target":[2,6],"mirrors":[[3,2,1],[3,4,0],[6,4,0],[6,6,1]],"blocks":[[1,4],[5,3],[2,4]],"moves":18,"id":10},{"n":7,"start":[1,0,1],"target":[3,0],"mirrors":[[1,2,0],[2,2,0],[2,4,0],[3,4,1]],"blocks":[[1,6],[2,5],[6,2],[2,1],[4,1]],"moves":18,"id":11},{"n":7,"start":[6,3,0],"target":[5,6],"mirrors":[[3,3,1],[3,4,1],[1,4,1],[1,6,0]],"blocks":[[2,2],[2,3],[1,1],[3,0],[1,3],[6,0]],"moves":18,"id":12},{"n":7,"start":[1,6,3],"target":[5,2],"mirrors":[[1,3,1],[3,3,0],[3,5,0],[5,5,1]],"blocks":[[2,6],[1,0],[0,6],[0,0],[2,2]],"moves":18,"id":13},{"n":7,"start":[6,3,0],"target":[2,1],"mirrors":[[4,3,0],[4,2,1],[6,2,1],[6,1,0]],"blocks":[[1,4],[5,0],[0,6]],"moves":18,"id":14}];
+const $=id=>document.getElementById(id);
+const DIRV=[[-1,0],[0,1],[1,0],[0,-1]];
+const st={li:0,lv:null,ori:[],moves:0,budget:0,resets:0,status:'playing',
+  cleared:0,totalRotations:0,levels:0};
+
+// Fire the beam from the level's start cell. Pure: reads `ori`, touches nothing.
+// Returns {hit, path:[r,c][], turns:index[]} where path is every cell visited.
+function trace(level,ori){
+  const n=level.n,r0=level.start[0],c0=level.start[1],d0=level.start[2];
+  const block=new Set(level.blocks.map(b=>b[0]*n+b[1]));
+  let r=r0,c=c0,d=d0;
+  const path=[r*n+c],turns=[],seen=new Set([r*n+c]);
+  for(let step=0;step<4*n*n+8;step++){
+    r+=DIRV[d][0];c+=DIRV[d][1];
+    if(r<0||c<0||r>=n||c>=n)return {hit:false,path:path,turns:turns,escaped:true};
+    const k=r*n+c;
+    if(r===level.target[0]&&c===level.target[1])return {hit:true,path:path,turns:turns,escaped:false};
+    if(block.has(k))return {hit:false,path:path,turns:turns,escaped:false};
+    path.push(k);seen.add(k);
+    if(ori[r]&&ori[r][c]!==undefined){turns.push([r,c]);d^=ori[r][c]===0?1:3}
+  }
+  return {hit:false,path:path,turns:turns,escaped:false}}
+
+// Brute force the orientations for one level. The page uses it only to report
+// how many solutions the board has; the prover re-derives all of this itself.
+function solveLevel(li,maxSolutions){
+  const lv=LEVELS[li],n=lv.n,k=lv.mirrors.length;
+  const found=[];
+  for(let mask=0;mask<(1<<k);mask++){
+    const o={};
+    lv.mirrors.forEach((m,b)=>{o[m[0]]=o[m[0]]||{};o[m[0]][m[1]]=(mask>>b)&1});
+    if(trace(lv,o).hit){found.push(mask);
+      if(found.length>=(maxSolutions||2))break}}
+  return found}
+
+function loadLevel(i){
+  st.li=Math.max(0,Math.min(LEVELS.length-1,i));
+  st.lv=LEVELS[st.li];
+  st.ori={};
+  st.lv.mirrors.forEach(m=>{st.ori[m[0]]=st.ori[m[0]]||{};st.ori[m[0]][m[1]]=m[2]});
+  st.budget=st.lv.moves;
+  st.moves=st.budget;
+  st.resets=0;
+  st.status='playing';
+  $('msg').textContent='Level '+st.lv.id+': '+st.lv.mirrors.length+' mirrors, '+
+    st.lv.blocks.length+' blockers, '+st.budget+' moves.';
+  render();
+  return st.li}
+
+// One click on one mirror. This is the only move in the game.
+function rotate(r,c){
+  if(st.status!=='playing')return 'locked';
+  if(!st.ori[r]||st.ori[r][c]===undefined)return 'not-a-mirror';
+  st.ori[r][c]=st.ori[r][c]?0:1;
+  st.moves--;
+  st.totalRotations++;
+  const b=trace(st.lv,st.ori);
+  if(b.hit){st.status='won';
+    if(st.li+1>st.cleared)st.cleared=st.li+1;
+    $('msg').textContent='Level '+st.lv.id+' clear in '+(st.budget-st.moves)+
+      ' move'+(st.budget-st.moves===1?'':'s')+'.'+
+      (st.li+1>=LEVELS.length?' That was the last board - the run is complete.':'');
+    render();
+    return 'won'}
+  if(st.moves<=0){
+    st.resets++;
+    if(st.resets>PS.MAX_RESETS){
+      st.status='lost';st.cleared=0;
+      $('msg').textContent='Out of resets on level '+st.lv.id+' - run over. Starting again from level 1.';
+      render();
+      return 'lost'}
+    st.lv.mirrors.forEach(m=>{st.ori[m[0]][m[1]]=m[2]});
+    st.moves=st.budget;
+    $('msg').textContent='Out of moves. Mirrors reset ('+st.resets+' of '+
+      PS.MAX_RESETS+' resets used).';
+    render();
+    return 'reset'}
+  render();
+  return 'ok'}
+
+// Apply a full orientation map at once - used by the test harness to replay a
+// solved board through this same code path, click for click.
+function applyAll(pairs){
+  const out=[];
+  for(const p of pairs)out.push(rotate(p[0],p[1]));
+  return out}
+
+function render(){
+  const lv=st.lv,n=lv.n,cv=$('cv'),ctx=cv.getContext('2d');
+  const cell=cv.width/n;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.fillStyle='#050505';ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.strokeStyle='rgba(255,255,255,.06)';ctx.lineWidth=1;
+  for(let i=0;i<=n;i++){
+    ctx.beginPath();ctx.moveTo(i*cell+.5,0);ctx.lineTo(i*cell+.5,cv.height);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,i*cell+.5);ctx.lineTo(cv.width,i*cell+.5);ctx.stroke()}
+  lv.blocks.forEach(b=>{
+    const x=b[1]*cell,y=b[0]*cell;
+    ctx.fillStyle='rgba(255,255,255,.10)';ctx.fillRect(x+2,y+2,cell-4,cell-4);
+    ctx.strokeStyle='rgba(255,255,255,.22)';ctx.strokeRect(x+2.5,y+2.5,cell-5,cell-5)});
+  const b=trace(lv,st.ori);
+  ctx.strokeStyle='#FF5F1F';ctx.lineWidth=2.5;ctx.beginPath();
+  b.path.forEach((k,i)=>{
+    const r=(k/n)|0,c=k%n,x=c*cell+cell/2,y=r*cell+cell/2;
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});
+  ctx.stroke();
+  lv.mirrors.forEach(m=>{
+    const o=st.ori[m[0]][m[1]];
+    const x=m[1]*cell,y=m[0]*cell,pad=cell*.24;
+    const lit=b.path.includes(m[0]*n+m[1]);
+    ctx.strokeStyle=lit?'#FF5F1F':'rgba(255,255,255,.55)';
+    ctx.lineWidth=3;ctx.beginPath();
+    if(o===0){ctx.moveTo(x+pad,y+cell-pad);ctx.lineTo(x+cell-pad,y+pad)}
+    else{ctx.moveTo(x+pad,y+pad);ctx.lineTo(x+cell-pad,y+cell-pad)}
+    ctx.stroke()});
+  const tx=lv.target[1]*cell,ty=lv.target[0]*cell;
+  ctx.strokeStyle='#FF5F1F';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(tx+cell/2,ty+cell/2,cell*.3,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle=b.hit?'#FF5F1F':'rgba(255,95,31,.35)';
+  ctx.beginPath();ctx.arc(tx+cell/2,ty+cell/2,cell*.1,0,Math.PI*2);ctx.fill();
+  const sx=lv.start[1]*cell,sy=lv.start[0]*cell;
+  ctx.fillStyle='#FF5F1F';ctx.fillRect(sx+cell*.3,sy+cell*.3,cell*.4,cell*.4);
+  ctx.strokeStyle='rgba(255,95,31,.5)';ctx.lineWidth=2;ctx.beginPath();
+  const dx=DIRV[lv.start[2]][1]*cell*.9,dy=DIRV[lv.start[2]][0]*cell*.9;
+  ctx.moveTo(sx+cell/2+dx*.55,sy+cell/2+dy*.55);
+  ctx.lineTo(sx+cell/2+dx,sy+cell/2+dy);ctx.stroke();
+  const ns=solveLevel(st.li,3).length;
+  $('solinfo').textContent=ns===1?'1 SOLUTION':'SOLUTIONS: '+ns;
+  $('which').textContent='LEVEL '+(st.li+1)+' / '+LEVELS.length;
+  $('moves').textContent=st.moves;
+  $('mirrors').textContent=lv.mirrors.length;
+  $('cleared').textContent=st.cleared;
+  $('status').textContent=st.status==='won'?'Clear':(st.status==='lost'?'Lost':'Playing');
+  $('prev').disabled=st.li===0;$('next').disabled=st.li>=LEVELS.length-1}
+
+$('restart').onclick=()=>{const r=st.resets;
+  if(st.status==='lost'){st.cleared=0;loadLevel(0)}
+  else{loadLevel(st.li);st.resets=r;render()}};
+$('prev').onclick=()=>loadLevel(st.li-1);
+$('next').onclick=()=>loadLevel(st.li+1);
+$('cv').onclick=e=>{
+  const n=st.lv.n,cell=$('cv').width/n;
+  const rect=$('cv').getBoundingClientRect();
+  const sx=$('cv').width/rect.width;
+  const c=Math.floor((e.clientX-rect.left)*sx/cell),r=Math.floor((e.clientY-rect.top)*sx/cell);
+  rotate(r,c)};
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft'){loadLevel(st.li-1);e.preventDefault()}
+  if(e.key==='ArrowRight'){loadLevel(st.li+1);e.preventDefault()}});
+loadLevel(0);
+window.__prism_splitter={PS,LEVELS,
+  get G(){return {level:st.li+1,li:st.li,moves:st.moves,budget:st.budget,
+    resets:st.resets,status:st.status,cleared:st.cleared,mirrors:st.lv.mirrors.length,
+    blocks:st.lv.blocks.length,ori:JSON.parse(JSON.stringify(st.ori)),
+    hit:trace(st.lv,st.ori).hit,totalRotations:st.totalRotations}},
+  loadLevel,rotate,applyAll,trace,solveLevel,
+  solutions:i=>solveLevel(i,99).length,
+  level:i=>LEVELS[i]};
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

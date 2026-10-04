@@ -112,4 +112,6 @@ const RAW = [
   {slug:"stream-stepper",name:"Stream Stepper",cat:"game",blurb:"Stream Stepper - playable in the browser.",tags:["GAMES"],ready:true},
   {slug:"knight-tour",name:"Knight Tour",cat:"game",blurb:"Knight Tour - playable in the browser.",tags:["GAMES"],ready:true},
   {slug:"lantern-path",name:"Lantern Path",cat:"game",blurb:"Lantern Path - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"prism-splitter",name:"Prism Splitter",cat:"game",blurb:"Prism Splitter - playable in the browser.",tags:["GAMES"],ready:true},
+  {slug:"tide-runner",name:"Tide Runner",cat:"game",blurb:"Tide Runner - playable in the browser.",tags:["GAMES"],ready:true},
 ];

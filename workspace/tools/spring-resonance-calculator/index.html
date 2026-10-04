@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spring Resonance Calculator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Natural frequency. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/spring-resonance-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Spring Resonance Calculator">
+<meta property="og:description" content="Natural frequency. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/spring-resonance-calculator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Spring Resonance Calculator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Spring Resonance Calculator">
+<meta name="twitter:description" content="Natural frequency. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Spring Resonance Calculator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Spring Resonance Calculator","url":"https://ocurp.com/workspace/tools/spring-resonance-calculator/","description":"Natural frequency. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Spring Resonance Calculator</h1>
+      <p class="mt-1 text-xs text-white/40">MATH & CONVERSION &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">A mass on a spring with a damper in it. It gives the undamped natural frequency in both rad/s and Hz, the damping ratio against the critical value 2*sqrt(k*m), the quality factor, and the peak response frequency &mdash; and it names which of the three damping branches you are on. That last part is the whole point: at or above critical damping the system never oscillates, so there is no damped frequency and none is printed. Peak response is treated the same way, because the resonance peak disappears once zeta passes 1/sqrt(2) and a damped frequency is not the same thing as a resonance.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">MASS-SPRING-DAMPER</span>
+    <span class="ws-chip">3 BRANCHES</span>
+  </div>
+  <label class="ws-label mb-2 block" for="sp-m">Mass m (kg)</label>
+  <input id="sp-m" class="ws-input" type="number" value="1" min="0" step="0.1">
+  <label class="ws-label mb-2 mt-3 block" for="sp-k">Stiffness k (N/m)</label>
+  <input id="sp-k" class="ws-input" type="number" value="100" min="0" step="5">
+  <label class="ws-label mb-2 mt-3 block" for="sp-c">Damping c (N&middot;s/m)</label>
+  <input id="sp-c" class="ws-input" type="number" value="2" min="0" step="1">
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="sp-c1" class="ws-btn-ghost" style="width:auto">Underdamped</button>
+    <button id="sp-c2" class="ws-btn-ghost" style="width:auto">Critical</button>
+    <button id="sp-c3" class="ws-btn-ghost" style="width:auto">Overdamped</button>
+    <button id="sp-c4" class="ws-btn-ghost" style="width:auto">No damping</button>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="sp-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Verdict</div>
+  <div id="sp-verdict" class="ws-out"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Frequencies</div>
+  <div id="sp-out" class="ws-out"></div>
+  <button id="sp-copy" class="ws-btn-ghost mt-3" style="width:auto">Copy</button>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Numbers</div>
+  <div id="sp-kv"></div>
+</div>
+<div class="md:col-span-2 ws-panel p-5">
+  <div class="ws-label mb-2">Where the damping sits</div>
+  <div id="sp-bar" class="ws-out"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Why the branch matters</div>
+  <div id="sp-why" class="ws-out"></div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||n===undefined) return 0;
+  if(typeof n!=='number') return String(n);
+  if(!isFinite(n)) return n>0?'infinity':(n<0?'-infinity':'undefined');
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id){ var el=$(id); if(!el) return NaN; return parseFloat(el.value); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function wireCopy(btnId,getText){
+  var b=$(btnId); if(!b) return;
+  b.addEventListener('click',function(){
+    var t=getText();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){
+        b.textContent='Copied'; },function(){ b.textContent='Copy failed'; });
+    }else{ b.textContent='Copy unavailable'; }
+    setTimeout(function(){ b.textContent='Copy'; },1400);
+  });
+}
+/* A number or a stated reason - never a bare NaN leaking into the DOM. */
+function numOr(reason,v,d){ return (v===null||v===undefined||!isFinite(v))?reason:r(v,d); }
+
+var SP=(function(){
+  /* Undamped natural frequency is sqrt(k/m). Critical damping is the single
+     value of c that returns the mass to rest in the shortest possible time
+     without overshoot: c_crit = 2*sqrt(k*m), and zeta = c / c_crit.
+     Below it the system still rings, so a real damped frequency exists.
+     At or above it there is no oscillation at all, and printing
+     wn*sqrt(1-zeta^2) there would hand back sqrt of a negative - a NaN
+     dressed up as a frequency. Those two branches say so instead. */
+  function compute(m,k,c){
+    if(!isFinite(m)||!isFinite(k)||!isFinite(c))
+      return {ok:false,valid:false,why:'m, k and c must all be finite numbers'};
+    if(m<=0) return {ok:false,valid:false,why:'the mass m must be greater than 0 - you asked for '+r(m,6)};
+    if(k<=0) return {ok:false,valid:false,why:'the stiffness k must be greater than 0 - with no spring there is no frequency'};
+    if(c<0) return {ok:false,valid:false,why:'the damping c cannot be negative - a negative damper would add energy instead of removing it'};
+    var wn=Math.sqrt(k/m);
+    var f=wn/(2*Math.PI);
+    var cCrit=2*Math.sqrt(k*m);
+    var zeta=c/cCrit;
+    /* Tolerance so that an exact critical value lands on 'critical' rather
+       than on whichever side of it floating-point noise happens to fall. */
+    var tol=1e-9;
+    var branch=(zeta<1-tol)?'under':((zeta>1+tol)?'over':'critical');
+    var o={ok:true,valid:true,m:m,k:k,c:c,wn:wn,freqHz:f,cCritical:cCrit,
+      zeta:zeta,
+      /* Q is the ratio of stored energy to energy lost per cycle. It is only
+         meaningful for a ringing system, so an undamped one gets no number. */
+      Q:(zeta>0?1/(2*zeta):null),
+      branch:branch,
+      dampedRad:null,dampedHz:null,peakRad:null,peakHz:null,peakNote:null};
+    if(branch==='under'){
+      o.dampedRad=wn*Math.sqrt(1-zeta*zeta);
+      o.dampedHz=o.dampedRad/(2*Math.PI);
+      /* The displacement-response peak only exists while zeta < 1/sqrt(2);
+         past that the response rolls off monotonically from the start and
+         there is no resonant frequency to quote. */
+      if(zeta<1/Math.sqrt(2)-tol){
+        o.peakRad=wn*Math.sqrt(1-2*zeta*zeta);
+        o.peakHz=o.peakRad/(2*Math.PI);
+        o.peakNote='a resonant peak exists: it sits below wn and above the damped frequency';
+      }else{
+        o.peakNote='no resonant peak: at zeta = '+r(zeta,6)+' the response is already past 1/sqrt(2), so it falls away monotonically and never overtakes the static response';
+      }
+    }else if(branch==='critical'){
+      o.dampedNote='critically damped: the system returns to rest as fast as possible without overshooting, and never rings - there is no oscillation frequency to report';
+    }else{
+      o.dampedNote='overdamped: the system creeps back to rest without overshooting and never rings - there is no oscillation frequency to report';
+    }
+    return o;
+  }
+  function render(){
+    var m=num('sp-m'), k=num('sp-k'), c=num('sp-c'), err=$('sp-err');
+    err.textContent='';
+    var v=compute(m,k,c);
+    if(!v.ok){
+      $('sp-verdict').textContent='NO SYSTEM\n\n'+v.why+'.';
+      $('sp-out').textContent=''; $('sp-kv').innerHTML='';
+      $('sp-why').textContent=''; $('sp-bar').textContent='';
+      err.textContent=v.why;
+      return v;
+    }
+    $('sp-verdict').textContent =
+        'c       '+r(v.c,6)+'\n'
+      + 'c_crit  '+r(v.cCritical,6)+'\n'
+      + 'zeta    '+r(v.zeta,6)+'\n\n'
+      + (v.branch==='under'
+          ? 'UNDERDAMPED - the system rings.\n'
+            +'c is below critical damping, so it oscillates at a real\n'
+            +'damped frequency slightly under wn.'
+          : v.branch==='critical'
+          ? 'CRITICALLY DAMPED - the fastest return, no ring.\n'
+            +'c equals 2*sqrt(k*m) exactly. This is the boundary case: the\n'
+            +'fastest possible return to rest with no overshoot.'
+          : 'OVERDAMPED - no oscillation at all.\n'
+            +'c is above 2*sqrt(k*m), so the mass creeps back to rest\n'
+            +'without ever crossing over. There is no damped frequency.');
+    var dl=(v.branch==='under')
+      ? 'damped      '+r(v.dampedRad,9)+' rad/s   ('+r(v.dampedHz,9)+' Hz)'
+      : 'damped      undefined - '+v.branch+' damping means no oscillation';
+    var pl=(v.peakRad===null)?'peak        none - '+v.peakNote:'peak        '+r(v.peakRad,9)+' rad/s   ('+r(v.peakHz,9)+' Hz)';
+    $('sp-out').textContent=
+        'm  '+r(v.m,6)+' kg    k  '+r(v.k,6)+' N/m    c  '+r(v.c,6)+' N.s/m\n\n'
+      +'wn         '+r(v.wn,9)+' rad/s   ('+r(v.freqHz,9)+' Hz)\n'
+      +dl+'\n'
+      +pl+'\n\n'
+      +'zeta       '+r(v.zeta,9)+'\n'
+      +'Q          '+(v.Q===null?'undefined - an undamped system rings forever, so energy lost per cycle is zero and the ratio has no finite value':r(v.Q,9));
+    fill('sp-kv',[
+      ['Mass m (kg)',r(v.m,9)],
+      ['Stiffness k (N/m)',r(v.k,9)],
+      ['Damping c (N.s/m)',r(v.c,9)],
+      ['Critical damping c_crit',r(v.cCritical,9)],
+      ['Damping ratio zeta',r(v.zeta,9)],
+      ['Damping branch',v.branch],
+      ['Undamped omega_n (rad/s)',r(v.wn,9)],
+      ['Undamped f_n (Hz)',r(v.freqHz,9)],
+      ['Damped omega_d (rad/s)',(v.dampedRad===null)?'undefined':r(v.dampedRad,9)],
+      ['Damped f_d (Hz)',(v.dampedHz===null)?'undefined':r(v.dampedHz,9)],
+      ['Quality factor Q',(v.Q===null)?'undefined':r(v.Q,9)],
+      ['Peak response (rad/s)',(v.peakRad===null)?'none':r(v.peakRad,9)],
+      ['Peak response (Hz)',(v.peakHz===null)?'none':r(v.peakHz,9)],
+      ['Is a valid system',v.valid]]);
+    $('sp-why').textContent =
+        'critical damping is c_crit = 2*sqrt(k*m) = 2*sqrt('+r(v.k,6)+' * '+r(v.m,6)+') = '
+        +r(v.cCritical,9)+'\n\n'
+      + 'and your c is '+r(v.c,6)+', which is '
+      + (v.c<v.cCritical?r(v.c/v.cCritical,6)+' of it'
+        : v.c===v.cCritical||Math.abs(v.zeta-1)<1e-9?'exactly it':'the limit case of it')
+      +'.\n\n'
+      + (v.branch==='under'
+          ? 'Below critical damping the mass overshoots and comes back, so it\n'
+            +'rings at omega_d = wn*sqrt(1 - zeta^2). The sqrt only has a real\n'
+            +'answer while zeta < 1, which is exactly what "underdamped" means.'
+          : v.branch==='critical'
+          ? 'At c = c_crit the root of the characteristic equation is a repeated\n'
+            +'real negative number: no oscillation, and the return to rest is\n'
+            +'faster than for any larger c. Quote wn here, not a damped frequency - there is none.'
+          : 'Above critical damping the roots are two distinct real numbers, so the\n'
+            +'motion is a sum of two decaying exponentials and never crosses\n'
+            +'over. The decay rates are '
+            +r(v.wn*Math.sqrt(v.zeta*v.zeta-1),6)+' rad/s and '
+            +r(-v.wn*Math.sqrt(v.zeta*v.zeta-1),6)+' rad/s - a real answer,\n'
+            +'but there is no oscillation frequency to print.');
+    $('sp-bar').textContent =
+        'zeta = 0 ................ critical = 1 ............... zeta large\n'
+      + 'undamped            '+(v.zeta<1?'':'')+'\n\n'
+      + 'your zeta = '+r(v.zeta,6)+'\n'
+      + 'position on the line: '+r(v.zeta*10,6)+'% of the way to a zeta of 10\n'
+      + 'branch: '+v.branch.toUpperCase();
+    return v;
+  }
+  $('sp-m').addEventListener('input',render);
+  $('sp-k').addEventListener('input',render);
+  $('sp-c').addEventListener('input',render);
+  $('sp-c1').addEventListener('click',function(){ put('sp-m',1); put('sp-k',100); put('sp-c',2); render(); });
+  $('sp-c2').addEventListener('click',function(){ put('sp-m',1); put('sp-k',100); put('sp-c',20); render(); });
+  $('sp-c3').addEventListener('click',function(){ put('sp-m',1); put('sp-k',100); put('sp-c',50); render(); });
+  $('sp-c4').addEventListener('click',function(){ put('sp-m',1); put('sp-k',100); put('sp-c',0); render(); });
+  wireCopy('sp-copy',function(){ return $('sp-verdict').textContent+'\n\n'+$('sp-out').textContent; });
+  render();
+  return {compute:compute,render:render};
+})();
+
+/* Hook: compute() is the shared core the UI renders from, not a copy. */
+window.__spring_resonance_calculator = {
+  compute: function(m,k,c){ return SP.compute(m,k,c); },
+  run: function(i){
+    i=i||{};
+    if(i.m!==undefined) put('sp-m',i.m);
+    if(i.k!==undefined) put('sp-k',i.k);
+    if(i.c!==undefined) put('sp-c',i.c);
+    var v=SP.render();
+    if(!v||!v.ok) return JSON.stringify({ok:false,valid:false,why:v?v.why:'bad input'});
+    return JSON.stringify({ok:true,valid:true,m:v.m,k:v.k,c:v.c,
+      omegaN:v.wn,freqHz:v.freqHz,cCritical:v.cCritical,zeta:v.zeta,
+      Q:v.Q,branch:v.branch,
+      omegaD:v.dampedRad,fDampedHz:v.dampedHz,
+      peakRad:v.peakRad,peakHz:v.peakHz});
+  }
+};
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/barometric-altitude/">
+      <span class="ocurp-related-n">Barometric Altitude &amp; Hypsometric Pressure</span>
+      <span class="ocurp-related-b">The barometric formula reading an altitude straight off a pressure</span>
+    </a></li>
+    <li><a href="/workspace/tools/blackbody-radiation/">
+      <span class="ocurp-related-n">Blackbody Radiation</span>
+      <span class="ocurp-related-b">Wien&#x27;s peak wavelength and the Stefan-Boltzmann flux</span>
+    </a></li>
+    <li><a href="/workspace/tools/buffer-ph/">
+      <span class="ocurp-related-n">Buffer pH</span>
+      <span class="ocurp-related-b">Henderson-Hasselbalch against the useful pKa +- 1 band</span>
+    </a></li>
+    <li><a href="/workspace/tools/buoyancy-calculator/">
+      <span class="ocurp-related-n">Buoyancy Calculator</span>
+      <span class="ocurp-related-b">Archimedes for any object in any fluid: buoyant force</span>
+    </a></li>
+    <li><a href="/workspace/tools/cantilever-deflection/">
+      <span class="ocurp-related-n">Cantilever Deflection</span>
+      <span class="ocurp-related-b">Euler-Bernoulli tip deflection and bending stress for a rectangular section</span>
+    </a></li>
+    <li><a href="/workspace/tools/cistern-sizing/">
+      <span class="ocurp-related-n">Rainwater Cistern Sizer</span>
+      <span class="ocurp-related-b">Size a rain tank from a monthly mass balance of catchment</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

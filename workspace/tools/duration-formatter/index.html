@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Duration Formatter — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Turn any span of seconds. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/duration-formatter/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Duration Formatter">
+<meta property="og:description" content="Turn any span of seconds. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/duration-formatter/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Duration Formatter on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Duration Formatter">
+<meta name="twitter:description" content="Turn any span of seconds. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Duration Formatter on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Duration Formatter","url":"https://ocurp.com/workspace/tools/duration-formatter/","description":"Turn any span of seconds. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Duration Formatter</h1>
+      <p class="mt-1 text-xs text-white/40">MATH & CONVERSION &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Give it a number of seconds and it answers in six registers at once: the breakdown into days, hours, minutes and seconds; the same thing spelled out in words; an ISO-8601 duration; a clock-style HH:MM:SS that wraps at 24 hours the way a clock does; and a table placing the duration against minutes, hours, eight-hour work days, forty-hour work weeks and Julian years of 365.25 days. Fractions are carried on the smallest unit instead of being rounded away, and a negative duration keeps its sign once, in front of the whole value.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">DAYS TO SECONDS</span>
+    <span class="ws-chip">ISO 8601</span>
+    <span class="ws-chip">IN WORDS</span>
+  </div>
+  <p class="mt-0 mb-3 text-[11px] leading-relaxed text-white/40">
+    One number in seconds, six ways out. The clock wraps at 24&nbsp;hours by
+    design &mdash; it is a clock reading, not a duration &mdash; while the unit
+    table keeps carrying into days, weeks and Julian years. Fractions stay on
+    the smallest unit rather than being rounded away, and a negative input
+    carries its sign once, in front, instead of negating every field.
+  </p>
+  <label class="ws-label mb-2 block" for="du-sec">Total seconds</label>
+  <input id="du-sec" class="ws-input" type="number" step="any" value="90061.25">
+  <div class="mt-3 flex flex-wrap gap-2">
+    <button id="du-d1" class="ws-btn-ghost" style="width:auto;padding:.5rem .9rem">90,061.25 s</button>
+    <button id="du-d2" class="ws-btn-ghost" style="width:auto;padding:.5rem .9rem">-3,661 s</button>
+    <button id="du-d3" class="ws-btn-ghost" style="width:auto;padding:.5rem .9rem">1.5 s</button>
+    <button id="du-d4" class="ws-btn-ghost" style="width:auto;padding:.5rem .9rem">0 s</button>
+  </div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-3">Breakdown</div>
+  <div id="du-parts"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-3">Encodings</div>
+  <div id="du-formats"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-3">Same duration in other units</div>
+  <div id="du-out" class="w75-scroll"></div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<style>
+<style>
+.w75-table{width:100%;border-collapse:collapse;font-size:.8rem;
+  font-family:'IBM Plex Sans',monospace;}
+.w75-table th{text-align:left;font-family:Inter,sans-serif;font-size:9px;
+  font-weight:800;text-transform:uppercase;letter-spacing:.13em;
+  color:rgba(255,255,255,.4);padding:.55rem .6rem;border-bottom:1px solid rgba(255,255,255,.12);}
+.w75-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.06);
+  color:#fff;vertical-align:top;}
+.w75-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.w75-table tr:last-child td{border-bottom:0}
+.w75-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.w75-add{color:#FF5F1F}
+.w75-del{color:rgba(255,255,255,.55);text-decoration:line-through}
+.w75-same{color:rgba(255,255,255,.3)}
+.w75-pass{color:#FF5F1F;font-weight:700}
+.w75-fail{color:rgba(255,255,255,.4)}
+.w75-warn{border-color:rgba(255,95,31,.5)}
+.w75-note{font-size:.75rem;color:rgba(255,255,255,.4);line-height:1.6}
+.w75-tag{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;padding:.2rem .5rem;border-radius:4px;
+  border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.6)}
+.w75-tag.num{border-color:rgba(255,95,31,.5);color:#FF5F1F}
+.w75-preview{border:1px solid rgba(255,255,255,.08);border-radius:.75rem;
+  padding:.9rem 1rem;background:rgba(255,255,255,.02);}
+</style>
+</style>
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||n===undefined) return 0;
+  if(typeof n!=='number') return String(n);
+  if(!isFinite(n)) return n>0?'infinity':(n<0?'-infinity':'undefined');
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+/* The one rounding the hook and the truth file agree on: 6 decimals, and a
+   negative zero is reported as 0 because -0 === 0 is true but prints as -0. */
+function R(n){ var v=Math.round(n*1e6)/1e6; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id){ var el=$(id); if(!el) return NaN; return parseFloat(el.value); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function wireCopy(btnId,getText){
+  var b=$(btnId); if(!b) return;
+  b.addEventListener('click',function(){
+    var t=getText();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){
+        b.textContent='Copied'; },function(){ b.textContent='Copy failed'; });
+    }else{ b.textContent='Copy unavailable'; }
+    setTimeout(function(){ b.textContent='Copy'; },1400);
+  });
+}
+/* Numeric test for "is this cell a number?" - deliberately the same strict
+   shape in JS and in Python: optional sign, digits, optional fraction,
+   optional exponent. '4.' and '.5' are NOT numbers here, and neither is
+   '12px' or an empty cell. */
+function isNumRaw(s){
+  if(typeof s!=='string') return false;
+  return /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/.test(s);
+}
+function toNum(s){ return isNumRaw(s)? parseFloat(s) : null; }
+/* median, hand-written so the behaviour on an even-length list is visible:
+   the mean of the two middle values. Python's statistics.median does this too,
+   which is why the truth file and this agree. */
+function median(sorted){
+  var n=sorted.length;
+  if(!n) return null;
+  return (n%2) ? sorted[(n-1)/2] : (sorted[n/2-1]+sorted[n/2])/2;
+}
+function table(head,rows,cls){
+  var h='<table class="w75-table'+(cls?' '+cls:'')+'"><thead><tr>'+
+    head.map(function(t){return '<th>'+esc(t)+'</th>';}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(row){
+    h+='<tr>'+row.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';
+  });
+  return h+'</tbody></table>';
+}
+
+var SMALL=['zero','one','two','three','four','five','six','seven','eight','nine',
+  'ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen',
+  'eighteen','nineteen'];
+var TENS=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+function words(n){
+  if(n<20) return SMALL[n];
+  if(n<100) return TENS[Math.floor(n/10)]+((n%10)?'-'+SMALL[n%10]:'');
+  if(n<1000) return SMALL[Math.floor(n/100)]+' hundred'+((n%100)?' and '+words(n%100):'');
+  return String(n);
+}
+/* Join non-zero unit readings with commas and a final 'and'. A unit worth
+   zero is left out entirely rather than read out as 'zero hours'. */
+function joinUnits(parts,tail){
+  var keep=parts.filter(function(p){ return p[0]!==0; });
+  var bits=keep.map(function(p){ return words(p[0])+' '+p[1]+(p[0]===1?'':'s'); });
+  if(tail) bits.push(tail);
+  if(!bits.length) return 'zero seconds';
+  if(bits.length===1) return bits[0];
+  return bits.slice(0,-1).join(', ')+' and '+bits[bits.length-1];
+}
+/* Round to `places` decimals and strip trailing zeros, but never strip the
+   integer digit: trim(90061,3) must stay '90061', not '9'. */
+function trim(x,places){
+  var s=x.toFixed(places===undefined?3:places);
+  if(s.indexOf('.')>=0){
+    s=s.replace(/0+$/,'');
+    if(s.charAt(s.length-1)==='.') s+='0';
+  }
+  return s;
+}
+
+function analyse(sec){
+  if(typeof sec!=='number' || !isFinite(sec)) return {ok:false, why:'seconds must be a finite number'};
+  var neg=sec<0, a=Math.abs(sec), total=Math.floor(a);
+  var days=Math.floor(total/86400), rem=total%86400;
+  var hours=Math.floor(rem/3600), rem2=rem%3600;
+  var minutes=Math.floor(rem2/60), secs=rem2%60;
+  var frac=a-total;
+  /* ISO-8601: the date part (D) and the time part (T H M S) are joined by a
+     T, and only non-zero components are written. The T is not optional just
+     because there are no days. Whole seconds are written 1S, never 1.0S. */
+  var tp='';
+  if(hours) tp+=hours+'H';
+  if(minutes) tp+=minutes+'M';
+  if(secs||frac) tp+=(frac===0?String(secs):trim(secs+frac,3))+'S';
+  var iso;
+  if(days) iso=(neg?'-P':'P')+days+'D'+(tp?'T'+tp:'');
+  else if(tp) iso=(neg?'-P':'P')+'T'+tp;
+  else iso=neg?'-PT0S':'PT0S';
+  var wordsTxt;
+  if(frac===0){
+    wordsTxt=joinUnits([[days,'day'],[hours,'hour'],[minutes,'minute'],
+                        [secs,'second']],null);
+  }else{
+    var sv=trim(secs+frac,3);
+    wordsTxt=joinUnits([[days,'day'],[hours,'hour'],[minutes,'minute']],
+                       sv+(sv==='1.0'?' second':' seconds'));
+  }
+  var wrap=total%86400;
+  // pad() is a two-digit integer padder, so every component has to be
+  // floored first. Feeding it a fractional remainder made 1.5s print as
+  // "00:00:01.5" + ".500" - a clock that reads 10 seconds for 1.5 of them.
+  var clock=(neg?'-':'')+pad(Math.floor(wrap/3600))+':'+
+    pad(Math.floor((wrap%3600)/60))+':'+pad(Math.floor(wrap%60));
+  if(frac) clock+=('.'+frac.toFixed(3)).slice(1);
+  return {ok:true, seconds:sec, negative:neg, days:days, hours:hours,
+    minutes:minutes, secondsInt:secs, fraction:R(frac),
+    inWords:(neg?'minus ':'')+wordsTxt, iso:iso, clock:clock,
+    minutesTotal:R(sec/60), hoursTotal:R(sec/3600),
+    workDays:R(sec/28800), workWeeks:R(sec/144000),
+    julianYears:R(sec/31557600)};
+}
+function pad(n){ return (n<10?'0':'')+n; }
+
+function render(){
+  var v=analyse(num('du-sec'));
+  var parts=$('du-parts'), fmts=$('du-formats'), out=$('du-out');
+  if(!v.ok){
+    parts.innerHTML='<div class="w75-note">'+esc(v.why)+'</div>';
+    fmts.innerHTML=''; out.innerHTML='';
+    return v;
+  }
+  fill('du-parts', [
+    ['Days', String(v.days)], ['Hours', String(v.hours)],
+    ['Minutes', String(v.minutes)],
+    ['Seconds', String(v.secondsInt)+(v.fraction?' + '+v.fraction:'')]
+  ]);
+  fill('du-formats', [
+    ['In words', v.inWords],
+    ['ISO 8601', v.iso],
+    ['Clock (wraps at 24h)', v.clock]
+  ]);
+  out.innerHTML=table(['Unit','Value','How it is derived'],[
+    ['Minutes', numcell(v.minutesTotal), 'seconds / 60'],
+    ['Hours', numcell(v.hoursTotal), 'seconds / 3,600'],
+    ['Work days', numcell(v.workDays), 'seconds / 28,800 (an 8-hour day)'],
+    ['Work weeks', numcell(v.workWeeks), 'seconds / 144,000 (a 40-hour week)'],
+    ['Julian years', numcell(v.julianYears), 'seconds / 31,557,600 (365.25 x 86,400)']
+  ]);
+  return v;
+}
+function numcell(x){ return '<span class="num">'+r(x,6)+'</span>'; }
+
+$('du-sec').addEventListener('input',render);
+$('du-d1').addEventListener('click',function(){ put('du-sec',90061.25); });
+$('du-d2').addEventListener('click',function(){ put('du-sec',-3661); });
+$('du-d3').addEventListener('click',function(){ put('du-sec',1.5); });
+$('du-d4').addEventListener('click',function(){ put('du-sec',0); });
+render();
+
+window.__duration_formatter = {
+  analyse: analyse,
+  run: function(i){
+    i=i||{};
+    if(i.seconds!==undefined) put('du-sec', i.seconds);
+    var v=render();
+    if(!v.ok) return JSON.stringify({ok:false, why:v.why});
+    return JSON.stringify({ok:true, seconds:v.seconds, negative:v.negative,
+      days:v.days, hours:v.hours, minutes:v.minutes, secondsInt:v.secondsInt,
+      fraction:v.fraction, inWords:v.inWords, iso:v.iso, clock:v.clock,
+      minutesTotal:v.minutesTotal, hoursTotal:v.hoursTotal,
+      workDays:v.workDays, workWeeks:v.workWeeks, julianYears:v.julianYears});
+  }
+};
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/anagram-solver/">
+      <span class="ocurp-related-n">Anagram Solver</span>
+      <span class="ocurp-related-b">Find exact anagrams and longer words you can build from a letter set.</span>
+    </a></li>
+    <li><a href="/workspace/tools/braille-translator/">
+      <span class="ocurp-related-n">Braille Translator</span>
+      <span class="ocurp-related-b">Convert text to Grade 1 Unicode Braille and back</span>
+    </a></li>
+    <li><a href="/workspace/tools/character-frequency/">
+      <span class="ocurp-related-n">Character Frequency Analyzer</span>
+      <span class="ocurp-related-b">Every character in your text counted with frequency and percentage</span>
+    </a></li>
+    <li><a href="/workspace/tools/duplicate-line-remover/">
+      <span class="ocurp-related-n">Duplicate Line Remover</span>
+      <span class="ocurp-related-b">Strip repeated lines</span>
+    </a></li>
+    <li><a href="/workspace/tools/em-dash-converter/">
+      <span class="ocurp-related-n">Em Dash Converter</span>
+      <span class="ocurp-related-b">Swap hyphens for en and em dashes and see exactly what changed</span>
+    </a></li>
+    <li><a href="/workspace/tools/emoji-picker/">
+      <span class="ocurp-related-n">Emoji Picker</span>
+      <span class="ocurp-related-b">Search and copy emoji by name</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

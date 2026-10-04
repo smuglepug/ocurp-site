@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tide Runner — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Tide Runner - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/tide-runner/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Tide Runner">
+<meta property="og:description" content="Tide Runner - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/tide-runner/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Tide Runner on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Tide Runner">
+<meta name="twitter:description" content="Tide Runner - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Tide Runner on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Tide Runner","url":"https://ocurp.com/workspace/games/tide-runner/","description":"Tide Runner - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Tide Runner</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">ARCADE</span><span class="ws-chip">PLATFORMER</span></div>
+        </div>
+      
+<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
+  <div>
+    <canvas id="cv" width="640" height="380" class="w-full rounded-xl border border-white/10"></canvas>
+    <div class="mt-3 flex flex-wrap items-center gap-2">
+      <button id="go" class="ws-btn" style="width:auto">Start / restart</button>
+      <button id="mute" class="ws-btn-ghost" style="width:auto">Sound: off</button>
+      <span class="ws-chip">SPACE / CLICK / TAP TO JUMP</span>
+    </div>
+    <p id="msg" class="mt-3 text-sm text-white/55">Press start, then jump the reef posts.</p>
+  </div>
+  <div class="ws-panel p-4">
+    <div class="ws-label mb-3">Run</div>
+    <div id="stat1" class="ws-out text-sm"></div>
+    <div id="stat2" class="mt-3 ws-out text-sm"></div>
+    <div class="mt-4 ws-label">Jump window</div>
+    <p id="window" class="mt-2 text-xs leading-relaxed text-white/50"></p>
+  </div>
+</div>
+
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+const $ = id => document.getElementById(id);
+const T = {G:0.4,JUMP_V:13.0,SPEED_MIN:4.2,SPEED_MAX:4.8,SPEED_RAMP:2400.0,PLAYER_W:30,PLAYER_H:46,PLAYER_X:90,GROUND_Y:330,COYOTE:8,BUFFER:8,OB_W:34,OB_H:34,GAP_MIN:480,GAP_MAX:560,TRIGGER:194,WIN_DIST:5000,SPAWN_AHEAD:900};
+
+const cv=$('cv'),ctx=cv.getContext('2d');
+let st=null,raf=null,sound=false;
+
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+// Difficulty is a pure function of distance, so the prover can ask what the
+// game looks like at any point in the run without playing up to it. The post
+// height is CONSTANT - only the scroll speed ramps, and only gently.
+function speedAt(d){return T.SPEED_MIN+(T.SPEED_MAX-T.SPEED_MIN)*
+  Math.min(1,d/T.SPEED_RAMP)}
+function heightAt(){return T.OB_H}
+
+function reset(){
+  st={y:T.GROUND_Y-T.PLAYER_H,vy:0,onGround:true,coyote:0,buffer:0,
+     dist:0,obstacles:[],nextId:0,jumps:0,status:'ready',t:0,
+     cleared:0,lastOb:-1,clearedIds:{},hitOb:null};
+  spawn();
+  return st}
+
+// Obstacles sit a guaranteed gap apart. The new post goes GAP_MIN..GAP_MAX
+// past the RIGHT edge of the one before it, so GAP_MIN is a hard floor the
+// player can always land on. Placing every post at a fixed offset instead
+// would ignore GAP_MIN entirely, which is the tuning the prover checks.
+function spawn(){
+  const id=st.nextId;
+  const gap=T.GAP_MIN+((id*2654435761)%1000)/1000*(T.GAP_MAX-T.GAP_MIN);
+  const last=st.obstacles[st.obstacles.length-1];
+  const x=last?last.x+last.w+gap:T.PLAYER_X+T.SPAWN_AHEAD;
+  st.obstacles.push({id:id,x:x,w:T.OB_W,h:T.OB_H,gap:last?gap:null});
+  st.nextId++;
+  return st.obstacles[st.obstacles.length-1]}
+
+function hitObstacle(){
+  if(!st||st.status!=='running')return null;
+  const px0=T.PLAYER_X,px1=T.PLAYER_X+T.PLAYER_W;
+  const py0=st.y,py1=st.y+T.PLAYER_H;
+  for(const o of st.obstacles){
+    if(px1>o.x&&px0<o.x+o.w&&py1>T.GROUND_Y-o.h&&py0<T.GROUND_Y)
+      return o}
+  return null}
+
+// One frame of the world, in the exact order the prover mirrors.
+function step(pressJump){
+  if(st.status!=='running')return st;
+  // 1. a press is remembered for BUFFER frames so an early tap still counts
+  if(pressJump)st.buffer=T.BUFFER; else if(st.buffer>0)st.buffer--;
+  // 2. coyote time: the frames after leaving the ground a jump is still legal
+  st.coyote=st.onGround?T.COYOTE:st.coyote-1;
+  // 3. the jump itself
+  if(st.buffer>0&&(st.onGround||st.coyote>0)){
+    st.vy=-T.JUMP_V;st.onGround=false;st.coyote=0;st.buffer=0;st.jumps++}
+  // 4. gravity, then integrate
+  st.vy+=T.G;st.y+=st.vy;
+  if(st.y+T.PLAYER_H>=T.GROUND_Y){st.y=T.GROUND_Y-T.PLAYER_H;st.vy=0;st.onGround=true}
+  if(st.y<0){st.y=0;st.vy=0}
+  // 5. the world moves
+  const sp=speedAt(st.dist);
+  st.dist+=sp;st.t++;
+  for(const o of st.obstacles)o.x-=sp;
+  while(st.obstacles.length&&st.obstacles[0].x+T.OB_W<-40)st.obstacles.shift();
+  // a post counts as cleared once the player's left edge is past its right
+  for(const o of st.obstacles)
+    if(o.x+o.w<T.PLAYER_X&&!st.clearedIds[o.id])st.clearedIds[o.id]=1;
+  // 6. keep the field populated ahead of the player
+  const last=st.obstacles[st.obstacles.length-1];
+  if(!last||last.x<T.PLAYER_X+T.SPAWN_AHEAD)spawn();
+  // 7. outcomes
+  const h=hitObstacle();
+  if(h){st.status='lost';st.hitOb=h;return st}
+  if(st.dist>=T.WIN_DIST){st.status='won';return st}
+  return st}
+
+// Distance from the player's front edge to the next obstacle's left edge.
+function nextGap(){
+  let best=null;
+  for(const o of st.obstacles)
+    if(o.x+T.OB_W>=T.PLAYER_X&&(best===null||o.x<best.x))best=o;
+  return best?best.x-(T.PLAYER_X+T.PLAYER_W):null}
+
+function render(){
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#050505';ctx.fillRect(0,0,W,H);
+  const sp=speedAt(st.dist);
+  // parallax sea bands
+  for(let i=0;i<3;i++){
+    ctx.fillStyle='rgba(224,242,254,'+(0.03-i*0.008)+')';
+    const off=(st.dist*(0.2+i*0.15))%(160+i*40);
+    ctx.fillRect(0,H*0.5+20+i*26-off*0.3,W,14+i*5)}
+  // ground
+  ctx.fillStyle='rgba(255,255,255,.10)';ctx.fillRect(0,T.GROUND_Y,W,H-T.GROUND_Y);
+  ctx.strokeStyle='rgba(255,95,31,.55)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(0,T.GROUND_Y+.5);ctx.lineTo(W,T.GROUND_Y+.5);ctx.stroke();
+  // obstacles
+  for(const o of st.obstacles){
+    ctx.fillStyle='rgba(255,255,255,.13)';
+    ctx.fillRect(o.x,T.GROUND_Y-o.h,o.w,o.h);
+    ctx.strokeStyle='rgba(255,95,31,.5)';
+    ctx.strokeRect(o.x+1,T.GROUND_Y-o.h+1,o.w-2,o.h-2)}
+  // player
+  ctx.fillStyle=st.status==='lost'?'rgba(255,95,31,.45)':'#FF5F1F';
+  ctx.fillRect(T.PLAYER_X,st.y,T.PLAYER_W,T.PLAYER_H);
+  ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;
+  ctx.strokeRect(T.PLAYER_X+.5,st.y+.5,T.PLAYER_W-1,T.PLAYER_H-1);
+  // hud
+  ctx.fillStyle='rgba(255,255,255,.55)';ctx.font='12px monospace';
+  ctx.fillText(Math.floor(st.dist)+' / '+T.WIN_DIST+' px',14,22);
+  $('stat1').innerHTML=kv('Status',st.status)+
+    kv('Distance',Math.floor(st.dist)+' px')+
+    kv('Obstacles cleared',Object.keys(st.clearedIds).length)+
+    kv('Jumps',st.jumps);
+  $('stat2').innerHTML=kv('Scroll speed',sp.toFixed(2)+' px/f')+
+    kv('Next post height',heightAt(st.dist)+' px')+
+    kv('Coyote / buffer',T.COYOTE+' / '+T.BUFFER+' f')+
+    kv('Time',(st.t/60).toFixed(1)+' s');
+  const g=nextGap();
+  $('msg').textContent=st.status==='ready'
+    ?'Press start, then jump the reef posts.'
+    :st.status==='lost'
+      ?'Hit post '+st.hitOb.id+' at '+Math.floor(st.dist)+' px. Restart and try again.'
+      :st.status==='won'
+        ?'Cleared '+T.WIN_DIST+' px in '+st.jumps+' jumps. The tide is behind you.'
+        :(g===null?'Clear water.':(g<=T.TRIGGER
+          ?'Post '+g+' px out - jump.':'Post '+g+' px out.'));
+}
+
+function kv(k,v){return '<div class="ws-kv"><span>'+k+'</span><span>'+v+'</span></div>'}
+
+function beep(freq,dur){
+  if(!sound)return;
+  try{
+    const ac=beep.ac||(beep.ac=new (window.AudioContext||window.webkitAudioContext)());
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.frequency.value=freq;o.type='square';
+    g.gain.value=.05;o.connect(g);g.connect(ac.destination);
+    o.start();o.stop(ac.currentTime+dur)}catch(e){}}
+
+let loop=()=>{if(st.status==='running'){
+    // A human-equivalent autopilot only exists for the prover; the played game
+    // takes its jump from the keyboard, so nothing here presses the button.
+    step(false);
+    if(st.onGround)beep(0,0);
+    if(st.status==='lost')beep(110,.18);
+    if(st.status==='won')beep(660,.25);
+    render()}
+  raf=requestAnimationFrame(loop)};
+
+function start(){
+  reset();st.status='running';render();loop()}
+$('go').onclick=start;
+$('mute').onclick=()=>{sound=!sound;$('mute').textContent='Sound: '+(sound?'on':'off')};
+cv.addEventListener('pointerdown',()=>{if(st.status!=='running')start();
+  else{step(true);render()}});
+addEventListener('keydown',e=>{
+  if(e.code==='Space'||e.code==='ArrowUp'){
+    e.preventDefault();
+    if(st.status!=='running')start();else{step(true);render()}}});
+
+reset();
+$('window').innerHTML='A jump covers '+
+  (Math.round(2*T.JUMP_V/T.G*T.SPEED_MIN))+
+  ' px of ground and rises '+
+  (Math.round(T.JUMP_V*T.JUMP_V/(2*T.G)))+
+  ' px. The post you are aiming at wants you to jump when it is '+
+  T.TRIGGER+' px away or closer.';
+
+window.__tide_runner={T,
+  reset,step,spawn,speedAt,heightAt,nextGap,render,
+  start,
+  state:()=>JSON.parse(JSON.stringify(st)),
+  constants:()=>JSON.parse(JSON.stringify(T)),
+  // The page's OWN autopilot, flying the real update() frame by frame. The
+  // prover in tools/provers/tide-runner.py re-implements the same rules in
+  // Python, and tools/verify_w75c_tests.json flies THIS one in a real browser:
+  // if the two ever disagree, one of them has drifted and the harness says so.
+  autopilot:function(opt){
+    opt=opt||{};
+    const reaction=opt.reaction===undefined?420:opt.reaction;
+    const jitter=opt.jitter||0;
+    const trigger=opt.trigger===undefined?T.TRIGGER:opt.trigger;
+    const postH=opt.postH===undefined?T.OB_H:opt.postH;
+    const seed=opt.seed||1;
+    let s=seed>>>0;
+    const rnd=()=>{s=(s+0x6D2B79F5)>>>0;let t=s;
+      t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);
+      return((t^t>>>14)>>>0)/4294967296};
+    reset();
+    for(const o of st.obstacles)o.h=postH;
+    st.status='running';
+    let frames=0,armed=null,pressAt=null;
+    while(st.status==='running'&&frames<20000){
+      frames++;
+      // arm on the next post, once, then fire `lag` frames later
+      const ahead=st.obstacles.find(o=>o.x+T.OB_W>=T.PLAYER_X);
+      if(ahead&&(ahead.x-(T.PLAYER_X+T.PLAYER_W))<=trigger&&armed!==ahead.id){
+        armed=ahead.id;
+        let lag=Math.round(reaction/1000*60);
+        if(jitter)lag+=Math.round((rnd()*2-1)*jitter/1000*60);
+        pressAt=frames+Math.max(0,lag)}
+      step(frames===pressAt);
+      // keep later posts on the same height so a run means the same thing
+      for(const o of st.obstacles)o.h=postH}
+    return JSON.parse(JSON.stringify(st))},
+  get S(){return JSON.parse(JSON.stringify(st))}};
+</script>
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Blackjack - playable in the browser.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Boggle - playable in the browser.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

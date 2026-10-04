@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heron's Triangle Solver — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Area. Free heron&#x27;s triangle solver that runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/heron-triangle-solver/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Heron&#x27;s Triangle Solver">
+<meta property="og:description" content="Area. Free heron&#x27;s triangle solver that runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/heron-triangle-solver/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Heron&#x27;s Triangle Solver on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Heron&#x27;s Triangle Solver">
+<meta name="twitter:description" content="Area. Free heron&#x27;s triangle solver that runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Heron&#x27;s Triangle Solver on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Heron's Triangle Solver","url":"https://ocurp.com/workspace/tools/heron-triangle-solver/","description":"Area. Free heron's triangle solver that runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Heron's Triangle Solver</h1>
+      <p class="mt-1 text-xs text-white/40">MATH & CONVERSION &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Three side lengths in, everything Heron's formula and the law of cosines can tell you out: the semiperimeter, the area, all three angles in degrees, the altitude dropped to the longest side, the inradius and the circumradius. The triangle inequality is checked first, so lengths that cannot close &mdash; like 1, 2 and 5 &mdash; are refused by name, since Heron's radicand would otherwise go negative and every angle would come back as the arccosine of a number outside its domain. The angle sum is shown as it comes out, so you can see the three angles really do add to 180.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">HERON'S FORMULA</span>
+    <span class="ws-chip">LAW OF COSINES</span>
+  </div>
+  <label class="ws-label mb-2 block" for="hr-a">Side a</label>
+  <input id="hr-a" class="ws-input" type="number" value="3" step="0.5">
+  <label class="ws-label mb-2 mt-3 block" for="hr-b">Side b</label>
+  <input id="hr-b" class="ws-input" type="number" value="4" step="0.5">
+  <label class="ws-label mb-2 mt-3 block" for="hr-c">Side c</label>
+  <input id="hr-c" class="ws-input" type="number" value="5" step="0.5">
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="hr-c1" class="ws-btn-ghost" style="width:auto">3-4-5</button>
+    <button id="hr-c2" class="ws-btn-ghost" style="width:auto">Equilateral</button>
+    <button id="hr-c3" class="ws-btn-ghost" style="width:auto">Right isosceles</button>
+    <button id="hr-c4" class="ws-btn-ghost" style="width:auto">Impossible 1-2-5</button>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="hr-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Results</div>
+  <div id="hr-out" class="ws-out"></div>
+  <button id="hr-copy" class="ws-btn-ghost mt-3" style="width:auto">Copy</button>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Numbers</div>
+  <div id="hr-kv"></div>
+</div>
+<div class="md:col-span-2 ws-panel p-5">
+  <div class="ws-label mb-2">Triangle, drawn to scale</div>
+  <svg id="hr-svg" class="w75-diagram" viewBox="0 0 320 220" role="img"
+       aria-label="The triangle with its sides and altitude labelled"></svg>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Triangle inequality</div>
+  <div id="hr-why" class="ws-out"></div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||n===undefined) return 0;
+  if(typeof n!=='number') return String(n);
+  if(!isFinite(n)) return n>0?'infinity':(n<0?'-infinity':'undefined');
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id){ var el=$(id); if(!el) return NaN; return parseFloat(el.value); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function wireCopy(btnId,getText){
+  var b=$(btnId); if(!b) return;
+  b.addEventListener('click',function(){
+    var t=getText();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){
+        b.textContent='Copied'; },function(){ b.textContent='Copy failed'; });
+    }else{ b.textContent='Copy unavailable'; }
+    setTimeout(function(){ b.textContent='Copy'; },1400);
+  });
+}
+/* A number or a stated reason - never a bare NaN leaking into the DOM. */
+function numOr(reason,v,d){ return (v===null||v===undefined||!isFinite(v))?reason:r(v,d); }
+
+var HR=(function(){
+  /* Heron needs all four factors under the root to be positive, and that is
+     only true when the three side lengths genuinely close. Rather than let
+     sqrt of a negative print NaN, the inequality is checked first and the
+     failing side is named. */
+  function compute(a,b,c){
+    if(!isFinite(a)||!isFinite(b)||!isFinite(c))
+      return {ok:false,valid:false,why:'all three sides must be finite numbers'};
+    if(a<=0||b<=0||c<=0)
+      return {ok:false,valid:false,why:'every side must be greater than 0 - one of a, b, c is '+(a<=0?'a':(b<=0?'b':'c'))};
+    var sp=(a+b+c)/2;
+    if(sp<=a||sp<=b||sp<=c){
+      /* sp <= the largest side is exactly a+b<=c (sorted), so name that side. */
+      var longest=(a>=b&&a>=c)?'a':((b>=c)?'b':'c'), s=(a>=b&&a>=c)?a:((b>=c)?b:c);
+      var other=s-Math.max(a>=b&&a>=c?Math.max(b,c):(b>=c?Math.max(a,c):Math.max(a,b)),0);
+      return {ok:false,valid:false,why:'no triangle exists: the longest side ('+longest+' = '+r(s,6)
+        +') is at least as long as the other two added together, so the three straight sides cannot close'
+        + (a+b<=c?' (a + b = '+r(a+b,6)+' <= c = '+r(c,6)+')'
+          :(a+c<=b?' (a + c = '+r(a+c,6)+' <= b = '+r(b,6)+')'
+            :' (b + c = '+r(b+c,6)+' <= a = '+r(a,6)+')'))};
+    }
+    var area=Math.sqrt(sp*(sp-a)*(sp-b)*(sp-c));
+    /* Law of cosines: a^2 = b^2 + c^2 - 2bc*cos(A), so cos(A) = (b^2+c^2-a^2)/(2bc). */
+    function angAt(side,u,w){ var co=(u*u+w*w-side*side)/(2*u*w);
+      if(co>1) co=1; if(co<-1) co=-1; return Math.acos(co)*180/Math.PI; }
+    var angA=angAt(a,b,c), angB=angAt(b,a,c);
+    var angC=angAt(c,a,b);
+    var longest=(a>=b&&a>=c)?a:((b>=c)?b:c);
+    var alt=2*area/longest;
+    return {ok:true,valid:true,a:a,b:b,c:c,semiperimeter:sp,area:area,
+      angleA:angA,angleB:angB,angleC:angC,angleSum:angA+angB+angC,
+      longestSide:longest,altitude:alt,
+      inradius:area/sp,circumradius:(a*b*c)/(4*area),
+      perUnitSides:{a:a/sp,b:b/sp,c:c/sp},
+      radicand:sp*(sp-a)*(sp-b)*(sp-c)};
+  }
+  function render(){
+    var a=num('hr-a'), b=num('hr-b'), c=num('hr-c'), err=$('hr-err');
+    err.textContent='';
+    var v=compute(a,b,c);
+    if(!v.ok){
+      $('hr-out').textContent='NO TRIANGLE\n\n'+v.why+'.';
+      $('hr-kv').innerHTML=''; $('hr-why').textContent=''; $('hr-svg').innerHTML='';
+      err.textContent=v.why;
+      return v;
+    }
+    $('hr-out').textContent=
+        'sides        a = '+r(v.a,6)+'   b = '+r(v.b,6)+'   c = '+r(v.c,6)+'\n'
+      +'semiperimeter s = '+r(v.semiperimeter,9)+'\n'
+      +'area         '+r(v.area,9)+'\n\n'
+      +'angle A      '+r(v.angleA,9)+' deg   (opposite a)\n'
+      +'angle B      '+r(v.angleB,9)+' deg   (opposite b)\n'
+      +'angle C      '+r(v.angleC,9)+' deg   (opposite c)\n\n'
+      +'altitude to the longest side ('+r(v.longestSide,6)+')\n'
+      +'             '+r(v.altitude,9)+'\n\n'
+      +'inradius r   '+r(v.inradius,9)+'\n'
+      +'circumradius R '+r(v.circumradius,9);
+    fill('hr-kv',[
+      ['Side a',r(v.a,9)],['Side b',r(v.b,9)],['Side c',r(v.c,9)],
+      ['Semiperimeter s',r(v.semiperimeter,9)],
+      ['Heron radicand s(s-a)(s-b)(s-c)',r(v.radicand,9)],
+      ['Area',r(v.area,9)],
+      ['Angle A (deg)',r(v.angleA,9)],
+      ['Angle B (deg)',r(v.angleB,9)],
+      ['Angle C (deg)',r(v.angleC,9)],
+      ['Angles sum (deg)',r(v.angleSum,9)],
+      ['Longest side',r(v.longestSide,9)],
+      ['Altitude to longest side',r(v.altitude,9)],
+      ['Inradius r = A/s',r(v.inradius,9)],
+      ['Circumradius R = abc/(4A)',r(v.circumradius,9)],
+      ['Is a valid triangle',v.valid]]);
+    $('hr-why').textContent=
+        'the three lengths close only if the longest is shorter than the\n'
+      +'other two added together:\n\n'
+      +'  a + b = '+r(v.a+v.b,9)+'   vs   c = '+r(v.c,9)
+      +(v.a+v.b>v.c?'   ok':'')+'\n'
+      +'  a + c = '+r(v.a+v.c,9)+'   vs   b = '+r(v.b,9)
+      +(v.a+v.c>v.b?'   ok':'')+'\n'
+      +'  b + c = '+r(v.b+v.c,9)+'   vs   a = '+r(v.a,9)
+      +(v.b+v.c>v.a?'   ok':'')+'\n\n'
+      +'all three hold, so the triangle exists. Equality would give a\n'
+      +'degenerate triangle of zero area - the formula would return 0 for the\n'
+      +'area and 0 or infinity for r and R, which is why it is refused here\n'
+      +'rather than printed.';
+    draw(v);
+    return v;
+  }
+  function draw(v){
+    /* Lay the longest side flat, then place the apex from the two angles. */
+    var L=v.longestSide, W=260, sc=W/L, H=180, base=[40,H-30];
+    var apex=[40+W, base[1]-2*v.area/L*sc], b=[40,base[1]], c=[40+W,base[1]];
+    var s='<polygon points="'+b[0]+','+b[1]+' '+apex[0]+','+apex[1].toFixed(2)
+      +' '+c[0]+','+c[1]+'" fill="rgba(255,95,31,.1)" stroke="#FF5F1F" '
+      +'stroke-width="1.5" stroke-linejoin="round"/>';
+    s+='<line x1="'+apex[0]+'" y1="'+apex[1].toFixed(2)+'" x2="'+apex[0]+'" y2="'+base[1]
+      +'" stroke="rgba(255,255,255,.5)" stroke-width="1" stroke-dasharray="3 3"/>';
+    s+='<text x="'+(apex[0]+7)+'" y="'+(apex[1]+14).toFixed(2)
+      +'" fill="rgba(255,255,255,.6)" font-size="10" font-family="monospace">h = '
+      +r(v.altitude,4)+'</text>';
+    function lbl(x,y,t){ return '<text x="'+x+'" y="'+y+'" fill="rgba(255,255,255,.6)" '
+      +'font-size="10" font-family="monospace">'+t+'</text>'; }
+    s+=lbl(b[0]+2,base[1]-6,'a = '+r(v.a,4));
+    s+=lbl(c[0]-46,base[1]-6,'b = '+r(v.b,4));
+    s+=lbl(apex[0]-24,base[1]+14,'c = '+r(v.c,4)+' (longest)');
+    $('hr-svg').innerHTML=s;
+  }
+  $('hr-a').addEventListener('input',render);
+  $('hr-b').addEventListener('input',render);
+  $('hr-c').addEventListener('input',render);
+  $('hr-c1').addEventListener('click',function(){ put('hr-a',3); put('hr-b',4); put('hr-c',5); render(); });
+  $('hr-c2').addEventListener('click',function(){ put('hr-a',1); put('hr-b',1); put('hr-c',1); render(); });
+  $('hr-c3').addEventListener('click',function(){ put('hr-a',1); put('hr-b',1); put('hr-c',Math.SQRT2); render(); });
+  $('hr-c4').addEventListener('click',function(){ put('hr-a',1); put('hr-b',2); put('hr-c',5); render(); });
+  wireCopy('hr-copy',function(){ return $('hr-out').textContent+'\n\n'+$('hr-why').textContent; });
+  render();
+  return {compute:compute,render:render};
+})();
+
+/* Hook: compute() is the shared core the UI renders from, not a copy. */
+window.__heron_triangle_solver = {
+  compute: function(a,b,c){ return HR.compute(a,b,c); },
+  run: function(i){
+    i=i||{};
+    if(i.a!==undefined) put('hr-a',i.a);
+    if(i.b!==undefined) put('hr-b',i.b);
+    if(i.c!==undefined) put('hr-c',i.c);
+    var v=HR.render();
+    if(!v||!v.ok) return JSON.stringify({ok:false,valid:false,why:v?v.why:'bad input'});
+    return JSON.stringify({ok:true,valid:true,a:v.a,b:v.b,c:v.c,
+      semiperimeter:v.semiperimeter,area:v.area,
+      angleA:v.angleA,angleB:v.angleB,angleC:v.angleC,angleSum:v.angleSum,
+      longestSide:v.longestSide,altitude:v.altitude,
+      inradius:v.inradius,circumradius:v.circumradius});
+  }
+};
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years</span>
+    </a></li>
+    <li><a href="/workspace/tools/apy-vs-apr-calculator/">
+      <span class="ocurp-related-n">APY vs APR Calculator</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

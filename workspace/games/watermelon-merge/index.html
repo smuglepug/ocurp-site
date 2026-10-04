@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watermelon Merge — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+</style>
+<meta name="description" content="Drop fruit into a jar, merge equals, grow the melon before the jar fills. Deterministic, seeded, and proven winnable.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/watermelon-merge/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Watermelon Merge">
+<meta property="og:description" content="Drop fruit into a jar, merge equals, grow the melon before the jar fills. Deterministic, seeded, and proven winnable.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/watermelon-merge/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Watermelon Merge on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Watermelon Merge">
+<meta name="twitter:description" content="Drop fruit into a jar, merge equals, grow the melon before the jar fills. Deterministic, seeded, and proven winnable.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Watermelon Merge on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"Watermelon Merge","url":"https://ocurp.com/workspace/games/watermelon-merge/","description":"Drop fruit into a jar, merge equals, grow the melon before the jar fills. Deterministic, seeded, and proven winnable.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob bg-secondary/20 top-[-30%] left-[-10%]" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Watermelon Merge</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
+          </div>
+          <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">GAMES</span><span class="ws-chip">PUZZLE</span><span class="ws-chip">PHYSICS</span></div>
+        </div>
+      </div>
+  <style>
+  .wm-jar{position:relative;margin:0 auto;border-radius:14px 14px 22px 22px;overflow:hidden;
+    border:1px solid rgba(255,255,255,.12);background:
+      linear-gradient(180deg,rgba(255,95,31,.05) 0%,rgba(255,255,255,.02) 100%);}
+  .wm-rim{position:absolute;left:0;right:0;border-top:1px dashed rgba(255,95,31,.55);pointer-events:none}
+  .wm-rim span{position:absolute;right:6px;top:-14px;font-family:'IBM Plex Sans',monospace;
+    font-size:8px;font-weight:900;letter-spacing:.2em;color:rgba(255,95,31,.75)}
+  .wm-f{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Sans',monospace;font-weight:900;color:rgba(0,0,0,.55);
+    box-shadow:inset 0 -3px 8px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.14)}
+  .wm-lane{position:absolute;top:0;bottom:0;border-left:1px solid rgba(255,255,255,.05)}
+  .wm-lanebtn{position:absolute;border-radius:.6rem;border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.03);display:flex;align-items:flex-end;justify-content:center;
+    padding-bottom:.35rem;font-family:'IBM Plex Sans',monospace;font-size:8px;font-weight:900;
+    letter-spacing:.14em;color:rgba(255,255,255,.25);cursor:pointer;transition:all .15s}
+  .wm-lanebtn:hover{background:rgba(255,95,31,.14);border-color:rgba(255,95,31,.5);color:#fff}
+  .wm-lanebtn.on{background:rgba(255,95,31,.28);border-color:#FF5F1F;color:#fff}
+  .wm-rk{border-radius:50%;border:1px solid rgba(255,255,255,.1);flex:1}
+</style>
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <select id="level" class="ws-input !w-auto !px-3 !py-2 text-sm"></select>
+      <button id="reset" class="ws-btn">Restart level</button>
+      <span class="ws-chip" id="budget">DROPS LEFT &mdash;</span>
+    </div>
+
+    <div class="mt-6 flex flex-col items-center gap-3">
+      <div id="next-hold" class="flex items-center gap-2">
+        <span class="ws-label">Next</span><div id="next" class="wm-f" style="position:relative;width:22px;height:22px"></div>
+      </div>
+      <div id="jar" class="wm-jar"></div>
+      <div id="lanes" class="grid w-full max-w-[420px] gap-1.5"></div>
+    </div>
+
+    <div class="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+        <div class="ws-label mb-1">Score</div>
+        <div class="font-display text-xl font-black text-white" id="score">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+        <div class="ws-label mb-1">Best fruit</div>
+        <div class="font-display text-xl font-black text-accent" id="best">rank 0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+        <div class="ws-label mb-1">Drops</div>
+        <div class="font-display text-xl font-black text-white" id="drops">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+        <div class="ws-label mb-1">Status</div>
+        <div class="font-display text-sm font-black text-white" id="status">Playing</div></div>
+    </div>
+
+    <p class="mt-4 text-[11px] text-white/40">Pick a lane (or use the arrow keys) to drop the
+      next fruit. Two fruits of the same rank that end up touching merge into the next
+      rank up, and merges cascade. Grow a fruit of the <em class="not-italic text-white/70">target
+      rank</em> within the drop budget and you win; fill the jar past the rim, or run out of
+      drops, and you lose. The drop order is seeded and fixed &mdash; the level you read is
+      the level you play.</p>
+  </section>
+  <section class="ws-panel mt-4 p-5">
+    <div class="ws-label mb-2">Levels and the live jar</div>
+    <pre id="wm-data" class="ws-out"></pre>
+  </section>
+  <div id="ws-more" class="mt-12"></div>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+<script>
+// ---- constants: the prover reads THIS block out of the shipped file by regex,
+// so a change here is a change the prover measures, not one it misses.
+const WM = {FPS:60, INNER_W:300, FLOOR_Y:520, RIM_Y:96, LANES:5, R0:11, RSTEP:6,
+  MAX_RANK:6, G:0.55, FALL_V:4, TOL:0.5, MERGE_PTS:[1,2,4,8,16,32],
+  SPAWN_W:[34,30,22,14,0,0], SEED:20261004};
+const WM_LV = [{"i":1,"target":3,"budget":70},{"i":2,"target":4,"budget":110},
+  {"i":3,"target":5,"budget":170}];
+const WM_COLOR = ['#e2e8f0','#94a3b8','#fca5a5','#fdba74','#a3e635','#34d399','#FF5F1F'];
+const SPD = id=>document.getElementById(id);
+
+const wmR = rank => WM.R0 + WM.RSTEP * rank;
+const wmLaneW = () => WM.INNER_W / WM.LANES;
+const wmLaneX = lane => wmLaneW() * lane + wmLaneW() / 2;
+
+// Which lanes a fruit of this rank can enter without clipping a wall. The page
+// snaps to the nearest usable lane instead of dropping a fruit through glass.
+function wmLegalLanes(rank){
+  const r = wmR(rank), out = [];
+  for(let l=0;l<WM.LANES;l++){
+    const x = wmLaneX(l);
+    if(x-r>=0 && x+r<=WM.INNER_W) out.push(l);
+  }
+  return out;
+}
+function wmClampLane(lane, rank){
+  const ls = wmLegalLanes(rank);
+  let best = ls[0];
+  for(const l of ls) if(Math.abs(l-lane)<Math.abs(best-lane) ||
+     (Math.abs(l-lane)===Math.abs(best-lane) && l<best)) best = l;
+  return best;
+}
+
+// Closed-form rest height against the resting pile: the highest contact point,
+// or the floor. Exact and order-independent, which is why the whole game is a
+// deterministic function of (seed, lane sequence) instead of a chaotic solve.
+function wmRestY(x, r, pile, y){
+  let best = (y===undefined ? WM.FLOOR_Y - r : y);
+  for(const f of pile){
+    const s = r + f.r + WM.TOL, dx = x - f.x;
+    if(Math.abs(dx) < s){
+      const v = f.y - Math.sqrt(s*s - dx*dx);
+      if(v < best) best = v;
+    }
+  }
+  return best;
+}
+function wmTouch(a,b){
+  const s = a.r + b.r + WM.TOL, dx = a.x - b.x, dy = a.y - b.y;
+  return dx*dx + dy*dy <= s*s;
+}
+
+// The rank of drop #n. A 32-bit integer hash, NOT a float PRNG: Python and
+// JavaScript agree on integer arithmetic by definition, so the prover's mirror
+// of this function cannot drift from the page's.
+function wmSpawnRank(dropIndex){
+  let h = (Math.imul(WM.SEED, 2654435761) + Math.imul(dropIndex+1, 40503)) >>> 0;
+  h ^= h>>>15; h = Math.imul(h, 2246822519) >>> 0;
+  h ^= h>>>13; h = Math.imul(h, 3266489917) >>> 0;
+  h ^= h>>>16;
+  const pick = (h % 10000) / 100;
+  let acc = 0;
+  for(let i=0;i<WM.SPAWN_W.length;i++){ acc += WM.SPAWN_W[i]; if(pick < acc) return i; }
+  return WM.SPAWN_W.length - 1;
+}
+
+// THE PURE FUNCTION. Everything that paints, the autopilot and the prover agree
+// goes through this: drop `rank` into `lane` of `pile`, get the new pile, the
+// points and the best rank made. No DOM, no timing, no randomness.
+function wmSimulate(pile, rank, lane){
+  lane = wmClampLane(lane, rank);
+  const x = wmLaneX(lane), r = wmR(rank);
+  const top = WM.RIM_Y + r;
+  let cur = {x, y: wmRestY(x, r, pile, top), r, rank};
+  let work = pile.concat([cur]);
+  let points = 0, made = rank;
+  for(let pass=0; pass<16; pass++){
+    let hit = null;
+    for(const f of work)
+      if(f.rank < WM.MAX_RANK && f !== cur && wmTouch(f, cur)){ hit = f; break; }
+    if(!hit) break;
+    work = work.filter(f => f !== hit && f !== cur);
+    made = hit.rank + 1;
+    points += WM.MERGE_PTS[hit.rank];
+    const mr = wmR(made), mx = (hit.x + cur.x) / 2, my = Math.max(hit.y, cur.y);
+    cur = {x:mx, y: wmRestY(mx, mr, work, my), r:mr, rank:made};
+    work = work.concat([cur]);
+  }
+  return {pile:work, points, made, lane, x, r};
+}
+
+// How a fruit's descent is integrated: fixed timestep, so the fall is
+// identical every replay rather than dependent on frame pacing.
+function wmDescentFrames(fromY, toY, fv){
+  let v = (fv===undefined ? WM.FALL_V : fv), y = fromY, n = 0;
+  while(y < toY - 1e-9 && n < 10000){ v += WM.G; y += v; n++; }
+  return {frames:n, y:y, v:v};
+}
+function wmTopY(pile){
+  if(!pile.length) return Infinity;
+  let m = Infinity;
+  for(const f of pile) m = Math.min(m, f.y - f.r);
+  return m;
+}
+
+// ---------------------------------------------------------------- the game
+let wm = {li:0, budget:0, target:0, pile:[], drops:0, score:0, best:-1,
+          status:'playing', lane:2, falling:null, lastPoints:0};
+
+function wmLoad(i){
+  const L = WM_LV[i];
+  wm.li = i; wm.budget = L.budget; wm.target = L.target;
+  wm.pile = []; wm.drops = 0; wm.score = 0; wm.best = -1;
+  wm.status = 'playing'; wm.lane = (WM.LANES-1)/2; wm.falling = null; wm.lastPoints = 0;
+  SPD('level').querySelectorAll('option').forEach(o=>{o.selected = (+o.value===i)});
+  wmRender();
+}
+function wmNextRank(){ return wmSpawnRank(wm.drops); }
+function wmCanDrop(){ return wm.status === 'playing' && !wm.falling; }
+
+// Queue a drop into a lane. The fruit then falls on the fixed timestep and
+// settles; the settle calls the SAME wmSimulate the prover mirrors.
+function wmDrop(lane){
+  if(!wmCanDrop()) return null;
+  lane = wmClampLane(lane, wmNextRank());
+  const rank = wmNextRank(), r = wmR(rank), x = wmLaneX(lane);
+  const rest = wmRestY(x, r, wm.pile, WM.RIM_Y + r);
+  wm.falling = {x, r, rank, y: WM.RIM_Y + r, rest, v: WM.FALL_V, lane};
+  wmRender();
+  return {lane, rank, restY: rest};
+}
+function wmSettle(){
+  const f = wm.falling; if(!f) return null;
+  const out = wmSimulate(wm.pile, f.rank, f.lane);
+  wm.pile = out.pile; wm.score += out.points; wm.lastPoints = out.points;
+  wm.drops += 1; wm.best = Math.max(wm.best, out.made);
+  wm.falling = null;
+  if(out.made >= wm.target) wm.status = 'won';
+  else if(wmTopY(wm.pile) < WM.RIM_Y) wm.status = 'lost';
+  else if(wm.drops >= wm.budget) wm.status = 'lost';
+  wmRender();
+  return out;
+}
+function wmStep(){
+  const f = wm.falling; if(!f) return false;
+  f.v += WM.G; f.y += f.v;
+  if(f.y >= f.rest){ wmSettle(); return true; }
+  wmRender(); return false;
+}
+
+// Choose the best lane: best rank made, then points, then the most rim
+// headroom left, centre lane as a stable tie-break.
+function wmBestLane(pile, rank, laneErr, rng){
+  const cands = [];
+  for(let l=0; l<WM.LANES; l++){
+    const o = wmSimulate(pile, rank, l);
+    const head = o.pile.length ? wmTopY(o.pile) - WM.RIM_Y : 1e9;
+    cands.push({lane:o.lane, made:o.made, pts:o.points, head,
+                tie:-Math.abs(o.lane - (WM.LANES-1)/2)});
+  }
+  cands.sort((a,b)=> b.made-a.made || b.pts-a.pts || b.head-a.head || b.tie-a.tie);
+  if(laneErr && rng && rng() < laneErr){
+    // A tired human aims at the pile and misses - somewhere plausible, not
+    // uniform over every lane, which is what makes this a real test.
+    const k = 1 + Math.floor(rng() * Math.max(1, cands.length/2));
+    return cands[k].lane;
+  }
+  return cands[0].lane;
+}
+
+// A fast, deterministic seeded RNG for the autopilot only (error injection).
+// The drop ORDER comes from wmSpawnRank, not from this.
+function wmRng(seed){
+  let s = (seed*7919 + 13) >>> 0;
+  return ()=>{ s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
+}
+
+// The page's own autopilot: the SAME rules, flown without animation. This is
+// the cross-check on the prover - tools/verify_w76a_tests.json asserts these
+// results equal the prover's, so a disagreement fails the build.
+function wmAutopilot(opt){
+  opt = opt || {};
+  const reaction = opt.reaction===undefined ? 420 : opt.reaction;
+  const jitter = opt.jitter===undefined ? 80 : opt.jitter;
+  const err = opt.err===undefined ? 0.06 : opt.err;
+  const target = opt.target===undefined ? WM_LV[0].target : opt.target;
+  const budget = opt.budget===undefined ? WM_LV[0].budget : opt.budget;
+  const rng = wmRng(opt.seed===undefined ? 0 : opt.seed);
+  let pile = [], drops = 0, score = 0, best = -1, frames = 0;
+  while(drops < budget){
+    const rank = wmSpawnRank(drops);
+    const lane = wmBestLane(pile, rank, err, rng);
+    const o = wmSimulate(pile, rank, lane);
+    pile = o.pile; score += o.points; drops += 1; best = Math.max(best, o.made);
+    const d = wmDescentFrames(WM.RIM_Y + o.r, o.pile.length ? o.pile[0].y : WM.FLOOR_Y);
+    frames += d.frames + Math.round(reaction/1000*WM.FPS);
+    if(best >= target) return {status:'won', drops, score, best_rank:best,
+      headroom_px:+(wmTopY(pile)-WM.RIM_Y).toFixed(2), frames};
+    if(wmTopY(pile) < WM.RIM_Y) return {status:'lost', drops, score,
+      best_rank:best, headroom_px:+(wmTopY(pile)-WM.RIM_Y).toFixed(2), frames};
+  }
+  return {status:'lost', drops, score, best_rank:best,
+    headroom_px:+(wmTopY(pile)-WM.RIM_Y).toFixed(2), frames};
+}
+
+// --------------------------------------------------------------- painting
+function wmFruitEl(f, abs){
+  const el = document.createElement('div');
+  el.className = 'wm-f';
+  el.dataset.rank = f.rank;
+  el.style.width = el.style.height = (2*f.r) + 'px';
+  el.style.left = (f.x - f.r) + 'px';
+  el.style.top = (f.y - f.r) + 'px';
+  el.style.background = WM_COLOR[Math.min(f.rank, WM_COLOR.length-1)];
+  el.style.fontSize = Math.max(8, f.r*0.5) + 'px';
+  if(f.rank >= 3) el.textContent = f.rank;
+  return el;
+}
+function wmRender(){
+  const jar = SPD('jar');
+  const W = WM.INNER_W, H = WM.FLOOR_Y, scale = Math.min(1, 420 / W);
+  jar.style.width = W*scale + 'px';
+  jar.style.height = H*scale + 'px';
+  let h = '';
+  for(let l=1;l<WM.LANES;l++)
+    h += '<div class="wm-lane" style="left:'+(wmLaneX(l)-wmLaneW()/2)*scale+'px"></div>';
+  h += '<div class="wm-rim" style="top:'+(WM.RIM_Y-8)*scale+'px"><span>RIM</span></div>';
+  jar.innerHTML = h;
+  const px = v => v * scale;
+  for(const f of wm.pile){
+    const el = wmFruitEl(f);
+    el.style.left = px(f.x - f.r) + 'px'; el.style.top = px(f.y - f.r) + 'px';
+    el.style.width = el.style.height = px(2*f.r) + 'px';
+    el.style.fontSize = Math.max(8, px(f.r*0.5)) + 'px';
+    jar.appendChild(el);
+  }
+  if(wm.falling){
+    const f = wm.falling;
+    const el = wmFruitEl(f);
+    el.style.left = px(f.x - f.r) + 'px'; el.style.top = px(f.y - f.r) + 'px';
+    el.style.width = el.style.height = px(2*f.r) + 'px';
+    el.style.fontSize = Math.max(8, px(f.r*0.5)) + 'px';
+    el.style.opacity = '.85';
+    jar.appendChild(el);
+  }
+  // lane buttons
+  const lanes = SPD('lanes');
+  lanes.style.gridTemplateColumns = 'repeat('+WM.LANES+',1fr)';
+  let lh = '';
+  for(let l=0;l<WM.LANES;l++)
+    lh += '<div class="wm-lanebtn'+(l===wm.lane?' on':'')+'" data-l="'+l+'">LANE '+(l+1)+'</div>';
+  lanes.innerHTML = lh;
+  lanes.querySelectorAll('.wm-lanebtn').forEach(el=>{
+    el.onclick = ()=>{ wm.lane = +el.dataset.l; wmRender(); };
+  });
+  // next fruit
+  const nx = SPD('next'), nr = wmNextRank();
+  nx.style.width = nx.style.height = wmR(nr)*1.4 + 'px';
+  nx.style.background = WM_COLOR[Math.min(nr, WM_COLOR.length-1)];
+  nx.textContent = nr>=3 ? nr : '';
+  // readouts
+  const L = WM_LV[wm.li];
+  SPD('score').textContent = wm.score;
+  SPD('best').textContent = 'rank ' + Math.max(0, wm.best);
+  SPD('drops').textContent = wm.drops + ' / ' + L.budget;
+  SPD('budget').textContent = 'DROPS LEFT ' + Math.max(0, L.budget - wm.drops);
+  SPD('status').textContent = wm.status === 'won' ? 'MELON MADE'
+    : (wm.status === 'lost' ? (wmTopY(wm.pile) < WM.RIM_Y ? 'JAR FULL' : 'OUT OF DROPS') : 'Playing');
+  SPD('wm-data').textContent = JSON.stringify({
+    constants:{FPS:WM.FPS, INNER_W:WM.INNER_W, FLOOR_Y:WM.FLOOR_Y, RIM_Y:WM.RIM_Y,
+      LANES:WM.LANES, R0:WM.R0, RSTEP:WM.RSTEP, MAX_RANK:WM.MAX_RANK, G:WM.G,
+      FALL_V:WM.FALL_V, TOL:WM.TOL, MERGE_PTS:WM.MERGE_PTS, SPAWN_W:WM.SPAWN_W,
+      SEED:WM.SEED},
+    levels:WM_LV,
+    current:{level:wm.li+1, target:L.target, budget:L.budget, drops:wm.drops,
+      score:wm.score, best_rank:wm.best, status:wm.status, lane:wm.lane,
+      pile:wm.pile.map(f=>({x:+f.x.toFixed(2), y:+f.y.toFixed(2), r:f.r, rank:f.rank})),
+      headroom_px:+(wmTopY(wm.pile)-WM.RIM_Y).toFixed(2),
+      next_rank:wmNextRank()},
+    win:'make a fruit of the target rank inside the drop budget',
+    fail:'pile clears the rim, or the drop budget runs out below target',
+    deterministic:'rank of drop n = wmSpawnRank(n) over SEED '+WM.SEED
+  },null,1);
+}
+
+// ------------------------------------------------------------------ input
+const WM_KEYS = {ArrowLeft:-1, ArrowRight:1, a:-1, d:1};
+addEventListener('keydown', e=>{
+  const k = WM_KEYS[e.key] || WM_KEYS[(e.key||'').toLowerCase()];
+  if(k===undefined) return;
+  wm.lane = wmClampLane(Math.max(0, Math.min(WM.LANES-1, wm.lane + k)), wmNextRank());
+  wmRender();
+  if(e.key.indexOf('Arrow')===0) e.preventDefault();
+});
+document.addEventListener('click', e=>{
+  const jar = SPD('jar'), r = jar.getBoundingClientRect();
+  if(!r.width || !jar.contains(e.target)) return;
+  const scale = r.width / WM.INNER_W;
+  const lane = Math.max(0, Math.min(WM.LANES-1, Math.floor((e.clientX - r.left)/(wmLaneW()*scale))));
+  wm.lane = lane; wmDrop(lane);
+});
+
+// The fixed-timestep loop. Accumulator-driven so the fall is the same number of
+// physics steps whether the browser paints at 60fps or 144fps.
+let wmLast = 0, wmAcc = 0;
+function wmFrame(t){
+  if(!wmLast) wmLast = t;
+  let dt = (t - wmLast) / 1000; wmLast = t;
+  if(dt > 0.25) dt = 0.25;
+  wmAcc += dt;
+  const step = 1 / WM.FPS;
+  let guard = 0;
+  while(wmAcc >= step && guard++ < 30){
+    wmAcc -= step;
+    if(wm.falling){
+      const f = wm.falling;
+      f.v += WM.G; f.y += f.v;
+      if(f.y >= f.rest) wmSettle();
+    }
+  }
+  if(wm.falling) wmRender();
+  requestAnimationFrame(wmFrame);
+}
+
+SPD('level').innerHTML = WM_LV.map((L,i)=>
+  '<option value="'+i+'">Level '+L.i+' — target rank '+L.target+', '+L.budget+' drops</option>').join('');
+SPD('level').onchange = e=>wmLoad(+e.target.value);
+SPD('reset').onclick = ()=>wmLoad(wm.li);
+wmLoad(0);
+requestAnimationFrame(wmFrame);
+
+// ---- test hook. Every value below comes from the SAME pure functions that
+// paint the DOM above - wmSimulate is not a second implementation.
+window.__watermelon_merge = {
+  WM, WM_LV, state: ()=>wm,
+  constants: ()=>({FPS:WM.FPS, INNER_W:WM.INNER_W, FLOOR_Y:WM.FLOOR_Y, RIM_Y:WM.RIM_Y,
+    LANES:WM.LANES, R0:WM.R0, RSTEP:WM.RSTEP, MAX_RANK:WM.MAX_RANK, G:WM.G,
+    FALL_V:WM.FALL_V, TOL:WM.TOL, SPAWN_W:WM.SPAWN_W, MERGE_PTS:WM.MERGE_PTS, SEED:WM.SEED}),
+  levels: ()=>WM_LV,
+  load: wmLoad, drop: wmDrop, step: wmStep, settle: wmSettle,
+  setLane: l=>{ wm.lane = wmClampLane(l, wmNextRank()); wmRender(); return wm.lane; },
+  spawnRank: wmSpawnRank, simulate: wmSimulate, bestLane: wmBestLane,
+  restY: wmRestY, radius: wmR, legalLanes: wmLegalLanes,
+  descentFrames: wmDescentFrames, topY: wmTopY,
+  autopilot: wmAutopilot,
+  pile: ()=>wm.pile.map(f=>({x:f.x, y:f.y, r:f.r, rank:f.rank}))
+};
+</script>
+
+<link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/play.js?v=20261002c" defer></script>
+</body>
+</html>
