@@ -39,3 +39,11 @@ Note: some `tools/verify_*.js` scripts probe the old React DOM and will need upd
 python -m http.server 5181 --directory "C:\Users\ZEPHYRUS G14\Documents\ocurp-workspace\appsite_portfolio"
 git -C "C:\Users\ZEPHYRUS G14\Documents\ocurp-workspace\appsite" merge design/portfolio-pro
 ```
+
+## v2 (2026-10-05, owner feedback)
+- Hero: the original Ocurp point-cloud globe is back (`assets/globe.js`, canvas 2D re-implementation of the old Three.js sphere: 45x45 points over a 30x30 wireframe), with no additive glow and no glowing buttons. Centred "THE OCURP" headline as in the original.
+- Kept from v1: wordmark/logo, everything from Selected work down, Mission Control (In the lab).
+- Work grid is 2-1-2-2: Livan | Ederdrone (drone card, top right), Rentify Events (wide featured), WearBenin | The Book of Layers, NGO | Restaurant. On phones the pairs stay side by side as compact cards, so the shape still reads.
+- Footer and contact use real GitHub / X / LinkedIn SVG logo buttons, like the original footer.
+- Type: self-hosted Space Grotesk, Inter, JetBrains Mono (assets/fonts, latin subsets, OFL).
+- Screenshots: ../design_review/v2/before_home_*.png and after_home_*.png.
