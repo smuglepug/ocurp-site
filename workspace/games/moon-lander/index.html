@@ -68,6 +68,7 @@ tailwind.config = { theme: { extend: {
 <meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
 <meta name="twitter:image:alt" content="Moon Lander on Ocurp - free, runs in your browser">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Moon Lander","url":"https://ocurp.com/workspace/games/moon-lander/","description":"Moon Lander - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script src="/workspace/juice.js?v=1"></script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -134,6 +135,8 @@ const DROP = 240.0, DRIFT = 30.0, SPAWN_GAP = 96.0;
 const NPTS = 121, T_MAX = 60.0, STEP = 0.008333333333333333;
 
 const keys = {};
+const fx = Juice.create(); let fxLast = 0, wasOver = null;
+const STARS = Array.from({ length: 140 }, () => ({ x: Math.random() * 720, y: Math.random() * 400, z: Math.random() }));
 let terrain, lander, running, over, acc, last, best = 0, bestFuel = 0, lastT = 0;
 
 function mkrnd(seed) {
@@ -251,44 +254,60 @@ function upd() {
 }
 
 function draw() {
-  cx.clearRect(0, 0, W, H);
-  cx.fillStyle = '#050505'; cx.fillRect(0, 0, W, H);
-  // terrain: screen space is y-DOWN, so g() maps up
+  const now = performance.now(); fx.update(fxLast ? Math.min(.05, (now - fxLast) / 1000) : 0); fxLast = now;
+  const L = lander;
+  if (L && L.over && wasOver !== L.over) {
+    wasOver = L.over;
+    if (L.over === 'win') { fx.burst(L.x, H - L.y + FOOT, ['#4fe08a', '#ffffff', '#ffd84a'], 40, 200, { life: 1.1, gravity: 120 }); fx.text(L.x, H - L.y - 40, 'LANDED +' + Math.round(L.fuel) + '%', '#4fe08a', 20); Juice.sfx.up(); }
+    else { fx.burst(L.x, H - L.y, ['#ffd84a', '#ff9f40', '#ff5a6e', '#ffffff'], 70, 260, { life: 1.2, gravity: 60 }); fx.shake(14, .6); Juice.sfx.boom(); }
+  }
+  if (L && !L.over) wasOver = null;
+  cx.save(); fx.applyShake(cx);
+  const sky = cx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#03040c'); sky.addColorStop(1, '#141a33');
+  cx.fillStyle = sky; cx.fillRect(-20, -20, W + 40, H + 40);
+  for (const st of STARS) { cx.fillStyle = 'rgba(230,236,255,' + (.25 + st.z * .7 * (0.75 + 0.25 * Math.sin(now / 600 + st.x))) + ')'; cx.fillRect(st.x, st.y, 1 + st.z, 1 + st.z); }
+  const eg = cx.createRadialGradient(610, 80, 4, 620, 90, 34); eg.addColorStop(0, '#9fd6ff'); eg.addColorStop(.6, '#2f6fd6'); eg.addColorStop(1, '#0c2a66');
+  cx.fillStyle = eg; cx.beginPath(); cx.arc(620, 90, 32, 0, 7); cx.fill();
+  cx.fillStyle = 'rgba(79,224,138,.55)'; cx.beginPath(); cx.ellipse(612, 84, 10, 6, .5, 0, 7); cx.ellipse(630, 100, 7, 5, -.4, 0, 7); cx.fill();
   cx.beginPath(); cx.moveTo(0, sy(0));
   for (let i = 1; i < NPTS; i++) cx.lineTo(W * i / (NPTS - 1), sy(W * i / (NPTS - 1)));
-  cx.lineTo(W, sy(W)); cx.closePath();
-  cx.fillStyle = '#151515'; cx.fill();
-  cx.strokeStyle = 'rgba(255,255,255,.18)'; cx.lineWidth = 1.5; cx.stroke();
-  // the pad
-  cx.fillStyle = '#FF5F1F';
-  cx.fillRect(terrain.pad_l, sy(terrain.pad_c) - 3, PAD_W, 3);
-  const L = lander; if (!L) return;
-  cx.save();
-  cx.translate(L.x, H - L.y);
-  cx.rotate(-L.ang);
-  cx.strokeStyle = L.over === 'crash' || L.over === 'hard' ? '#FF5F1F' : '#fff';
-  cx.lineWidth = 2;
-  cx.beginPath();
-  cx.moveTo(0, -6); cx.lineTo(0, 6);
-  cx.moveTo(-9, 6); cx.lineTo(9, 6);
-  cx.moveTo(-9, 6); cx.lineTo(-13, FOOT);
-  cx.moveTo(9, 6); cx.lineTo(13, FOOT);
-  cx.stroke();
-  cx.fillStyle = '#FF5F1F';
-  cx.beginPath(); cx.moveTo(0, -6); cx.lineTo(-4, -12); cx.lineTo(4, -12); cx.closePath(); cx.fill();
-  if (keys.up && L.fuel > 0) {
-    cx.fillStyle = 'rgba(255,255,255,.55)';
-    cx.beginPath(); cx.moveTo(-4, -13); cx.lineTo(4, -13); cx.lineTo(0, -22); cx.closePath(); cx.fill();
+  cx.lineTo(W, H); cx.lineTo(0, H); cx.closePath();
+  const gg = cx.createLinearGradient(0, H - PAD_H - 20, 0, H); gg.addColorStop(0, '#8a8fa3'); gg.addColorStop(1, '#2b2e3b');
+  cx.fillStyle = gg; cx.fill(); cx.strokeStyle = '#c9cede'; cx.lineWidth = 1.5; cx.stroke();
+  cx.fillStyle = 'rgba(0,0,0,.18)';
+  for (let i = 0; i < 9; i++) { const x = (i * 83 + 40) % W, y = sy(x) + 18 + (i * 29) % 70; cx.beginPath(); cx.ellipse(x, y, 14 + (i % 3) * 6, 4 + (i % 2) * 2, 0, 0, 7); cx.fill(); }
+  const py = sy(terrain.pad_c);
+  cx.fillStyle = '#e8ecf5'; cx.fillRect(terrain.pad_l, py - 4, PAD_W, 5);
+  const blink = Math.floor(now / 400) % 2;
+  cx.fillStyle = blink ? '#4fe08a' : '#1f7a44'; cx.beginPath(); cx.arc(terrain.pad_l + 3, py - 7, 3, 0, 7); cx.arc(terrain.pad_r - 3, py - 7, 3, 0, 7); cx.fill();
+  if (L) {
+    const burning = keys.up && L.fuel > 0 && !L.over;
+    if (burning) { const a = -L.ang; fx.burst(L.x - Math.sin(a) * 14, H - L.y + Math.cos(a) * 14, ['#ffd84a', '#ff9f40', '#ffffff'], 2, 80, { gravity: 40, life: .35, size: 3 }); }
+    const alt = L.y - FOOT - ground(terrain, L.x);
+    if (burning && alt < 50) fx.burst(L.x + (Math.random() - .5) * 30, sy(L.x) - 2, 'rgba(200,205,220,.7)', 1, 60, { gravity: -10, life: .6, size: 4 });
+    if (L.over !== 'crash' && L.over !== 'hard') {
+      cx.save(); cx.translate(L.x, H - L.y); cx.rotate(-L.ang);
+      if (burning) { const f = 14 + Math.random() * 10; const fg = cx.createLinearGradient(0, 8, 0, 8 + f); fg.addColorStop(0, '#fff6c8'); fg.addColorStop(1, 'rgba(255,159,64,0)');
+        cx.fillStyle = fg; cx.beginPath(); cx.moveTo(-5, 8); cx.lineTo(5, 8); cx.lineTo(0, 8 + f); cx.closePath(); cx.fill(); }
+      cx.strokeStyle = '#c9cede'; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(-8, 4); cx.lineTo(-14, FOOT); cx.moveTo(8, 4); cx.lineTo(14, FOOT); cx.moveTo(-17, FOOT); cx.lineTo(-11, FOOT); cx.moveTo(11, FOOT); cx.lineTo(17, FOOT); cx.stroke();
+      const bg = cx.createLinearGradient(-10, 0, 10, 0); bg.addColorStop(0, '#b8892a'); bg.addColorStop(.5, '#ffd84a'); bg.addColorStop(1, '#a8761c');
+      cx.fillStyle = bg; Juice.rr(cx, -10, -2, 20, 10, 3); cx.fill();
+      cx.fillStyle = '#dfe5f2'; cx.beginPath(); cx.moveTo(-8, -2); cx.lineTo(-6, -12); cx.lineTo(6, -12); cx.lineTo(8, -2); cx.closePath(); cx.fill();
+      cx.fillStyle = '#2f6fd6'; cx.beginPath(); cx.arc(0, -7, 3, 0, 7); cx.fill();
+      cx.restore();
+    }
   }
-  cx.restore();
-  // drift arrow at the start, so the direction is never a mystery
-  if (running && !L.over && L.t < 1.2) {
-    cx.fillStyle = 'rgba(255,255,255,.35)';
-    const d = L.vx > 0 ? 1 : -1;
-    cx.beginPath();
-    cx.moveTo(L.x + d * 34, H - L.y); cx.lineTo(L.x + d * 20, H - L.y - 7);
-    cx.lineTo(L.x + d * 20, H - L.y + 7); cx.closePath(); cx.fill();
+  fx.draw(cx); cx.restore();
+  if (L && running && !L.over && L.t < 1.6) {
+    cx.fillStyle = 'rgba(255,255,255,.6)'; const d = L.vx > 0 ? 1 : -1;
+    cx.beginPath(); cx.moveTo(L.x + d * 36, H - L.y); cx.lineTo(L.x + d * 22, H - L.y - 7); cx.lineTo(L.x + d * 22, H - L.y + 7); cx.closePath(); cx.fill();
   }
+  cx.textAlign = 'center';
+  const ov = (t, sub, col) => { cx.fillStyle = 'rgba(3,4,12,.55)'; cx.fillRect(0, 0, W, H); cx.fillStyle = col; cx.font = '700 40px "Space Grotesk",sans-serif'; cx.fillText(t, W / 2, H / 2 - 30); cx.fillStyle = '#d6dbe6'; cx.font = '500 15px Inter,sans-serif'; cx.fillText(sub, W / 2, H / 2); };
+  if (!running && L && !L.over) ov('MOON LANDER', 'Press Start. Up or Space burns, Left and Right rotate.', '#ffffff');
+  else if (L && L.over === 'win') ov('THE EAGLE HAS LANDED', Math.round(L.fuel) + '% fuel left. Best ' + best + '%.', '#4fe08a');
+  else if (L && L.over) ov(L.over === 'timeout' ? 'OUT OF TIME' : L.over === 'hard' ? 'HARD LANDING' : 'CRASHED', 'Touch down on the pad below 42 down and 26 sideways.', '#ff5a6e');
+  if (L && L.over && fx.busy()) requestAnimationFrame(() => { if (!running) draw(); });
 }
 
 function sized() {
