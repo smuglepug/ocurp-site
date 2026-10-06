@@ -77,6 +77,7 @@ tailwind.config = { theme: { extend: {
 <meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
 <meta name="twitter:image:alt" content="2048 on Ocurp - free, runs in your browser">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"2048","url":"https://ocurp.com/workspace/games/2048/","description":"Merge the tiles and chase 2048. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script src="/workspace/juice.js?v=1"></script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -92,7 +93,7 @@ tailwind.config = { theme: { extend: {
           </div>
           <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">PUZZLE</span><span class="ws-chip">ARROWS</span><span class="ws-chip">LOCAL BEST</span></div>
         </div>
-      <section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_240px]"><div id="grid" class="mx-auto grid aspect-square w-full max-w-[420px] grid-cols-4 gap-2 rounded-2xl bg-white/[0.04] p-2"></div><div class="flex flex-col gap-4"><div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="ws-label mb-1">Score</div><div class="font-display text-3xl font-black text-accent" id="score">0</div></div><div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="ws-label mb-1">Best</div><div class="font-display text-3xl font-black text-white/60" id="best">0</div></div><button id="new" class="ws-btn">New game</button><p class="text-[10px] text-white/50 leading-relaxed">Arrow keys or WASD. Merge equal tiles to reach 2048.</p></div></div></section>
+      <section class="ws-panel p-6"><div class="grid gap-6 md:grid-cols-[1fr_240px]"><div id="grid" class="mx-auto grid aspect-square w-full max-w-[420px] grid-cols-4 gap-2 rounded-2xl bg-white/[0.04] p-2"></div><div class="flex flex-col gap-4"><div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="ws-label mb-1">Score</div><div class="font-display text-3xl font-black text-accent" id="score">0</div></div><div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center"><div class="ws-label mb-1">Best</div><div class="font-display text-3xl font-black text-white/60" id="best">0</div></div><button id="new" class="ws-btn">New game</button><p class="text-[10px] text-white/50 leading-relaxed">Arrow keys, WASD or swipe. Merge equal tiles to reach 2048.</p></div></div></section>
   <div id="ws-more" class="mt-12"></div>
   <div class="mt-10 border-t border-white/5 pt-6 text-center">
     <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen's Workspace</a>
@@ -100,40 +101,86 @@ tailwind.config = { theme: { extend: {
 </div>
 <script src="/workspace/related.js" defer></script>
 <script>const $=id=>document.getElementById(id);
-let b,score,dead;
-const COL={2:'#4a2e18',4:'#7a4522',8:'#FF5F1F',16:'#ff7a33',32:'#ff9147',64:'#ffa65c',128:'#ffb877',256:'#ffca93',512:'#ffd9ae',1024:'#ffe6c8',2048:'#ffd166'};
+/* 2048 with sliding tiles: every tile is a persistent element that moves with a CSS transform,
+   merges pop, new tiles grow in, and +points float up from the score. */
+const PAL={2:['#26324d','#cfe0ff'],4:['#2c3f6b','#e3ecff'],8:['#3f6fe0','#fff'],16:['#5e5ee6','#fff'],32:['#8b55e0','#fff'],64:['#c04fd6','#fff'],
+  128:['#e0559e','#fff'],256:['#ef5b6b','#fff'],512:['#f47a3d','#fff'],1024:['#f4a93a','#1b1205'],2048:['#ffd84a','#1b1205'],4096:['#4fe08a','#06200f']};
+const G=$('grid');let tiles,score,dead,won,keepGoing,nid=1,busy=false;
 const best=()=>+(localStorage.getItem('ws-2048')||0);
-function add(){const empty=[];b.forEach((v,i)=>{if(!v)empty.push(i)});
-  if(!empty.length)return;b[empty[Math.floor(Math.random()*empty.length)]]=Math.random()<.9?2:4}
-function draw(){$('grid').innerHTML=b.map(v=>'<div class="flex items-center justify-center rounded-lg font-display font-black" style="background:'+(COL[v]||'#1c1a18')+';color:'+(v>=512?'#3a1e08':'#fff')+';font-size:'+(v>512?'1.1rem':v>64?'1.6rem':'2rem')+'">'+(v||'')+'</div>').join('');
-  $('score').textContent=score;$('best').textContent=best()}
-function reset(){b=Array(16).fill(0);score=0;dead=false;add();add();draw()}
-function slide(row){let r=row.filter(v=>v),i=0;
-  while(i<r.length-1){if(r[i]===r[i+1]){r[i]*=2;score+=r[i];r.splice(i+1,1)}i++}
-  while(r.length<4)r.push(0);return r}
+G.className='mx-auto w-full max-w-[420px] t48';G.innerHTML='';
+const style=document.createElement('style');style.textContent=`
+.t48{position:relative;aspect-ratio:1;border-radius:18px;background:#141824;padding:10px;touch-action:none;user-select:none;-webkit-user-select:none}
+.t48 .cell{position:absolute;border-radius:12px;background:rgba(255,255,255,.045)}
+.t48 .tile{position:absolute;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;
+  transition:transform .12s cubic-bezier(.2,.8,.3,1);will-change:transform;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18),inset 0 2px 0 rgba(255,255,255,.12)}
+.t48 .tile span{display:block;transition:none}
+.t48 .tile.new span{animation:t48in .18s cubic-bezier(.2,.8,.3,1.4)}
+.t48 .tile.pop span{animation:t48pop .2s ease}
+@keyframes t48in{from{transform:scale(0)}to{transform:scale(1)}}
+@keyframes t48pop{0%{transform:scale(1)}50%{transform:scale(1.22)}100%{transform:scale(1)}}
+.t48 .over{position:absolute;inset:0;border-radius:18px;background:rgba(10,12,20,.78);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:5;animation:t48fade .3s}
+.t48 .over b{font:700 34px 'Space Grotesk',sans-serif;color:#fff}.t48 .over p{color:#c9d0db;font-size:14px;margin:0}
+@keyframes t48fade{from{opacity:0}}
+.t48float{position:absolute;font:700 18px 'Space Grotesk',sans-serif;color:#ffd84a;pointer-events:none;animation:t48up .8s ease-out forwards}
+@keyframes t48up{to{transform:translateY(-36px);opacity:0}}`;
+document.head.appendChild(style);
+function geom(){const w=G.clientWidth-20,gap=10,sz=(w-gap*3)/4;return{sz,step:sz+gap}}
+function layoutCells(){G.querySelectorAll('.cell').forEach(c=>c.remove());const g=geom();
+  for(let r=0;r<4;r++)for(let c=0;c<4;c++){const d=document.createElement('div');d.className='cell';
+    d.style.cssText='width:'+g.sz+'px;height:'+g.sz+'px;left:10px;top:10px;transform:translate('+c*g.step+'px,'+r*g.step+'px)';G.prepend(d)}}
+function el(t){if(!t.el){t.el=document.createElement('div');t.el.className='tile new';t.el.innerHTML='<span></span>';G.appendChild(t.el)}return t.el}
+function paint(t){const g=geom(),e=el(t),p=PAL[t.v]||['#4fe08a','#06200f'];
+  e.style.width=e.style.height=g.sz+'px';e.style.left=e.style.top='10px';e.style.background=p[0];e.style.color=p[1];
+  e.style.fontSize=(t.v>=1024?g.sz*.3:t.v>=128?g.sz*.36:g.sz*.44)+'px';e.style.transform='translate('+t.c*g.step+'px,'+t.r*g.step+'px)';
+  e.firstChild.textContent=t.v;e.style.zIndex=t.dying?1:2}
+function render(){tiles.forEach(paint);$('score').textContent=score;$('best').textContent=Math.max(best(),score)}
+function add(){const free=[];for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(!tiles.some(t=>t.r===r&&t.c===c))free.push([r,c]);
+  if(!free.length)return;const f=free[Math.floor(Math.random()*free.length)];tiles.push({id:nid++,v:Math.random()<.9?2:4,r:f[0],c:f[1]})}
+function reset(){G.querySelectorAll('.tile,.over').forEach(n=>n.remove());tiles=[];score=0;dead=won=keepGoing=false;busy=false;layoutCells();add();add();render()}
+function overlay(title,sub,btn,fn){const o=document.createElement('div');o.className='over';o.innerHTML='<b>'+title+'</b><p>'+sub+'</p><button class="ws-btn">'+btn+'</button>';
+  o.querySelector('button').onclick=()=>{o.remove();fn()};G.appendChild(o)}
+function floatPts(n){const r=$('score').getBoundingClientRect(),f=document.createElement('div');f.className='t48float';f.textContent='+'+n;
+  f.style.left=(r.left+r.width/2-14+scrollX)+'px';f.style.top=(r.top+scrollY-6)+'px';f.style.position='absolute';document.body.appendChild(f);setTimeout(()=>f.remove(),800)}
 function move(dir){
-  if(dead)return;let moved=false;
-  for(let i=0;i<4;i++){
-    let line;
-    if(dir==='left'||dir==='right'){line=[0,1,2,3].map(j=>b[i*4+j]);if(dir==='right')line.reverse()}
-    else{line=[0,1,2,3].map(j=>b[j*4+i]);if(dir==='down')line.reverse()}
-    const n=slide(line);
-    if(dir==='right'||dir==='down')n.reverse();
-    for(let j=0;j<4;j++){const idx=(dir==='left'||dir==='right')?i*4+j:j*4+i;
-      if(b[idx]!==n[j]){moved=true}b[idx]=n[j]}}
-  if(moved){add();draw();
+  if(dead||busy||(won&&!keepGoing))return;
+  const V={left:[0,-1],right:[0,1],up:[-1,0],down:[1,0]}[dir];let moved=false,gained=0;
+  const at=(r,c)=>tiles.find(t=>t.r===r&&t.c===c&&!t.dying);
+  const order=[0,1,2,3];if(V[0]>0||V[1]>0)order.reverse();
+  tiles.forEach(t=>t.merged=false);
+  for(const r of order)for(const c of order){
+    const t=at(r,c);if(!t)continue;let nr=r,nc=c;
+    while(true){const rr=nr+V[0],cc=nc+V[1];if(rr<0||rr>3||cc<0||cc>3)break;const o=at(rr,cc);
+      if(!o){nr=rr;nc=cc;continue}
+      if(o.v===t.v&&!o.merged){nr=rr;nc=cc;t.dying=true;o.merged=true;o.v*=2;gained+=o.v;o.popNext=true}
+      break}
+    if(nr!==r||nc!==c){t.r=nr;t.c=nc;moved=true}}
+  if(!moved)return;
+  busy=true;score+=gained;
+  tiles.forEach(t=>{if(t.el)t.el.classList.remove('new','pop')});
+  /* slide first with the old values, then resolve merges */
+  tiles.forEach(t=>{const g=geom();if(t.el)t.el.style.transform='translate('+t.c*g.step+'px,'+t.r*g.step+'px)';if(t.el&&t.popNext)t.el.firstChild.textContent=t.v/2});
+  setTimeout(()=>{
+    tiles.filter(t=>t.dying).forEach(t=>t.el&&t.el.remove());tiles=tiles.filter(t=>!t.dying);
+    tiles.forEach(t=>{if(t.popNext){t.popNext=false;el(t).classList.add('pop')}});
+    add();render();busy=false;
+    if(gained){floatPts(gained);if(window.Juice)Juice.sfx.blip()}
     if(score>best())localStorage.setItem('ws-2048',score);
-    if(!canMove()){dead=true;$('score').textContent=score+' (no moves)';}}}
-function canMove(){if(b.some(v=>!v))return true;
-  for(let i=0;i<4;i++)for(let j=0;j<4;j++){const v=b[i*4+j];
-    if(j<3&&v===b[i*4+j+1])return true;if(i<3&&v===b[(i+1)*4+j])return true}return false}
+    if(!won&&tiles.some(t=>t.v>=2048)){won=true;overlay('2048!','You made it with '+score+' points.','Keep going',()=>{keepGoing=true})}
+    else if(!canMove()){dead=true;overlay('No moves left',score+' points. Best '+best()+'.','Try again',reset)}
+  },125)}
+function canMove(){if(tiles.length<16)return true;const v=(r,c)=>{const t=tiles.find(t=>t.r===r&&t.c===c);return t&&t.v};
+  for(let r=0;r<4;r++)for(let c=0;c<4;c++){if(c<3&&v(r,c)===v(r,c+1))return true;if(r<3&&v(r,c)===v(r+1,c))return true}return false}
 addEventListener('keydown',e=>{const m={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',a:'left',d:'right',w:'up',s:'down'}[e.key];
   if(m){e.preventDefault();move(m)}});
-let sx,sy;$('grid').addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
-$('grid').addEventListener('touchend',e=>{if(sx==null)return;const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+let sx=null,sy=null;
+G.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY});
+G.addEventListener('pointerup',e=>{if(sx==null)return;const dx=e.clientX-sx,dy=e.clientY-sy;sx=null;
   if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;
-  move(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'))},{passive:true});
-$('new').onclick=reset;reset();</script>
+  move(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'))});
+addEventListener('resize',()=>{layoutCells();render()});
+$('new').onclick=reset;reset();
+window.__2048={tiles:()=>tiles.map(t=>[t.r,t.c,t.v]),move};
+</script>
 <script>
 /* Announce the result of a tool. Screen readers get the output; sighted
    keyboard users get a quiet confirmation line. Set to '' to clear. */
