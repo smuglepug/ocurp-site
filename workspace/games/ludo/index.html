@@ -75,6 +75,23 @@ tailwind.config = { theme: { extend: {
 <meta name="twitter:image:alt" content="Ludo on Ocurp - free, runs in your browser">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Ludo","url":"https://ocurp.com/workspace/games/ludo/","description":"Ludo - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+<style>
+.lg-board{background:#f4efe4!important;border-radius:16px!important;padding:6px!important;gap:2px!important;box-shadow:0 30px 60px -30px rgba(0,0,0,.9)}
+.lg-c{border-radius:4px!important;background:#fffdf7!important;box-shadow:inset 0 0 0 1px rgba(30,30,40,.12)!important}
+.lg-c.plain{background:transparent!important;box-shadow:none!important}
+.lg-c.q0{background:#ff5a6e!important}.lg-c.q1{background:#3fbf75!important}.lg-c.q2{background:#ffcc33!important}.lg-c.q3{background:#4d7cff!important}
+.lg-c.q0,.lg-c.q1,.lg-c.q2,.lg-c.q3{border-radius:0!important;opacity:.9}
+.lg-c.y0,.lg-c.y1,.lg-c.y2,.lg-c.y3{background:#fffdf7!important;border-radius:50%!important;box-shadow:inset 0 0 0 3px rgba(0,0,0,.12)!important}
+.lg-c.h0,.lg-c.start0{background:#ff5a6e!important}.lg-c.h1,.lg-c.start1{background:#3fbf75!important}.lg-c.h2,.lg-c.start2{background:#ffcc33!important}.lg-c.h3,.lg-c.start3{background:#4d7cff!important}
+.lg-c.mid{background:conic-gradient(from 45deg,#3fbf75 0 25%,#ffcc33 0 50%,#4d7cff 0 75%,#ff5a6e 0)!important;border-radius:4px!important;transform:scale(2.9);z-index:1;box-shadow:0 0 0 1px rgba(0,0,0,.1)!important}.lg-c.midr{background:transparent!important}
+.lg-c.legal{box-shadow:inset 0 0 0 3px #111827,0 0 0 2px #fff!important;animation:lgPulse 1s infinite}
+@keyframes lgPulse{50%{filter:brightness(1.15)}}
+.lg-p{box-shadow:inset 0 -3px 0 rgba(0,0,0,.25),inset 0 2px 0 rgba(255,255,255,.5),0 3px 6px rgba(0,0,0,.45);border:2px solid #fff!important;font-size:0}
+.lg-p.p0{background:radial-gradient(circle at 35% 30%,#ff9aa6,#e0344b)!important}.lg-p.p1{background:radial-gradient(circle at 35% 30%,#8ef0b7,#249a59)!important}
+.lg-p.p2{background:radial-gradient(circle at 35% 30%,#ffe78a,#e0a800)!important}.lg-p.p3{background:radial-gradient(circle at 35% 30%,#a9c1ff,#2f5fe0)!important}
+.lg-die{background:#fffdf7!important;color:#111827!important;font-weight:800;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15)}
+.lg-die.hot{background:#ffcc33!important}
+</style>
 </head>
 <body class="ws" data-reskin="1" style="--hue:#4fd69c">
 <a class="skip" href="#ws-play">Skip to the game</a>
@@ -154,7 +171,7 @@ var LG_SEATSET={2:[0,2],3:[0,1,2],4:[0,1,2,3]};
 var LG_YARD=[[0,0],[0,14],[14,14],[14,0]];
 var LG_ARM={5:[[1,6],[2,6],[3,6],[4,6],[5,6]],18:[[6,13],[6,12],[6,11],[6,10],[6,9]],
             31:[[13,8],[12,8],[11,8],[10,8],[9,8]],44:[[8,1],[8,2],[8,3],[8,4],[8,5]]};
-var LG_NAME=['You','Silver','Graphite','Slate'];
+var LG_NAME=['You','Green','Yellow','Blue'];
 
 var LG={};
 
@@ -312,6 +329,9 @@ LG.render=function(){
   var h='';
   for(r=0;r<15;r++)for(c=0;c<15;c++){
     var id=r+','+c,cell=key[id]||{t:'plain'},cls='lg-c '+cell.t;
+    if(cell.t==='plain'){if(r<6&&c<6)cls+=' q0';else if(r<6&&c>8)cls+=' q1';else if(r>8&&c>8)cls+=' q2';else if(r>8&&c<6)cls+=' q3';else if(r>=6&&r<=8&&c>=6&&c<=8)cls+=(r===7&&c===7)?' mid':' midr'}
+    if(cell.t==='home'){var hp=(c===6&&r<6)?0:(r===6&&c>8)?1:(c===8&&r>8)?2:3;cls+=' h'+hp}
+    if(cell.t==='yard')cls+=' y'+cell.p;
     if(cell.t==='start')cls+=' start'+cell.p;
     if(legal[id])cls+=' legal';
     var dots='';
