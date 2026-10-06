@@ -75,6 +75,23 @@ tailwind.config = { theme: { extend: {
 <meta name="twitter:image:alt" content="Hangman on Ocurp - free, runs in your browser">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Hangman","url":"https://ocurp.com/workspace/games/hangman/","description":"Guess the word before the drawing runs out. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+<style>
+#word{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;letter-spacing:0!important}
+.hm-l{width:clamp(28px,6vw,44px);height:clamp(38px,8vw,54px);border-bottom:3px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font:700 clamp(20px,4.5vw,32px) "Space Grotesk",sans-serif;color:#fff}
+.hm-l.on{border-color:var(--hue);animation:hmIn .25s ease}
+.hm-l.miss{color:#ff5a6e}
+@keyframes hmIn{from{transform:translateY(-8px);opacity:0}}
+#art{width:min(220px,60vw)}
+.hm-svg{width:100%;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.hm-svg .hm-ghost{stroke:rgba(255,255,255,.06);stroke-width:5}
+.hm-svg .hm-p{stroke:#e8edf6;stroke-width:5;stroke-dasharray:240;stroke-dashoffset:0;animation:hmDraw .5s ease}
+.hm-svg.lost .hm-p{stroke:#ff5a6e}.hm-svg.won .hm-p{stroke:#4fe08a}
+@keyframes hmDraw{from{stroke-dashoffset:240}}
+.hm-k{border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);min-height:40px;font:700 13px Inter,sans-serif;color:#e8edf6;transition:all .15s}
+.hm-k:hover{border-color:var(--hue)}
+.hm-k.ok{background:rgba(79,224,138,.18);border-color:rgba(79,224,138,.5);color:#4fe08a}
+.hm-k.no{background:rgba(255,90,110,.1);border-color:rgba(255,90,110,.3);color:rgba(255,90,110,.6)}
+</style>
 </head>
 <body class="ws" data-reskin="1" style="--hue:#ffd166">
 <a class="skip" href="#ws-play">Skip to the game</a>
@@ -89,13 +106,14 @@ const WORDS=['PLATFORM','COMPUTER','BENIN','KEYBOARD','STUDENT','HOLIDAY','ELEPH
 let word,guess,wrong,max=8;
 function newGame(){word=WORDS[Math.floor(Math.random()*WORDS.length)];guess=new Set();wrong=0;
  $('msg').textContent='Guess a letter.';render()}
-function render(){$('word').textContent=word.split('').map(ch=>guess.has(ch)?ch:'_').join(' ');
- const stages=['','\n O','\n O\n |','\n O\n/|','\n O\n/|\\','\n O\n/|\\\n/','\n O\n/|\\\n/ \\','\n O\n/|\\\n/ \\','\n_O_\n O\n/|\\\n/ \\'];
- $('art').textContent='+---+'+(stages[wrong]||'');
+const PARTS=['<path d="M20 190h120"/>','<path d="M50 190V20h70v22"/>','<circle cx="120" cy="58" r="16"/>','<path d="M120 74v50"/>','<path d="M120 86l-22 22"/>','<path d="M120 86l22 22"/>','<path d="M120 124l-20 32"/>','<path d="M120 124l20 32"/>'];
+function render(){
+ const done0=word.split('').every(ch=>guess.has(ch)),lost0=wrong>=max;
+ $('word').innerHTML=word.split('').map(ch=>'<span class="hm-l'+(guess.has(ch)?' on':'')+(lost0&&!guess.has(ch)?' miss':'')+'">'+(guess.has(ch)||lost0?ch:'')+'</span>').join('');
+ $('art').innerHTML='<svg viewBox="0 0 160 200" class="hm-svg'+(lost0?' lost':'')+(done0?' won':'')+'">'+PARTS.map((p,i)=>i<wrong?p.replace('/>',' class="hm-p"/>'):p.replace('/>',' class="hm-ghost"/>')).join('')+'</svg>';
  $('lives').textContent=max-wrong;
  const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
- $('keys').innerHTML=A.map(ch=>'<button data-ch="'+ch+'" class="rounded-lg border border-white/10 py-2 text-[11px] font-black '
-  +(guess.has(ch)?'text-white/25 border-white/5':'text-white/80 hover:border-accent/50')+'">'+ch+'</button>').join('');
+ $('keys').innerHTML=A.map(ch=>'<button data-ch="'+ch+'" class="hm-k'+(guess.has(ch)?(word.includes(ch)?' ok':' no'):'')+'">'+ch+'</button>').join('');
  $('keys').querySelectorAll('button').forEach(el=>el.onclick=()=>pick(el.dataset.ch));
  const done=word.split('').every(ch=>guess.has(ch));
  if(done)$('msg').textContent='Solved! The word was '+word+'.';
