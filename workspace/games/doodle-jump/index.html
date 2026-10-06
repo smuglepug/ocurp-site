@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Doodle Jump — Play Free in Browser | Ocurp</title>
+<title>Sky Hopper — Play Free in Browser | Ocurp</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,23 +51,24 @@ tailwind.config = { theme: { extend: {
   .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
   .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
 </style>
-<meta name="description" content="Doodle Jump - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="description" content="Sky Hopper - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
 <link rel="canonical" href="https://ocurp.com/workspace/games/doodle-jump/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Doodle Jump">
-<meta property="og:description" content="Doodle Jump - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:title" content="Sky Hopper">
+<meta property="og:description" content="Sky Hopper - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
 <meta property="og:url" content="https://ocurp.com/workspace/games/doodle-jump/">
 <meta property="og:site_name" content="Ocurp">
 <meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Doodle Jump on Ocurp - free, runs in your browser">
+<meta property="og:image:alt" content="Sky Hopper on Ocurp - free, runs in your browser">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Doodle Jump">
-<meta name="twitter:description" content="Doodle Jump - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:title" content="Sky Hopper">
+<meta name="twitter:description" content="Sky Hopper - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
 <meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
-<meta name="twitter:image:alt" content="Doodle Jump on Ocurp - free, runs in your browser">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Doodle Jump","url":"https://ocurp.com/workspace/games/doodle-jump/","description":"Doodle Jump - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<meta name="twitter:image:alt" content="Sky Hopper on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Sky Hopper","url":"https://ocurp.com/workspace/games/doodle-jump/","description":"Sky Hopper - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script src="/workspace/juice.js?v=1"></script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -78,7 +79,7 @@ tailwind.config = { theme: { extend: {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
     </a>
     <div class="min-w-0">
-      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Doodle Jump</h1>
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Sky Hopper</h1>
       <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Game — Client-side</p>
           </div>
           <div class="ml-auto hidden flex-wrap gap-2 sm:flex"><span class="ws-chip">ARCADE</span><span class="ws-chip">PLATFORMER</span><span class="ws-chip">CANVAS</span></div>
@@ -123,15 +124,17 @@ tailwind.config = { theme: { extend: {
 const $ = id => document.getElementById(id);
 const cv = $('cv'), cx = cv.getContext('2d');
 const W = 420, H = 680;
-const GRAV = 0.42, JUMP = -6.9, ACC = 0.55, VMAX = 4.2;
+const GRAV = 0.42, JUMP = -7.5, ACC = 0.6, VMAX = 4.4;
 const FRICTION = 0.82, R = 15;
 const PLAT_W_MIN = 52, PLAT_W_MAX = 76;
 const PLAT_GAP_MIN = 26, PLAT_GAP_MAX = 48;
-const V_DRIFT = 0.5, MAX_DX = 78;
+const V_DRIFT = 0.35, MAX_DX = 78;
 const CAM_ANCHOR = 0.42, DEATH_MARGIN = 40;
 
 const keys = {};
 let plats, blob, camY, running, over, acc = 0, lastT = 0, best = 0, seed = 1, count = 0;
+const fx = Juice.create(); let squash = 0, fxLast = 0, peak = 0;
+const CLOUDS = Array.from({ length: 8 }, () => ({ x: Math.random() * 420, y: Math.random() * 1400, s: .5 + Math.random() * .8 }));
 
 function mkrnd(s0) {
   let s = (s0 * 2654435761) >>> 0;
@@ -159,22 +162,29 @@ function hsh(i) {
 //     138px arc of a single bounce -- see the header of tools/build_w44a_doodle_jump.py.
 // Platforms above the first two drift, so a player who stops steering is left
 // behind. The blob wraps, so the sides are a seam and not a corner.
+let GEN = null;
 function genPlats(s0) {
   const r = mkrnd(s0);
   const out = [];
   let y = H - 130, x = W * (0.25 + r() * 0.5);
   out.push({ x: x, y: y, w: PLAT_W_MAX, v: 0 });
-  while (y > -H * 2) {
+  GEN = { r: r, out: out, x: x, y: y };
+  extend(-H * 2);
+  return out;
+}
+function extend(top) {
+  const r = GEN.r, out = GEN.out; let x = GEN.x, y = GEN.y;
+  while (y > top) {
     const gap = PLAT_GAP_MIN + r() * (PLAT_GAP_MAX - PLAT_GAP_MIN);
     const ny = y - gap;
     const w = PLAT_W_MIN + r() * (PLAT_W_MAX - PLAT_W_MIN);
     let nx = x + (r() * 2 - 1) * MAX_DX;
     nx = Math.max(w / 2, Math.min(W - w / 2, nx));
     const v = out.length < 2 ? 0 : (hsh(out.length) < 0.5 ? -V_DRIFT : V_DRIFT);
-    out.push({ x: nx, y: ny, w: w, v: v });
+    out.push({ x: nx, y: ny, w: w, v: v, id: out.length });
     x = nx; y = ny;
   }
-  return out;
+  GEN.x = x; GEN.y = y;
 }
 
 function reset() {
@@ -183,7 +193,7 @@ function reset() {
   count = plats.length;
   blob = { x: plats[0].x, y: plats[0].y - 70, vx: 0, vy: 0 };
   camY = blob.y - H * CAM_ANCHOR;
-  over = false; acc = 0; lastT = 0;
+  over = false; acc = 0; lastT = 0; peak = 0;
   upd();
 }
 
@@ -219,12 +229,15 @@ function step() {
       const p = plats[i];
       if (prevBottom <= p.y + 1 && b.y + R >= p.y &&
           Math.abs(b.x - p.x) <= p.w / 2 + R * 0.6) {
-        b.y = p.y - R; b.vy = JUMP;
+        b.y = p.y - R; b.vy = JUMP; squash = 1;
+        fx.burst(b.x, p.y - camY, ['#ffffff', '#d6ffe6'], 6, 90, { gravity: 200, life: .35, size: 3 });
         break;
       }
     }
   }
-  if (b.y > camY + H + DEATH_MARGIN) over = true;
+  peak = Math.max(peak, Math.round(plats[0].y - b.y));
+  if (GEN && GEN.y > camY - H) extend(camY - H * 2);
+  if (b.y > camY + H + DEATH_MARGIN && !over) { over = true; fx.shake(8, .35); Juice.sfx.boom(); }
 }
 
 function upd() {
@@ -240,50 +253,51 @@ function upd() {
   if (h > best) best = h;
 }
 
+function mix(a, b, t) { const pa = a.match(/\w\w/g).map(h => parseInt(h, 16)), pb = b.match(/\w\w/g).map(h => parseInt(h, 16)); return 'rgb(' + pa.map((v, i) => Math.round(v + (pb[i] - v) * t)).join(',') + ')'; }
 function draw() {
-  cx.clearRect(0, 0, W, H);
-  cx.fillStyle = '#050505'; cx.fillRect(0, 0, W, H);
-  cx.strokeStyle = 'rgba(255,255,255,.05)'; cx.lineWidth = 1;
-  const base = plats[0].y;
-  for (let h = 200; h < base - camY + 40; h += 200) {
-    const sy = H - (base - camY - h);
-    cx.beginPath(); cx.moveTo(0, sy); cx.lineTo(W, sy); cx.stroke();
+  const now = performance.now(); fx.update(fxLast ? (now - fxLast) / 1000 : 0); fxLast = now; squash = Math.max(0, squash - 0.08);
+  cx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+  const alt = Math.max(0, plats[0].y - camY - H), k = Math.min(1, alt / 6000);
+  const g = cx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, mix('7ec8ff', '0b0f2e', k)); g.addColorStop(1, mix('dff3ff', '3a2a6b', k));
+  cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+  if (k > .3) for (let i = 0; i < 60; i++) { cx.fillStyle = 'rgba(255,255,255,' + ((k - .3) * (.3 + (i * 37 % 10) / 14)) + ')'; cx.fillRect((i * 97) % W, (i * 53 + (-camY * .05)) % H, 1.5, 1.5); }
+  for (const c of CLOUDS) {
+    const y = ((c.y - camY * .3 * c.s) % 1400 + 1400) % 1400 - 200;
+    cx.fillStyle = 'rgba(255,255,255,' + (.55 * (1 - k)) + ')';
+    cx.beginPath(); cx.arc(c.x, y, 22 * c.s, 0, 7); cx.arc(c.x + 24 * c.s, y - 8 * c.s, 26 * c.s, 0, 7); cx.arc(c.x + 50 * c.s, y, 20 * c.s, 0, 7); cx.fill();
   }
-  cx.strokeStyle = 'rgba(255,95,31,.18)';
-  cx.beginPath(); cx.moveTo(0, 0); cx.lineTo(0, H); cx.stroke();
-  cx.beginPath(); cx.moveTo(W, 0); cx.lineTo(W, H); cx.stroke();
+  cx.save(); fx.applyShake(cx);
   for (let i = 0; i < plats.length; i++) {
-    const p = plats[i];
-    const sy = p.y - camY;
+    const p = plats[i], sy = p.y - camY;
     if (sy < -20 || sy > H + 20) continue;
-    cx.fillStyle = i === 0 ? '#FF5F1F' : '#ffffff';
-    cx.globalAlpha = i === 0 ? 0.85 : 0.32;
-    cx.beginPath();
-    if (cx.roundRect) { cx.roundRect(p.x - p.w / 2, sy - 5, p.w, 8, 4); cx.fill(); }
-    else { cx.fillRect(p.x - p.w / 2, sy - 5, p.w, 8); }
-    if (p.v) {
-      cx.fillStyle = '#FF5F1F'; cx.globalAlpha = 0.75;
-      cx.beginPath();
-      const d = p.v > 0 ? 1 : -1;
-      cx.moveTo(p.x + d * (p.w / 2 + 4), sy - 1);
-      cx.lineTo(p.x + d * (p.w / 2 + 11), sy - 5);
-      cx.lineTo(p.x + d * (p.w / 2 + 11), sy + 3);
-      cx.closePath(); cx.fill();
-    }
+    const col = i === 0 ? '#ffb347' : p.v ? '#7aa2ff' : '#4fe08a';
+    const pg = cx.createLinearGradient(0, sy - 6, 0, sy + 6); pg.addColorStop(0, Juice.shade(col, .25)); pg.addColorStop(1, Juice.shade(col, -.25));
+    cx.fillStyle = pg; Juice.rr(cx, p.x - p.w / 2, sy - 6, p.w, 12, 6); cx.fill();
+    cx.fillStyle = 'rgba(255,255,255,.45)'; Juice.rr(cx, p.x - p.w / 2 + 5, sy - 4, p.w - 10, 3, 2); cx.fill();
+    if (p.v) { cx.fillStyle = 'rgba(255,255,255,.8)'; const d = p.v > 0 ? 1 : -1; cx.beginPath(); cx.moveTo(p.x + d * 8, sy); cx.lineTo(p.x - d * 2, sy - 3); cx.lineTo(p.x - d * 2, sy + 3); cx.fill(); }
   }
-  cx.globalAlpha = 1;
   const b = blob;
-  if (!b) return;
-  const by = b.y - camY;
-  cx.fillStyle = over ? '#FF5F1F' : '#fff';
-  cx.beginPath(); cx.arc(b.x, by, R, 0, 6.2832); cx.fill();
-  cx.fillStyle = '#FF5F1F';
-  cx.beginPath(); cx.arc(b.x - 4, by - 4, R * 0.34, 0, 6.2832); cx.fill();
-  if (Math.abs(b.vx) > 0.15) {
-    cx.strokeStyle = 'rgba(255,95,31,.9)'; cx.lineWidth = 3;
-    const d = b.vx > 0 ? 1 : -1;
-    cx.beginPath(); cx.moveTo(b.x + d * (R + 3), by); cx.lineTo(b.x + d * (R + 12), by); cx.stroke();
+  if (b) {
+    const by = b.y - camY, sx = 1 + squash * .25 - Math.min(.15, Math.abs(b.vy) * .015), sy2 = 1 - squash * .22 + Math.min(.15, Math.abs(b.vy) * .015);
+    cx.save(); cx.translate(b.x, by + R * (1 - sy2)); cx.scale(sx, sy2);
+    const bg = cx.createRadialGradient(-5, -6, 2, 0, 0, R + 2); bg.addColorStop(0, '#ffe7a3'); bg.addColorStop(1, over ? '#ff5a6e' : '#ff9f40');
+    cx.fillStyle = bg; cx.beginPath(); cx.arc(0, 0, R, 0, 7); cx.fill();
+    const look = Math.max(-3, Math.min(3, b.vx));
+    cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(-5 + look, -3, 4.5, 0, 7); cx.arc(5 + look, -3, 4.5, 0, 7); cx.fill();
+    cx.fillStyle = '#1b1530'; cx.beginPath(); cx.arc(-4.5 + look * 1.3, -2 + (b.vy > 0 ? 1 : -1), 2.2, 0, 7); cx.arc(5.5 + look * 1.3, -2 + (b.vy > 0 ? 1 : -1), 2.2, 0, 7); cx.fill();
+    cx.strokeStyle = '#1b1530'; cx.lineWidth = 1.6; cx.beginPath(); cx.arc(look, 5, 4, .2, Math.PI - .2); cx.stroke();
+    cx.restore();
   }
+  fx.draw(cx); cx.restore();
+  const hgt = over ? peak : Math.max(0, Math.round(plats[0].y - (blob ? blob.y : 0)));
+  cx.textAlign = 'center'; cx.font = '700 30px "Space Grotesk",sans-serif'; cx.lineWidth = 5; cx.strokeStyle = 'rgba(20,24,60,.35)';
+  cx.strokeText(hgt + ' m', W / 2, 46); cx.fillStyle = '#fff'; cx.fillText(hgt + ' m', W / 2, 46);
+  const ov = (t, sub, col) => { cx.fillStyle = 'rgba(12,16,40,.55)'; cx.fillRect(0, 0, W, H); cx.fillStyle = col; cx.font = '700 40px "Space Grotesk",sans-serif'; cx.fillText(t, W / 2, H / 2 - 8);
+    cx.fillStyle = '#f3f5f8'; cx.font = '500 15px Inter,sans-serif'; cx.fillText(sub, W / 2, H / 2 + 22); };
+  if (over) ov('YOU FELL', hgt + ' m climbed. Best ' + best + ' m.', '#ffd84a');
+  else if (!running) ov('SKY HOPPER', 'Press Start. Arrows or tap a side to steer.', '#ffffff');
+  if (over || !running) { if (fx.busy()) requestAnimationFrame(() => { if (over || !running) draw(); }); }
 }
 
 function sized() {
