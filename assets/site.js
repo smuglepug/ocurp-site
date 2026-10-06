@@ -35,7 +35,7 @@
     }, { rootMargin: '-40% 0px -55% 0px' });
     ['work', 'workspace', 'about', 'contact'].forEach(function (id) { var s = d.getElementById(id); if (s) so.observe(s); });
   }
-  var yr = d.getElementById('yr'); if (yr) yr.textContent = new Date().getFullYear();
+  var yr = d.querySelector('.site-footer #yr'); if (yr) yr.textContent = new Date().getFullYear();
   /* live counts from the registries; the static fallback values stay if a fetch fails */
   var targets = { tools: '/workspace/tools-data.js', games: '/workspace/games-data.js', sites: '/workspace/websites-data.js' };
   Object.keys(targets).forEach(function (k) {
