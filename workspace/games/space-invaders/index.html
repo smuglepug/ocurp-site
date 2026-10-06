@@ -77,6 +77,8 @@ tailwind.config = { theme: { extend: {
 <meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
 <meta name="twitter:image:alt" content="Space Invaders on Ocurp - free, runs in your browser">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Space Invaders","url":"https://ocurp.com/workspace/games/space-invaders/","description":"Descending waves. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script src="/workspace/juice.js?v=1"></script>
+<meta name="ocurp-touchpad" content="ArrowLeft|&#9664;; |Fire;ArrowRight|&#9654;">
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -109,6 +111,8 @@ const SPR=[
  ["00011000","00111100","01111110","11011011","11111111","10100101","00111000","01100110"],
  ["00011000","00111100","01111110","11011011","11111111","10011001","10100101","00111100"]];
 const PTS=[10,20,10,30];
+const ROWCOL=['#ff7ad9','#5ec8ff','#5ec8ff','#4fe08a','#4fe08a'];const fx=Juice.create();
+const STARS=Array.from({length:70},()=>({x:Math.random()*480,y:Math.random()*420,z:Math.random()}));
 
 // The campaign is FINITE. Without this, newWave() is unbounded and the game
 // has no win state at all: the stepInterval/fireRate ramps bottom out at their
@@ -157,9 +161,9 @@ function stepInterval(){
 }
 function fireRate(){return Math.max(0.16,0.95-S.wave*0.11)}
 function ex(f){return S.foeX+f.c*CW+CW/2}
-function ey(f){return S.foeY+f.r*CH+CH/2}
+function ey(f){return S.foeY+S.drop+f.r*CH+CH/2}
 function live(){return S.foe.filter(f=>f.a)}
-function shoot(){if(S.over||S.won||!S.running)return;S.bullets.push({x:S.ship.x,y:S.ship.y-12});S.shotsFired++}
+function shoot(){if(S.over||S.won||!S.running)return;if(S.bullets.length>=3)return;S.bullets.push({x:S.ship.x,y:S.ship.y-12});S.shotsFired++;Juice.sfx.blip()}
 
 // Erase one 4px cell. Player shots bite from underneath, enemy shots from above,
 // which is what keeps your own line of fire open.
@@ -179,14 +183,14 @@ function erode(sh,px,py,fromBelow){
 function killFoe(f){f.a=0;S.kills++;
   const pts=PTS[Math.min(3,f.r)];
   S.score+=pts;
-  boom={x:ex(f),y:ey(f),t:0};
+  boom={x:ex(f),y:ey(f),t:0};fx.burst(ex(f),ey(f),[ROWCOL[f.r],'#fff'],16,170,{square:true,size:4,gravity:60});fx.text(ex(f),ey(f)-6,'+'+pts,ROWCOL[f.r],13);fx.shake(2,.1);Juice.sfx.hit();
   if(!live().length){$('msg').textContent='Wave '+S.wave+' cleared.'}
   hud();   // the score/wave readouts must track every kill, not just deaths
 }
 function hitShip(){
   if(S.safe>0)return;
   S.lives--;S.safe=1.6;S.bullets=[];S.shots=[];
-  boom={x:S.ship.x,y:S.ship.y,t:0};
+  boom={x:S.ship.x,y:S.ship.y,t:0};fx.burst(S.ship.x,S.ship.y,['#5ec8ff','#fff','#ffd84a'],40,220,{life:1});fx.shake(11,.45);Juice.sfx.boom();
   if(S.lives<=0){S.over=true;S.running=false;saveBest();
     $('msg').textContent='Game over \u2014 '+S.score+' points. Press Start.'}
   else $('msg').textContent='Hit. '+S.lives+' '+(S.lives===1?'life':'lives')+' left.';
@@ -283,57 +287,41 @@ function hud(){
   $('wave').textContent=S.wave;$('best').textContent=best();
 }
 function draw(){
-  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,W,H);
-  // ground rule
-  cx.fillStyle='rgba(255,255,255,.12)';cx.fillRect(0,H-8,W,1);
-  // bunkers
-  for(const sh of S.shields){
-    for(const c of sh.g){
-      if(!c.a)continue;
-      cx.fillStyle='rgba(255,255,255,.30)';
-      cx.fillRect(sh.x+c.x*4,sh.y+c.y*4,4,4);
-    }
-  }
-  // invaders
+  const bg=cx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#0d0b22');bg.addColorStop(1,'#05060b');
+  cx.setTransform(1,0,0,1,0,0);cx.fillStyle=bg;cx.fillRect(0,0,W,H);
+  for(const st of STARS){cx.fillStyle='rgba(220,230,255,'+(.15+st.z*.5)+')';cx.fillRect(st.x,(st.y+S.t*8*st.z)%H,1+st.z,1+st.z)}
+  cx.save();fx.applyShake(cx);
+  const gg=cx.createLinearGradient(0,H-10,0,H);gg.addColorStop(0,'rgba(79,224,138,.5)');gg.addColorStop(1,'rgba(79,224,138,0)');cx.fillStyle=gg;cx.fillRect(0,H-9,W,9);
+  for(const sh of S.shields)for(const c of sh.g){if(!c.a)continue;cx.fillStyle=(c.x+c.y)%2?'#3fbf75':'#4fe08a';cx.fillRect(sh.x+c.x*4,sh.y+c.y*4,4,4)}
+  const frame=Math.floor(S.t*2.4)%2;
   for(const f of S.foe){
     if(!f.a)continue;
     const art=SPR[f.r===0?0:(f.r<3?1:2)],x=ex(f)-12,y=ey(f)-12;
-    cx.fillStyle='rgba(255,255,255,'+(0.5+f.r*0.1)+')';
-    for(let gy=0;gy<8;gy++)for(let gx=0;gx<8;gx++)
-      if(art[gy][gx]==='1')cx.fillRect(x+gx*3,y+gy*3,3,3);
-  }
-  // shots
-  cx.fillStyle='rgba(255,255,255,.55)';
-  for(const s of S.shots)cx.fillRect(s.x-1,s.y,2,7);
-  cx.fillStyle='#FF5F1F';
-  for(const b of S.bullets)cx.fillRect(b.x-1,b.y,2,9);
-  // player ship
+    cx.fillStyle=ROWCOL[f.r];
+    for(let gy=0;gy<8;gy++)for(let gx=0;gx<8;gx++){
+      const on=art[gy][frame&&gy>=6?7-gx:gx]==='1';
+      if(on)cx.fillRect(x+gx*3,y+gy*3,3,3)}
+    cx.fillStyle='rgba(255,255,255,.85)';cx.fillRect(x+6,y+9,3,3);cx.fillRect(x+15,y+9,3,3)}
+  for(const s2 of S.shots){cx.fillStyle='#ff5a6e';const z=Math.floor(S.t*20)%2;cx.fillRect(s2.x-1+(z?1:-1),s2.y,2,3);cx.fillRect(s2.x-1-(z?1:-1),s2.y+3,2,3);cx.fillRect(s2.x-1,s2.y+6,2,2)}
+  for(const b of S.bullets){cx.fillStyle='rgba(94,200,255,.35)';cx.fillRect(b.x-2.5,b.y-2,5,13);cx.fillStyle='#e8f8ff';cx.fillRect(b.x-1,b.y,2,9)}
   if(S.safe<=0||Math.floor(S.t*12)%2===0){
-    cx.fillStyle='#FF5F1F';
     const x=S.ship.x,y=S.ship.y;
-    cx.beginPath();cx.moveTo(x,y-11);cx.lineTo(x+11,y+8);cx.lineTo(x,y+4);cx.lineTo(x-11,y+8);
-    cx.closePath();cx.fill();
+    const g=cx.createLinearGradient(0,y-12,0,y+8);g.addColorStop(0,'#bfe6ff');g.addColorStop(1,'#3b6bd6');
+    cx.fillStyle=g;cx.beginPath();cx.moveTo(x,y-12);cx.lineTo(x+4,y-4);cx.lineTo(x+13,y+2);cx.lineTo(x+13,y+8);cx.lineTo(x-13,y+8);cx.lineTo(x-13,y+2);cx.lineTo(x-4,y-4);cx.closePath();cx.fill();
+    cx.fillStyle='#0a0b0d';cx.fillRect(x-2,y-5,4,5);
   }
-  if(boom){
-    cx.strokeStyle='#FF5F1F';cx.lineWidth=2;
-    cx.beginPath();cx.arc(boom.x,boom.y,6+boom.t*30,0,7);cx.stroke();
-  }
-  if(S.over){
-    cx.fillStyle='rgba(10,10,10,.78)';cx.fillRect(0,0,W,H);
-    cx.fillStyle='#FF5F1F';cx.font='900 26px Manrope,sans-serif';cx.textAlign='center';
-    cx.fillText(S.won?'YOU WIN':'GAME OVER',W/2,H/2-6);
-    cx.fillStyle='rgba(255,255,255,.6)';cx.font='700 13px IBM Plex Sans,monospace';
-    cx.fillText(S.score+' POINTS \u00b7 '+S.kills+' INVADERS',W/2,H/2+20);
-  }
-  else if(!S.running){
-    cx.fillStyle='rgba(255,255,255,.45)';cx.font='900 15px Manrope,sans-serif';cx.textAlign='center';
-    cx.fillText('PRESS START',W/2,H/2);
-  }
+  fx.draw(cx);cx.restore();
+  const ov=(t,sub,col)=>{cx.fillStyle='rgba(5,6,11,.66)';cx.fillRect(0,0,W,H);cx.textAlign='center';
+    cx.fillStyle=col;cx.font='700 34px "Space Grotesk",sans-serif';cx.fillText(t,W/2,H/2-6);
+    cx.fillStyle='#c9d0db';cx.font='500 14px Inter,sans-serif';cx.fillText(sub,W/2,H/2+22)};
+  if(S.won)ov('YOU WIN',S.score+' points, '+S.kills+' invaders','#4fe08a');
+  else if(S.over)ov('GAME OVER',S.score+' points, '+S.kills+' invaders','#ff5a6e');
+  else if(!S.running)ov('SPACE INVADERS','Press Start. Arrows move, Space fires.','#ff7ad9');
 }
 function loop(now){
   const d=Math.min(0.25,(now-last)/1000);last=now;acc+=d;
   while(acc>=STEP){update(STEP);acc-=STEP}
-  draw();requestAnimationFrame(loop);
+  fx.update(d);draw();requestAnimationFrame(loop);
 }
 addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft'||e.key==='a'){K.left=1;S.ship.x-=9;e.preventDefault()}
@@ -344,7 +332,10 @@ addEventListener('keyup',e=>{
   if(e.key==='ArrowLeft'||e.key==='a')K.left=0;
   else if(e.key==='ArrowRight'||e.key==='d')K.right=0;
 });
-cv.addEventListener('pointerdown',shoot);
+cv.style.touchAction='none';
+const toX=e=>{const r=cv.getBoundingClientRect();return (e.clientX-r.left)/r.width*W};
+cv.addEventListener('pointerdown',e=>{if(!S.running&&!S.over&&!S.won){$('start').click();return}if(e.pointerType!=='mouse')S.ship.x=Math.max(14,Math.min(W-14,toX(e)));shoot()});
+cv.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse'&&e.buttons)S.ship.x=Math.max(14,Math.min(W-14,toX(e)))});
 $('start').onclick=()=>{
   if(S.over||!S.running){reset();S.running=true;newWave();
     $('msg').textContent='Wave '+S.wave+' \u2014 hold the line.'}
@@ -406,6 +397,7 @@ requestAnimationFrame(loop);</script>
 </script>
 
 <link rel="stylesheet" href="/workspace/play.css?v=20261002c">
+<script src="/workspace/touchpad.js?v=20261006" defer></script>
 <script src="/workspace/play.js?v=20261002c" defer></script>
 
 
