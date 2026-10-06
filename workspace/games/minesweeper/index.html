@@ -75,6 +75,16 @@ tailwind.config = { theme: { extend: {
 <meta name="twitter:image:alt" content="Minesweeper on Ocurp - free, runs in your browser">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Minesweeper","url":"https://ocurp.com/workspace/games/minesweeper/","description":"Flag the mines. Free minesweeper that runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+<style>
+#grid{gap:3px!important}
+.ms{border-radius:6px;font-size:clamp(11px,2.2vw,17px);transition:background .12s,transform .08s}
+.ms-up{background:linear-gradient(180deg,#3a4458,#2a3142);box-shadow:inset 0 2px 0 rgba(255,255,255,.12),inset 0 -2px 0 rgba(0,0,0,.35)}
+.ms-up:hover{background:linear-gradient(180deg,#46526a,#323b50)}
+.ms-up:active{transform:scale(.94)}
+.ms-open{background:#151a24;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);animation:msOpen .18s ease-out}
+.ms-boom{background:radial-gradient(circle,#ff9f40,#ff5a6e 60%,#7a1830)!important}
+@keyframes msOpen{from{transform:scale(.85);opacity:.4}}
+</style>
 </head>
 <body class="ws" data-reskin="1" style="--hue:#b49bff">
 <a class="skip" href="#ws-play">Skip to the game</a>
@@ -108,17 +118,18 @@ function checkWin(){if(over||won)return;
   won=true;
   $('status').textContent='Cleared - every safe square is open.'}   /* no timer exists: it printed the flag count as 'seconds' */
 function leftCount(){return Math.max(0,M-flags.flat().filter(Boolean).length)}
+const FLAG='<svg viewBox="0 0 24 24" width="62%"><path d="M6 3v18" stroke="#c9d0db" stroke-width="2"/><path d="M7 4h11l-3 4 3 4H7z" fill="#ff5a6e"/></svg>',MINE='<svg viewBox="0 0 24 24" width="66%"><g stroke="#1b1f2a" stroke-width="2"><path d="M12 2v20M2 12h20M5 5l14 14M19 5 5 19"/></g><circle cx="12" cy="12" r="6" fill="#1b1f2a"/><circle cx="10" cy="10" r="1.6" fill="#fff"/></svg>';
 function draw(){$('grid').style.gridTemplateColumns='repeat('+W+',1fr)';
   let html='';
   for(let r=0;r<H;r++)for(let c=0;c<W;c++){
     const v=g[r][c],rv=revealed[r][c],fl=flags[r][c];
-    let cls='border-white/10 bg-white/[0.05] hover:bg-white/[0.10]',txt='';
-    if(rv){cls='border-white/5 bg-white/[0.02]';
-      if(v===-1){cls='border-red-500/40 bg-red-500/20';txt='💥'}
+    let cls='ms-up',txt='';
+    if(rv){cls='ms-open';
+      if(v===-1){cls='ms-open ms-boom';txt=MINE}
       else txt=v||''}
-    else if(fl){txt='🚩'}
+    else if(fl){txt=FLAG}
     const col=v>0&&rv?'color:'+['','#38bdf8','#4ade80','#fbbf24','#fb923c','#f87171','#a78bfa','#f472b6','#e5e7eb'][v]:'';
-    html+='<button data-r="'+r+'" data-c="'+c+'" class="flex aspect-square items-center justify-center rounded border font-display text-sm font-black '+cls+'" style="'+col+'">'+txt+'</button>'}
+    html+='<button data-r="'+r+'" data-c="'+c+'" class="ms flex aspect-square items-center justify-center font-display font-black '+cls+'" style="'+col+'">'+txt+'</button>'}
   $('grid').innerHTML=html;
   $('grid').querySelectorAll('button').forEach(b=>{
     b.onclick=()=>reveal(+b.dataset.r,+b.dataset.c);
