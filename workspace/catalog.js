@@ -26,7 +26,7 @@
       + '<div class="shot"><img src="' + shot(e) + '" alt="" loading="' + (i < 8 ? 'eager' : 'lazy') + '" decoding="async" width="480" height="300" onerror="this.remove()">'
       + (e.ready === false ? '<span class="building">In build</span>' : '')
       + '<span class="go" aria-hidden="true">' + verb + ' ' + arrow + '</span></div>'
-      + '<div class="body"><span class="genre">' + esc(g.label) + '</span><h3>' + esc(e.name) + '</h3><p>' + esc(e.blurb || e.desc || '') + '</p></div></a>';
+      + '<div class="tc-body"><span class="genre">' + esc(g.label) + '</span><h3>' + esc(e.name) + '</h3><p>' + esc(e.blurb || e.desc || '') + '</p></div></a>';
   }
 
   function featured() {
