@@ -68,6 +68,7 @@ tailwind.config = { theme: { extend: {
 <meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
 <meta name="twitter:image:alt" content="Missile Command on Ocurp - free, runs in your browser">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Missile Command","url":"https://ocurp.com/workspace/games/missile-command/","description":"Three batteries. Free missile command that runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script src="/workspace/juice.js?v=1"></script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -147,7 +148,8 @@ BATX:[36,240,444],CITYX:[84,132,180,300,348,396],CITY_N:6};
 const MCD=id=>document.getElementById(id);
 const mcv=MCD('mc-canvas'),mcx=mcv.getContext('2d');
 let mcrng=Math.random;
-let mc=null;
+let mc=null;const fx=Juice.create();let fxT=performance.now();
+const STARS=Array.from({length:80},()=>({x:Math.random()*480,y:Math.random()*400,z:Math.random()}));
 
 function mcBonus(){
   // Every BONUS_EVERY kills, the fullest magazine gains BONUS rounds.
@@ -166,7 +168,7 @@ function mcSpawn(){
   const sx=40+mcrng()*(MC.W-80),sy=MC.SPAWN_Y;
   const dx=tx-sx,dy=ty-sy,L=Math.hypot(dx,dy);
   const sp=MC.ESPEED+MC.ESPEED_RAMP*mc.spawned/MC.WAVE_SIZE;
-  mc.live.push({x:sx,y:sy,vx:dx/L*sp,vy:dy/L*sp,tx:ty,ti:ti});
+  mc.live.push({x:sx,y:sy,ox:sx,oy:sy,vx:dx/L*sp,vy:dy/L*sp,tx:ty,ti:ti});
   return 1}
 
 function mcFire(bi,tx,ty){
@@ -176,7 +178,7 @@ function mcFire(bi,tx,ty){
   mc.ammo[bi]--;mc.fired++;
   const bx=MC.BATX[bi],by=MC.BASE-14;
   const dx=tx-bx,dy=ty-by,L=Math.hypot(dx,dy)||1;
-  mc.ivl.push({x:bx,y:by,vx:dx/L*MC.ISPEED,vy:dy/L*MC.ISPEED,tx:tx,ty:ty});
+  mc.ivl.push({x:bx,y:by,ox:bx,oy:by,vx:dx/L*MC.ISPEED,vy:dy/L*MC.ISPEED,tx:tx,ty:ty});Juice.sfx.blip();
   return 'fired'}
 
 function mcBoom(x,y){mc.booms.push({x:x,y:y,t:0.28})}
@@ -190,7 +192,7 @@ function mcStep(){
     const e=mc.live[i];e.x+=e.vx*MC.STEP;e.y+=e.vy*MC.STEP;
     if(e.y>=MC.BASE){
       if(Math.abs(e.x-MC.CITYX[e.ti])<=MC.CITY_HALF&&(mc.cities&(1<<e.ti))){
-        mc.cities&=~(1<<e.ti);mcBoom(e.x,MC.BASE)}
+        mc.cities&=~(1<<e.ti);mcBoom(e.x,MC.BASE);fx.shake(10,.4);fx.burst(e.x,MC.BASE-8,['#ff5a6e','#ff9f40','#ffd84a'],40,240,{life:1});Juice.sfx.boom()}
       mc.live.splice(i,1);continue}}
   for(let i=mc.ivl.length-1;i>=0;i--){
     const v=mc.ivl[i];v.x+=v.vx*MC.STEP;v.y+=v.vy*MC.STEP;
@@ -200,7 +202,7 @@ function mcStep(){
       if(Math.hypot(e.x-v.x,e.y-v.y)<=MC.BOOM){
         mc.live.splice(j,1);mc.kills++;mc.score+=10;
         if(mc.kills%MC.BONUS_EVERY===0)mcBonus();
-        mcBoom(e.x,e.y);gone=true;break}}
+        mcBoom(e.x,e.y);fx.burst(e.x,e.y,['#ffd84a','#ff9f40','#fff'],16,160,{gravity:90,life:.7});fx.text(e.x,e.y-14,'+10','#ffd84a',13);Juice.sfx.hit();gone=true;break}}
     if(gone){mc.ivl.splice(i,1);continue}
     if(v.x<0||v.x>MC.W||v.y<0||Math.hypot(v.x-v.tx,v.y-v.ty)<6){
       mcBoom(v.tx,MC.BASE);mc.ivl.splice(i,1)}}
@@ -217,36 +219,37 @@ function mcReset(){
     ammo:[MC.AMMO,MC.AMMO,MC.AMMO],spawnT:0,spawned:0,over:null,started:false,fired:0}}
 
 function mcDraw(){
-  const w=MC.W,h=MC.H;mcx.clearRect(0,0,w,h);
-  mcx.fillStyle='#0a0a0a';mcx.fillRect(0,0,w,h);
-  mcx.strokeStyle='rgba(255,255,255,.06)';
-  for(let y=0;y<h;y+=20){mcx.beginPath();mcx.moveTo(0,y);mcx.lineTo(w,y);mcx.stroke()}
-  mcx.strokeStyle='rgba(255,255,255,.18)';mcx.beginPath();
-  mcx.moveTo(0,MC.BASE);mcx.lineTo(w,MC.BASE);mcx.stroke();
+  const now=performance.now();fx.update((now-fxT)/1000);fxT=now;
+  const w=MC.W,h=MC.H;mcx.setTransform(1,0,0,1,0,0);
+  const sky=mcx.createLinearGradient(0,0,0,h);sky.addColorStop(0,'#05061a');sky.addColorStop(.7,'#1b1446');sky.addColorStop(1,'#3a1d4f');
+  mcx.fillStyle=sky;mcx.fillRect(0,0,w,h);
+  for(const st of STARS){mcx.fillStyle='rgba(230,235,255,'+(.2+st.z*.6)+')';mcx.fillRect(st.x,st.y,1+st.z,1+st.z)}
+  mcx.save();fx.applyShake(mcx);
+  mcx.fillStyle='#120d26';mcx.beginPath();mcx.moveTo(0,MC.BASE);for(let x=0;x<=w;x+=40)mcx.lineTo(x,MC.BASE-6-((x*7)%13));mcx.lineTo(w,h);mcx.lineTo(0,h);mcx.fill();
+  mcx.fillStyle='#2b1f4a';mcx.fillRect(0,MC.BASE,w,h-MC.BASE);
   for(let i=0;i<MC.CITY_N;i++){
     const x=MC.CITYX[i],alive=!!(mc.cities&(1<<i));
-    mcx.fillStyle=alive?'#FF5F1F':'rgba(255,255,255,.07)';
-    mcx.fillRect(x-13,MC.BASE-14,26,14)}
+    if(alive){const hs=[12,20,15,24,10];hs.forEach((hh,k)=>{const bx=x-14+k*6;mcx.fillStyle=k%2?'#4d7cff':'#5ec8ff';mcx.fillRect(bx,MC.BASE-hh,5,hh);
+      mcx.fillStyle='rgba(255,240,180,.85)';for(let y=MC.BASE-hh+3;y<MC.BASE-2;y+=5)if((y+k*3)%10<5)mcx.fillRect(bx+1.5,y,2,2)})}
+    else{mcx.fillStyle='#3a2a44';mcx.fillRect(x-13,MC.BASE-5,26,5);mcx.fillStyle='rgba(255,140,80,.5)';mcx.fillRect(x-6,MC.BASE-8,3,3);mcx.fillRect(x+4,MC.BASE-7,3,2)}}
   for(let i=0;i<3;i++){
-    const x=MC.BATX[i];mcx.fillStyle='#fff';mcx.fillRect(x-5,MC.BASE-22,10,22);
-    mcx.fillStyle='#FF5F1F';mcx.fillRect(x-2,MC.BASE-28,4,7);
-    mcx.fillStyle='rgba(255,255,255,.4)';mcx.fillRect(x-3,MC.BASE-6,6,3)}
-  mcx.fillStyle='#FF5F1F';
-  for(let i=0;i<mc.live.length;i++){const e=mc.live[i];mcx.fillRect(e.x-3,e.y-3,6,6)}
-  mcx.strokeStyle='#fff';mcx.lineWidth=2;
-  for(let i=0;i<mc.ivl.length;i++){const v=mc.ivl[i];mcx.beginPath();
-    mcx.moveTo(v.x,v.y);mcx.lineTo(v.x-v.vx*0.028,v.y-v.vy*0.028);mcx.stroke()}
-  mcx.lineWidth=1;
-  for(let i=0;i<mc.booms.length;i++){const b=mc.booms[i];
-    mcx.globalAlpha=Math.max(0,b.t/0.28);mcx.fillStyle='#FF5F1F';
-    mcx.beginPath();mcx.arc(b.x,b.y,4+b.t*26,0,6.2832);mcx.fill();mcx.globalAlpha=1}
-  if(mc.over){
-    mcx.fillStyle='rgba(5,5,5,.72)';mcx.fillRect(0,0,w,h);
-    mcx.textAlign='center';mcx.fillStyle='#fff';
-    mcx.font='700 26px ui-monospace,monospace';
-    mcx.fillText(mc.over==='won'?'DEFENDED':'CITIES LOST',w/2,h/2);
-    mcx.font='600 13px ui-monospace,monospace';mcx.fillStyle='#FF5F1F';
-    mcx.fillText('score '+mc.score+'  -  kills '+mc.kills,w/2,h/2+26)}
+    const x=MC.BATX[i];mcx.fillStyle='#4fe08a';mcx.beginPath();mcx.moveTo(x-16,MC.BASE);mcx.lineTo(x-8,MC.BASE-18);mcx.lineTo(x+8,MC.BASE-18);mcx.lineTo(x+16,MC.BASE);mcx.fill();
+    mcx.fillStyle='#d6ffe6';mcx.fillRect(x-2,MC.BASE-26,4,9);
+    mcx.fillStyle='#0a0b0d';mcx.font='700 10px "Space Grotesk",sans-serif';mcx.textAlign='center';mcx.fillText(mc.ammo[i],x,MC.BASE-6)}
+  mcx.lineWidth=1.6;
+  for(const e of mc.live){const g=mcx.createLinearGradient(e.ox,e.oy,e.x,e.y);g.addColorStop(0,'rgba(255,90,110,0)');g.addColorStop(1,'rgba(255,90,110,.9)');
+    mcx.strokeStyle=g;mcx.beginPath();mcx.moveTo(e.ox,e.oy);mcx.lineTo(e.x,e.y);mcx.stroke();mcx.fillStyle='#fff';mcx.fillRect(e.x-2,e.y-2,4,4)}
+  for(const v of mc.ivl){mcx.strokeStyle='rgba(94,200,255,.85)';mcx.beginPath();mcx.moveTo(v.ox,v.oy);mcx.lineTo(v.x,v.y);mcx.stroke();
+    mcx.strokeStyle='rgba(255,255,255,.6)';mcx.beginPath();mcx.moveTo(v.tx-4,v.ty-4);mcx.lineTo(v.tx+4,v.ty+4);mcx.moveTo(v.tx+4,v.ty-4);mcx.lineTo(v.tx-4,v.ty+4);mcx.stroke()}
+  for(const b of mc.booms){const k=1-b.t/0.28,r=4+Juice.ease.outCubic(k)*MC.BOOM*1.4;
+    const g=mcx.createRadialGradient(b.x,b.y,0,b.x,b.y,r);g.addColorStop(0,'rgba(255,255,255,'+(1-k*.6)+')');g.addColorStop(.5,'rgba(255,216,74,'+(1-k)*.9+')');g.addColorStop(1,'rgba(255,90,110,0)');
+    mcx.fillStyle=g;mcx.beginPath();mcx.arc(b.x,b.y,r,0,6.2832);mcx.fill()}
+  fx.draw(mcx);mcx.restore();
+  const ov=(t,sub,col)=>{mcx.fillStyle='rgba(5,6,18,.66)';mcx.fillRect(0,0,w,h);mcx.textAlign='center';
+    mcx.fillStyle=col;mcx.font='700 34px "Space Grotesk",sans-serif';mcx.fillText(t,w/2,h/2-6);
+    mcx.fillStyle='#c9d0db';mcx.font='500 14px Inter,sans-serif';mcx.fillText(sub,w/2,h/2+22)};
+  if(mc.over)ov(mc.over==='won'?'DEFENDED':'CITIES LOST','Score '+mc.score+'  \u00b7  '+mc.kills+' kills',mc.over==='won'?'#4fe08a':'#ff5a6e');
+  else if(!mc.started)ov('MISSILE COMMAND','Press Launch, then click or tap the sky to intercept','#5ec8ff');
   mcx.textAlign='left'}
 
 function mcHud(){
@@ -285,7 +288,7 @@ let mcrunning=false, mclooped=false, mcacc=0;
 // chain that never stopped. Every extra click advanced the physics once more per
 // frame, silently making the game faster and faster. mclooped makes the loop
 // single-instance.
-// FIX 2 (frame-rate independence): mcStep() advances a fixed MC.STEEP=1/60 s and
+// FIX 2 (frame-rate independence): mcStep() advances a fixed MC.STEP=1/60 s and
 // was called exactly once per rAF, so the game ran at fps/60x real speed -- 2.4x
 // too fast on a 144 Hz panel. mcacc accumulates real elapsed time and drains it
 // in whole 1/60 s steps, so the game keeps true 60 Hz timing at any refresh rate.
@@ -296,7 +299,7 @@ function mcLoop(){
   if(dt>0.25)dt=0.25;                 // a backgrounded tab must not teleport the sim
   mcacc.left+=dt;
   let n=0;
-  while(mcacc.left>=MC.STEEP&&n<8){mcacc.left-=MC.STEEP;mcStep();n++}
+  while(mcacc.left>=MC.STEP&&n<8){mcacc.left-=MC.STEP;mcStep();n++}
   mcDraw();mcHud();
   if(mc.over){mclooped=false;mcrunning=false;return}
   requestAnimationFrame(mcLoop)}

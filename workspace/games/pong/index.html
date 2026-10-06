@@ -77,6 +77,7 @@ tailwind.config = { theme: { extend: {
 <meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
 <meta name="twitter:image:alt" content="Pong on Ocurp - free, runs in your browser">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Pong","url":"https://ocurp.com/workspace/games/pong/","description":"Classic rally against an AI paddle that tracks the ball. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script src="/workspace/juice.js?v=1"></script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -138,7 +139,7 @@ const DIFFS={rookie:{cpu:0.62,speed:0.55,label:'Rookie'},pro:{cpu:0.85,speed:0.8
 const st={you:0,cpu:0,rally:0,best:0,bestRally:parseInt(localStorage.getItem('ws-pong-rally')||'0'),
   px:H/2,py:H/2,cy:H/2,bx:W/2,by:H/2,vx:0,vy:0,dir:1,run:false,pdir:0,ctdir:1,level:'pro',
   over:false,raf:null,speedUp:0,pts:0};
-window.pongState=st;
+window.pongState=st;const fx=Juice.create();const trail=[];
 $('best').textContent=st.bestRally;
 function reset(serve){
   st.you=0;st.cpu=0;st.rally=0;st.pts=0;st.over=false;st.pdir=0;st.ctdir=1;
@@ -191,7 +192,7 @@ function step(){
       st.vy=rel*6.2;
       st.vx=Math.abs(st.vx)*1.04;
       st.speedUp=Math.min(1.6,st.speedUp+.06);
-      st.rally++;hud();return}
+      st.rally++;fx.burst(PW+8,st.by,['#5ec8ff','#fff'],10,160,{gravity:0,life:.4});fx.ring(PW+8,st.by,'rgba(94,200,255,.8)',26);Juice.sfx.blip();hud();return}
     point(false)}
   if(st.bx>=W-PW-8&&st.vx>0){
     if(Math.abs(st.by-st.cy)<PH/2+8){
@@ -199,12 +200,13 @@ function step(){
       st.vy=rel*6.2;
       st.vx=-Math.abs(st.vx)*1.04;
       st.speedUp=Math.min(1.6,st.speedUp+.06);
-      st.rally++;hud();return}
+      st.rally++;fx.burst(W-PW-8,st.by,['#ff7ad9','#fff'],10,160,{gravity:0,life:.4});fx.ring(W-PW-8,st.by,'rgba(255,122,217,.8)',26);Juice.sfx.blip();hud();return}
     point(true)}
   if(st.rally>st.best){st.best=st.rally;
     if(st.best>st.bestRally){st.bestRally=st.best;localStorage.setItem('ws-pong-rally',st.best);$('best').textContent=st.bestRally}}}
 function hud(){$('ps').textContent=st.you;$('cs').textContent=st.cpu;$('rally').textContent=st.rally}
 function point(player){
+  fx.shake(8,.3);fx.burst(player?W-4:4,st.by,player?['#5ec8ff','#fff']:['#ff7ad9','#fff'],30,240,{gravity:0,life:.7});Juice.sfx[player?'up':'boom']();trail.length=0;
   if(player){st.you++;$('msg').textContent='Point to you. '+st.you+'–'+st.cpu+'.'}
   else{st.cpu++;$('msg').textContent='Point to the CPU. '+st.you+'–'+st.cpu+'.'}
   if(st.rally>st.best)st.best=st.rally;
@@ -217,20 +219,36 @@ function point(player){
   placeBall(player?-1:1);
   draw()}
 function draw(){
-  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,W,H);
-  cx.fillStyle='rgba(255,255,255,.1)';
-  for(let y=8;y<H;y+=18)cx.fillRect(W/2-1,y,2,9);
-  cx.fillStyle='#FF5F1F';cx.fillRect(0,st.px-PH/2,PW,PH);
-  cx.fillStyle='rgba(255,255,255,.65)';cx.fillRect(W-PW,st.cy-PH/2,PW,PH);
-  cx.fillStyle='#fff';cx.beginPath();cx.arc(st.bx,st.by,7,0,7);cx.fill();
-  cx.fillStyle='rgba(255,255,255,.4)';cx.font='900 13px Manrope,sans-serif';cx.textAlign='center';
-  cx.fillText(st.you+' – '+st.cpu,W/2,20);
-  if(!st.run&&!st.over){
-    cx.fillStyle='rgba(10,10,10,.7)';cx.fillRect(0,0,W,H);
-    cx.fillStyle='#FF5F1F';cx.font='900 20px Manrope,sans-serif';
-    cx.fillText('PRESS SERVE',W/2,H/2)}}
-function loop(){
-  st.raf=requestAnimationFrame(loop);step();draw()}
+  cx.setTransform(1,0,0,1,0,0);
+  const bg=cx.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#0c1428');bg.addColorStop(1,'#140b24');
+  cx.fillStyle=bg;cx.fillRect(0,0,W,H);
+  cx.save();fx.applyShake(cx);
+  cx.textAlign='center';cx.textBaseline='middle';cx.font='700 110px "Space Grotesk",sans-serif';
+  cx.fillStyle='rgba(94,200,255,.08)';cx.fillText(st.you,W/4,H/2);cx.fillStyle='rgba(255,122,217,.08)';cx.fillText(st.cpu,W*3/4,H/2);
+  cx.textBaseline='alphabetic';
+  cx.strokeStyle='rgba(255,255,255,.08)';cx.lineWidth=2;cx.strokeRect(1,1,W-2,H-2);
+  cx.fillStyle='rgba(255,255,255,.14)';for(let y=8;y<H;y+=18)cx.fillRect(W/2-1,y,2,9);
+  cx.strokeStyle='rgba(255,255,255,.08)';cx.beginPath();cx.arc(W/2,H/2,38,0,7);cx.stroke();
+  const pad=(x,y,c1,c2)=>{const g=cx.createLinearGradient(x,0,x+PW,0);g.addColorStop(0,c1);g.addColorStop(1,c2);cx.fillStyle=g;Juice.rr(cx,x,y-PH/2,PW,PH,5);cx.fill()};
+  pad(2,st.px,'#bfe6ff','#3b8bd6');pad(W-PW-2,st.cy,'#ffc4ee','#c0399b');
+  if(st.run){trail.push([st.bx,st.by]);if(trail.length>10)trail.shift()}
+  trail.forEach((p,i)=>{cx.fillStyle='rgba(255,255,255,'+(i/trail.length*.25)+')';cx.beginPath();cx.arc(p[0],p[1],7*i/trail.length,0,7);cx.fill()});
+  const rg=cx.createRadialGradient(st.bx-2,st.by-2,1,st.bx,st.by,7);rg.addColorStop(0,'#fff');rg.addColorStop(1,'#cfd8ff');
+  cx.fillStyle=rg;cx.beginPath();cx.arc(st.bx,st.by,7,0,7);cx.fill();
+  fx.draw(cx);cx.restore();
+  cx.textAlign='center';
+  if(!st.run){
+    cx.fillStyle='rgba(6,7,12,.66)';cx.fillRect(0,0,W,H);
+    cx.font='700 34px "Space Grotesk",sans-serif';
+    if(st.over){cx.fillStyle=st.you>=TARGET?'#5ec8ff':'#ff7ad9';cx.fillText(st.you>=TARGET?'YOU WIN':'CPU WINS',W/2,H/2-6);
+      cx.fillStyle='#c9d0db';cx.font='500 14px Inter,sans-serif';cx.fillText(st.you+' \u2013 '+st.cpu+'. Press Serve for a rematch.',W/2,H/2+22)}
+    else{cx.fillStyle='#fff';cx.fillText('PONG',W/2,H/2-6);cx.fillStyle='#c9d0db';cx.font='500 14px Inter,sans-serif';cx.fillText('First to '+TARGET+'. Click, tap or press Space to serve.',W/2,H/2+22)}}
+}
+let lastT=0,acc=0;
+function loop(now){
+  st.raf=requestAnimationFrame(loop);const dt=Math.min(100,lastT?now-lastT:16);lastT=now;acc+=dt;
+  while(acc>=16.67){step();acc-=16.67}fx.update(dt/1000);draw()}
+cv.style.touchAction='none';
 cv.addEventListener('pointermove',e=>{
   const r=cv.getBoundingClientRect();
   st.px=((e.clientY-r.top)/r.height)*H});
