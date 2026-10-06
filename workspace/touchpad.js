@@ -17,8 +17,8 @@
     'border-top:1px solid rgba(255,255,255,.12);touch-action:none;user-select:none;-webkit-user-select:none}' +
     '.ocurp-pad button{min-width:56px;height:56px;border-radius:14px;border:1px solid rgba(255,255,255,.18);' +
     'background:rgba(255,255,255,.07);color:#fff;font:800 18px Manrope,Inter,sans-serif;touch-action:none}' +
-    '.ocurp-pad button.go{background:#ff5f1f;color:#140600;border-color:#ff5f1f;padding:0 18px;font-size:13px;letter-spacing:.12em;text-transform:uppercase}' +
-    '.ocurp-pad button:active,.ocurp-pad button.on{background:rgba(255,95,31,.35)}' +
+    '.ocurp-pad button.go{background:var(--hue,#5ec8ff);color:#0a0b0d;border-color:var(--hue,#5ec8ff);padding:0 18px;font-size:13px;letter-spacing:.12em;text-transform:uppercase}' +
+    '.ocurp-pad button:active,.ocurp-pad button.on{background:rgba(255,255,255,.22)}' +
     'html.ocurp-playing body>.ocurp-pad.ocurp-pad.ocurp-pad{display:flex!important}' +
     'body.has-ocurp-pad{padding-bottom:84px}';
   document.head.appendChild(css);

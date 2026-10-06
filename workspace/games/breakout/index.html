@@ -77,6 +77,7 @@ tailwind.config = { theme: { extend: {
 <meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
 <meta name="twitter:image:alt" content="Breakout on Ocurp - free, runs in your browser">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Breakout","url":"https://ocurp.com/workspace/games/breakout/","description":"Bricks. Free breakout that runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script src="/workspace/juice.js?v=1"></script>
 </head>
 <body class="bg-dark text-white selection:bg-secondary selection:text-black">
 <div class="noise-overlay"></div>
@@ -132,7 +133,8 @@ tailwind.config = { theme: { extend: {
 <script>const $=id=>document.getElementById(id);
 const cv=$('cv'),cx=cv.getContext('2d');
 const W=cv.width,H=cv.height,COLS=10,BR=14,BH=18,LEFT=6,TOP=34;
-const PUPS=[{id:'wide',label:'Wide paddle',tone:'#FF5F1F'},{id:'multi',label:'Multiball',tone:'#fff'},{id:'slow',label:'Slow motion',tone:'rgba(255,255,255,.6)'}];
+const PUPS=[{id:'wide',label:'Wide paddle',tone:'#4fe08a'},{id:'multi',label:'Multiball',tone:'#5ec8ff'},{id:'slow',label:'Slow motion',tone:'#ffd84a'}];
+const ROWC=['#ff5a6e','#ff9f40','#ffd84a','#4fe08a','#5ec8ff'];const fx=Juice.create();
 const st={bricks:[],balls:[],px:W/2,py:H-30,pw:76,score:0,lives:3,level:1,running:false,paused:false,
   over:false,cleared:0,pup:null,pupT:0,keys:{},hits:0,raf:null,active:[false,false,false],started:false};
 window.breakoutState=st;
@@ -142,7 +144,7 @@ function build(){
   for(let r=0;r<5;r++)for(let c=0;c<COLS;c++){
     const cw=(W-LEFT*2-COLS*4)/COLS;
     st.bricks.push({x:LEFT+c*(cw+4),y:TOP+r*(BH+4),w:cw,h:BH,
-      hp:r<1?1:r<3?2:3,max:r<1?1:r<3?2:3})}}
+      hp:r<1?1:r<3?2:3,max:r<1?1:r<3?2:3,row:r})}}
 function reset(){
   st.score=0;st.lives=3;st.level=1;st.cleared=0;st.pw=76;st.px=W/2;st.hits=0;
   st.balls=[];st.pup=null;st.active=[false,false,false];
@@ -165,7 +167,9 @@ function brickHit(b){
   b.hp--;st.hits++;
   const pts=10*st.level*(b.max||1);
   st.score+=pts;
-  if(b.hp<=0){st.cleared++;st.score+=25*st.level}
+  const col=ROWC[b.row%5];
+  if(b.hp<=0){st.cleared++;st.score+=25*st.level;fx.burst(b.x+b.w/2,b.y+b.h/2,[col,'#fff'],18,200,{square:true,size:4});fx.shake(2.5,.12);fx.text(b.x+b.w/2,b.y,'+'+(pts+25*st.level),col,14);Juice.sfx.blip()}
+  else{fx.burst(b.x+b.w/2,b.y+b.h/2,col,5,110,{size:3});Juice.sfx.hit()}
   // Level advance is decided by bricksLeft() (every brick down), not by a
   // fixed fraction. The old 12%-of-the-wall rule rebuilt the wall after ~6
   // bricks, so the only win condition on this page -- clear the wall -- could
@@ -190,7 +194,7 @@ function paddle(b){
   b.y=st.py-b.r-1;
   b.vy=-Math.abs(b.vy);
   const off=Math.max(-1,Math.min(1,d));
-  b.vx=off*4.8+b.vx*0.2;
+  b.vx=off*4.8+b.vx*0.2;fx.ring(b.x,st.py,'rgba(255,255,255,.6)',22);
   if(Math.abs(b.vx)<1)b.vx=(b.vx<0?-1:1)*1;
   st.hits++}
 function step(dt){
@@ -230,13 +234,14 @@ function step(dt){
     if(st.pup.x < 4 || st.pup.x > W-4) st.pup.vx *= -1;
     st.pupT -= dt/16;
     const caught = st.pup.y > st.py-14 && st.pup.y < st.py+8 && Math.abs(st.pup.x-st.px) < st.pw/2+8;
-    if(caught){ applyPup(st.pup.p); st.pup = null; }
+    if(caught){ fx.burst(st.pup.x,st.py,st.pup.p.tone,24,220);fx.text(st.pup.x,st.py-20,st.pup.p.label,st.pup.p.tone,15);Juice.sfx.up(); applyPup(st.pup.p); st.pup = null; }
     else if(st.pup.y > H+20 || st.pupT <= 0) st.pup = null;
   }
   if(Math.random() < 0.0016 && !st.pup && st.balls.length) dropPup(Math.random()*W);
 }
 function loseBall(){
   st.lives--;
+  fx.shake(9,.35);Juice.sfx.boom();
   hud();
   if(st.lives <= 0){
     st.over = true; st.running = false;
@@ -257,35 +262,44 @@ function applyPup(p){
   $('msg').textContent=p.label+' active.';hud();
   setTimeout(()=>{st.active[i]=false;if(st.pw>76)st.pw=Math.max(76,st.pw/1.5);hud()},7000)}
 function draw(){
-  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,W,H);
+  const bg=cx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#101528');bg.addColorStop(1,'#06070c');
+  cx.setTransform(1,0,0,1,0,0);cx.fillStyle=bg;cx.fillRect(0,0,W,H);
+  cx.save();fx.applyShake(cx);
+  cx.fillStyle='rgba(140,170,255,.05)';for(let x=12;x<W;x+=24)for(let y=12;y<H;y+=24)cx.fillRect(x,y,1.5,1.5);
   st.bricks.forEach(b=>{
     if(b.hp<=0)return;
-    const frac=b.hp/b.max;
-    cx.fillStyle=frac>0.99?'#fff':frac>0.6?'#FF5F1F':'rgba(255,95,31,.55)';
-    cx.fillRect(b.x,b.y,b.w,b.h)});
-  cx.fillStyle='#FF5F1F';cx.fillRect(st.px-st.pw/2,st.py,st.pw,8);
-  cx.fillStyle='rgba(255,255,255,.16)';cx.fillRect(st.px-st.pw/2,st.py,st.pw,2);
-  st.balls.forEach(b=>{cx.fillStyle='#fff';cx.beginPath();cx.arc(b.x,b.y,b.r,0,7);cx.fill()});
+    const col=ROWC[b.row%5],a=.45+.55*b.hp/b.max;
+    cx.save();cx.globalAlpha=a;
+    const g=cx.createLinearGradient(0,b.y,0,b.y+b.h);g.addColorStop(0,Juice.shade(col,.3));g.addColorStop(1,Juice.shade(col,-.2));
+    cx.fillStyle=g;Juice.rr(cx,b.x,b.y,b.w,b.h,5);cx.fill();
+    cx.fillStyle='rgba(255,255,255,.3)';Juice.rr(cx,b.x+3,b.y+2,b.w-6,4,2);cx.fill();
+    if(b.hp<b.max){cx.strokeStyle='rgba(0,0,0,.45)';cx.lineWidth=1.2;cx.beginPath();cx.moveTo(b.x+b.w*.3,b.y+2);cx.lineTo(b.x+b.w*.45,b.y+b.h*.6);cx.lineTo(b.x+b.w*.62,b.y+b.h-2);cx.stroke()}
+    cx.restore()});
+  const pg=cx.createLinearGradient(0,st.py,0,st.py+10);pg.addColorStop(0,'#e8f4ff');pg.addColorStop(1,'#7aa2ff');
+  cx.fillStyle=pg;Juice.rr(cx,st.px-st.pw/2,st.py,st.pw,10,5);cx.fill();
+  st.balls.forEach(b=>{
+    cx.fillStyle='rgba(94,200,255,.18)';for(let k=1;k<=4;k++){cx.beginPath();cx.arc(b.x-b.vx*k*1.6,b.y-b.vy*k*1.6,b.r*(1-k*.15),0,7);cx.fill()}
+    const rg=cx.createRadialGradient(b.x-2,b.y-2,1,b.x,b.y,b.r);rg.addColorStop(0,'#fff');rg.addColorStop(1,'#9fdcff');
+    cx.fillStyle=rg;cx.beginPath();cx.arc(b.x,b.y,b.r,0,7);cx.fill()});
   if(st.pup){
-    cx.fillStyle=st.pup.p.tone;cx.fillRect(st.pup.x-5,st.pup.y-5,10,10);
-    cx.fillStyle='rgba(0,0,0,.6)';cx.font='900 8px Manrope,sans-serif';cx.textAlign='center';
-    cx.fillText(st.pup.p.id[0].toUpperCase(),st.pup.x,st.pup.y+3)}
-  if(!st.running&&!st.over){
-    cx.fillStyle='rgba(10,10,10,.72)';cx.fillRect(0,0,W,H);
-    cx.fillStyle='#FF5F1F';cx.font='900 20px Manrope,sans-serif';cx.textAlign='center';
-    cx.fillText('PRESS START',W/2,H/2)}
-  if(st.paused){
-    cx.fillStyle='rgba(10,10,10,.6)';cx.fillRect(0,0,W,H);
-    cx.fillStyle='#FF5F1F';cx.font='900 20px Manrope,sans-serif';cx.textAlign='center';
-    cx.fillText('PAUSED',W/2,H/2)}
-  if(st.over){
-    cx.fillStyle='rgba(10,10,10,.78)';cx.fillRect(0,0,W,H);
-    cx.fillStyle='#FF5F1F';cx.font='900 20px Manrope,sans-serif';cx.textAlign='center';
-    cx.fillText('GAME OVER',W/2,H/2-8);
-    cx.fillStyle='#fff';cx.font='700 13px Manrope,sans-serif';
-    cx.fillText(st.score+' points',W/2,H/2+16)}}
+    const p=st.pup;cx.fillStyle=p.p.tone;Juice.rr(cx,p.x-12,p.y-7,24,14,7);cx.fill();
+    cx.fillStyle='#0a0b0d';cx.font='700 10px "Space Grotesk",sans-serif';cx.textAlign='center';cx.textBaseline='middle';
+    cx.fillText({wide:'W',multi:'M',slow:'S'}[p.p.id],p.x,p.y+.5);cx.textBaseline='alphabetic'}
+  fx.draw(cx);cx.restore();
+  const ov=(t,sub,col)=>{cx.fillStyle='rgba(6,7,12,.7)';cx.fillRect(0,0,W,H);cx.textAlign='center';
+    cx.fillStyle=col;cx.font='700 34px "Space Grotesk",sans-serif';cx.fillText(t,W/2,H/2-6);
+    cx.fillStyle='#c9d0db';cx.font='500 14px Inter,sans-serif';cx.fillText(sub,W/2,H/2+22)};
+  if(!st.running&&!st.over)ov('BREAKOUT',matchMedia('(pointer:coarse)').matches?'Tap the table to launch':'Click or press Space to launch','#5ec8ff');
+  if(st.paused)ov('PAUSED','Press Pause to resume','#ffd84a');
+  if(st.over)ov('GAME OVER',st.score+' points','#ff5a6e')}
+let lastT=0,acc=0;
 function loop(t){
-  st.raf=requestAnimationFrame(loop);step(t);draw()}
+  st.raf=requestAnimationFrame(loop);
+  const dt=Math.min(100,lastT?t-lastT:16);lastT=t;acc+=dt;
+  /* fixed 60 Hz physics so the ball is the same speed on 60/120/144 Hz screens */
+  while(acc>=16.67){step(16.67);acc-=16.67}
+  fx.update(dt/1000);draw()}
+cv.style.touchAction='none';
 cv.addEventListener('pointermove',e=>{
   const r=cv.getBoundingClientRect();
   st.px=((e.clientX-r.left)/r.width)*W});
