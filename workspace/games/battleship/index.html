@@ -75,6 +75,7 @@ tailwind.config = { theme: { extend: {
 <meta name="twitter:image:alt" content="Battleship on Ocurp - free, runs in your browser">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Battleship","url":"https://ocurp.com/workspace/games/battleship/","description":"Sink the whole fleet. The AI hunts with real targeting logic. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+<style>.bs-splash{width:34%;height:34%;border-radius:50%;border:2px solid rgba(220,240,255,.85);box-shadow:0 0 0 3px rgba(220,240,255,.18);animation:bsS .4s ease-out}@keyframes bsS{from{transform:scale(2.2);opacity:0}}#enemy button:hover span{filter:brightness(1.35)}</style>
 </head>
 <body class="ws" data-reskin="1" style="--hue:#4fd69c">
 <a class="skip" href="#ws-play">Skip to the game</a>
@@ -172,15 +173,15 @@ function aiNext(){
   const p=rest[Math.floor(Math.random()*rest.length)];
   return {r:p[0],c:p[1],mode:'random'}}
 function cell(txt,bg,br){
-  return '<span class="flex aspect-square items-center justify-center rounded-[3px] border text-[9px] font-black" style="background:'+bg+';border-color:'+br+'">'+txt+'</span>'}
+  return '<span class="flex aspect-square items-center justify-center rounded-[5px] border text-[11px] font-black text-white" style="background:'+bg+';border-color:'+br+';transition:background .2s">'+txt+'</span>'}
 function render(){
   let eh='';
   for(let r=0;r<10;r++)for(let c=0;c<10;c++){
     const f=st.fired[r][c],ship=st.enemy[r][c];
     const sunk=f&&ship&&!st.enemyShips.find(s=>s.alive&&s.cells.some(p=>p[0]===r&&p[1]===c));
-    let bg='rgba(255,255,255,.04)',br='rgba(255,255,255,.1)',txt='';
-    if(f&&ship){bg='#4fd69c';br='#4fd69c';txt=sunk?'&#10007;':'&#10005;'}
-    else if(f){bg='rgba(255,255,255,.16)';br='rgba(255,255,255,.2)';txt='&#183;'}
+    let bg='linear-gradient(160deg,#16406e,#0d2a4d)',br='rgba(120,180,255,.18)',txt='';
+    if(f&&ship){bg=sunk?'linear-gradient(160deg,#5a1d24,#2a0c10)':'radial-gradient(circle,#ffd84a 0 18%,#ff6a3d 40%,#a3241b 80%)';br=sunk?'#ff5a6e':'#ff9f40';txt=sunk?'&#10007;':''}
+    else if(f){bg='linear-gradient(160deg,#1d4f86,#123a66)';br='rgba(160,210,255,.35)';txt='<i class="bs-splash"></i>'}
     eh+='<button data-r="'+r+'" data-c="'+c+'" class="block w-full p-0">'+cell(txt,bg,br)+'</button>'}
   $('enemy').innerHTML=eh;
   $('enemy').querySelectorAll('button').forEach(b=>b.onclick=()=>fire(+b.dataset.r,+b.dataset.c));
@@ -188,11 +189,10 @@ function render(){
   for(let r=0;r<10;r++)for(let c=0;c<10;c++){
     const v=st.mine[r][c],f=st.aiFired[r][c];
     const alive=v&&!st.aiFired[r][c];
-    let bg='rgba(255,255,255,.04)',br='rgba(255,255,255,.1)',txt='';
-    if(f&&v){bg='#4fd69c';br='#4fd69c';txt='&#10005;'}
-    else if(v){bg='rgba(79,214,156,.28)';br='rgba(79,214,156,.5)';txt='&#9679;'}
-    else if(f){bg='rgba(255,255,255,.16)';txt='&#183;'}
-    else if(alive){bg='rgba(79,214,156,.28)';br='rgba(79,214,156,.5)';txt='&#9679;'}
+    let bg='linear-gradient(160deg,#16406e,#0d2a4d)',br='rgba(120,180,255,.18)',txt='';
+    if(f&&v){bg='radial-gradient(circle,#ffd84a 0 18%,#ff6a3d 40%,#a3241b 80%)';br='#ff9f40'}
+    else if(v){bg='linear-gradient(180deg,#a7b4c8,#5e6b80)';br='#cfd8e6'}
+    else if(f){bg='linear-gradient(160deg,#1d4f86,#123a66)';br='rgba(160,210,255,.35)';txt='<i class="bs-splash"></i>'}
     mh+='<span>'+cell(txt,bg,br)+'</span>'}
   $('mine').innerHTML=mh;
   $('efleet').innerHTML=FLEET.map(f=>{
@@ -251,9 +251,16 @@ $('auto').onclick=()=>{
   const step=()=>{
     if(st.over||n<=0)return;
     for(let k=0;k<40;k++){
-      let best=null;
+      /* Fair auto-fire: it used to read st.enemy and only ever shot at ship squares (100% accuracy).
+         Now it only uses what a player can see: finish off hits that are not sunk yet, else hunt on a parity grid. */
+      const open=(r,c)=>r>=0&&r<10&&c>=0&&c<10&&!st.fired[r][c];
+      const sunkAt=(r,c)=>!st.enemyShips.find(q=>q.alive&&q.cells.some(p=>p[0]===r&&p[1]===c));
+      let cand=[];
       for(let r=0;r<10;r++)for(let c=0;c<10;c++)
-        if(!st.fired[r][c]&&st.enemy[r][c]&&(!best||Math.random()<.15))best=[r,c];
+        if(st.fired[r][c]&&st.enemy[r][c]&&!sunkAt(r,c))[[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{if(open(r+d[0],c+d[1]))cand.push([r+d[0],c+d[1]])});
+      if(!cand.length)for(let r=0;r<10;r++)for(let c=0;c<10;c++)if(open(r,c)&&(r+c)%2===0)cand.push([r,c]);
+      if(!cand.length)for(let r=0;r<10;r++)for(let c=0;c<10;c++)if(open(r,c))cand.push([r,c]);
+      const best=cand[Math.floor(Math.random()*cand.length)];
       if(best){fire(best[0],best[1]);break}}
     if(!st.over&&!document.getElementById('new'))return;
     n--;setTimeout(step,520)};
