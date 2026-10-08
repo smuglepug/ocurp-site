@@ -170,8 +170,8 @@ function readInputs(){
     target:($('target').value===''?null:parseFloat($('target').value))};
 }
 function run(){
-  var o,i;
-  try{ o=calc(readInputs()); }
+  var o,i,inp;
+  try{ inp=readInputs(); o=calc(inp); }
   catch(e){ seterr('err',e.message); return; }
   seterr('err','');
   show([['File size',grp(o.mb,2)+' MB'],
@@ -181,8 +181,9 @@ function run(){
   var h=o.seconds/3600;
   var rows='';
   [1,2,3,4,5,8,10,12,60].forEach(function(mins){
-    var b=trackBytes({seconds:mins*60,mode:o.mode,bitrate:o.bitrate,rate:o.rate,
-      depth:o.depth,chan:o.chan,flacShare:o.flacShare});
+    /* the table needs the INPUTS: calc()'s result has no mode/bitrate/rate fields, so every row read NaN */
+    var b=trackBytes({seconds:mins*60,mode:inp.mode,bitrate:inp.bitrate,rate:inp.rate,
+      depth:inp.depth,chan:inp.chan,flacShare:inp.flacShare});
     rows+=row([mins+' min',grp(b/1e6,2)+' MB',grp(b*8/(mins*60)/1000,1)]);
   });
   $('tbl').innerHTML=rows;
