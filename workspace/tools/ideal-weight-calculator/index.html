@@ -98,7 +98,7 @@ tailwind.config = { theme: { extend: {
 <section class="ws-panel mt-4 p-5">
   <div class="mb-3 flex items-center justify-between"><span class="ws-label">The five, side by side</span>
     <span id="hgt" class="ws-chip">-</span></div>
-  <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">Formula</th><th class="py-2 pr-4">Weight</th><th class="py-2 pr-4">In kg</th><th class="py-2 pr-4">Spread</th></tr></thead><tbody id="ftbl"><tr><td colspan="4" style="opacity:.5">Nothing to show yet.</td></tr></tbody></table></div>
+  <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="ws-label"><tr><th class="py-2 pr-4">Formula</th><th class="py-2 pr-4">Weight</th><th class="py-2 pr-4">In lb</th><th class="py-2 pr-4">BMI</th></tr></thead><tbody id="ftbl"><tr><td colspan="4" style="opacity:.5">Nothing to show yet.</td></tr></tbody></table></div>
 </section>
 
 <div class="mt-4 grid gap-4 md:grid-cols-2">
@@ -136,7 +136,8 @@ tailwind.config = { theme: { extend: {
   window.__T = window.__T || {};
 
   var CM_PER_IN = 2.54;
-  var F = [('Devine', 50.0, 2.3, 45.5, 2.3, 'Devine, 1974 - drug dosing'), ('Robinson', 52.0, 1.9, 49.0, 1.7, 'Robinson, 1983 - Metro-Vic Daily'), ('Miller', 56.2, 1.41, 53.1, 1.36, 'Miller, 1983'), ('Hamwi', 48.0, 2.7, 45.5, 2.2, 'Hamwi, 1964 - build charts')];
+  /* [name, male base kg, male kg per inch over 5 ft, female base kg, female kg per inch, source]. These formulas are in KILOGRAMS. */
+  var F = [['Devine', 50.0, 2.3, 45.5, 2.3, 'Devine, 1974 - drug dosing'], ['Robinson', 52.0, 1.9, 49.0, 1.7, 'Robinson, 1983'], ['Miller', 56.2, 1.41, 53.1, 1.36, 'Miller, 1983'], ['Hamwi', 48.0, 2.7, 45.5, 2.2, 'Hamwi, 1964 - build charts']];
   var BMIN = 18.5, BMAX = 24.9, BMID = 22.0;
   var KG_PER_LB = 0.45359237;
 
@@ -152,10 +153,11 @@ tailwind.config = { theme: { extend: {
     F.forEach(function(f){
       var base = male ? f[1] : f[3];
       var per  = male ? f[2] : f[4];
-      var lb = base + per * over;
+      var kg = base + per * over, lb = kg / KG_PER_LB;
       lbVals.push(lb);
+      out['kg_' + f[0].toLowerCase()] = r2(kg);
       out['lb_' + f[0].toLowerCase()] = r2(lb);
-      rows.push({ name: f[0], who: f[5], lb: lb, kg: lb * KG_PER_LB });
+      rows.push({ name: f[0], who: f[5], lb: lb, kg: kg });
     });
     var m = o.cm / 100;
     out.bmi_mid_kg = r2(BMID * m * m);
@@ -184,18 +186,7 @@ tailwind.config = { theme: { extend: {
     // a CDP fixture asserting these exact names at full double precision. Keep
     // them unrounded, so replacing the page does not break a test another wave
     // left behind.
-    var mRaw = o.cm / 100, inRaw = o.cm / CM_PER_IN, overRaw = inRaw - 60;
-    out.total_inches = inRaw;
-    out.over_five_feet = overRaw;
-    out.lb_devine = 50.0 + 2.3 * overRaw;
-    out.lb_robinson = 52.0 + 1.9 * overRaw;
-    out.lb_miller = 56.2 + 1.41 * overRaw;
-    out.lb_hamwi = 48.0 + 2.7 * overRaw;
-    var lbr = [out.lb_devine, out.lb_robinson, out.lb_miller, out.lb_hamwi];
-    out.min_lb = Math.min.apply(null, lbr);
-    out.max_lb = Math.max.apply(null, lbr);
-    out.spread_lb = out.max_lb - out.min_lb;
-    out.mid_lb = (out.min_lb + out.max_lb) / 2;
+    var mRaw = o.cm / 100;
     out.bmi_min_kg = 18.5 * mRaw * mRaw;
     out.bmi_max_kg = 24.9 * mRaw * mRaw;
     out.inside_bmi_band = out.bmi_min_kg <= out.mid_kg && out.mid_kg <= out.bmi_max_kg;
@@ -222,14 +213,14 @@ tailwind.config = { theme: { extend: {
 
     document.getElementById('ftbl').innerHTML = c.rows.map(function(x){
       return '<tr><td class="py-1.5 pr-4"><b>' + x.name + '</b><div style="opacity:.45;font-size:11px">' + x.who + '</div></td>'
-        + '<td class="py-1.5 pr-4 font-mono">' + fmtLb(x.lb) + '</td>'
         + '<td class="py-1.5 pr-4 font-mono">' + fmtKg(x.kg) + '</td>'
-        + '<td class="py-1.5 pr-4 font-mono">= ' + (r2(50 + (x.lb - 50) / 2.3)) + ' &hellip;</td></tr>';
+        + '<td class="py-1.5 pr-4 font-mono">' + fmtLb(x.lb) + '</td>'
+        + '<td class="py-1.5 pr-4 font-mono">BMI ' + r1(x.kg / (c.cm/100 * c.cm/100)) + '</td></tr>';
     }).join('')
     + '<tr><td class="py-1.5 pr-4"><b>BMI 22</b><div style="opacity:.45;font-size:11px">middle of the healthy band</div></td>'
     + '<td class="py-1.5 pr-4 font-mono">' + fmtKg(c.bmi_mid_kg) + '</td>'
     + '<td class="py-1.5 pr-4 font-mono">' + r2(c.bmi_mid_kg / KG_PER_LB) + ' lb</td>'
-    + '<td class="py-1.5 pr-4 font-mono" style="opacity:.5">band-derived</td></tr>';
+    + '<td class="py-1.5 pr-4 font-mono">BMI 22.0</td></tr>';
 
     document.getElementById('kv1').innerHTML = kvHtml([
       ['Narrowest formula', fmtKg(c.min_kg)],
@@ -269,14 +260,14 @@ tailwind.config = { theme: { extend: {
       'IDEAL WEIGHT - FIVE FORMULAS, ONE HEIGHT',
       '---------------------------------------',
       'Sex          ' + (c.sex === 'm' ? 'Male' : 'Female'),
-      'Height       ' + fmtKg(c.cm) + '  (' + c.total_inches + ' in = '
+      'Height       ' + c.cm + ' cm  (' + c.total_inches + ' in = '
         + Math.floor(c.total_inches/12) + ' ft ' + r2(c.total_inches % 12) + ' in)',
       'Over 5 ft    ' + c.over_five_feet + ' in',
       '',
-      'Devine       ' + fmtLb(c.lb_devine),
-      'Robinson     ' + fmtLb(c.lb_robinson),
-      'Miller       ' + fmtLb(c.lb_miller),
-      'Hamwi        ' + fmtLb(c.lb_hamwi),
+      'Devine       ' + fmtKg(c.kg_devine) + '  (' + fmtLb(c.lb_devine) + ')',
+      'Robinson     ' + fmtKg(c.kg_robinson) + '  (' + fmtLb(c.lb_robinson) + ')',
+      'Miller       ' + fmtKg(c.kg_miller) + '  (' + fmtLb(c.lb_miller) + ')',
+      'Hamwi        ' + fmtKg(c.kg_hamwi) + '  (' + fmtLb(c.lb_hamwi) + ')',
       'BMI 22       ' + fmtKg(c.bmi_mid_kg),
       '',
       'Range        ' + fmtKg(c.min_kg) + ' - ' + fmtKg(c.max_kg)
