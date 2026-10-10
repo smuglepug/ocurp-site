@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Character Frequency Analyzer — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#ffd166', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#ffd166; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#ffd166; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,209,102,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#ffd166 !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,209,102,.28); background:rgba(255,209,102,.06);
+    padding:1rem 1.1rem; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+
+<style>
+  html, body { overflow-x:hidden; }
+  .qs-row, .rs-row { display:grid; gap:.5rem; align-items:center;
+    grid-template-columns:1fr 7rem 1.3fr auto; margin-bottom:.5rem; }
+  .qs-row .qs-k, .rs-row .rs-q { font-family:'JetBrains Mono',ui-monospace,monospace; }
+  .qs-del, .rs-del { border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04);
+    color:rgba(255,255,255,.6); width:2rem; height:2rem; border-radius:.6rem;
+    font-size:1.05rem; line-height:1; cursor:pointer; transition:all .15s ease; }
+  .qs-del:hover, .rs-del:hover { border-color:rgba(255,209,102,.55); color:#ffd166; }
+  @media (max-width:560px) {
+    .qs-row, .rs-row { grid-template-columns:1fr 6rem auto; }
+    .qs-row .qs-v, .rs-row .rs-n { grid-column:1 / -1; }
+  }
+</style>
+<meta name="description" content="Every character in your text counted with frequency and percentage. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/character-frequency/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Character Frequency Analyzer">
+<meta property="og:description" content="Every character in your text counted with frequency and percentage. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/character-frequency/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Character Frequency Analyzer on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Character Frequency Analyzer">
+<meta name="twitter:description" content="Every character in your text counted with frequency and percentage. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Character Frequency Analyzer on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Character Frequency Analyzer","url":"https://ocurp.com/workspace/tools/character-frequency/","description":"Every character in your text counted with frequency and percentage. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#ffd166">
+<a class="skip" href="#ws-play">Skip to the tool</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/tools/character-frequency/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/tools/">Tools</a><span aria-hidden="true">/</span><a href="/workspace/tools/?c=text">Writing &amp; text</a></nav><h1>Character Frequency Analyzer</h1><p class="lede">Every character in your text counted with frequency and percentage, broken out by case class, with a bar for each one.</p><div class="d-tags"><span class="g">Writing &amp; text</span><span>Character</span><span>Frequency</span><span>Count</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Open now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/tools/">All tools</a></div></div><div class="d-shot"><img src="/workspace/tools/character-frequency/card.jpg?v=20261006" alt="Character Frequency Analyzer screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+  <p class="mb-8 max-w-2xl text-base text-white/55">Count every symbol in a block of text by Unicode code point, see what repeats and what never appears at all, and read the shape of the distribution as a ranked bar per character.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">UNICODE CODE POINTS</span>
+    <span class="ws-chip">CASE TOGGLE</span>
+    <span class="ws-chip">DISTRIBUTION BARS</span>
+  </div>
+  <p class="mt-0 mb-3 text-[11px] leading-relaxed text-white/40">
+    Paste anything. Counting is by Unicode <span class="text-white/70">code
+    point</span>, so an emoji or an accented letter counts as one symbol and
+    never as the two surrogate halves a byte-wise split would invent. A
+    character is a character: the totals below are not byte counts.
+  </p>
+  <label class="ws-label mb-2 block" for="cf-text">Text</label>
+  <textarea id="cf-text" class="ws-input" rows="6" spellcheck="false">Hello World</textarea>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="cf-go" class="ws-btn" style="width:auto">Count</button>
+    <button id="cf-c1" class="ws-btn-ghost" style="width:auto">Hello World</button>
+    <button id="cf-c2" class="ws-btn-ghost" style="width:auto">Mixed case</button>
+    <button id="cf-c3" class="ws-btn-ghost" style="width:auto">Unicode</button>
+    <button id="cf-c4" class="ws-btn-ghost" style="width:auto">Prose</button>
+  </div>
+  <div class="mt-4 grid grid-cols-2 gap-3">
+    <div>
+      <label class="ws-label mb-2 block" for="cf-case">Case</label>
+      <select id="cf-case" class="ws-input">
+        <option value="insensitive" selected>Case-insensitive</option>
+        <option value="sensitive">Case-sensitive</option>
+      </select>
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="cf-top">Top N</label>
+      <input id="cf-top" class="ws-input" type="number" value="10" min="1" max="200">
+    </div>
+  </div>
+  <label class="mt-4 flex items-center gap-2 text-[11px] text-white/55" for="cf-space">
+    <input id="cf-space" type="checkbox" class="accent-[#ffd166]" checked>
+    Count whitespace as a symbol
+  </label>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="cf-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Totals</div>
+  <div id="cf-kv"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Distribution</div>
+  <div id="cf-bars"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Ranked</div>
+  <div id="cf-tab" class="ws-out" style="max-height:22rem;overflow:auto"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Copy</div>
+  <button id="cf-copy" class="ws-btn" style="width:auto">Copy report</button>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||n===undefined) return 0;
+  if(!isFinite(n)) return n>0?'infinity':(n<0?'-infinity':'undefined');
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function NL(){ return String.fromCharCode(10); }
+function copyBtn(id,txt){
+  var b=$(id); if(!b) return;
+  b.addEventListener('click',function(){
+    var s=(typeof txt==='function')?txt():txt;
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(s).catch(function(){});
+    }
+    var old=b.getAttribute('data-label')||b.textContent;
+    b.setAttribute('data-label',old);
+    b.textContent='Copied';
+    setTimeout(function(){ b.textContent=old; },1100);
+  });
+}
+
+var CF=(function(){
+  /* A symbol label that is readable in the table without inventing a Unicode
+     name (there is no in-page Unicode database). Space, newline and tab get
+     names; anything else gets a quoted glyph plus its U+ code point. */
+  function label(ch){
+    if(ch===' ') return 'space';
+    if(ch===NL()) return 'newline';
+    if(ch.charCodeAt(0)===9) return 'tab';
+    if(ch.charCodeAt(0)<32) return 'U+'+(ch.charCodeAt(0)).toString(16).toUpperCase();
+    return ch;
+  }
+  function isWs(ch){
+    var c=ch.charCodeAt(0);
+    return c===32||c===10||c===9||c===13||c===12||c===11||c===133;
+  }
+  /* codePoints() is the whole point of this page: Array.from(str) yields one
+     entry per code point, so an astral character is ONE symbol rather than the
+     two surrogates a plain split('') would hand back. Verified against
+     Python's list(str) in tools/_w72c_truth.py: 'aee-b' is 5 code points but
+     6 UTF-16 units. */
+  function codePoints(str){ return Array.from(String(str)); }
+  function analyze(text,sensitive,countSpace){
+    var cps=codePoints(text), counts={}, order=[], i, ch, key;
+    for(i=0;i<cps.length;i++){
+      ch=cps[i];
+      if(!countSpace&&isWs(ch)) continue;
+      key=sensitive?ch:ch.toLowerCase();
+      if(!(key in counts)){ counts[key]=0; order.push(key); }
+      counts[key]++;
+    }
+    /* Rank by count descending, then by code point ascending, so the order is
+       TOTAL - two implementations can never disagree about a tie. Python's
+       sort in _w72c_truth.py uses the same rule. */
+    var ranked=order.slice().sort(function(a,b){
+      if(counts[b]!==counts[a]) return counts[b]-counts[a];
+      return a<b?-1:(a>b?1:0);
+    });
+    return {counts:counts,ranked:ranked,total:cps.length,
+      counted:ranked.length,unique:ranked.length,most:ranked.length?counts[ranked[0]]:0,
+      least:ranked.length?counts[ranked[ranked.length-1]]:0,
+      cps:cps.length, utf16:String(text).length};
+  }
+  function bar(pct){
+    return '<div style="height:.45rem;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden">'
+      +'<div style="height:100%;width:'+pct+'%;background:#ffd166"></div></div>';
+  }
+  function countsOf(a){ var m={}, i;
+    for(i=0;i<a.ranked.length;i++) m[a.ranked[i]]=a.counts[a.ranked[i]];
+    return m; }
+  function render(){
+    var text=$('cf-text').value;
+    var sensitive=$('cf-case').value==='sensitive';
+    var countSpace=$('cf-space').checked;
+    var top=Math.max(1,Math.min(200,parseInt($('cf-top').value,10)||10));
+    var a=analyze(text,sensitive,countSpace), err=$('cf-err'), i, h;
+    err.textContent='';
+    if(!a.counted){ err.textContent='nothing to count yet'; }
+    var pctOf=function(n){ return a.most?Math.round(n/a.most*100):0; };
+    h='';
+    var lim=Math.min(top,a.ranked.length);
+    for(i=0;i<lim;i++){
+      var k=a.ranked[i], n=a.counts[k];
+      h+='<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.55rem">'
+        +'<span style="flex:0 0 3.2rem;font-family:\'IBM Plex Sans\',monospace;font-size:.8rem;color:#fff;'
+        +'overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(label(k))+'">'
+        +esc(label(k))+'</span>'
+        +'<span style="flex:1 1 auto">'+bar(pctOf(n))+'</span>'
+        +'<span style="flex:0 0 3.6rem;text-align:right;font-family:\'IBM Plex Sans\',monospace;'
+        +'font-size:.78rem;color:rgba(255,255,255,.6)">'+n+' &middot; '+r(n/a.counted*100,1)+'%</span>'
+        +'</div>';
+    }
+    $('cf-bars').innerHTML=(a.counted
+      ? h
+      : '<div style="font-size:.8rem;color:rgba(255,255,255,.35)">no symbols counted</div>');
+    fill('cf-kv',[
+      ['Characters in (code points)',a.cps],
+      ['UTF-16 code units',a.utf16],
+      ['Symbols counted',a.counted],
+      ['Unique symbols',a.unique],
+      ['Most frequent',a.counted?(label(a.ranked[0])+'  ('+a.most+')'):'--'],
+      ['Least frequent',a.counted?(label(a.ranked[a.ranked.length-1])+'  ('+a.least+')'):'--'],
+      ['Distinct count range',a.counted?a.least+' to '+a.most:'--'],
+      ['Mode',sensitive?'case-SENSITIVE':'case-INSENSITIVE'],
+      ['Whitespace counted',countSpace]]);
+    var t='symbol          count   share'+NL();
+    for(i=0;i<a.ranked.length;i++){
+      var k2=a.ranked[i];
+      t+=('   '+label(k2)).slice(-14)+'   '+('    '+a.counts[k2]).slice(-4)
+        +'   '+r(a.counts[k2]/a.counted*100,1)+'%'+NL();
+    }
+    t+=NL()+a.unique+' unique of '+a.counted+' counted '
+      +'('+a.cps+' code points total)';
+    $('cf-tab').textContent=t;
+    return a;
+  }
+  $('cf-go').addEventListener('click',render);
+  $('cf-c1').addEventListener('click',function(){ put('cf-text','Hello World'); render(); });
+  $('cf-c2').addEventListener('click',function(){ put('cf-text','aAa'); render(); });
+  $('cf-c3').addEventListener('click',function(){ put('cf-text','a\u00e9\u00e9\u{1F600}b'); render(); });
+  $('cf-c4').addEventListener('click',function(){
+    put('cf-text','the quick brown fox jumps over the lazy dog'); render(); });
+  $('cf-text').addEventListener('input',render);
+  $('cf-case').addEventListener('change',render);
+  $('cf-space').addEventListener('change',render);
+  $('cf-top').addEventListener('input',render);
+  copyBtn('cf-copy',function(){
+    var a=analyze($('cf-text').value,$('cf-case').value==='sensitive',$('cf-space').checked);
+    var out=[], i;
+    for(i=0;i<a.ranked.length;i++) out.push(label(a.ranked[i])+'  '+a.counts[a.ranked[i]]);
+    return out.join(NL());
+  });
+  render();
+  return {analyze:analyze,render:render,codePoints:codePoints,label:label,
+    countsOf:countsOf,isWs:isWs};
+})();
+
+window.__character_frequency = {
+  analyze: function(text,sensitive,countSpace){
+    var a=CF.analyze(text,!!sensitive,countSpace===undefined?true:!!countSpace);
+    return {cps:a.cps,utf16:a.utf16,counted:a.counted,unique:a.unique,
+      most:a.most,least:a.least,counts:CF.countsOf(a),
+      ranked:a.ranked.map(function(k){ return [CF.label(k),a.counts[k]]; })};
+  },
+  label: function(ch){ return CF.label(ch); },
+  render: function(){
+    var a=CF.render();
+    return JSON.stringify({ok:!!a,cps:a.cps,utf16:a.utf16,counted:a.counted,
+      unique:a.unique,most:a.most,least:a.least,
+      topChar:CF.label(a.ranked[0]),topN:a.counts[a.ranked[0]],
+      counts:CF.countsOf(a),
+      ranked:a.ranked.slice(0,12).map(function(k){ return [CF.label(k),a.counts[k]]; })});
+  },
+  run: function(i){
+    i=i||{};
+    if(i.text!==undefined) put('cf-text',i.text);
+    if(i.sensitive!==undefined) put('cf-case',i.sensitive?'sensitive':'insensitive');
+    if(i.countSpace!==undefined) $('cf-space').checked=!!i.countSpace;
+    if(i.top!==undefined) put('cf-top',String(i.top));
+    return window.__character_frequency.render();
+  }
+};
+
+</script>
+  </div>
+</div>
+<section class="d-more"><div class="wrap"><h2>More tools</h2><div class="ws-grid"><a class="tile-card" href="/workspace/tools/sentence-case-converter/" style="--c:#ffd166"><div class="shot"><img src="/workspace/tools/sentence-case-converter/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Writing &amp; text</span><h3>Sentence Case Converter</h3><p>One input, fourteen cases: title, sentence, camelCase, PascalCase, kebab, snake, dot and more.</p></div></a><a class="tile-card" href="/workspace/tools/find-replace-batch/" style="--c:#ffd166"><div class="shot"><img src="/workspace/tools/find-replace-batch/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Writing &amp; text</span><h3>Find &amp; Replace Batch</h3><p>Search and replace across a whole text with regex or literal find, case and whole-word toggles, and capture groups.</p></div></a><a class="tile-card" href="/workspace/tools/markup-fence-splitter/" style="--c:#ffd166"><div class="shot"><img src="/workspace/tools/markup-fence-splitter/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Writing &amp; text</span><h3>Markup Fence Splitter</h3><p>Pull every fenced code block out of Markdown into separate downloadable files, with the language and line numbers preserved.</p></div></a><a class="tile-card" href="/workspace/tools/text-shuffle-scrambler/" style="--c:#ffd166"><div class="shot"><img src="/workspace/tools/text-shuffle-scrambler/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Writing &amp; text</span><h3>Text Shuffle Scrambler</h3><p>Shuffle, unscramble or anagram any text: seeded reproducible shuffles, a solve button, and a check of which words are real English.</p></div></a><a class="tile-card" href="/workspace/tools/lorem-ipsum/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/lorem-ipsum/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>Lorem Ipsum Generator</h3><p>Placeholder paragraphs, sentences or words.</p></div></a><a class="tile-card" href="/workspace/tools/regex-tester/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/regex-tester/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>Regex Tester</h3><p>Test patterns with live match highlighting.</p></div></a><a class="tile-card" href="/workspace/tools/sql-formatter/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/sql-formatter/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>SQL Formatter</h3><p>Reindent SQL queries so they can actually be read.</p></div></a><a class="tile-card" href="/workspace/tools/pdf-viewer/" style="--c:#ff8f70"><div class="shot"><img src="/workspace/tools/pdf-viewer/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">PDF &amp; docs</span><h3>PDF Viewer</h3><p>Open a PDF in the browser and inspect page by page.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>

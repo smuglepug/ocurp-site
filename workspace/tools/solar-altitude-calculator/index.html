@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solar Altitude Calculator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#43e0d0', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#43e0d0; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#43e0d0; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(67,224,208,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#43e0d0 !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(67,224,208,.28); background:rgba(67,224,208,.06);
+    padding:1rem 1.1rem; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="NOAA solar position for any place and date: equation of time. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/solar-altitude-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Solar Altitude Calculator">
+<meta property="og:description" content="NOAA solar position for any place and date: equation of time. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/solar-altitude-calculator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Solar Altitude Calculator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Solar Altitude Calculator">
+<meta name="twitter:description" content="NOAA solar position for any place and date: equation of time. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Solar Altitude Calculator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Solar Altitude Calculator","url":"https://ocurp.com/workspace/tools/solar-altitude-calculator/","description":"NOAA solar position for any place and date: equation of time. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#43e0d0">
+<a class="skip" href="#ws-play">Skip to the tool</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/tools/solar-altitude-calculator/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/tools/">Tools</a><span aria-hidden="true">/</span><a href="/workspace/tools/?c=science">Science</a></nav><h1>Solar Altitude Calculator</h1><p class="lede">NOAA solar position for any place and date: equation of time, declination, altitude, azimuth, sunrise, sunset, twilight and the year&#x27;s day length.</p><div class="d-tags"><span class="g">Science</span><span>Solar</span><span>Sun</span><span>Noaa</span><span>Sunrise</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Open now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/tools/">All tools</a></div></div><div class="d-shot"><img src="/workspace/tools/solar-altitude-calculator/card.jpg?v=20261006" alt="Solar Altitude Calculator screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+  <p class="mb-8 max-w-2xl text-base text-white/55">Where the Sun is in the sky, from latitude, longitude, date and time. The equation of time and the Sun's declination come from the NOAA fractional-year approximations; the hour angle is the true solar time converted at 15&deg; per hour; the altitude and azimuth follow from the standard spherical relations. Sunrise, sunset and civil twilight are solved for as events rather than assumed from a day-length figure, and above the Arctic circle in winter the page reports polar night instead of inventing a sunrise that does not happen. Sunrise uses a horizon of &minus;0.833&deg; &mdash; the Sun's own disc plus standard refraction &mdash; which is why the day at the equator is twelve hours and seven minutes rather than twelve exactly, and the table below traces the year's day length at this latitude.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">NOAA ALGORITHM</span>
+    <span class="ws-chip">EQUATION OF TIME</span>
+    <span class="ws-chip">POLAR NIGHT REPORTED</span>
+  </div>
+  <div class="ws-grid2">
+    <div><label class="ws-label mb-1 block" for="xLat">Latitude &deg;N</label>
+      <input id="xLat" class="ws-input" type="number" value="40" step="0.01"></div>
+    <div><label class="ws-label mb-1 block" for="xLon">Longitude &deg;E</label>
+      <input id="xLon" class="ws-input" type="number" value="0" step="0.01"></div>
+    <div><label class="ws-label mb-1 block" for="xY">Year</label>
+      <input id="xY" class="ws-input" type="number" value="2026"></div>
+    <div><label class="ws-label mb-1 block" for="xM">Month</label>
+      <input id="xM" class="ws-input" type="number" value="6" min="1" max="12"></div>
+    <div><label class="ws-label mb-1 block" for="xD">Day</label>
+      <input id="xD" class="ws-input" type="number" value="21" min="1" max="31"></div>
+    <div><label class="ws-label mb-1 block" for="xTz">UTC offset h</label>
+      <input id="xTz" class="ws-input" type="number" value="0" step="0.5"></div>
+  </div>
+  <div class="ws-grid2 mt-3" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+    <div><label class="ws-label mb-1 block" for="xHh">Hour (clock)</label>
+      <input id="xHh" class="ws-input" type="number" value="12" min="0" max="23"></div>
+    <div><label class="ws-label mb-1 block" for="xMm">Minute</label>
+      <input id="xMm" class="ws-input" type="number" value="0" min="0" max="59"></div>
+  </div>
+  <div class="mt-3 flex flex-wrap gap-2">
+    <button id="xGo" class="ws-btn" style="width:auto">Compute</button>
+    <button id="xCopy" class="ws-btn-ghost" style="width:auto">Copy</button>
+  </div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Position</div>
+  <div id="xPos"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Sun events (local clock)</div>
+  <div id="xEvents"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Day length through the year (15th of each month)</div>
+  <div class="w76-scroll"><div id="xTable"></div></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3">
+  <p class="w76-note">
+    Sunrise and sunset use a horizon altitude of
+    <span class="w76-add">&minus;0.833&deg;</span> (the Sun's own radius plus
+    standard refraction), not 0&deg;, which is why day length at the equator is
+    12 h 7 min rather than exactly 12 h. Civil twilight is
+    <span class="w76-add">&minus;6&deg;</span> and astronomical twilight
+    <span class="w76-add">&minus;18&deg;</span>. Times are UTC plus your offset.
+    This is the NOAA approximation and it is good to about a minute for
+    sunrise; it ignores the observer's elevation.
+  </p>
+</div>
+
+  </div>
+  <div class="mt-8">
+<style>
+<style>
+.w76-table{width:100%;border-collapse:collapse;font-size:.8rem;
+  font-family:'JetBrains Mono',ui-monospace,monospace;}
+.w76-table th{text-align:left;font-family:Inter,sans-serif;font-size:9px;
+  font-weight:800;text-transform:uppercase;letter-spacing:.13em;
+  color:rgba(255,255,255,.4);padding:.55rem .6rem;border-bottom:1px solid rgba(255,255,255,.12);}
+.w76-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.06);
+  color:#fff;vertical-align:top;}
+.w76-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.w76-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.w76-add{color:#43e0d0}
+.w76-warn{border-color:rgba(67,224,208,.5)}
+.w76-note{font-size:.75rem;color:rgba(255,255,255,.4);line-height:1.6}
+.w76-tag{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;padding:.2rem .5rem;border-radius:4px;
+  border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.6)}
+.w76-tag.num{border-color:rgba(67,224,208,.5);color:#43e0d0}
+.w76-bad{display:block;margin-top:1rem;border:1px solid rgba(67,224,208,.45);
+  background:rgba(67,224,208,.08);border-radius:.75rem;padding:.85rem 1rem;
+  font-size:.8rem;color:rgba(255,255,255,.8);line-height:1.6}
+.w76-canvas{width:100%;height:auto;display:block;border-radius:.75rem;
+  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08)}
+</style>
+</style>
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||n===undefined) return 0;
+  if(typeof n!=='number') return String(n);
+  if(!isFinite(n)) return n>0?'infinity':(n<0?'-infinity':'undefined');
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+/* The one rounding the hook and the truth file agree on: 6 decimals, -0 as 0. */
+function R(n){ var v=Math.round(n*1e6)/1e6; if(Object.is(v,-0)) v=0; return v; }
+function R4(n){ var v=Math.round(n*1e4)/1e4; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id){ var el=$(id); if(!el) return NaN; return parseFloat(el.value); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function wireCopy(btnId,getText){
+  var b=$(btnId); if(!b) return;
+  b.addEventListener('click',function(){
+    var t=getText();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){
+        b.textContent='Copied'; },function(){ b.textContent='Copy failed'; });
+    }else{ b.textContent='Copy unavailable'; }
+    setTimeout(function(){ b.textContent='Copy'; },1400);
+  });
+}
+function table(head,rows){
+  var h='<table class="w76-table"><thead><tr>'+
+    head.map(function(t){return '<th>'+esc(t)+'</th>';}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(row){
+    h+='<tr>'+row.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';
+  });
+  return h+'</tbody></table>';
+}
+
+var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function solarTerms(y,m,d,hours){
+  /* NOAA solar position, the Julian-day form rather than the "fractional year"
+     shortcut. The shortcut computes its phase angle g straight from `d - 1`,
+     so it never sees the month: 21 June and 21 December both hashed g = 20
+     days and returned the SAME declination of -20.09 deg. The page rendered
+     the winter Sun at the summer solstice for the whole of the year. This is
+     the Julian day -> geometric mean longitude -> equation of the centre ->
+     apparent longitude -> declination chain, which actually uses the date. */
+  var yy=y, mm=m;
+  if(mm<=2){ yy-=1; mm+=12; }
+  var A=Math.floor(yy/100), B=2-A+Math.floor(A/4);
+  var jd=Math.floor(365.25*(yy+4716))+Math.floor(30.6001*(mm+1))+d+B-1524.5+hours/24;
+  var t=(jd-2451545)/36525;
+  var L0=(280.46646+t*(36000.76983+t*0.0003032))%360;
+  var M=357.52911+t*(35999.05029-0.0001537*t);
+  var e=0.016708634-t*(0.000042037+0.0000001267*t);
+  var C=Math.sin(_rad(M))*(1.914602-t*(0.004817+0.000014*t))
+      +Math.sin(_rad(2*M))*(0.019993-0.000101*t)+Math.sin(_rad(3*M))*0.000289;
+  var appLong=(L0+C)-0.00569-0.00478*Math.sin(_rad(125.04-1934.136*t));
+  var obliq=23+(26+(21.448-t*(46.815+t*(0.00059-t*0.001813)))/60)/60
+      +0.00256*Math.cos(_rad(125.04-1934.136*t));
+  var decl=_deg(Math.asin(Math.sin(_rad(obliq))*Math.sin(_rad(appLong))));
+  var v=Math.pow(Math.tan(_rad(obliq/2)),2);
+  var eqtime=4*_deg(v*Math.sin(2*_rad(L0))-2*e*Math.sin(_rad(M))
+      +4*e*v*Math.sin(_rad(M))*Math.cos(2*_rad(L0))
+      -0.5*v*v*Math.sin(4*_rad(L0))-1.25*e*e*Math.sin(2*_rad(M)));
+  return {eqTimeMin:eqtime, declinationDeg:decl};
+}
+/* NOAA's piecewise atmospheric refraction, degrees. The old one-line
+   0.0167/tan(alt) is only valid near the horizon; at 30 deg it reads 0.029
+   when NOAA gives 0.017, and it blows up as the Sun approaches the horizon. */
+function refractionDeg(alt){
+  if(alt>85) return 0;
+  if(alt>5) return (58.1/Math.tan(_rad(alt))-0.07/Math.pow(Math.tan(_rad(alt)),3)
+      +0.000086/Math.pow(Math.tan(_rad(alt)),5))/3600;
+  if(alt>-0.575) return (1735+alt*(-518.2+alt*(103.4+alt*(-12.79+alt*0.711))))/3600;
+  return (-20.772/Math.tan(_rad(alt)))/3600;
+}
+function _rad(d){ return d*Math.PI/180; }
+function _deg(r){ return r*180/Math.PI; }
+/* Minutes-to-clock, rounding to the nearest minute. Truncating (the old
+   Math.floor(v%60)) turned 9.7 min past the hour into :09 and 59.7 into :59,
+   so an event computed a few seconds early printed a whole minute short. */
+function _hhmm(mins){
+  var v=mins%1440; if(v<0) v+=1440;
+  var total=Math.round(v);
+  if(total>=1440) total-=1440;
+  var h=Math.floor(total/60), mi=total%60;
+  return (h<10?'0':'')+h+':'+(mi<10?'0':'')+mi;
+}
+function solarEvent(lat,lon,dec,eq,altDeg,tz){
+  var la=_rad(lat);
+  var c=(Math.sin(_rad(altDeg))-Math.sin(la)*Math.sin(_rad(dec)))
+        /(Math.cos(la)*Math.cos(_rad(dec)));
+  var noon = 720 - 4*lon - eq + tz;
+  if(c<-1 || c>1) return {rise:null,set:null,ha0:null,noon:noon};
+  var ha0=_deg(Math.acos(c));
+  return {rise:{minutes:R(noon-4*ha0),clock:_hhmm(noon-4*ha0)},
+          set:{minutes:R(noon+4*ha0),clock:_hhmm(noon+4*ha0)},
+          ha0:ha0, noon:noon};
+}
+function solarAll(o){
+  var lat=o.lat, lon=o.lon, tz=(o.tz===undefined?0:o.tz)*60;
+  var tm=solarTerms(o.y,o.m,o.d,o.hh+o.mm/60);
+  var dec=tm.declinationDeg, eq=tm.eqTimeMin;
+  var tst=(o.hh*60+o.mm + eq + 4*lon - tz);
+  var ha=(tst/4)-180;
+  if(ha < -180) ha += 360;   // the raw -180..-540 half had to be wrapped before use
+  var la=_rad(lat), ph=_rad(dec);
+  /* altitude via the spherical triangle, clamped: acos() of a value 1e-16 past
+     1 at the equator returns NaN, which used to blank the whole readout. */
+  var cosz=Math.min(1,Math.max(-1,Math.sin(la)*Math.sin(ph)
+        +Math.cos(la)*Math.cos(ph)*Math.cos(_rad(ha))));
+  var alt=90-_deg(Math.acos(cosz));
+  var ca=Math.cos(_rad(alt));
+  var az;
+  if(Math.abs(ca) < 1e-9) az = 180;
+  else {
+    var cz=(Math.sin(ph)-Math.sin(la)*Math.sin(_rad(alt)))/(Math.cos(la)*ca);
+    az=_deg(Math.acos(Math.min(1,Math.max(-1,cz))));
+    /* The acos form gives the azimuth measured from NORTH through EAST, which
+       is only the true azimuth while the Sun is before local noon. Past noon
+       it has to be mirrored, or a 06:00 Sun reports 150 deg and a 18:00 Sun
+       reports 60 deg - the clock hands of the compass compass swapped. */
+    if(ha > 0) az = 360 - az;
+  }
+  var refraction = refractionDeg(alt);
+  var sun=solarEvent(lat,lon,dec,eq,-0.833,tz);
+  var civil=solarEvent(lat,lon,dec,eq,-6.0,tz);
+  /* Day length in hours. R() takes ONE argument and rounds to 6 decimals; the
+     old R(8*sun.ha0/60, 4) silently rounded to 6 and reported 15.014675 rather
+     than 15.0147. Round explicitly at the precision this quantity deserves. */
+  var dayLength = sun.ha0===null ? null : R4(8*sun.ha0/60);
+  var polarNight=false;
+  if(sun.ha0===null){
+    var altMin=_deg(Math.asin(Math.max(-1,Math.min(1,Math.sin(la)*Math.sin(ph)
+        -Math.cos(la)*Math.cos(ph)))));
+    polarNight = altMin < -0.833;
+  }
+  return {ok:true, lat:lat, lon:lon, year:o.y, month:o.m, day:o.d,
+    declinationDeg:R(dec,6), eqTimeMin:R(eq,6), hourAngleDeg:R(ha,6),
+    altitudeDeg:R(alt,6), azimuthDeg:R(az,6), refractionDeg:R(refraction,6),
+    trueSolarTime:R(((tst%1440)+1440)%1440,4),
+    sunrise:sun.rise?sun.rise.clock:null,
+    sunset:sun.set?sun.set.clock:null,
+    civilDawn:civil.rise?civil.rise.clock:null,
+    civilDusk:civil.set?civil.set.clock:null,
+    solarNoon:_hhmm(sun.noon), dayLengthHours:dayLength, polarNight:polarNight};
+}
+function dayLengthRow(lat,lon,y,m,tz){
+  var tm=solarTerms(y,m,15,12);
+  var ev=solarEvent(lat,lon,tm.declinationDeg,tm.eqTimeMin,-0.833,tz);
+  return {month:m, name:MONTHS[m-1],
+    dayLengthHours: ev.ha0===null?null:R4(8*ev.ha0/60),
+    sunrise: ev.rise?ev.rise.clock:null,
+    sunset: ev.set?ev.set.clock:null};
+}
+function solarPaint(res){
+  var az=res.azimuthDeg;
+  var warn = res.polarNight ?
+    '<div class="w76-bad"><strong>Polar night.</strong> The Sun never rises on '+
+    'this date at this latitude, so there is no sunrise, no sunset and no day '+
+    'length to report.</div>' : '';
+  fill('xPos',[
+    ['Declination', r(res.declinationDeg,6)+'&deg;'],
+    ['Equation of time', r(res.eqTimeMin,6)+' min'],
+    ['Hour angle', r(res.hourAngleDeg,6)+'&deg;'],
+    ['Altitude', r(res.altitudeDeg,6)+'&deg;'],
+    ['Azimuth (N=0, clockwise)', r(res.azimuthDeg,6)+'&deg; '+compass(az)],
+    ['Atmospheric refraction', r(res.refractionDeg,6)+'&deg;'],
+  ]);
+  fill('xEvents',[
+    ['Solar noon', res.solarNoon],
+    ['Sunrise', res.sunrise===null?'none':res.sunrise],
+    ['Sunset', res.sunset===null?'none':res.sunset],
+    ['Civil dawn', res.civilDawn===null?'none':res.civilDawn],
+    ['Civil dusk', res.civilDusk===null?'none':res.civilDusk],
+    ['Day length', res.dayLengthHours===null?'none':r(res.dayLengthHours,4)+' h'],
+  ]);
+  var tz=(num('xTz')||0)*60;
+  var rows=[];
+  for(var m=1;m<=12;m++){
+    var row=dayLengthRow(num('xLat'),num('xLon'),Math.floor(num('xY')),m,tz);
+    rows.push([row.name, row.dayLengthHours===null?'none':r(row.dayLengthHours,4),
+      row.sunrise===null?'none':row.sunrise,
+      row.sunset===null?'none':row.sunset]);
+  }
+  $('xTable').innerHTML=table(['month','day length (h)','sunrise','sunset'],rows);
+  $('xTable').insertAdjacentHTML('afterbegin',warn);
+  return res;
+}
+function compass(az){
+  var names=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  return names[Math.round(az/22.5)%16];
+}
+function solar(){
+  return solarPaint(solarAll({lat:num('xLat'), lon:num('xLon'),
+    y:Math.floor(num('xY')), m:Math.floor(num('xM')), d:Math.floor(num('xD')),
+    hh:num('xHh'), mm:num('xMm'), tz:num('xTz')}));
+}
+$('xGo').addEventListener('click',solar);
+['xLat','xLon','xY','xM','xD','xHh','xMm','xTz'].forEach(function(id){
+  $(id).addEventListener('input',solar);
+});
+wireCopy('xCopy',function(){
+  var res=solarAll({lat:num('xLat'), lon:num('xLon'), y:Math.floor(num('xY')),
+    m:Math.floor(num('xM')), d:Math.floor(num('xD')), hh:num('xHh'),
+    mm:num('xMm'), tz:num('xTz')});
+  return 'declination '+res.declinationDeg+' deg\nEoT        '+res.eqTimeMin+
+    ' min\naltitude   '+res.altitudeDeg+' deg\nazimuth    '+res.azimuthDeg+
+    ' deg\nsunrise    '+(res.sunrise||'none')+'\nsunset     '+
+    (res.sunset||'none')+'\nday length '+(res.dayLengthHours===null?'none':
+    res.dayLengthHours);
+});
+window.__solar_altitude_calculator = {
+  calc: function(o){ return solarAll(o); },
+  run: function(o){
+    o=o||{};
+    if(o.lat!==undefined) put('xLat',o.lat);
+    if(o.lon!==undefined) put('xLon',o.lon);
+    if(o.y!==undefined) put('xY',o.y);
+    if(o.m!==undefined) put('xM',o.m);
+    if(o.d!==undefined) put('xD',o.d);
+    if(o.hh!==undefined) put('xHh',o.hh);
+    if(o.mm!==undefined) put('xMm',o.mm);
+    if(o.tz!==undefined) put('xTz',o.tz);
+    return solar();
+  }
+};
+solar();
+
+</script>
+  </div>
+</div>
+<section class="d-more"><div class="wrap"><h2>More tools</h2><div class="ws-grid"><a class="tile-card" href="/workspace/tools/cantilever-deflection/" style="--c:#43e0d0"><div class="shot"><img src="/workspace/tools/cantilever-deflection/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Science</span><h3>Cantilever Deflection</h3><p>Euler-Bernoulli tip deflection and bending stress for a rectangular section, with a factor of safety.</p></div></a><a class="tile-card" href="/workspace/tools/thermal-bridge/" style="--c:#43e0d0"><div class="shot"><img src="/workspace/tools/thermal-bridge/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Science</span><h3>Thermal Bridge</h3><p>Layer-by-layer wall transmittance, the linear thermal bridge value and whether the internal surface will condense.</p></div></a><a class="tile-card" href="/workspace/tools/kaplan-meier-survival-estimator/" style="--c:#43e0d0"><div class="shot"><img src="/workspace/tools/kaplan-meier-survival-estimator/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Science</span><h3>Kaplan-Meier Estimator</h3><p>Survival from a table of event and censor times: the risk set at every step, the curve as exact fractions, Greenwood standard errors, confidence bounds and median survival.</p></div></a><a class="tile-card" href="/workspace/tools/spring-resonance-calculator/" style="--c:#43e0d0"><div class="shot"><img src="/workspace/tools/spring-resonance-calculator/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Science</span><h3>Spring Resonance Calculator</h3><p>Natural frequency, period, static deflection, quality factor and the damped and resonance frequencies for any mass-spring-damper, with the damping regimes named.</p></div></a><a class="tile-card" href="/workspace/tools/csv-json/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/csv-json/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>CSV to JSON</h3><p>Convert delimited text and JSON both ways.</p></div></a><a class="tile-card" href="/workspace/tools/html-entities/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/html-entities/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>HTML Entity Escaper</h3><p>Escape and unescape HTML and XML entities safely.</p></div></a><a class="tile-card" href="/workspace/tools/jwt-debugger/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/jwt-debugger/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>JWT Debugger</h3><p>Decode a JWT header and payload, client-side only.</p></div></a><a class="tile-card" href="/workspace/tools/diff-checker/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/diff-checker/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>Diff Checker</h3><p>Compare two blocks of text line by line.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>

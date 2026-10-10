@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSV Column Statistics — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#5ec8ff', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#5ec8ff; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#5ec8ff; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(94,200,255,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#5ec8ff !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(94,200,255,.28); background:rgba(94,200,255,.06);
+    padding:1rem 1.1rem; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Profile every column of a pasted CSV at once: type detection. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/csv-column-statistics/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="CSV Column Statistics">
+<meta property="og:description" content="Profile every column of a pasted CSV at once: type detection. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/csv-column-statistics/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="CSV Column Statistics on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CSV Column Statistics">
+<meta name="twitter:description" content="Profile every column of a pasted CSV at once: type detection. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="CSV Column Statistics on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSV Column Statistics","url":"https://ocurp.com/workspace/tools/csv-column-statistics/","description":"Profile every column of a pasted CSV at once: type detection. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#5ec8ff">
+<a class="skip" href="#ws-play">Skip to the tool</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/tools/csv-column-statistics/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/tools/">Tools</a><span aria-hidden="true">/</span><a href="/workspace/tools/?c=data">Data &amp; code</a></nav><h1>CSV Column Statistics</h1><p class="lede">Profile every column of a pasted CSV at once: type detection, count, missing, distinct, mean, median, quartiles, stdev and a histogram per column, with delimiter auto-detection.</p><div class="d-tags"><span class="g">Data &amp; code</span><span>Csv</span><span>Statistics</span><span>Columns</span><span>Profiling</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Open now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/tools/">All tools</a></div></div><div class="d-shot"><img src="/workspace/tools/csv-column-statistics/card.jpg?v=20261006" alt="CSV Column Statistics screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+  <p class="mb-8 max-w-2xl text-base text-white/55">Paste delimited text and get a per-column read on it in one pass: for every numeric column the count, the missing count, the minimum, the maximum, the mean, the median, the sample standard deviation and the sum; for every text column the count, the missing, how many distinct values there are, and which value appears most often and how many times. The delimiter &mdash; comma, semicolon or tab &mdash; is detected from the shape of the data rather than assumed, and the first row is treated as a header unless you say otherwise. Rows that do not have the same number of fields as the header are named by line number and counted anyway, because a tool that silently drops the rows it cannot fit is worse than one that shows you which rows are malformed.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">COLUMN STATISTICS</span>
+    <span class="ws-chip">DELIMITER DETECTED</span>
+    <span class="ws-chip">RAGGED ROWS REPORTED</span>
+  </div>
+  <p class="mt-0 mb-3 text-[11px] leading-relaxed text-white/40">
+    A column is numeric only when <em>every</em> non-blank cell in it parses as a
+    number; one stray label demotes the whole column to text rather than being
+    quietly skipped. Blank cells are counted as missing and excluded from the
+    arithmetic. Rows whose field count disagrees with the header are named by
+    line number, never dropped.
+  </p>
+  <label class="ws-label mb-2 block" for="cs-text">CSV text</label>
+  <textarea id="cs-text" class="ws-input" rows="8" spellcheck="false">name,qty,price,active
+apple,3,1.25,yes
+pear,5,2.50,no
+plum,,1.75,yes
+kiwi,2,3.00,yes
+fig,4,,no</textarea>
+  <div class="mt-3 flex flex-wrap items-center gap-3">
+    <label class="inline-flex items-center gap-2 text-xs text-white/70">
+      <input id="cs-header" type="checkbox" checked class="accent-orange-500"> First row is a header
+    </label>
+    <button id="cs-sample" class="ws-btn-ghost" style="width:auto;padding:.5rem .9rem">Load ragged sample</button>
+    <button id="cs-clear" class="ws-btn-ghost" style="width:auto;padding:.5rem .9rem">Clear</button>
+  </div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-3">Shape</div>
+  <div id="cs-shape"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-3">Ragged rows</div>
+  <div id="cs-ragged"></div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<style>
+<style>
+.w75-table{width:100%;border-collapse:collapse;font-size:.8rem;
+  font-family:'JetBrains Mono',ui-monospace,monospace;}
+.w75-table th{text-align:left;font-family:Inter,sans-serif;font-size:9px;
+  font-weight:800;text-transform:uppercase;letter-spacing:.13em;
+  color:rgba(255,255,255,.4);padding:.55rem .6rem;border-bottom:1px solid rgba(255,255,255,.12);}
+.w75-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.06);
+  color:#fff;vertical-align:top;}
+.w75-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.w75-table tr:last-child td{border-bottom:0}
+.w75-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.w75-add{color:#5ec8ff}
+.w75-del{color:rgba(255,255,255,.55);text-decoration:line-through}
+.w75-same{color:rgba(255,255,255,.3)}
+.w75-pass{color:#5ec8ff;font-weight:700}
+.w75-fail{color:rgba(255,255,255,.4)}
+.w75-warn{border-color:rgba(94,200,255,.5)}
+.w75-note{font-size:.75rem;color:rgba(255,255,255,.4);line-height:1.6}
+.w75-tag{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;padding:.2rem .5rem;border-radius:4px;
+  border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.6)}
+.w75-tag.num{border-color:rgba(94,200,255,.5);color:#5ec8ff}
+.w75-preview{border:1px solid rgba(255,255,255,.08);border-radius:.75rem;
+  padding:.9rem 1rem;background:rgba(255,255,255,.02);}
+</style>
+</style>
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||n===undefined) return 0;
+  if(typeof n!=='number') return String(n);
+  if(!isFinite(n)) return n>0?'infinity':(n<0?'-infinity':'undefined');
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+/* The one rounding the hook and the truth file agree on: 6 decimals, and a
+   negative zero is reported as 0 because -0 === 0 is true but prints as -0. */
+function R(n){ var v=Math.round(n*1e6)/1e6; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id){ var el=$(id); if(!el) return NaN; return parseFloat(el.value); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function wireCopy(btnId,getText){
+  var b=$(btnId); if(!b) return;
+  b.addEventListener('click',function(){
+    var t=getText();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){
+        b.textContent='Copied'; },function(){ b.textContent='Copy failed'; });
+    }else{ b.textContent='Copy unavailable'; }
+    setTimeout(function(){ b.textContent='Copy'; },1400);
+  });
+}
+/* Numeric test for "is this cell a number?" - deliberately the same strict
+   shape in JS and in Python: optional sign, digits, optional fraction,
+   optional exponent. '4.' and '.5' are NOT numbers here, and neither is
+   '12px' or an empty cell. */
+function isNumRaw(s){
+  if(typeof s!=='string') return false;
+  return /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/.test(s);
+}
+function toNum(s){ return isNumRaw(s)? parseFloat(s) : null; }
+/* median, hand-written so the behaviour on an even-length list is visible:
+   the mean of the two middle values. Python's statistics.median does this too,
+   which is why the truth file and this agree. */
+function median(sorted){
+  var n=sorted.length;
+  if(!n) return null;
+  return (n%2) ? sorted[(n-1)/2] : (sorted[n/2-1]+sorted[n/2])/2;
+}
+function table(head,rows,cls){
+  var h='<table class="w75-table'+(cls?' '+cls:'')+'"><thead><tr>'+
+    head.map(function(t){return '<th>'+esc(t)+'</th>';}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(row){
+    h+='<tr>'+row.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';
+  });
+  return h+'</tbody></table>';
+}
+
+/* ---------------------------------------------------------------- tokenize --
+   A hand-written character scanner. No eval, no Function(), no regex-split
+   that would break on quoted delimiters. Handles "quoted, fields", a doubled
+   "" inside a quoted field, and \n / \r\n / \r line endings. */
+function tokenize(text, delim){
+  var rows=[], row=[], field=[], started=false, i=0, n=text.length;
+  while(i<n){
+    var ch=text.charAt(i);
+    if(ch==='"'){
+      started=true; i++;
+      while(i<n){
+        if(text.charAt(i)==='"'){
+          if(text.charAt(i+1)==='"'){ field.push('"'); i+=2; continue; }
+          i++; break;
+        }
+        field.push(text.charAt(i)); i++;
+      }
+      continue;
+    }
+    if(ch===delim){ row.push(field.join('')); field=[]; started=true; i++; continue; }
+    if(ch==='\n'||ch==='\r'){
+      if(ch==='\r'&&text.charAt(i+1)==='\n') i++;
+      row.push(field.join(''));
+      if(row.length>1||row[0]!==''||started) rows.push(row);
+      row=[]; field=[]; started=false; i++; continue;
+    }
+    field.push(ch); started=true; i++;
+  }
+  if(field.length||started){ row.push(field.join('')); rows.push(row); }
+  return rows;
+}
+
+/* Count how many lines each candidate delimiter would account for. The winner
+   is the one that produces the most multi-field lines and the fewest ragged
+   ones, so 'a,b;c' resolves on the comma, not on whichever char appears first. */
+/* Delimiter detection, one rule: for each candidate, count how many rows
+   agree on the SAME field count, and take the candidate whose winning count
+   is agreed by the most rows. A delimiter that only appears once - a comma
+   inside one quoted note - therefore never wins. Ties go to the earlier
+   candidate in the order comma, semicolon, tab. */
+function detectDelimiter(text){
+  var cands=[[',','comma'],[';','semicolon'],['\t','tab']];
+  var best={delim:',', name:'comma', score:-1};
+  cands.forEach(function(c){
+    var rows=tokenize(text, c[0]);
+    if(!rows.length) return;
+    var tally={};
+    rows.forEach(function(row){ tally[row.length]=1; if(row.length>1){} });
+    /* how many rows share the most common width */
+    var width=null, hits=-1;
+    Object.keys(tally).forEach(function(w){
+      var n=0;
+      rows.forEach(function(row){ if(String(row.length)===String(w)) n++; });
+      if(width===null || n>hits || (n===hits && Number(w)>Number(width))){
+        width=w; hits=n;
+      }
+    });
+    if(width===0) return;
+    if(hits>best.score){ best={delim:c[0], name:c[1], score:hits}; }
+  });
+  return best;
+}
+
+/* --------------------------------------------------------------- statistics */
+function medianOf(sorted){
+  var n=sorted.length;
+  if(!n) return null;
+  return (n%2) ? sorted[(n-1)/2] : (sorted[n/2-1]+sorted[n/2])/2;
+}
+function statsOf(vals){
+  var n=vals.length;
+  if(!n) return null;
+  var s=vals.slice().sort(function(a,b){return a-b;});
+  var sum=0; vals.forEach(function(v){ sum+=v; });
+  var mean=sum/n;
+  var ss=0; vals.forEach(function(v){ ss+=(v-mean)*(v-mean); });
+  return {min:s[0], max:s[n-1], mean:mean, median:medianOf(s), sum:sum,
+          /* n-1 sample standard deviation. With a single value n-1 = 0 and
+             the divisor is 0, so the answer is genuinely undefined -> null. */
+          sd:(n>1 ? Math.sqrt(ss/(n-1)) : null)};
+}
+function mostCommon(vals){
+  var tally={}, order={}, seen=0, best=null, bestN=-1;
+  vals.forEach(function(v){
+    if(!(v in tally)){ tally[v]=0; order[v]=seen++; }
+    tally[v]++;
+  });
+  /* Strict '>' so the FIRST value to reach the winning count is the one
+     reported - a tie is broken by position in the column, not by sorting the
+     strings, because 'a' winning over 'z' is a statement about the data, not
+     about the alphabet. Python's truth file uses the same rule. */
+  Object.keys(tally).forEach(function(v){
+    if(tally[v]>bestN){ bestN=tally[v]; best=v; }
+  });
+  return {value:(best===null?null:best), freq:bestN<0?0:bestN};
+}
+
+/* ------------------------------------------------------------------- core --
+   THE single source of truth. render() paints its return value; the hook
+   returns the same object. There is no second copy of the arithmetic. */
+function analyse(csv, header){
+  csv=(csv===null||csv===undefined)?'':String(csv);
+  if(csv.replace(/^\s+|\s+$/g,'')===''){
+    return {ok:false, why:'empty input', delimiter:',', delimiterName:'comma',
+            hasHeader:!!header, rowCount:0, fieldCount:0, raggedCount:0,
+            raggedRows:[], numericCount:0, textCount:0, columns:[]};
+  }
+  var det=detectDelimiter(csv);
+  var all=tokenize(csv, det.delim);
+  if(!all.length){
+    return {ok:false, why:'no rows parsed', delimiter:det.delim, delimiterName:det.name,
+            hasHeader:!!header, rowCount:0, fieldCount:0, raggedCount:0,
+            raggedRows:[], numericCount:0, textCount:0, columns:[]};
+  }
+  var names=null, data=all;
+  if(header){ names=all[0]; data=all.slice(1); }
+  /* The declared width. With a header it is the header's own field count, so a
+     data row that disagrees is genuinely ragged. Without a header there are no
+     names to define an expectation, so the expectation becomes the MODAL field
+     count - the width most rows share - which is the width a ragged row is
+     measured against. The widest row is NOT used: that would define every row
+     as correct and hide the very thing this tool exists to report. */
+  var width;
+  if(names){ width=names.length; }
+  else{
+    var tally={};
+    data.forEach(function(r){ tally[r.length]=1; });
+    var bw=null, bh=-1;
+    Object.keys(tally).forEach(function(w){
+      var n=0; data.forEach(function(r){ if(r.length===Number(w)) n++; });
+      if(bw===null||n>bh||(n===bh&&Number(w)>bw)){ bw=Number(w); bh=n; }
+    });
+    width=bw===null?0:bw;
+  }
+  var ragged=[];
+  data.forEach(function(row,k){
+    if(row.length!==width) ragged.push({row:k+1, fields:row.length});
+  });
+  var columns=[];
+  for(var c=0;c<width;c++){
+    /* Only rows that actually carry this column are read. A row too short to
+       reach column c contributes nothing here; it is already named in the
+       ragged report, and counting it as a missing value as well would report
+       the same defect twice under two different labels. */
+    var vals=data.filter(function(row){ return row.length>c; })
+                  .map(function(row){ return row[c]; });
+    var nonBlank=vals.filter(function(v){ return v.replace(/^\s+|\s+$/g,'')!==''; });
+    var numeric=nonBlank.length>0 && nonBlank.every(function(v){ return isNumRaw(v.trim()); });
+    var col={index:c, name:(names? String(names[c]===undefined?'':names[c]).replace(/^\s+|\s+$/g,'') : ('Column '+(c+1))),
+             type:(numeric?'numeric':'text'), count:nonBlank.length,
+             missing:vals.length-nonBlank.length};
+    if(numeric){
+      var nums=nonBlank.map(function(v){ return parseFloat(v.trim()); });
+      var s=statsOf(nums);
+      col.min=s.min; col.max=s.max; col.mean=s.mean; col.median=s.median;
+      col.sd=s.sd; col.sum=s.sum;
+    }else{
+      var mc=mostCommon(nonBlank);
+      col.distinct=Object.keys(nalkey(nonBlank)).length;
+      col.mostCommon=mc.value; col.mostCommonFreq=mc.freq;
+    }
+    columns.push(col);
+  }
+  return {ok:true, delimiter:det.delim, delimiterName:det.name, hasHeader:!!header,
+          rowCount:data.length, fieldCount:width,
+          raggedCount:ragged.length, raggedRows:ragged,
+          numericCount:columns.filter(function(c){return c.type==='numeric';}).length,
+          textCount:columns.filter(function(c){return c.type==='text';}).length,
+          columns:columns};
+}
+function nalkey(arr){ var t={}; arr.forEach(function(v){ t[v]=1; }); return t; }
+
+/* ----------------------------------------------------------------- render --
+   Returns the same object the hook hands back, so what is on screen and what
+   is asserted cannot drift apart. */
+function render(){
+  var v=analyse($('cs-text').value, $('cs-header').checked);
+  var shape=$('cs-shape'), rag=$('cs-ragged');
+  if(!v.ok){
+    shape.innerHTML='<div class="w75-note">Nothing to summarise yet &mdash; '+esc(v.why)+'.</div>';
+    rag.innerHTML='';
+    return v;
+  }
+  fill('cs-shape', [
+    ['Delimiter', v.delimiterName+' ('+(v.delimiterName==='tab'?'\\t':v.delimiter)+')'],
+    ['Header row', v.hasHeader?'yes':'no'],
+    ['Data rows', v.rowCount],
+    ['Columns', v.fieldCount],
+    ['Numeric / text', v.numericCount+' / '+v.textCount]
+  ]);
+  if(!v.raggedCount){
+    rag.innerHTML='<div class="w75-note">Every row has '+v.fieldCount+
+      ' fields. Nothing is out of shape.</div>';
+  }else{
+    rag.innerHTML='<div class="w75-note" style="margin-bottom:.6rem">'+
+      v.raggedCount+' row'+(v.raggedCount===1?'':'s')+' do not have '+
+      v.fieldCount+' fields. They are reported here and still counted; short '+
+      'rows read as blanks in the columns they miss.</div>'+
+      table(['Line','Fields'],[v.raggedRows.map(function(g){
+        return [String(g.row),'<span class="num">'+g.fields+'</span>'];
+      })]);
+  }
+  var out=$('cs-out');
+  if(out){
+    out.innerHTML=table(['#','Column','Type','Count','Missing','Min','Max','Mean',
+      'Median','Std dev (n-1)','Sum','Distinct','Most common','Freq'],
+      v.columns.map(function(col){
+        function n(x){ return x===null||x===undefined
+          ? '<span class="w75-same">&mdash;</span>'
+          : '<span class="num">'+r(x,4)+'</span>'; }
+        return ['<span class="num">'+col.index+'</span>', esc(col.name),
+          '<span class="w75-tag'+(col.type==='numeric'?' num':'')+'">'+col.type+'</span>',
+          '<span class="num">'+col.count+'</span>',
+          '<span class="num">'+col.missing+'</span>',
+          col.type==='numeric'?n(col.min):'&mdash;',
+          col.type==='numeric'?n(col.max):'&mdash;',
+          col.type==='numeric'?n(col.mean):'&mdash;',
+          col.type==='numeric'?n(col.median):'&mdash;',
+          col.type==='numeric'?n(col.sd):'&mdash;',
+          col.type==='numeric'?n(col.sum):'&mdash;',
+          col.type==='text'?'<span class="num">'+col.distinct+'</span>':'&mdash;',
+          col.type==='text'?esc(col.mostCommon===null?'':col.mostCommon):'&mdash;',
+          col.type==='text'?'<span class="num">'+col.mostCommonFreq+'</span>':'&mdash;'];
+      }));
+  }
+  return v;
+}
+
+$('cs-text').addEventListener('input',render);
+$('cs-header').addEventListener('change',render);
+$('cs-sample').addEventListener('click',function(){
+  put('cs-text','a,b,c\n1,2,3\n4,5\n6,7,8,9');
+  $('cs-header').checked=true;
+  $('cs-header').dispatchEvent(new Event('change',{bubbles:true}));
+  render();
+});
+$('cs-clear').addEventListener('click',function(){ put('cs-text',''); });
+wireCopy('cs-copy',function(){ return $('cs-out').textContent; });
+render();
+
+/* Hook: analyse() is the same function render() painted from, not a copy. */
+window.__csv_column_statistics = {
+  analyse: analyse,
+  run: function(i){
+    i=i||{};
+    if(i.csv!==undefined) put('cs-text', i.csv);
+    if(i.header!==undefined){
+      var h=$('cs-header'); h.checked=!!i.header;
+      h.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+    var v=render();
+    var o={ok:v.ok, delimiter:v.delimiter, delimiterName:v.delimiterName,
+           hasHeader:v.hasHeader, rowCount:v.rowCount, fieldCount:v.fieldCount,
+           raggedCount:v.raggedCount, raggedRows:v.raggedRows,
+           numericCount:v.numericCount, textCount:v.textCount,
+           columnNames:v.columns.map(function(c){return c.name;})};
+    if(!v.ok){ o.why=v.why; return JSON.stringify(o); }
+    /* Flattened col<i><Field> accessors so a single test can assert one
+       column's numbers without hardcoding the whole table. */
+    v.columns.forEach(function(c,i){
+      var p='col'+i;
+      o[p+'Type']=c.type; o[p+'Name']=c.name;
+      o[p+'Count']=c.count; o[p+'Missing']=c.missing;
+      ['min','max','mean','median','sd','sum','distinct','mostCommon','mostCommonFreq']
+        .forEach(function(k){
+          if(c[k]!==undefined) o[p+k[0].toUpperCase()+k.slice(1)] =
+            (typeof c[k]==='number' ? R(c[k]) : c[k]);
+        });
+    });
+    return JSON.stringify(o);
+  }
+};
+
+</script>
+  </div>
+</div>
+<section class="d-more"><div class="wrap"><h2>More tools</h2><div class="ws-grid"><a class="tile-card" href="/workspace/tools/find-replace/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/find-replace/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>Find &amp; Replace</h3><p>Plain or regex find-and-replace with live count.</p></div></a><a class="tile-card" href="/workspace/tools/text-stats/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/text-stats/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>Text Statistics</h3><p>Chars, words, sentences, reading time and character frequency.</p></div></a><a class="tile-card" href="/workspace/tools/readability/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/readability/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>Readability Score</h3><p>Flesch, Flesch-Kincaid, Gunning Fog, SMOG and ARI scores.</p></div></a><a class="tile-card" href="/workspace/tools/slugify/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/slugify/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>Slug Generator</h3><p>SEO-friendly URL slugs with separator and diacritic options.</p></div></a><a class="tile-card" href="/workspace/tools/invoice-generator/" style="--c:#ff8f70"><div class="shot"><img src="/workspace/tools/invoice-generator/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">PDF &amp; docs</span><h3>Invoice Generator</h3><p>Build a tax invoice with line items, discount and tax, then print or save it as PDF.</p></div></a><a class="tile-card" href="/workspace/tools/css-border-radius-generator/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/tools/css-border-radius-generator/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Design &amp; colour</span><h3>Border Radius Generator</h3><p>Dial in all eight corner radii, watch the shape change and copy the exact CSS.</p></div></a><a class="tile-card" href="/workspace/tools/gradient-text-generator/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/tools/gradient-text-generator/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Design &amp; colour</span><h3>Gradient Text Generator</h3><p>Build linear, radial or conic gradient text and copy the CSS or the ready-made HTML span.</p></div></a><a class="tile-card" href="/workspace/tools/timestamp-diff/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/timestamp-diff/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Timestamp Difference</h3><p>Difference between two Unix timestamps or dates, broken down into days, hours, weeks and years.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>

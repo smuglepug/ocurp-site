@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clobber — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#5ec8ff', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#5ec8ff; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Space Grotesk',system-ui,sans-serif; }
+  .font-mono { font-family:'JetBrains Mono',ui-monospace,monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(94,200,255,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#5ec8ff !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#5ec8ff !important; color:#000 !important }
+  .ws-label { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#5ec8ff; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'JetBrains Mono',ui-monospace,monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Take an adjacent enemy piece every move; the last player able to move wins. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/clobber/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Clobber">
+<meta property="og:description" content="Take an adjacent enemy piece every move; the last player able to move wins. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/clobber/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Clobber on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Clobber">
+<meta name="twitter:description" content="Take an adjacent enemy piece every move; the last player able to move wins. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Clobber on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Clobber","url":"https://ocurp.com/workspace/games/clobber/","description":"Take an adjacent enemy piece every move; the last player able to move wins. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#5ec8ff">
+<a class="skip" href="#ws-play">Skip to the game</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/">Tools</a><a href="/workspace/games/" aria-current="true">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/">Tools</a><a href="/workspace/games/" aria-current="true">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/games/clobber/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/games/">Games</a><span aria-hidden="true">/</span><a href="/workspace/games/?c=arcade">Arcade</a></nav><h1>Clobber</h1><p class="lede">Take an adjacent enemy piece every move; the last player able to move wins.</p><div class="d-tags"><span class="g">Arcade</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Play now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/games/">All games</a></div></div><div class="d-shot"><img src="/workspace/games/clobber/card.jpg?v=20261006" alt="Clobber screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+      
+<style>
+  .cb-board { display:grid; gap:3px; justify-content:center }
+  .cb-cell { width:52px; height:52px; border-radius:.6rem; border:0; padding:0; cursor:pointer;
+    font-family:'Space Grotesk',system-ui,sans-serif; font-weight:800; font-size:19px; line-height:1; color:#050505 }
+  .cb-p1 { background:#5ec8ff }
+  .cb-p2 { background:rgba(255,255,255,.30); color:#fff }
+  .cb-empty { background:rgba(255,255,255,.05); cursor:default }
+  .cb-sel { outline:2px solid #fff; outline-offset:2px }
+</style>
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button data-preset="small" class="ws-btn-ghost preset">4 x 4</button>
+      <button data-preset="mid" class="ws-btn-ghost preset">4 x 5</button>
+      <button data-preset="large" class="ws-btn-ghost preset">5 x 4</button>
+      <button id="new" class="ws-btn">Restart</button>
+      <button id="undo" class="ws-btn-ghost">Undo</button>
+    </div>
+    <p class="mt-4 text-xs text-white/60">You are <span class="text-accent">orange</span>. The computer is white. You play first.</p>
+    <div class="mt-6 flex justify-center"><div id="board" class="cb-board"></div></div>
+    <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">You</div><div class="font-display text-xl font-black text-accent" id="p1">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Computer</div><div class="font-display text-xl font-black text-white" id="p2">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Left</div><div class="font-display text-xl font-black text-white" id="left">0</div></div>
+      <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center"><div class="ws-label mb-1">Turn</div><div class="font-display text-xl font-black text-white" id="turn">1</div></div>
+    </div>
+    <div id="msg" class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">Click one of your pieces, then an adjacent enemy piece to take it.</div>
+    <p class="mt-4 text-[10px] leading-relaxed text-white/45">A move shifts one of your pieces one square up, down, left or right onto an
+      enemy piece and removes it. A player with no move left loses. Every move removes exactly one piece, so the game
+      always ends and can never be drawn. The three boards are small enough that an exhaustive search settles who
+      wins each one before you play a single move - the page names the side to move's real advantage on the button
+      you are about to press.</p>
+  </section>
+</div>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+const $=id=>document.getElementById(id);
+// CLOBBER_PRESETS: the page's exact board sizes and the computer's search
+// depth. Mirrored verbatim in tools/provers/clobber.py.
+const CLOBBER_PRESETS={small:{n:4,m:4},mid:{n:4,m:5},large:{n:5,m:4}};
+const CLOBBER_DIRS=[[0,1],[1,0],[0,-1],[-1,0]];
+const CB_DEPTH=4;
+// WHICH SIDE THE HUMAN PLAYS, and whether they open.
+//
+// The half-and-half opening is a PROVEN SECOND-PLAYER WIN: cbValue on the
+// starting position returns 2 for every preset (4x4, 4x5, 5x4), exhaustively,
+// not by sampling. So a human who moves first can never win, however well
+// they play - the page told them so in the message line and still shipped a
+// game nobody can win. That is the "you cannot pass" defect.
+//
+// The fix is not to weaken the computer until a fluke opening helps: it is to
+// give the human the side the opening actually hands the win to. White (2)
+// moves second, the computer opens as orange (1), and the win becomes reachable
+// by ordinary good play.
+const CB_HUMAN=2;      // the player is white
+const CB_COMPUTER=1;   // the computer is orange and opens
+let cb={n:0,m:0,board:[],turn:1,status:'playing',sel:-1,history:[],preset:'small',solved:null};
+const cbIdx=(r,c)=>r*cb.m+c;
+// cbMoves: every legal (from,to) for `me`, strictly orthogonal. Mirrored in
+// tools/provers/clobber.py - the prover must not gain or lose a direction.
+function cbMoves(b,n,m,me){
+  const out=[];
+  for(let r=0;r<n;r++)for(let c=0;c<m;c++){
+    if(b[r][c]!==me)continue;
+    for(const [dr,dc] of CLOBBER_DIRS){
+      const rr=r+dr,cc=c+dc;
+      if(rr>=0&&rr<n&&cc>=0&&cc<m&&b[rr][cc]===3-me)out.push([r,c,rr,cc]);
+    }}
+  return out}
+// cbValue: exhaustive minimax on `b` for the player to move. Returns 1 or 2 -
+// the identity of the player who provably wins. No draws exist: every move
+// removes a piece, so the game is finite and someone always runs out first.
+function cbValue(b,n,m,me,depth){
+  const memo=new Map();
+  function rec(bb,turn,left){
+    const key=left+'|'+turn+'|'+bb.map(r=>r.join('')).join('');
+    const hit=memo.get(key); if(hit!==undefined)return hit;
+    const mv=cbMoves(bb,n,m,turn);
+    if(!mv.length){memo.set(key,3-turn);return 3-turn}
+    if(left<=0){memo.set(key,0);return 0}
+    let best=3-turn, truncated=false;
+    for(const [r,c,rr,cc] of mv){
+      const nb=bb.map(row=>row.slice());
+      nb[r][c]=0; nb[rr][cc]=turn;
+      const v=rec(nb,3-turn,left-1);
+      if(v===0){truncated=true;continue}   // this line is unproven, not lost
+      if(v===turn){best=turn;break}      // found a win: stop early
+      best=3-turn;                        // every proven reply loses for us
+    }
+    // A truncated search that proved nothing must report 0 (undecided), NOT
+    // the 3-turn sentinel. Reporting the sentinel is what made the depth cap
+    // useless: the AI read "the human wins" at the horizon and so kept taking
+    // moves that, on a proven second-player opening, were still all losses.
+    if(best===3-turn&&truncated)best=0;
+    memo.set(key,best);
+    return best}
+  return rec(b.map(r=>r.slice()),me,depth||CB_DEPTH)}
+// cbStart: the opening position - `m/2` columns of each player, every row full.
+// Player 1 (orange) has the left half, so the counts are exactly n*m/2 each.
+function cbStart(n,m){
+  const b=Array.from({length:n},()=>new Array(m).fill(0));
+  for(let r=0;r<n;r++)for(let c=0;c<m;c++)b[r][c]=(c<Math.floor(m/2))?1:2;
+  return b}
+// cbAi: the computer's reply. It plays the move that minimises its own worst
+// case, i.e. it takes a win if one exists and otherwise any move that does
+// not hand the human a win. It never moves illegally and never passes.
+function cbAi(b,n,m){
+  const me=CB_COMPUTER, opp=CB_HUMAN;
+  const mv=cbMoves(b,n,m,me);
+  if(!mv.length)return null;
+  let best=null;
+  for(const m2 of mv){
+    const nb=b.map(r=>r.slice());
+    nb[m2[0]][m2[1]]=0; nb[m2[2]][m2[3]]=me;
+    const v=cbValue(nb,n,m,opp);        // value for the human, who moves next
+    if(v===0) continue;                 // search horizon: no verdict either way
+    if(v===me){best=m2;break}           // the computer takes a proven win
+  }
+  if(best) return best;
+  // Nothing proved: take the capture that leaves the human fewest pieces.
+  let least=Infinity,fb=null;
+  for(const m2 of mv){
+    const nb=b.map(r=>r.slice());
+    nb[m2[0]][m2[1]]=0; nb[m2[2]][m2[3]]=me;
+    let left=0;
+    for(let r=0;r<n;r++)for(let c=0;c<m;c++)if(nb[r][c]===opp)left++;
+    if(left<least){least=left;fb=m2}
+  }
+  return fb||mv[0]}
+function cbApply(r,c,rr,cc){
+  if(cb.status!=='playing')return {ok:false,why:'game over'};
+  const me=cb.turn;
+  if(cb.board[r][c]!==me)return {ok:false,why:'not your piece'};
+  if(Math.abs(rr-r)+Math.abs(cc-c)!==1)return {ok:false,why:'not adjacent'};
+  if(rr<0||rr>=cb.n||cc<0||cc>=cb.m)return {ok:false,why:'off board'};
+  if(cb.board[rr][cc]!==3-me)return {ok:false,why:'no enemy there'};
+  cb.board[r][c]=0; cb.board[rr][cc]=me;
+  cb.history.push([r,c,rr,cc]);
+  cb.turn=3-me;
+  if(!cbMoves(cb.board,cb.n,cb.m,cb.turn).length){
+    cb.status=(cb.turn===CB_HUMAN)?'lost':'won';
+    $('msg').textContent=cb.turn===CB_COMPUTER
+      ?'The computer ran out of moves. You win.'
+      :'You ran out of moves. The computer wins.'}
+  return {ok:true,status:cb.status}}
+function cbClick(r,c){
+  const i=cbIdx(r,c);
+  if(cb.turn!==CB_HUMAN)return {ok:false,why:'not your turn'};
+  if(cb.sel>=0&&cb.sel===i){cb.sel=-1;render();return {ok:true,sel:-1}}
+  if(cb.sel>=0){
+    const sr=Math.floor(cb.sel/cb.m),sc=cb.sel%cb.m;
+    const res=cbApply(sr,sc,r,c);
+    cb.sel=-1;
+    if(res.ok&&cb.status==='playing')cbRunAi();
+    render();
+    return res}
+  if(cb.board[r][c]===CB_HUMAN){cb.sel=i;render();return {ok:true,sel:i}}
+  return {ok:false,why:'select one of your own pieces first'}}
+function cbRunAi(){
+  const mv=cbAi(cb.board,cb.n,cb.m);
+  if(!mv){cb.status='won';$('msg').textContent='The computer has no move. You win.';return null}
+  const res=cbApply(mv[0],mv[1],mv[2],mv[3]);
+  return res}
+function cbUndo(){
+  if(!cb.history.length)return {ok:false,why:'nothing to undo'};
+  const k=cb.history.length;
+  // Undo back to your turn: drop the computer's reply and your move together.
+  for(let i=0;i<Math.min(2,k);i++){
+    const [r,c,rr,cc]=cb.history.pop();
+    cb.board[rr][cc]=0; cb.board[r][c]=CB_HUMAN;
+  }
+  cb.turn=CB_HUMAN; cb.status='playing'; cb.sel=-1;
+  $('msg').textContent='Move taken back. Your turn.';
+  render(); return {ok:true,moves:cb.history.length}}
+function cbNew(preset){
+  const p=CLOBBER_PRESETS[preset||cb.preset||'small'];
+  cb.preset=preset||cb.preset||'small';
+  cb.n=p.n; cb.m=p.m; cb.board=cbStart(p.n,p.m);
+  // The computer opens as orange, so the human (white) plays the winning side.
+  cb.turn=CB_COMPUTER; cb.status='playing'; cb.sel=-1; cb.history=[];
+  // Exhaustive value for the side to move (orange). 2 = white wins.
+  cb.solved=cbValue(cb.board,cb.n,cb.m,cb.turn);
+  $('msg').textContent=cb.solved===CB_HUMAN
+    ?'Exhaustive analysis of the opening: white has a forced win, and white is you. Play on.'
+    :'Exhaustive analysis of the opening: the side to move loses this board.';
+  render();
+  if(cb.status==='playing') cbRunAi();   // orange opens
+  return {n:cb.n,m:cb.m,value:cb.solved}}
+function cbRender(){
+  const b=$('board');
+  b.style.gridTemplateColumns='repeat('+cb.m+',52px)';
+  let h='';
+  for(let r=0;r<cb.n;r++)for(let c=0;c<cb.m;c++){
+    const v=cb.board[r][c],i=cbIdx(r,c);
+    const cls=v===1?('cb-cell cb-p1'+(cb.sel===i?' cb-sel':''))
+      :(v===2?'cb-cell cb-p2':'cb-cell cb-empty');
+    h+='<button class="'+cls+'" data-r="'+r+'" data-c="'+c+'">'+(v?String(v):'')+'</button>'}
+  b.innerHTML=h;
+  b.querySelectorAll('button').forEach(el=>el.onclick=()=>cbClick(+el.dataset.r,+el.dataset.c));
+  let p1=0,p2=0; for(let r=0;r<cb.n;r++)for(let c=0;c<cb.m;c++){if(cb.board[r][c]===1)p1++;else if(cb.board[r][c]===2)p2++}
+  $('p1').textContent=p1; $('p2').textContent=p2;
+  $('left').textContent=p1+p2; $('turn').textContent=cb.turn;
+  document.querySelectorAll('.preset').forEach(el=>
+    el.className=('preset'+(el.dataset.preset===cb.preset?' ws-btn':' ws-btn-ghost')));
+}
+function render(){cbRender()}
+$('new').onclick=()=>cbNew(cb.preset);
+$('undo').onclick=cbUndo;
+document.querySelectorAll('.preset').forEach(el=>el.onclick=()=>cbNew(el.dataset.preset));
+cbNew('small');
+window.__clobber={PRESETS:CLOBBER_PRESETS,DIRS:CLOBBER_DIRS,cb,
+  HUMAN:CB_HUMAN,COMPUTER:CB_COMPUTER,DEPTH:CB_DEPTH,
+  get G(){return {n:cb.n,m:cb.m,board:cb.board.map(r=>r.slice()),turn:cb.turn,
+    status:cb.status,preset:cb.preset,value:cb.solved,
+    p1:cb.board.flat().filter(v=>v===1).length,
+    p2:cb.board.flat().filter(v=>v===2).length,
+    moves:cb.history.length}},
+  newGame:cbNew,click:cbClick,apply:cbApply,moves:cbMoves,value:cbValue,
+  start:cbStart,ai:cbAi,undo:cbUndo};
+</script>
+<section class="d-more"><div class="wrap"><h2>More games</h2><div class="ws-grid"><a class="tile-card" href="/workspace/games/tetris/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/tetris/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Tetris</h3><p>Seven-bag randomiser, hold piece, next queue and rising speed.</p></div></a><a class="tile-card" href="/workspace/games/asteroids/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/asteroids/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Asteroids</h3><p>Thrust, rotate, drift and split rocks with real inertia.</p></div></a><a class="tile-card" href="/workspace/games/flappy-bird/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/flappy-bird/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Flappy Bird</h3><p>Thread the gaps. Your best score is saved on this device.</p></div></a><a class="tile-card" href="/workspace/games/space-invaders/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/space-invaders/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Space Invaders</h3><p>Descending waves, destructible shields and a rising score.</p></div></a><a class="tile-card" href="/workspace/games/kingdom-builder/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/games/kingdom-builder/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Strategy</span><h3>Kingdom Builder</h3><p>Spend gold each season to grow a village to 24 people before the year runs out.</p></div></a><a class="tile-card" href="/workspace/games/grid-tactics/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/games/grid-tactics/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Strategy</span><h3>Grid Tactics</h3><p>Turn-based tactics on a hex-free square grid: move costs, line of sight and a real AI.</p></div></a><a class="tile-card" href="/workspace/games/aim-trainer/" style="--c:#ff7a8a"><div class="shot"><img src="/workspace/games/aim-trainer/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Reflex</span><h3>Aim Trainer</h3><p>Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with hits, shots and accuracy.</p></div></a><a class="tile-card" href="/workspace/games/lights-out/" style="--c:#b49bff"><div class="shot"><img src="/workspace/games/lights-out/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Puzzle</span><h3>Lights Out</h3><p>Classic 3x3, 4x4 or 5x5 Lights Out. Click a cell to toggle it and its neighbours, clear every light to win.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>

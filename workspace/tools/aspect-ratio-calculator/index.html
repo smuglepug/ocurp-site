@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aspect Ratio Calculator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#ff8fc7', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#ff8fc7; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#ff8fc7; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,143,199,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#ff8fc7 !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,143,199,.28); background:rgba(255,143,199,.06);
+    padding:1rem 1.1rem; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+
+<style>
+  html, body { overflow-x:hidden; }
+  .qs-row, .rs-row { display:grid; gap:.5rem; align-items:center;
+    grid-template-columns:1fr 7rem 1.3fr auto; margin-bottom:.5rem; }
+  .qs-row .qs-k, .rs-row .rs-q { font-family:'JetBrains Mono',ui-monospace,monospace; }
+  .qs-del, .rs-del { border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04);
+    color:rgba(255,255,255,.6); width:2rem; height:2rem; border-radius:.6rem;
+    font-size:1.05rem; line-height:1; cursor:pointer; transition:all .15s ease; }
+  .qs-del:hover, .rs-del:hover { border-color:rgba(255,143,199,.55); color:#ff8fc7; }
+  @media (max-width:560px) {
+    .qs-row, .rs-row { grid-template-columns:1fr 6rem auto; }
+    .qs-row .qs-v, .rs-row .rs-n { grid-column:1 / -1; }
+  }
+</style>
+<meta name="description" content="Reduce any width and height pair. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/aspect-ratio-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Aspect Ratio Calculator">
+<meta property="og:description" content="Reduce any width and height pair. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/aspect-ratio-calculator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Aspect Ratio Calculator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Aspect Ratio Calculator">
+<meta name="twitter:description" content="Reduce any width and height pair. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Aspect Ratio Calculator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Aspect Ratio Calculator","url":"https://ocurp.com/workspace/tools/aspect-ratio-calculator/","description":"Reduce any width and height pair. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#ff8fc7">
+<a class="skip" href="#ws-play">Skip to the tool</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/tools/aspect-ratio-calculator/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/tools/">Tools</a><span aria-hidden="true">/</span><a href="/workspace/tools/?c=design">Design &amp; colour</a></nav><h1>Aspect Ratio Calculator</h1><p class="lede">Reduce any width and height pair, widen or narrow it to a target, and get the multiplier, the pad or crop needed for a fixed canvas.</p><div class="d-tags"><span class="g">Design &amp; colour</span><span>Aspect Ratio</span><span>Ratio</span><span>Resize</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Open now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/tools/">All tools</a></div></div><div class="d-shot"><img src="/workspace/tools/aspect-ratio-calculator/card.jpg?v=20261006" alt="Aspect Ratio Calculator screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+  <p class="mb-8 max-w-2xl text-base text-white/55">Reduce a width and height to their lowest-term ratio by greatest common divisor, list the standard resolutions that share it, and solve the scale needed to fit a source size inside a given box.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">GCD REDUCTION</span>
+    <span class="ws-chip">RESOLUTION MATCHES</span>
+    <span class="ws-chip">SCALE TO FIT</span>
+  </div>
+  <p class="mt-0 mb-3 text-[11px] leading-relaxed text-white/40">
+    Enter a pixel size and it is reduced by its greatest common divisor, so
+    1920&times;1080 becomes 16:9 because the gcd is 120 &mdash; not by dividing
+    by hand until something looks tidy. The matches list compares the
+    <span class="text-white/70">reduced</span> pair, which is why
+    854&times;480 does not appear under 16:9: it reduces to 427:240.
+  </p>
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="ws-label mb-2 block" for="ar-w">Width</label>
+      <input id="ar-w" class="ws-input" type="number" value="1920" min="1" step="1">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="ar-h">Height</label>
+      <input id="ar-h" class="ws-input" type="number" value="1080" min="1" step="1">
+    </div>
+  </div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="ar-go" class="ws-btn" style="width:auto">Reduce</button>
+    <button id="ar-c1" class="ws-btn-ghost" style="width:auto">1920&times;1080</button>
+    <button id="ar-c2" class="ws-btn-ghost" style="width:auto">1080&times;1920</button>
+    <button id="ar-c3" class="ws-btn-ghost" style="width:auto">1024&times;768</button>
+    <button id="ar-c4" class="ws-btn-ghost" style="width:auto">1280&times;853</button>
+    <button id="ar-c5" class="ws-btn-ghost" style="width:auto">1000&times;1000</button>
+  </div>
+  <div class="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div class="ws-label mb-2">Scale W&times;H to fit inside</div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <input id="ar-mw" class="ws-input" type="number" value="1280" min="1" step="1" aria-label="Max width">
+      </div>
+      <div>
+        <input id="ar-mh" class="ws-input" type="number" value="720" min="1" step="1" aria-label="Max height">
+      </div>
+    </div>
+    <label class="mt-3 flex items-center gap-2 text-[11px] text-white/55" for="ar-up">
+      <input id="ar-up" type="checkbox" class="accent-[#ff8fc7]">
+      Allow upscaling above 1
+    </label>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="ar-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">The reduced ratio</div>
+  <div id="ar-out" class="ws-out"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Numbers</div>
+  <div id="ar-kv"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Resolutions with this ratio</div>
+  <div id="ar-list" class="ws-out" style="max-height:20rem;overflow:auto"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Scale to fit</div>
+  <div id="ar-fit" class="ws-out"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Copy</div>
+  <button id="ar-copy" class="ws-btn" style="width:auto">Copy ratio</button>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function r(n,d){ if(d===undefined) d=2; if(n===null||n===undefined) return 0;
+  if(!isFinite(n)) return n>0?'infinity':(n<0?'-infinity':'undefined');
+  var f=Math.pow(10,d), v=Math.round(n*f)/f; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function NL(){ return String.fromCharCode(10); }
+function copyBtn(id,txt){
+  var b=$(id); if(!b) return;
+  b.addEventListener('click',function(){
+    var s=(typeof txt==='function')?txt():txt;
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(s).catch(function(){});
+    }
+    var old=b.getAttribute('data-label')||b.textContent;
+    b.setAttribute('data-label',old);
+    b.textContent='Copied';
+    setTimeout(function(){ b.textContent=old; },1100);
+  });
+}
+
+var AR=(function(){
+  /* Hand-rolled Euclid: the page has to show the gcd it divided by, and a
+     library gcd() would hide the one number the tool exists to explain. */
+  function gcd(a,b){
+    a=Math.abs(Math.round(a)); b=Math.abs(Math.round(b));
+    var steps=0, s='';
+    while(b!==0){
+      s+='    '+a+' = '+Math.floor(a/b)+' x '+b+' + '+(a%b)+NL();
+      var t=b; b=a%b; a=t; steps++;
+      if(steps>64) break;
+    }
+    return {g:a,steps:steps,trace:s};
+  }
+  /* Common screen and print sizes. Matching is on the REDUCED pair, so
+     854x480 (427:240) and 640x480 (4:3) are correctly absent from 16:9, and
+     240x320 (3:4) is correctly absent from 9:16. */
+  var RES=[
+    [3840,2160],[2560,1440],[1920,1080],[1600,900],[1440,810],[1280,720],
+    [1024,576],[960,540],[854,480],[800,450],[768,432],[640,360],[426,240],
+    [384,216],[320,180],[1080,1920],[720,1280],[480,854],[360,640],[240,320],
+    [2160,3840],[1440,2560],[1280,853],[1000,1000],[512,512],[256,256],
+    [1920,1200],[1024,768],[1280,1024],[2560,1080]
+  ];
+  function analyze(w,h){
+    if(!(w>0)||!(h>0)) return {ok:false,why:'width and height must both be above zero'};
+    var G=gcd(w,h);
+    var rw=w/G.g, rh=h/G.g;
+    var matches=[], seen={}, i;
+    for(i=0;i<RES.length;i++){
+      var G2=gcd(RES[i][0],RES[i][1]);
+      var a=RES[i][0]/G2.g, b=RES[i][1]/G2.g;
+      if(a===rw&&b===rh&&!seen[RES[i][0]+'x'+RES[i][1]]){
+        seen[RES[i][0]+'x'+RES[i][1]]=1; matches.push([RES[i][0],RES[i][1]]);
+      }
+    }
+    matches.sort(function(p,q){ return q[0]-p[0]; });
+    return {ok:true,w:w,h:h,g:G.g,rw:rw,rh:rh,steps:G.steps,trace:G.trace,
+      decimal:w/h,rdec:rw/rh,matches:matches,matchCount:matches.length,
+      multiple:G.g,portrait:h>w};
+  }
+  function fit(w,h,mw,mh,allowUp){
+    if(!(w>0)||!(h>0)||!(mw>0)||!(mh>0)) return null;
+    var sx=mw/w, sy=mh/h;
+    var s=sx<sy?sx:sy, binding=(sx<=sy)?'width':'height';
+    var capped=false;
+    if(s>1&&!allowUp){ s=1; capped=true; }
+    var nw=Math.round(w*s), nh=Math.round(h*s);
+    return {sx:sx,sy:sy,s:s,scale:r(s,6),w:nw,h:nh,
+      binding:(s===1)?'none (already fits)':binding,capped:capped,
+      okW:nw<=mw,okH:nh<=mh};
+  }
+  function render(){
+    var w=parseFloat($('ar-w').value), h=parseFloat($('ar-h').value);
+    var mw=parseFloat($('ar-mw').value), mh=parseFloat($('ar-mh').value);
+    var err=$('ar-err'); err.textContent='';
+    var a=analyze(w,h);
+    if(!a.ok){ err.textContent=a.why; $('ar-out').textContent=''; $('ar-fit').textContent='';
+      return null; }
+    $('ar-out').textContent=
+        a.rw+':'+a.rh+NL()+NL()
+      +'original      '+a.w+' x '+a.h+NL()
+      +'gcd           '+a.g+'   ('+a.steps+' Euclid steps)'+NL()
+      +'reduction     '+a.w+' / '+a.g+' = '+a.rw+NL()
+      +'              '+a.h+' / '+a.g+' = '+a.rh+NL()
+      +'decimal       '+r(a.decimal,6)+'   (1 : '+r(1/a.decimal,6)+')'+NL()
+      +'ratio decimal '+r(a.rdec,6)+NL()
+      +'orientation   '+(a.portrait?'portrait':'landscape')+NL()
+      +'gcd is        '+(a.g===1?'1 - already in lowest terms':a.g)+NL()
+      +NL()+'Euclidean trace'+NL()+a.trace;
+    fill('ar-kv',[
+      ['Width',a.w],['Height',a.h],
+      ['GCD',a.g],['Reduced width',a.rw],['Reduced height',a.rh],
+      ['Reduced ratio',a.rw+':'+a.rh],
+      ['Decimal (w / h)',r(a.decimal,6)],
+      ['Decimal (reduced)',r(a.rdec,6)],
+      ['Orientation',a.portrait?'portrait':'landscape'],
+      ['Resolution matches',a.matchCount],
+      ['Largest match',a.matchCount?a.matches[0][0]+'x'+a.matches[0][1]:'none'],
+      ['Smallest match',a.matchCount?a.matches[a.matches.length-1][0]+'x'
+        +a.matches[a.matches.length-1][1]:'none']]);
+    var L='', i;
+    if(a.matchCount){
+      for(i=0;i<a.matches.length;i++) L+=((a.matches[i][0]+'x'+a.matches[i][1])).length<16
+        ? (a.matches[i][0]+'x'+a.matches[i][1])+(i<a.matches.length-1?'   ':'')
+        : (a.matches[i][0]+'x'+a.matches[i][1])+NL();
+      if(L.indexOf(NL())===-1) L+='   ('+a.matchCount+' found)';
+    }else{
+      L='no common resolution matches this exact ratio'+NL()
+        +'the reduced pair '+a.rw+':'+a.rh+' is unusual, and no number is'
+        +NL()+'invented for it.';
+    }
+    $('ar-list').textContent=L;
+    var f=fit(w,h,mw,mh,$('ar-up').checked);
+    if(!f){ $('ar-fit').textContent='enter a maximum width and height'; }
+    else{
+      $('ar-fit').textContent=
+          'box          '+$('ar-mw').value+' x '+$('ar-mh').value+NL()
+        +'scale x      '+r(f.sx,6)+NL()
+        +'scale y      '+r(f.sy,6)+NL()
+        +'scale used   '+f.scale+NL()
+        +'binding side '+f.binding+NL()
+        +(f.capped?('capped at 1 - the source already fits, so it is not '
+          +'upscaled')+NL():'')
+        +NL()+'result       '+f.w+' x '+f.h+NL()
+        +'fits width   '+(f.okW?'yes':'NO')+NL()
+        +'fits height  '+(f.okH?'yes':'NO');
+    }
+    return a;
+  }
+  $('ar-go').addEventListener('click',render);
+  $('ar-c1').addEventListener('click',function(){ put('ar-w','1920'); put('ar-h','1080'); render(); });
+  $('ar-c2').addEventListener('click',function(){ put('ar-w','1080'); put('ar-h','1920'); render(); });
+  $('ar-c3').addEventListener('click',function(){ put('ar-w','1024'); put('ar-h','768'); render(); });
+  $('ar-c4').addEventListener('click',function(){ put('ar-w','1280'); put('ar-h','853'); render(); });
+  $('ar-c5').addEventListener('click',function(){ put('ar-w','1000'); put('ar-h','1000'); render(); });
+  $('ar-w').addEventListener('input',render);
+  $('ar-h').addEventListener('input',render);
+  $('ar-mw').addEventListener('input',render);
+  $('ar-mh').addEventListener('input',render);
+  $('ar-up').addEventListener('change',render);
+  copyBtn('ar-copy',function(){
+    var a=analyze(parseFloat($('ar-w').value),parseFloat($('ar-h').value));
+    return a.ok?a.rw+':'+a.rh:'--';
+  });
+  render();
+  return {analyze:analyze,fit:fit,gcd:gcd,render:render,RES:RES};
+})();
+
+window.__aspect_ratio_calculator = {
+  analyze: function(w,h){ return AR.analyze(w,h); },
+  fit: function(w,h,mw,mh,up){ return AR.fit(w,h,mw,mh,!!up); },
+  render: function(){
+    var a=AR.render();
+    if(!a) return JSON.stringify({ok:false});
+    var f=AR.fit(a.w,a.h,parseFloat($('ar-mw').value),parseFloat($('ar-mh').value),
+      $('ar-up').checked);
+    return JSON.stringify({ok:true,w:a.w,h:a.h,g:a.g,rw:a.rw,rh:a.rh,
+      steps:a.steps,decimal:r(a.decimal,6),rdec:r(a.rdec,6),
+      portrait:a.portrait,matchCount:a.matchCount,
+      matches:a.matches.map(function(m){ return m[0]+'x'+m[1]; }),
+      first:a.matchCount?a.matches[0][0]+'x'+a.matches[0][1]:null,
+      last:a.matchCount?a.matches[a.matches.length-1][0]+'x'
+        +a.matches[a.matches.length-1][1]:null,
+      fit:f?{scale:f.scale,w:f.w,h:f.h,binding:f.binding,capped:f.capped,
+        okW:f.okW,okH:f.okH}:null});
+  },
+  run: function(i){
+    i=i||{};
+    if(i.w!==undefined) put('ar-w',String(i.w));
+    if(i.h!==undefined) put('ar-h',String(i.h));
+    if(i.maxW!==undefined) put('ar-mw',String(i.maxW));
+    if(i.maxH!==undefined) put('ar-mh',String(i.maxH));
+    if(i.up!==undefined) $('ar-up').checked=!!i.up;
+    return window.__aspect_ratio_calculator.render();
+  }
+};
+
+</script>
+  </div>
+</div>
+<section class="d-more"><div class="wrap"><h2>More tools</h2><div class="ws-grid"><a class="tile-card" href="/workspace/tools/image-crop/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/tools/image-crop/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Design &amp; colour</span><h3>Image Cropper</h3><p>Drag a crop box with fixed ratios and download.</p></div></a><a class="tile-card" href="/workspace/tools/image-convert/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/tools/image-convert/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Design &amp; colour</span><h3>Image Converter</h3><p>PNG, JPG and WebP via canvas with quality control.</p></div></a><a class="tile-card" href="/workspace/tools/heic-to-jpg/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/tools/heic-to-jpg/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Design &amp; colour</span><h3>HEIC to JPG</h3><p>Decode HEIC in-browser via heic2any, no upload.</p></div></a><a class="tile-card" href="/workspace/tools/svg-to-png/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/tools/svg-to-png/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Design &amp; colour</span><h3>SVG to PNG</h3><p>Rasterise an uploaded SVG at your chosen scale.</p></div></a><a class="tile-card" href="/workspace/tools/ocr-image-to-text/" style="--c:#ff8f70"><div class="shot"><img src="/workspace/tools/ocr-image-to-text/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">PDF &amp; docs</span><h3>Image to Text (OCR)</h3><p>Run Tesseract.js OCR in the browser — no upload, multi-language.</p></div></a><a class="tile-card" href="/workspace/tools/markdown-to-pdf/" style="--c:#ff8f70"><div class="shot"><img src="/workspace/tools/markdown-to-pdf/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">PDF &amp; docs</span><h3>Markdown to PDF</h3><p>Write markdown, preview it, export a clean paginated PDF.</p></div></a><a class="tile-card" href="/workspace/tools/html-to-pdf/" style="--c:#ff8f70"><div class="shot"><img src="/workspace/tools/html-to-pdf/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">PDF &amp; docs</span><h3>HTML to PDF</h3><p>Paste HTML, preview it live, export a styled PDF.</p></div></a><a class="tile-card" href="/workspace/tools/pdf-page-extract/" style="--c:#ff8f70"><div class="shot"><img src="/workspace/tools/pdf-page-extract/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">PDF &amp; docs</span><h3>Extract PDF Pages</h3><p>Pull a page range into a new PDF with one click.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>

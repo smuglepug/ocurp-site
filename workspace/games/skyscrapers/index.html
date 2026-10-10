@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skyscrapers — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#5ec8ff', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#5ec8ff; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Space Grotesk',system-ui,sans-serif; }
+  .font-mono { font-family:'JetBrains Mono',ui-monospace,monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(94,200,255,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#5ec8ff !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#5ec8ff !important; color:#000 !important }
+  .ws-label { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#5ec8ff; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'JetBrains Mono',ui-monospace,monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Fill the grid with towers so each edge clue counts the towers it can see. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/skyscrapers/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Skyscrapers">
+<meta property="og:description" content="Fill the grid with towers so each edge clue counts the towers it can see. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/skyscrapers/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Skyscrapers on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Skyscrapers">
+<meta name="twitter:description" content="Fill the grid with towers so each edge clue counts the towers it can see. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Skyscrapers on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Skyscrapers","url":"https://ocurp.com/workspace/games/skyscrapers/","description":"Fill the grid with towers so each edge clue counts the towers it can see. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#5ec8ff">
+<a class="skip" href="#ws-play">Skip to the game</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/">Tools</a><a href="/workspace/games/" aria-current="true">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/">Tools</a><a href="/workspace/games/" aria-current="true">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/games/skyscrapers/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/games/">Games</a><span aria-hidden="true">/</span><a href="/workspace/games/?c=arcade">Arcade</a></nav><h1>Skyscrapers</h1><p class="lede">Fill the grid with towers so each edge clue counts the towers it can see.</p><div class="d-tags"><span class="g">Arcade</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Play now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/games/">All games</a></div></div><div class="d-shot"><img src="/workspace/games/skyscrapers/card.jpg?v=20261006" alt="Skyscrapers screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+      
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="easy" class="ws-btn">4 &times; 4 Easy</button>
+      <button id="med" class="ws-btn-ghost">5 &times; 5 Medium</button>
+      <button id="hard" class="ws-btn-ghost">6 &times; 6 Hard</button>
+      <button id="new" class="ws-btn-ghost">New puzzle</button>
+      <button id="giveup" class="ws-btn-ghost">Show solution</button>
+      <span class="ws-chip" id="chip">UNIQUE SOLUTION</span>
+    </div>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)]">
+      <div class="overflow-x-auto">
+        <div id="field"></div>
+        <div id="pad" class="mt-4 flex flex-wrap gap-2"></div>
+        <p class="mt-3 text-[10px] text-white/35">Pick a square, then a number. Erase clears it. Arrow keys move.</p>
+      </div>
+
+      <div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Filled</div>
+            <div class="font-display text-xl font-black text-white" id="filled">0/0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Mistakes</div>
+            <div class="font-display text-xl font-black text-accent" id="mis">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Clues met</div>
+            <div class="font-display text-xl font-black text-white" id="clues">0/0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Status</div>
+            <div class="font-display text-sm font-black text-white" id="status">Playing</div></div>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="check" class="ws-btn-ghost">Check entries</button>
+          <button id="hint" class="ws-btn-ghost">Hint</button>
+        </div>
+        <div id="msg" class="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-white/70">New puzzle loads on start.</div>
+        <p id="legend" class="mt-3 text-[10px] leading-relaxed text-white/45"></p>
+      </div>
+    </div>
+  </section>
+  <p class="mx-auto mt-6 max-w-2xl text-[10px] leading-relaxed text-white/45"><span class="font-black tracking-[0.2em] text-white/60">THE EXACT RULES</span><br>
+    Fill the <span class="text-white/70">n &times; n</span> grid so that every row and every column holds
+    <span class="text-white/70">1&ndash;n exactly once</span>. The numbers around the edges are clues: a clue
+    counts how many buildings you see when you look along that line, and a building is
+    seen only when it is taller than everything before it. A clue of <span class="text-accent">n</span>
+    forces that line to start with the tallest building; a clue of <span class="text-accent">1</span>
+    forces it to end with it. Grey squares are givens and cannot be changed. A number that
+    repeats in its row or column is <span class="text-accent">REFUSED</span> and costs nothing; a legal number
+    that disagrees with the answer is kept, costs one mistake and can be overwritten.
+    <span class="text-accent">WIN</span> = every square filled, every row and column a permutation, and all
+    <span class="text-white/70">4n</span> clues matched. Puzzles are cut from a freshly generated full grid and are
+    only handed over when the solver counts exactly one solution.</p>
+</div>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>const SK={DIFF:{easy:{n:4},med:{n:5},hard:{n:6}},
+           FILL:[45,55],ATTEMPTS:60,RELAX:10};
+const $=id=>document.getElementById(id);
+let st={level:'easy',n:4,puzzle:[],sol:[],givens:[],clues:null,
+        sel:-1,mistakes:0,done:false,over:false,revealed:false};
+
+// --- permutations ---------------------------------------------------------
+function permsOf(n){
+  const base=[];for(let i=1;i<=n;i++)base.push(i);
+  const out=[];
+  (function rec(a){
+    if(!a.length){out.push(base.slice());return}
+    for(let i=0;i<a.length;i++){const r=a.slice();const v=r.splice(i,1)[0];rec(r.concat(v))}})(base);
+  return out}
+function shuffled(a){
+  const b=a.slice();
+  for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=b[i];b[i]=b[j];b[j]=t}
+  return b}
+
+// --- random Latin square (randomised cell-wise backtracking) --------------
+function latinFill(n){
+  const g=Array.from({length:n},()=>new Array(n).fill(0));
+  const rs=Array.from({length:n},()=>new Set()),cs=Array.from({length:n},()=>new Set());
+  let steps=0;
+  (function rec(i){
+    if(i===n*n)return true;
+    if(++steps>400000)return false;
+    const r=(i/n)|0,c=i%n;
+    const off=1+Math.floor(Math.random()*n);
+    for(let t=0;t<n;t++){
+      const v=((off+t)%n)+1;
+      if(rs[r].has(v)||cs[c].has(v))continue;
+      g[r][c]=v;rs[r].add(v);cs[c].add(v);
+      if(rec(i+1))return true;
+      rs[r].delete(v);cs[c].delete(v);g[r][c]=0}
+    return false})(0);
+  return steps>0&&g.every(row=>row.every(v=>v))?g:null}
+
+// --- visibility -----------------------------------------------------------
+function vis(seq){
+  let m=0,h=0;
+  for(let i=0;i<seq.length;i++){const v=seq[i];if(v>h){h=v;m++}}
+  return m}
+function cluesOf(sol,n){
+  const cl={L:[],R:[],T:[],B:[]};
+  for(let r=0;r<n;r++){const row=sol[r];cl.L.push(vis(row));cl.R.push(vis(row.slice().reverse()))}
+  for(let c=0;c<n;c++){const col=[];for(let r=0;r<n;r++)col.push(sol[r][c]);
+    cl.T.push(vis(col));cl.B.push(vis(col.slice().reverse()))}
+  return cl}
+
+// --- the page's solver (the generator's own uniqueness gate) -------------
+function okCell(g,n,r,c,v,cl){
+  for(let k=0;k<n;k++){
+    if(k!==c&&g[r][k]===v)return false;
+    if(k!==r&&g[k][c]===v)return false}
+  let h=0,m=0,k2;
+  for(k2=0;k2<=c;k2++){if(k2===c){if(v>h)m++}else if(g[r][k2]>h){h=g[r][k2];m++}}
+  if(m>cl.L[r])return false;
+  h=0;m=0;
+  for(k2=n-1;k2>=c;k2--){if(k2===c){if(v>h)m++}else if(g[r][k2]>h){h=g[r][k2];m++}}
+  if(m>cl.R[r])return false;
+  h=0;m=0;
+  for(k2=0;k2<=r;k2++){if(k2===r){if(v>h)m++}else if(g[k2][c]>h){h=g[k2][c];m++}}
+  if(m>cl.T[c])return false;
+  h=0;m=0;
+  for(k2=n-1;k2>=r;k2--){if(k2===r){if(v>h)m++}else if(g[k2][c]>h){h=g[k2][c];m++}}
+  if(m>cl.B[c])return false;
+  return true}
+function countSolutions(givens,n,cl,limit){
+  const g=givens.map(row=>row.slice());
+  let count=0;
+  (function rec(i){
+    if(count>=limit)return true;
+    if(i===n*n){count++;return count>=limit}
+    const r=(i/n)|0,c=i%n;
+    if(g[r][c])return rec(i+1);
+    for(let v=1;v<=n;v++)if(okCell(g,n,r,c,v,cl)){
+      g[r][c]=v;if(rec(i+1))return true;g[r][c]=0}
+    return false})(0);
+  return count}
+
+// --- givens: a random subset, never a whole line solved -------------------
+function pickGivens(sol,n,loPct,hiPct){
+  const M=n*n;
+  let pct=loPct+Math.random()*(hiPct-loPct);
+  let target=Math.round(M*pct/100);
+  if(target<n)target=n;
+  if(target>M-1)target=M-1;
+  const g=sol.map(row=>row.map(()=>0));
+  const rc=new Array(n).fill(0),cc=new Array(n).fill(0);
+  let placed=0;
+  for(const i of shuffled(Array.from({length:M},(_,k)=>k))){
+    if(placed>=target)break;
+    const r=(i/n)|0,c=i%n;
+    if(rc[r]>=n-1||cc[c]>=n-1)continue;
+    g[r][c]=sol[r][c];rc[r]++;cc[c]++;placed++}
+  return g}
+
+// --- the win condition ---------------------------------------------------
+function isWon(p,n,cl){
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(!p[r][c])return false;
+  for(let r=0;r<n;r++){
+    const seen=new Set();
+    for(let c=0;c<n;c++){const v=p[r][c];
+      if(v<1||v>n||seen.has(v))return false;seen.add(v)}
+    if(vis(p[r])!==cl.L[r])return false;
+    if(vis(p[r].slice().reverse())!==cl.R[r])return false}
+  for(let c=0;c<n;c++){
+    const col=[];for(let r=0;r<n;r++)col.push(p[r][c]);
+    const seen=new Set();
+    for(let i=0;i<n;i++){const v=col[i];
+      if(v<1||v>n||seen.has(v))return false;seen.add(v)}
+    if(vis(col)!==cl.T[c])return false;
+    if(vis(col.slice().reverse())!==cl.B[c])return false}
+  return true}
+// Would the value v repeat a number already in row r or column c?
+// takes the value as an argument: 0 is not a value, so an empty square can
+// never clash with itself, and the move rule can ask about the value it is
+// about to write before it writes it.
+function clashesAt(p,n,r,c,v){
+  if(!v)return false;
+  for(let k=0;k<n;k++){
+    if(k!==c&&p[r][k]===v)return true;
+    if(k!==r&&p[k][c]===v)return true}
+  return false}
+// The square r,c as it stands. Without the zero guard here two empty squares
+// look like a repeat of each other and every legal placement gets refused,
+// which would leave the board unfillable - the failure the prover must rule out.
+function conflicts(p,n,r,c){
+  return clashesAt(p,n,r,c,p[r][c])}
+function cluesMet(p,n,cl){
+  let hit=0,total=4*n;
+  const lineOK=(seq,a,b)=>{if(!seq.every(v=>v))return false;
+    return vis(seq)===a&&vis(seq.slice().reverse())===b};
+  for(let r=0;r<n;r++){
+    if(lineOK(p[r],cl.L[r],cl.R[r]))hit+=2}
+  for(let c=0;c<n;c++){
+    const col=[];for(let r=0;r<n;r++)col.push(p[r][c]);
+    if(lineOK(col,cl.T[c],cl.B[c]))hit+=2}
+  return {hit:hit,total:total}}
+
+// --- generator -----------------------------------------------------------
+function make(level){
+  st.level=level;
+  const n=SK.DIFF[level].n;
+  let built=null;
+  for(let pass=0;pass<3&&!built;pass++){
+    const lo=Math.max(20,SK.FILL[0]-SK.RELAX*pass),hi=Math.max(lo+5,SK.FILL[1]-SK.RELAX*pass);
+    for(let a=0;a<SK.ATTEMPTS&&!built;a++){
+      const sol=latinFill(n);
+      if(!sol)continue;
+      const cl=cluesOf(sol,n);
+      const giv=pickGivens(sol,n,lo,hi);
+      if(countSolutions(giv,n,cl,2)!==1)continue;
+      built={sol:sol,clues:cl,givens:giv}}}
+  if(!built)built={sol:latFallback(n),clues:null,givens:null};
+  if(!built.clues)built.clues=cluesOf(built.sol,n);
+  if(!built.givens)built.givens=pickGivens(built.sol,n,SK.FILL[0],SK.FILL[1]);
+  st.n=n;
+  st.sol=built.sol.map(r=>r.slice());
+  st.givens=built.givens.map(r=>r.slice());
+  st.clues=built.clues;
+  st.puzzle=built.givens.map(r=>r.slice());
+  st.sel=-1;st.mistakes=0;st.done=false;st.over=false;st.revealed=false;
+  $('mis').textContent='0';
+  $('status').textContent='Playing';
+  $('chip').textContent=n+'x'+n+' - ONE SOLUTION';
+  $('legend').innerHTML='Grey squares are givens. The number on each edge is how many towers '+
+    'you see looking along that line; <span class="text-accent">'+n+'</span> means that line begins with the '+
+    'tallest, <span class="text-accent">1</span> that it ends with it.';
+  $('msg').textContent=levelName(level)+' - '+st.givens.flat().filter(Boolean).length+
+    ' of '+(n*n)+' squares given, exactly one solution.';
+  render();
+  return {n:n,given:st.givens.flat().filter(Boolean).length,
+          solutions:countSolutions(st.givens.slice(),n,st.clues,3)}}
+function latFallback(n){
+  const g=[];for(let r=0;r<n;r++){const row=[];for(let c=0;c<n;c++)row.push((r+c)%n+1);g.push(row)}
+  return g}
+function levelName(l){return l==='med'?'Medium':(l==='hard'?'Hard':'Easy')}
+
+// --- the move rule -------------------------------------------------------
+function place(i,v){
+  if(st.done||st.over)return 'locked';
+  const n=st.n;
+  const r=(i/n)|0,c=i%n;
+  if(r<0||r>=n||c<0||c>=n)return 'oob';
+  if(st.givens[r][c])return 'rejected-given';
+  if(v!==0&&(v<1||v>n||v!==((v-1)%n+1)))return 'rejected-range';
+  if(v!==0&&clashesAt(st.puzzle,n,r,c,v))return 'rejected-clash';
+  if(v===st.puzzle[r][c])return 'ok';
+  const prev=st.puzzle[r][c];
+  st.puzzle[r][c]=v;
+  if(v&&v!==st.sol[r][c]){
+    st.mistakes++;$('mis').textContent=st.mistakes;
+    $('msg').textContent='Kept for now. It is legal on the board but it disagrees with the '+
+      'answer, so it will have to change. Mistakes: '+st.mistakes+'.'}
+  else if(v){$('msg').textContent='Part of the answer. '+(n*n-st.givens.flat().filter(Boolean).length)+
+    ' squares are yours to fill.'}
+  else if(prev){$('msg').textContent='Cleared.'}
+  render();
+  if(isWon(st.puzzle,n,st.clues)){
+    st.done=true;st.revealed=true;
+    $('status').textContent='Solved';
+    $('msg').textContent='Solved. Every row, column and clue matches.'}
+  return 'ok'}
+function erase(i){return place(i,0)}
+
+// --- render --------------------------------------------------------------
+function render(){
+  const n=st.n,cl=st.clues;
+  const f=$('field');
+  f.style.display='grid';
+  f.style.gridTemplateColumns='26px repeat('+n+',minmax(34px,50px)) 26px';
+  f.style.gap='2px';
+  let h='';
+  const clue=(txt,rc,ccx)=>'<div style="grid-row:'+rc+';grid-column:'+ccx+
+    '" class="flex items-center justify-center text-[10px] font-black text-white/50 rounded-sm bg-white/[0.03] h-7">'+txt+'</div>';
+  h+=clue(cl.T[0],1,2);
+  for(let c=1;c<n;c++)h+=clue(cl.T[c],1,c+2);
+  h+=clue(cl.B[0],n+2,2);
+  for(let c=1;c<n;c++)h+=clue(cl.B[c],n+2,c+2);
+  for(let r=0;r<n;r++){
+    h+=clue(cl.L[r],r+2,1);
+    for(let c=0;c<n;c++){
+      const gv=st.givens[r][c],v=st.puzzle[r][c];
+      let cls='sky flex items-center justify-center rounded-sm text-base font-black border transition-colors';
+      cls+=' '+(gv?'bg-white/[0.10] text-white/70 border-white/5':'bg-white/[0.03] border-white/10 text-white');
+      if(!gv&&v&&conflicts(st.puzzle,n,r,c))cls+=' border-[#5ec8ff] bg-[#5ec8ff]/15 text-[#5ec8ff]';
+      if(st.sel===r*n+c)cls+=' outline outline-2 outline-[#5ec8ff]';
+      h+='<button data-i="'+(r*n+c)+'" style="grid-row:'+(r+2)+';grid-column:'+(c+2)+
+        '" class="'+cls+'">'+(v||'')+'</button>'}
+    h+=clue(cl.R[r],r+2,n+2)}
+  f.innerHTML=h;
+  f.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    st.sel=parseInt(b.dataset.i,10);render()});
+  $('pad').innerHTML=Array.from({length:n},(_,i)=>'<button data-n="'+(i+1)+
+    '" class="ws-btn-ghost !px-3 !py-2 text-sm">'+(i+1)+'</button>').join('')+
+    '<button id="clr" class="ws-btn-ghost !px-3 !py-2 text-xs">Erase</button>';
+  $('pad').querySelectorAll('button[data-n]').forEach(b=>b.onclick=()=>place(st.sel,parseInt(b.dataset.n,10)));
+  $('clr').onclick=()=>erase(st.sel);
+  const need=st.givens.flat().filter(v=>!v).length;
+  const have=st.puzzle.flat().filter((v,i)=>v&&!st.givens.flat()[i]).length;
+  $('filled').textContent=have+'/'+need;
+  const cm=cluesMet(st.puzzle,n,cl);
+  $('clues').textContent=cm.hit+'/'+cm.total;
+  $('status').textContent=st.done?'Solved':'Playing';
+  document.querySelectorAll('#easy,#med,#hard').forEach(el=>{
+    const key=el.id;
+    el.className=(key===st.level?'ws-btn':'ws-btn-ghost')});
+}
+$('easy').onclick=()=>make('easy');
+$('med').onclick=()=>make('med');
+$('hard').onclick=()=>make('hard');
+$('new').onclick=()=>make(st.level);
+$('giveup').onclick=()=>{
+  st.puzzle=st.sol.map(r=>r.slice());
+  st.revealed=true;st.done=isWon(st.puzzle,st.n,st.clues);
+  $('msg').textContent='The answer, filled in. Click New puzzle to play again.';
+  render()};
+$('check').onclick=()=>{
+  const n=st.n;
+  const wrong=[];
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+    const v=st.puzzle[r][c];
+    if(v&&!st.givens[r][c]&&v!==st.sol[r][c])wrong.push('row '+(r+1)+' col '+(c+1))}
+  const clash=[];
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++)
+    if(st.puzzle[r][c]&&conflicts(st.puzzle,n,r,c))clash.push('row '+(r+1)+' col '+(c+1));
+  const parts=[];
+  if(wrong.length)parts.push(wrong.length+' entered square'+(wrong.length===1?'':'s')+
+    ' disagree'+(wrong.length===1?'s':'')+' with the answer: '+wrong.slice(0,4).join(', '));
+  if(clash.length)parts.push(clash.length+' square'+(clash.length===1?'':'s')+' repeat a number in their line');
+  $('msg').textContent=parts.length?parts.join('. ')+'.':'Everything you entered is part of the answer.'};
+$('hint').onclick=()=>{
+  if(st.done)return;
+  const n=st.n;
+  let best=-1;
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+    if(!st.givens[r][c]&&!st.puzzle[r][c]){best=r*n+c;r=n;break}}
+  if(best<0)return;
+  const r=(best/n)|0,c=best%n;
+  st.sel=best;place(best,st.sol[r][c]);
+  $('msg').textContent='Hint: row '+(r+1)+' col '+(c+1)+' holds '+st.sol[r][c]+'.'};
+addEventListener('keydown',e=>{
+  if(e.key==='Backspace'||e.key==='Delete'){erase(st.sel);e.preventDefault();return}
+  if(e.key>='1'&&e.key<='9'){place(st.sel,parseInt(e.key,10));e.preventDefault();return}
+  const d={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];
+  if(d&&st.sel>=0){
+    const n=st.n;
+    let r=((st.sel/n)|0)+d[0],c=st.sel%n+d[1];
+    if(r<0)r=n-1;if(r>n-1)r=0;if(c<0)c=n-1;if(c>n-1)c=0;
+    st.sel=r*n+c;render();e.preventDefault()}});
+make('easy');
+window.__skyscrapers={SK,
+  get G(){return {level:st.level,n:st.n,puzzle:st.puzzle.map(r=>r.slice()),
+    sol:st.sol.map(r=>r.slice()),givens:st.givens.map(r=>r.slice()),
+    clues:{L:st.clues.L.slice(),R:st.clues.R.slice(),T:st.clues.T.slice(),B:st.clues.B.slice()},
+    sel:st.sel,mistakes:st.mistakes,done:st.done,status:st.done?'won':'playing',
+    filled:st.puzzle.flat().filter(Boolean).length,
+    blanks:st.puzzle.flat().filter(v=>!v).length,
+    given:st.givens.flat().filter(Boolean).length,
+    revealed:st.revealed}},
+  newGame:l=>make(l),place,erase,select:i=>{st.sel=i;render()},
+  countSolutions:(g,n,cl,lim)=>countSolutions(g,n||st.n,cl||st.clues,lim||2),
+  countEmpty:(n,lim)=>countSolutions(Array.from({length:n},()=>new Array(n).fill(0)),n,
+    {L:new Array(n).fill(0),R:new Array(n).fill(0),T:new Array(n).fill(0),B:new Array(n).fill(0)},lim),
+  cluesOf,vis,latinFill,isWon,conflicts,clashesAt,cluesMet,permsOf,pickGivens,
+  setPuzzle:p=>{st.puzzle=p.map(r=>r.slice());render();return st.done},
+  givens:()=>st.givens.map(r=>r.slice()),clues:()=>st.clues};
+</script>
+<section class="d-more"><div class="wrap"><h2>More games</h2><div class="ws-grid"><a class="tile-card" href="/workspace/games/slingshot-siege/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/slingshot-siege/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Slingshot Siege</h3><p>Pull back, aim and launch. Topple the three marked blocks in six shots.</p></div></a><a class="tile-card" href="/workspace/games/tower-stack/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/tower-stack/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Tower Stack</h3><p>Drop the sliding block and stack it clean. Perfect cuts keep full width.</p></div></a><a class="tile-card" href="/workspace/games/tron-arena/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/tron-arena/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Tron Arena</h3><p>Light-cycle duel against the CPU or a friend. Walls and trails are fatal.</p></div></a><a class="tile-card" href="/workspace/games/orbit-race/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/orbit-race/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Orbit Race</h3><p>Kepler-orbit racing: pick a trajectory, burn, and coast to the next marker.</p></div></a><a class="tile-card" href="/workspace/games/fitts-drill/" style="--c:#ff7a8a"><div class="shot"><img src="/workspace/games/fitts-drill/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Reflex</span><h3>Fitts Drill</h3><p>A pointing-speed drill built on Fitts&#x27;s law: 30 targets, each with a time budget.</p></div></a><a class="tile-card" href="/workspace/games/reaction-time/" style="--c:#ff7a8a"><div class="shot"><img src="/workspace/games/reaction-time/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Reflex</span><h3>Reaction Time</h3><p>Wait for green, then click. Five rounds, no false starts, best time kept.</p></div></a><a class="tile-card" href="/workspace/games/tile-memory/" style="--c:#b49bff"><div class="shot"><img src="/workspace/games/tile-memory/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Puzzle</span><h3>Tile Memory</h3><p>Watch the tiles light up, then repeat the sequence. Twelve levels.</p></div></a><a class="tile-card" href="/workspace/games/hexmines/" style="--c:#b49bff"><div class="shot"><img src="/workspace/games/hexmines/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Puzzle</span><h3>Hex Mines</h3><p>Minesweeper on a hexagon grid, where every number can read up to six.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>

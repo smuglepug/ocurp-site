@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stream Stepper — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#5ec8ff', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#5ec8ff; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Space Grotesk',system-ui,sans-serif; }
+  .font-mono { font-family:'JetBrains Mono',ui-monospace,monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(94,200,255,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#5ec8ff !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#5ec8ff !important; color:#000 !important }
+  .ws-label { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#5ec8ff; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'JetBrains Mono',ui-monospace,monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="One button: time your jumps across the river stones as the runner charges on. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/stream-stepper/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Stream Stepper">
+<meta property="og:description" content="One button: time your jumps across the river stones as the runner charges on. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/stream-stepper/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Stream Stepper on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Stream Stepper">
+<meta name="twitter:description" content="One button: time your jumps across the river stones as the runner charges on. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Stream Stepper on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Stream Stepper","url":"https://ocurp.com/workspace/games/stream-stepper/","description":"One button: time your jumps across the river stones as the runner charges on. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#5ec8ff">
+<a class="skip" href="#ws-play">Skip to the game</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/">Tools</a><a href="/workspace/games/" aria-current="true">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/">Tools</a><a href="/workspace/games/" aria-current="true">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/games/stream-stepper/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/games/">Games</a><span aria-hidden="true">/</span><a href="/workspace/games/?c=arcade">Arcade</a></nav><h1>Stream Stepper</h1><p class="lede">One button: time your jumps across the river stones as the runner charges on.</p><div class="d-tags"><span class="g">Arcade</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Play now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/games/">All games</a></div></div><div class="d-shot"><img src="/workspace/games/stream-stepper/card.jpg?v=20261006" alt="Stream Stepper screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="ss-start" class="ws-btn ss-btn">Start crossing</button>
+      <button id="ss-new" class="ws-btn-ghost ss-btn">New river</button>
+      <span class="ws-chip">SPACE or CLICK = jump</span>
+      <span class="ws-chip">You run on your own - only the jump is yours</span>
+    </div>
+    <div class="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-[minmax(0,1fr)_250px]">
+      <div class="col-span-2 lg:col-span-1">
+        <canvas id="ss-cv" width="640" height="400"></canvas>
+        <p class="mt-3 max-w-[640px] text-[11px] leading-relaxed text-white/40">
+          One button. The runner never stops, so the only question is when to
+          jump. Every gap in the river is inside a single jump arc, and every
+          stone is wide enough to land on after a slow reaction - the river gets
+          wider as you climb, never impossible. Falling costs a life and puts you
+          back at the near bank of the same level.
+        </p>
+      </div>
+      <div class="col-span-2 flex flex-col gap-3 lg:col-span-1">
+        <div class="ss-card rounded-xl bg-white/[0.03] p-4">
+          <div class="ws-label mb-1">Level</div>
+          <div class="font-display text-3xl font-black text-accent" id="ss-level">1</div>
+          <div class="ss-kv mt-1" id="ss-gap">gap: 50px</div>
+        </div>
+        <div class="ss-card rounded-xl bg-white/[0.03] p-4">
+          <div class="ws-label mb-2">Lives</div>
+          <div class="font-display text-lg font-extrabold text-white" id="ss-lives">5</div>
+          <div class="ss-kv mt-1" id="ss-jumps">air jump: 1</div>
+        </div>
+        <div class="ss-card rounded-xl bg-white/[0.03] p-4">
+          <div class="ws-label mb-2">Run</div>
+          <div class="ss-kv" id="ss-state">ready</div>
+          <div class="ss-kv mt-1" id="ss-dist">distance: 0</div>
+          <div class="ss-kv mt-1" id="ss-cleared">cleared: 0</div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="mt-10 border-t border-white/5 pt-6 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors">Owen’s Workspace</a>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('ss-cv'), cx=cv.getContext('2d');
+
+/* ---- REAL CONSTANTS. tools/provers/stream-stepper.py mirrors every one. ---- */
+const W=640, H=400;
+const FRAME=1/60;          /* fixed 60Hz step, no variable dt            */
+const GROUND_Y=300;        /* top surface of every stone and log          */
+const WATER_Y=GROUND_Y+70; /* feet below this with no ground = drowned    */
+const GRAVITY=0.62;        /* px per frame^2                             */
+const JUMP_V=-13.2;        /* px per frame, the standing jump            */
+const AIR_V=-10.5;         /* px per frame, the one mid-air jump          */
+const AIR_JUMPS=1;
+const RUN=2.0;             /* px per frame, the runner never stops       */
+const PW=18, PH=26;        /* player box                                 */
+const STONE_W=150;         /* static stone width                         */
+const LOG_W=130;           /* drifting log width                         */
+const LOG_V=0.12;          /* px per frame                               */
+const LOG_AMP=26;          /* px either side of its home                 */
+const BANK_W=420;          /* the far bank                               */
+const GAP_MIN=40;
+const GAP_CAP=66;          /* the widest gap any level may generate      */
+const LIVES=5;
+const LEVELS_TO_WIN=6;
+const LAND_SLACK=6;        /* landing sweep, in px                       */
+const ORANGE='#5ec8ff';   /* the single accent hue; never a second one  */
+/* airtime of one standing jump, in frames, and the ground it covers: */
+const AIRTIME=(2*Math.abs(JUMP_V))/GRAVITY;          /* 42.5806 frames   */
+const ARC_X=AIRTIME*RUN;                             /* 85.1613 px       */
+
+function mulberry32(a){
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+let rng, plats, p, level, lives, cleared, dist, state, running, airLeft;
+let jumpReq=false, best=0, runSeed=0;
+
+best = parseInt(localStorage.getItem('ss_best')||'0',10) || 0;
+
+function newLevel(lv, seed){
+  rng = mulberry32(seed);
+  plats=[];
+  /* GAP_MAX widens with the level but is hard-capped at GAP_CAP. The prover
+     shows ARC_X = 85.16 >= gap + PW + 1 for every gap up to 66, i.e. the cap
+     sits exactly where the arc stops clearing the water. */
+  const gapMax = Math.min(GAP_CAP, 50 + lv*3);
+  let x = 0;
+  plats.push({x:x, y:GROUND_Y, w:STONE_W, h:14, kind:'stone', v:0, home:x});
+  let i=1;
+  while (true){
+    const gap = GAP_MIN + rng()*(gapMax-GAP_MIN);
+    x = x + (i===1?STONE_W:plats[i-1].w) + gap;
+    if (x > W*7){
+      plats.push({x:x, y:GROUND_Y, w:BANK_W, h:20, kind:'bank', v:0, home:x});
+      break;
+    }
+    const isLog = (i % 3 === 0);
+    plats.push({x:x, y:GROUND_Y, w:isLog?LOG_W:STONE_W, h:isLog?12:14,
+                kind:isLog?'log':'stone', v:isLog?LOG_V:0, home:x});
+    i++;
+  }
+  p={x:8, y:GROUND_Y-PH, vy:0, on:true};
+  airLeft=AIR_JUMPS;
+  dist=0;
+}
+function newGame(seed){
+  runSeed = (seed===undefined||seed===null) ? ((Math.random()*1e9)|0) : (seed|0);
+  level=1; lives=LIVES; cleared=0; running=true; state='running';
+  newLevel(level, runSeed);
+  paint();
+}
+function drown(){
+  lives--;
+  paint();
+  if (lives<=0){ running=false; state='game over'; return; }
+  state='drowned - retrying level';
+  newLevel(level, runSeed + level*7919 + 13);
+  state='running';
+}
+function clearLevel(){
+  cleared++;
+  if (cleared > best){ best=cleared; localStorage.setItem('ss_best',String(best)); }
+  if (cleared>=LEVELS_TO_WIN){ running=false; state='all levels cleared'; paint(); return; }
+  level++;
+  newLevel(level, runSeed + level*104729);
+  state='running';
+}
+function jump(){
+  if (p.on){ p.vy=JUMP_V; p.on=false; airLeft=AIR_JUMPS; }
+  else if (airLeft>0){ p.vy=AIR_V; airLeft--; }
+}
+
+function frame(){
+  if (!running) return;
+  /* drifting logs, ping-pong around their home */
+  for (const pl of plats){
+    if (pl.kind!=='log') continue;
+    pl.x += pl.v;
+    if (pl.x < pl.home-LOG_AMP){ pl.x = pl.home-LOG_AMP; pl.v = LOG_V; }
+    if (pl.x > pl.home+LOG_AMP){ pl.x = pl.home+LOG_AMP; pl.v = -LOG_V; }
+  }
+  /* the jump request is consumed here, exactly as a keypress would */
+  if (jumpReq){ jump(); jumpReq=false; }
+  p.vy += GRAVITY;
+  p.y  += p.vy;
+  p.x  += RUN;
+  const wasOn = p.on;
+  p.on = false;
+  if (p.vy > 0){
+    for (const pl of plats){
+      if (p.x + PW <= pl.x || p.x >= pl.x + pl.w) continue;
+      const foot = p.y + PH;
+      if (foot >= pl.y && foot <= pl.y + pl.h + p.vy + LAND_SLACK){
+        p.y = pl.y - PH; p.vy = 0; p.on = true; airLeft = AIR_JUMPS;
+        break;
+      }
+    }
+  }
+  dist += RUN;
+  if (p.on && wasOn && plats.length){
+    const last = plats[plats.length-1];
+    if (last.kind==='bank' && p.x + PW/2 > last.x + 8){ clearLevel(); return; }
+  }
+  if (!p.on && (p.y + PH) > WATER_Y){ drown(); }
+}
+
+function paint(){
+  cx.clearRect(0,0,W,H);
+  cx.fillStyle='#050505'; cx.fillRect(0,0,W,H);
+  /* water band */
+  cx.fillStyle='#0b0b0b'; cx.fillRect(0,GROUND_Y+2,W,H-GROUND_Y-2);
+  cx.strokeStyle='rgba(94,200,255,0.22)'; cx.lineWidth=1;
+  for (let y=GROUND_Y+14;y<H;y+=13){
+    cx.beginPath(); cx.moveTo(0,y+0.5); cx.lineTo(W,y+0.5); cx.stroke();
+  }
+  /* near bank */
+  cx.fillStyle='#161616'; cx.fillRect(0,GROUND_Y-26,14,26);
+  /* platforms */
+  for (const pl of plats){
+    if (pl.x > W+40 || pl.x + pl.w < -40) continue;
+    cx.fillStyle = pl.kind==='log' ? '#201a15' : '#1a1a1a';
+    cx.fillRect(pl.x, pl.y, pl.w, pl.h);
+    cx.fillStyle = ORANGE;
+    cx.fillRect(pl.x, pl.y, pl.w, 3);
+    if (pl.kind==='log'){
+      cx.fillStyle='rgba(255,255,255,.10)';
+      cx.fillRect(pl.x+6, pl.y+5, pl.w-12, 2);
+    }
+  }
+  /* player */
+  cx.fillStyle='#ffffff';
+  cx.fillRect(p.x, p.y, PW, PH);
+  cx.fillStyle=ORANGE;
+  cx.fillRect(p.x, p.y, PW, 6);
+  if (!running){
+    cx.fillStyle='rgba(5,5,5,.72)'; cx.fillRect(0,0,W,H);
+    cx.textAlign='center'; cx.fillStyle='#fff';
+    cx.font='700 22px Manrope, sans-serif';
+    cx.fillText(state==='game over'?'Run over':'River crossed', W/2, H/2-8);
+    cx.font='400 13px IBM Plex Sans, monospace'; cx.fillStyle=ORANGE;
+    cx.fillText(cleared+' level'+(cleared===1?'':'s')+' cleared - press New river', W/2, H/2+18);
+  }
+  $('ss-level').textContent = level;
+  $('ss-lives').textContent = Math.max(0,lives);
+  $('ss-state').textContent = state;
+  $('ss-dist').textContent = 'distance: ' + Math.floor(dist);
+  $('ss-cleared').textContent = 'cleared: ' + cleared + ' / ' + LEVELS_TO_WIN;
+  $('ss-jumps').textContent = 'air jump: ' + AIR_JUMPS;
+  $('ss-gap').textContent = 'gap max: ' + Math.min(GAP_CAP, 50 + level*3) + 'px';
+}
+function litPixels(){
+  const d = cx.getImageData(0,0,W,H).data;
+  let n = 0;
+  for (let i=3;i<d.length;i+=4) if (d[i] > 10) n++;
+  return n;
+}
+
+let acc=0, last=0;
+function loop(ts){
+  if (!last) last = ts;
+  let dt = Math.min(0.1, (ts-last)/1000); last = ts;
+  acc += dt;
+  let guard = 0;
+  while (acc >= FRAME && guard++ < 8){ frame(); acc -= FRAME; }
+  paint();
+  requestAnimationFrame(loop);
+}
+/* frame one is drawn SYNCHRONOUSLY, before the loop starts: a canvas that
+   only paints inside requestAnimationFrame is blank on first paint. */
+newGame();
+paint();
+requestAnimationFrame(loop);
+
+addEventListener('keydown', e=>{
+  if (e.code==='Space' || e.code==='ArrowUp' || e.code==='KeyW'){
+    e.preventDefault();
+    if (!running){ newGame(); return; }
+    jumpReq = true;
+  }
+});
+cv.addEventListener('pointerdown', e=>{ e.preventDefault();
+  if (!running){ newGame(); return; }
+  jumpReq = true; });
+$('ss-start').addEventListener('click', ()=>{ newGame(); });
+$('ss-new').addEventListener('click', ()=>{ newGame(); });
+
+/* ---------------- test hook ---------------- */
+window.__stream_stepper = {
+  C:{W:W,H:H,FRAME:FRAME,GROUND_Y:GROUND_Y,WATER_Y:WATER_Y,GRAVITY:GRAVITY,
+     JUMP_V:JUMP_V,AIR_V:AIR_V,AIR_JUMPS:AIR_JUMPS,RUN:RUN,PW:PW,PH:PH,
+     STONE_W:STONE_W,LOG_W:LOG_W,LOG_V:LOG_V,LOG_AMP:LOG_AMP,BANK_W:BANK_W,
+     GAP_MIN:GAP_MIN,GAP_CAP:GAP_CAP,LIVES:LIVES,LEVELS_TO_WIN:LEVELS_TO_WIN,
+     LAND_SLACK:LAND_SLACK},
+  AIRTIME:AIRTIME, ARC_X:ARC_X,
+  mulberry32:mulberry32,
+  newGame:newGame, newLevel:newLevel, frame:frame, jump:function(){jumpReq=true;},
+  litPixels:litPixels,
+  advance:function(n){
+    for (let i=0;i<n;i++){ frame(); }
+    return this.state();
+  },
+  state:function(){
+    return {seed:runSeed, level:level, lives:lives, cleared:cleared,
+            running:running, state:state, dist:dist,
+            x:p.x, y:p.y, vy:p.vy, on:p.on,
+            plats:plats.map(function(q){return {x:q.x,y:q.y,w:q.w,h:q.h,
+                     kind:q.kind,v:q.v,home:q.home};})};
+  }
+};
+</script>
+<script>
+/* Announce the result of a tool. Screen readers get the output; sighted
+   keyboard users get a quiet confirmation line. Set to '' to clear. */
+(function(){
+  if(window.__ocurpLive)return; window.__ocurpLive=1;
+  var box=document.createElement('p');
+  box.className='ocurp-status'; box.id='ocurp-live-status';
+  box.setAttribute('role','status'); box.setAttribute('aria-live','polite');
+  function near(el){
+    if(!el||!el.parentNode)return false;
+    var p=el.parentNode;
+    for(var i=0;i<4&&p;i++,p=p.parentNode){
+      if(p.classList&&(p.className+'').indexOf('ws-panel')>=0){
+        p.appendChild(box);return true; } }
+    (el.parentNode||el).appendChild(box); return true;
+  }
+  window.ocurpSay=function(msg){
+    if(!box.isConnected){ var o=document.getElementById('out')||document.body;
+      near(o); }
+    box.textContent=msg||'';
+  };
+  /* Watch the usual output nodes; report a short, useful summary. */
+  var targets=['out','result','results','output','res','ans','preview','cssOut','htmlOut',
+                'score','st','state','moves','turn','round','level','lvl','best','time','timer'];
+  var last={};
+  function scan(){
+    for(var i=0;i<targets.length;i++){
+      var el=document.getElementById(targets[i]);
+      if(!el)continue;
+      var v=(el.value!==undefined?String(el.value):(el.textContent||'')).trim();
+      if(!v||v===last[targets[i]])continue;
+      last[targets[i]]=v;
+      var n=v.length;
+      /* A game node is a label like "Score 12" - read it out as it stands.
+         A tool node is raw output - a character count is the useful summary. */
+      var isGame=/^(score|st|state|moves|turn|round|level|lvl|best|time|timer)$/.test(targets[i]);
+      if(isGame){
+        window.ocurpSay(v.length>90?v.slice(0,90)+'…':v);
+      }else{
+        window.ocurpSay('Result updated: '+n+' characters.'
+          +(n>400?' Use the copy button to take the full result.':''));
+      }
+      el.setAttribute('aria-live','polite');
+    }
+  }
+  setInterval(scan,700);
+})();
+</script>
+
+<style>
+
+canvas{display:block;background:#050505;border-radius:8px;touch-action:none;
+  max-width:100%;height:auto}
+.ss-kv{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:rgba(255,255,255,.5)}
+.ss-card{border:1px solid rgba(255,255,255,.10)}
+.ss-btn{min-height:44px}
+
+</style>
+<link rel="stylesheet" href="/workspace/play.css?v=20261006">
+<script src="/workspace/play.js?v=20261006" defer></script>
+<section class="d-more"><div class="wrap"><h2>More games</h2><div class="ws-grid"><a class="tile-card" href="/workspace/games/river-crosser/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/river-crosser/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>River Crosser</h3><p>One-button timing: hop across seven lanes of drifting logs to the nest.</p></div></a><a class="tile-card" href="/workspace/games/ricochet-lines/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/ricochet-lines/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Ricochet Lines</h3><p>Place deflectors to bounce the beam into the ring. Every board is solvable.</p></div></a><a class="tile-card" href="/workspace/games/snake-battle/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/snake-battle/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Snake Battle</h3><p>One duel point at a time: you move, then the rival answers. A greedy AI that shrinks the larger axis gap toward you, never into itself.</p></div></a><a class="tile-card" href="/workspace/games/missile-command/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/missile-command/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Missile Command</h3><p>Three batteries, six cities and a magazine that never refills. Twelve waves, four cities lost ends it.</p></div></a><a class="tile-card" href="/workspace/games/orbit-fit/" style="--c:#b49bff"><div class="shot"><img src="/workspace/games/orbit-fit/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Puzzle</span><h3>Orbit Fit</h3><p>Slot satellites into orbits within a move budget. Each manifest has one solution.</p></div></a><a class="tile-card" href="/workspace/games/path-forge/" style="--c:#b49bff"><div class="shot"><img src="/workspace/games/path-forge/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Puzzle</span><h3>Path Forge</h3><p>Rotate pipe tiles around bedrock to connect source to sink.</p></div></a><a class="tile-card" href="/workspace/games/boggle/" style="--c:#ffd166"><div class="shot"><img src="/workspace/games/boggle/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Words &amp; brain</span><h3>Boggle</h3><p>Find ten words on a 4x4 letter grid before the three-minute clock runs out.</p></div></a><a class="tile-card" href="/workspace/games/nonogram/" style="--c:#b49bff"><div class="shot"><img src="/workspace/games/nonogram/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Puzzle</span><h3>Nonogram</h3><p>Fill the grid from the number clues to reveal a hidden picture.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>

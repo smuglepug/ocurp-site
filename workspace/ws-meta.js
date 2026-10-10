@@ -10,11 +10,11 @@ window.WS_META = (function () {
     sim:      { label: 'Sims & toys',   c: '#43e0d0' }
   };
   var G = {
-    arcade: 'snake breakout pong tetris asteroids flappy-bird space-invaders fruit-slice lane-runner mole-mash tower-stack tron-arena orbit-defender river-crosser snake-battle missile-command pinball platformer bomberman-lite breakout-2p drone-dash doodle-jump moon-lander plinko-drop slingshot-siege ricochet-rings ricochet-lines deep-descent orbit-race',
-    puzzle: '2048 minesweeper sudoku lights-out hexmines nonogram sokoban sliding-puzzle peg-solitaire mines-digger towers kenken circuit-balance orbit-fit path-forge grid-trail memory-match tile-memory',
-    board: 'chess checkers reversi connect-four tic-tac-toe gomoku nim battleship dots-boxes blackjack freecell holdem yahtzee dominoes ludo snakes-ladders tic-tac-toe-3d ultimate-ttt hexxagon chomp rock-paper-scissors mastermind',
+    arcade: 'snake breakout pong tetris asteroids flappy-bird space-invaders fruit-slice lane-runner mole-mash tower-stack tron-arena orbit-defender river-crosser snake-battle missile-command pinball platformer bomberman-lite breakout-2p drone-dash doodle-jump moon-lander plinko-drop slingshot-siege ricochet-rings ricochet-lines deep-descent orbit-race maze-runner stream-stepper tide-runner watermelon-merge',
+    puzzle: '2048 minesweeper sudoku lights-out hexmines nonogram sokoban sliding-puzzle peg-solitaire mines-digger towers kenken circuit-balance orbit-fit path-forge grid-trail memory-match tile-memory hashiwokakero lamplight lumen-grid slitherlink light-up skyscrapers star-battle tile-pan knight-tour lantern-path prism-splitter',
+    board: 'chess checkers reversi connect-four tic-tac-toe gomoku nim battleship dots-boxes blackjack freecell holdem yahtzee dominoes ludo snakes-ladders tic-tac-toe-3d ultimate-ttt hexxagon chomp rock-paper-scissors mastermind clobber hex-connect',
     strategy: 'kingdom-builder grid-tactics tower-defense spend-a-billion',
-    brain: 'wordle hangman boggle word-search word-ladder typing-race math-sprint memory-sequence simon password-gauntlet life-in-numbers',
+    brain: 'wordle hangman boggle word-search word-ladder typing-race math-sprint memory-sequence simon password-gauntlet life-in-numbers digit-lock',
     skill: 'aim-trainer reaction-time fitts-drill circle-score',
     sim: 'falling-sand sandbox-3d jepa-lab n-body-orbits pendulum-lab reaction-diffusion wave-equation meme-sound-generator'
   };

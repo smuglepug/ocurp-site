@@ -48,15 +48,6 @@ tailwind.config = { theme: { extend: {
   .ws-out { font-family:'JetBrains Mono',ui-monospace,monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
   .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
 </style>
-<style>
-  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
-    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-  @media (prefers-reduced-motion:no-preference){
-    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
-      clip:auto;white-space:normal;display:block;margin-top:.75rem;
-      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
-  }
-</style>
 <meta name="description" content="Prime factorisation by trial division. Runs entirely in your browser - nothing is uploaded.">
 <link rel="canonical" href="https://ocurp.com/workspace/tools/factor-calculator/">
 <meta property="og:type" content="website">
@@ -95,6 +86,12 @@ tailwind.config = { theme: { extend: {
 </style>
 <section class="ws-panel p-6"><div class="grid items-end gap-4 md:grid-cols-2"><div><label class="ws-label mb-2 block" for="n">Number to factorise</label><input id="n" class="ws-input ws-num ws-in" value="360"></div><div class="grid grid-cols-2 gap-4"><div><label class="ws-label mb-2 block" for="b">Compare with</label><input id="b" class="ws-input ws-num ws-in" value="12"></div><div><label class="ws-label mb-2 block" for="c">a second number</label><input id="c" class="ws-input ws-num ws-in" value="18"></div></div></div><div class="mt-4 flex flex-wrap gap-2" id="presets"></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Prime factorisation</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="main" onclick="cp(this)">Copy</button></div><div class="ws-big" id="main">-</div><div class="mt-3 text-sm text-white/60" id="classline">-</div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">GCD and LCM</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="pair" onclick="cp(this)">Copy</button></div><div class="mt-2 grid gap-3 md:grid-cols-3" id="pair"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Every division step</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="steps" onclick="cp(this)">Copy</button></div><div id="steps" class="mt-1 text-sm text-white/70"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Divisor list</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="divs" onclick="cp(this)">Copy</button></div><div id="divs" class="mt-1 text-sm"></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">What this tells you</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="note" onclick="cp(this)">Copy</button></div><div id="note" class="mt-1 text-sm text-white/60"></div></section>
 </div>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
 <script>
 function cp(btn){
   var el=document.getElementById(btn.getAttribute('data-t')||'out');
@@ -124,6 +121,10 @@ function grp(n,d){
   var s=String(Math.abs(v));
   var parts=s.split('.');
   parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  // Pad to the requested decimals. Without this grp(20000,2) returned
+  // '20,000' and a money column rendered as a bare integer.
+  while(parts.length<2) parts.push('');
+  if(d>0 && parts[1].length<d) parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
   return (v<0?'-':'')+parts.join('.');
 }
 function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;

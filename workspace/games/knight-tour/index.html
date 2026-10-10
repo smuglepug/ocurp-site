@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knight Tour — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<style>
+  :root { --accent:#FF5F1F; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Manrope',sans-serif; }
+  .font-mono { font-family:'IBM Plex Sans',monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important }
+  .ws-label { font-family:'IBM Plex Sans',monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#FF5F1F; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'IBM Plex Sans',monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<style>
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="Hop a knight onto every square exactly once and finish on the ringed corner. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/knight-tour/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Knight Tour">
+<meta property="og:description" content="Hop a knight onto every square exactly once and finish on the ringed corner. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/knight-tour/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Knight Tour on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Knight Tour">
+<meta name="twitter:description" content="Hop a knight onto every square exactly once and finish on the ringed corner. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Knight Tour on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Knight Tour","url":"https://ocurp.com/workspace/games/knight-tour/","description":"Hop a knight onto every square exactly once and finish on the ringed corner. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+ content="Walk a knight across an empty board, touching every square exactly once, and finish on the marked corner. Move numbers are stamped on each square as you go.">
+<div class="noise-overlay"></div>
+
+<div class="mx-auto w-full max-w-5xl px-5 pb-20 pt-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/games/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 transition-colors hover:text-white">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Games
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Knight Tour</h1>
+      <p class="mt-0.5 text-[10px] font-black uppercase tracking-[0.26em] text-white/40">Puzzle &mdash; Client-side</p>
+    </div>
+    <div class="ml-auto flex flex-wrap gap-2">
+      <span class="ws-chip">CLICK OR ARROW KEYS</span>
+      <span class="ws-chip">4 BOARDS</span>
+      <span class="ws-chip">PROVED WINNABLE</span>
+    </div>
+  </div>
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="kt-size" class="ws-btn kt-btn" type="button">Board: 5&times;5</button>
+      <button id="kt-new" class="ws-btn kt-btn" type="button">New tour</button>
+      <button id="kt-undo" class="ws-btn-ghost kt-btn" type="button">Undo</button>
+      <button id="kt-clear" class="ws-btn-ghost kt-btn" type="button">Clear</button>
+      <button id="kt-hint" class="ws-btn-ghost kt-btn" type="button">Hint</button>
+    </div>
+
+    <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_230px]">
+      <div>
+        <div id="kt-board" class="kt-board" role="grid" aria-label="Knight tour board"></div>
+        <p class="mt-3 max-w-[620px] text-[11px] leading-relaxed text-white/40">
+          The knight starts in the top-left square and must land on every square
+          exactly once, ending on the ringed corner. Each legal hop is stamped
+          with the number it was made on, so the whole tour is visible at a
+          glance. Click a square with a bright outline, or use the arrow keys.
+          There is no clock and no move limit &mdash; an unfinished tour is
+          always restartable, and every board below has been proved to have at
+          least one complete solution.
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <div class="kt-card rounded-xl bg-white/[0.03] p-4">
+          <div class="ws-label mb-1">Board</div>
+          <div class="font-display text-3xl font-black text-accent" id="kt-sizeout">5&times;5</div>
+          <div class="kt-kv mt-1" id="kt-total">25 squares</div>
+        </div>
+        <div class="kt-card rounded-xl bg-white/[0.03] p-4">
+          <div class="ws-label mb-2">Tour</div>
+          <div class="font-display text-lg font-extrabold text-white" id="kt-count">1 / 25</div>
+          <div class="kt-kv mt-1" id="kt-legal">legal hops: 0</div>
+        </div>
+        <div class="kt-card rounded-xl bg-white/[0.03] p-4">
+          <div class="ws-label mb-2">Run</div>
+          <div class="kt-kv" id="kt-state">ready</div>
+          <div class="kt-kv mt-1" id="kt-bestsq">tours solved: 0</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="mt-12 text-center">
+    <a href="/workspace/games/" class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 transition-colors hover:text-accent">Owen&rsquo;s Workspace</a>
+  </div>
+</div>
+<script>
+/* ------------------------------------------------------------------
+   Knight Tour. Every board size ships a tour that a Python solver found
+   and checked square by square before it was written here, so the win
+   condition is reachable rather than merely plausible.
+
+   Parity is why the finish square is the top-RIGHT corner and not the
+   opposite one. A knight always changes square colour, so a tour of
+   N*N-1 moves ends on the opposite colour to its start. On any board,
+   (0,0) and (N-1,N-1) share a colour: they differ by (N-1, N-1), and
+   those two offsets are always the same parity. So a corner-to-opposite-
+   corner tour can never exist, and demanding one makes the game unwinnable
+   by construction. (0,N-1) is the other corner, and it always works.
+   ------------------------------------------------------------------ */
+const $ = id => document.getElementById(id);
+
+/* ---- REAL CONSTANTS. tools/provers/knight-tour.py mirrors every one. ---- */
+const SIZES = [5, 6, 7, 8];        /* board is N x N, squares visited = N*N  */
+const START = [0, 0];              /* the knight's opening square           */
+const MOVES = [[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]];
+const WIN_STATE = 'tour complete';
+const RUN_STATE = 'riding';
+const START_STATE = 'ready';
+const HINT_STEPS = 3;              /* squares a single hint lights up        */
+const ORANGE = '#FF5F1F';         /* the single accent hue; never a second  */
+
+/* The proved tours, keyed by N. Each is a list of N*N [row, col] squares in
+   order, starting at START and ending at GOALS[N]. tools/provers/knight-tour.py
+   re-validates every one of them from this file rather than trusting it. */
+const GOALS = {"5":[0,4],"6":[0,5],"7":[0,6],"8":[0,7]};
+const TOURS = {"5":[[[0,0],[1,2],[2,4],[0,3],[1,1],[3,0],[4,2],[3,4],[1,3],[0,1],[2,0],[4,1],[3,3],[1,4],[2,2],[4,3],[3,1],[1,0],[0,2],[2,1],[4,0],[3,2],[4,4],[2,3],[0,4]],[[0,0],[2,1],[4,0],[3,2],[4,4],[2,3],[4,2],[3,0],[1,1],[0,3],[2,4],[4,3],[3,1],[1,0],[0,2],[1,4],[3,3],[4,1],[2,2],[3,4],[1,3],[0,1],[2,0],[1,2],[0,4]],[[0,0],[2,1],[4,0],[3,2],[4,4],[2,3],[0,2],[1,4],[3,3],[4,1],[2,0],[0,1],[1,3],[3,4],[4,2],[3,0],[1,1],[0,3],[2,4],[4,3],[2,2],[1,0],[3,1],[1,2],[0,4]]],"6":[[[0,0],[1,2],[0,4],[2,5],[4,4],[5,2],[4,0],[2,1],[0,2],[1,0],[3,1],[5,0],[4,2],[5,4],[3,3],[4,5],[5,3],[4,1],[2,0],[0,1],[1,3],[3,4],[5,5],[4,3],[3,5],[1,4],[2,2],[3,0],[5,1],[3,2],[1,1],[2,3],[1,5],[0,3],[2,4],[0,5]],[[0,0],[1,2],[0,4],[2,5],[4,4],[5,2],[4,0],[2,1],[0,2],[1,0],[3,1],[5,0],[4,2],[5,4],[3,5],[2,3],[1,5],[0,3],[1,1],[3,0],[5,1],[4,3],[5,5],[3,4],[5,3],[4,5],[3,3],[1,4],[2,2],[4,1],[2,0],[0,1],[1,3],[3,2],[2,4],[0,5]],[[0,0],[1,2],[0,4],[2,5],[4,4],[5,2],[4,0],[2,1],[0,2],[1,0],[3,1],[5,0],[4,2],[5,4],[3,3],[4,5],[5,3],[4,1],[2,0],[0,1],[1,3],[3,4],[5,5],[4,3],[5,1],[3,0],[2,2],[1,4],[3,5],[2,3],[1,5],[0,3],[1,1],[3,2],[2,4],[0,5]]],"7":[[[0,0],[2,1],[4,0],[6,1],[5,3],[6,5],[4,6],[5,4],[6,6],[4,5],[2,6],[0,5],[1,3],[0,1],[2,0],[1,2],[0,4],[1,6],[2,4],[3,2],[1,1],[0,3],[1,5],[3,6],[5,5],[3,4],[4,2],[6,3],[5,1],[3,0],[2,2],[1,0],[0,2],[2,3],[3,5],[5,6],[6,4],[4,3],[3,1],[5,0],[6,2],[4,1],[6,0],[5,2],[4,4],[2,5],[3,3],[1,4],[0,6]],[[0,0],[2,1],[0,2],[1,0],[3,1],[5,0],[6,2],[5,4],[6,6],[4,5],[2,6],[0,5],[1,3],[0,1],[2,0],[1,2],[0,4],[1,6],[2,4],[3,6],[1,5],[0,3],[1,1],[2,3],[3,5],[5,6],[6,4],[4,3],[5,5],[6,3],[5,1],[3,0],[4,2],[6,1],[4,0],[3,2],[4,4],[5,2],[6,0],[4,1],[3,3],[1,4],[2,2],[3,4],[5,3],[6,5],[4,6],[2,5],[0,6]],[[0,0],[2,1],[0,2],[1,0],[3,1],[5,0],[6,2],[5,4],[6,6],[4,5],[2,6],[0,5],[1,3],[0,1],[2,0],[1,2],[0,4],[1,6],[2,4],[3,6],[1,5],[0,3],[1,1],[2,3],[3,5],[5,6],[6,4],[4,3],[5,5],[6,3],[5,1],[3,0],[4,2],[6,1],[4,0],[3,2],[4,4],[6,5],[5,3],[3,4],[4,6],[2,5],[3,3],[5,2],[6,0],[4,1],[2,2],[1,4],[0,6]]],"8":[[[0,0],[1,2],[0,4],[1,6],[3,7],[5,6],[7,7],[6,5],[7,3],[6,1],[4,0],[2,1],[0,2],[1,0],[3,1],[5,0],[7,1],[5,2],[6,0],[7,2],[6,4],[7,6],[5,7],[4,5],[6,6],[7,4],[5,3],[4,1],[2,0],[0,1],[1,3],[0,5],[1,7],[2,5],[0,6],[2,7],[4,6],[6,7],[7,5],[6,3],[4,4],[3,6],[2,4],[3,2],[5,1],[7,0],[6,2],[4,3],[5,5],[4,7],[2,6],[1,4],[3,3],[5,4],[3,5],[2,3],[4,2],[3,0],[1,1],[0,3],[2,2],[3,4],[1,5],[0,7]],[[0,0],[2,1],[4,0],[6,1],[7,3],[6,5],[7,7],[5,6],[7,5],[6,7],[4,6],[2,7],[0,6],[1,4],[0,2],[1,0],[3,1],[5,0],[7,1],[5,2],[6,0],[7,2],[6,4],[7,6],[5,7],[3,6],[1,7],[0,5],[1,3],[0,1],[2,0],[1,2],[0,4],[2,5],[3,7],[1,6],[2,4],[0,3],[1,1],[3,2],[4,4],[6,3],[5,1],[7,0],[6,2],[4,1],[3,3],[4,5],[5,3],[7,4],[6,6],[5,4],[3,5],[4,7],[5,5],[4,3],[2,2],[3,0],[4,2],[2,3],[1,5],[3,4],[2,6],[0,7]],[[0,0],[2,1],[4,0],[6,1],[7,3],[6,5],[7,7],[5,6],[3,7],[1,6],[0,4],[1,2],[2,0],[0,1],[1,3],[0,5],[1,7],[2,5],[0,6],[2,7],[4,6],[6,7],[7,5],[5,4],[6,6],[7,4],[6,2],[7,0],[5,1],[3,0],[1,1],[0,3],[2,4],[3,2],[4,4],[3,6],[5,7],[7,6],[5,5],[4,7],[3,5],[4,3],[6,4],[7,2],[6,0],[4,1],[5,3],[4,5],[3,3],[5,2],[7,1],[6,3],[4,2],[5,0],[3,1],[2,3],[1,5],[3,4],[2,2],[1,0],[0,2],[1,4],[2,6],[0,7]]]};
+
+/* live game state */
+let N, cells, visits, order, at, won, tourIdx, state, sq;
+
+/* ------------------------------------------------------------------ */
+function idx(r, c) { return r * N + c; }
+function rowOf(i) { return (i / N) | 0; }
+function colOf(i) { return i % N; }
+function inside(r, c) { return r >= 0 && r < N && c >= 0 && c < N; }
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* Squares the knight may legally reach from `from`, in a stable order. */
+function legalFrom(from) {
+  const out = [];
+  if (from < 0) return out;
+  const r = rowOf(from), c = colOf(from);
+  for (let i = 0; i < MOVES.length; i++) {
+    const nr = r + MOVES[i][0], nc = c + MOVES[i][1];
+    if (!inside(nr, nc)) continue;
+    const j = idx(nr, nc);
+    if (visits[j] > 0) continue;
+    out.push(j);
+  }
+  return out;
+}
+
+/* Move onto square `i`. Returns true when the hop was legal.
+   This is the only way the board ever changes, so the prover reimplements
+   exactly this predicate. */
+function move(i) {
+  if (won) return false;
+  if (visits[i] > 0) return false;
+  const ok = legalFrom(at).indexOf(i) >= 0;
+  if (!ok) return false;
+  visits[i] = visits[at] + 1;   /* move numbers run 1..N*N with no gaps */
+  order.push(i);
+  at = i;
+  if (visits[i] === N * N && rowOf(i) === GOALS[N][0] && colOf(i) === GOALS[N][1]) {
+    won = true;
+    state = WIN_STATE;
+    sq++;
+    tourIdx = (tourIdx + 1) % TOURS[N].length;
+  } else if (visits[i] === N * N) {
+    state = 'full board - wrong corner, undo a step';
+  } else {
+    state = RUN_STATE;
+  }
+  paint();
+  return true;
+}
+
+function undo() {
+  if (won || !order.length) return false;
+  /* The square we just left is the one that must go blank; the square we
+     return to keeps its move number. Undoing the first hop leaves order
+     empty, so fall back to the opening square. */
+  const was = order.pop();
+  visits[was] = 0;
+  at = order.length ? order[order.length - 1] : idx(START[0], START[1]);
+  state = RUN_STATE;
+  paint();
+  return true;
+}
+
+function clearBoard() {
+  visits = new Array(N * N).fill(0);
+  at = idx(START[0], START[1]);
+  /* The opening square IS move 1 of the tour, so it has to be stamped at
+     boot. Leaving it 0 let the knight walk back onto it, which pushed every
+     later move number up by one: the last square then read N*N-1 and
+     `visits[i] === N * N` could never be true, so won stayed false forever
+     on every board size. Unwinnable, and it looked fine. */
+  visits[at] = 1;
+  order = [at];
+  won = false;
+  state = START_STATE;
+  paint();
+}
+
+/* Light up a few legal hops. Purely advisory - it never changes the board. */
+function hint() {
+  const opts = legalFrom(at);
+  if (!opts.length) return [];
+  const rng = mulberry32((N * 1000003) ^ (order.length * 7919));
+  const picks = opts.slice();
+  const out = [];
+  for (let i = 0; i < Math.min(HINT_STEPS, picks.length); i++) {
+    const k = Math.floor(rng() * picks.length) % picks.length;
+    out.push(picks[k]);
+    picks.splice(k, 1);
+  }
+  paint(hintCells);
+  return out;
+}
+
+/* ---------------- rendering ---------------- */
+const boardEl = $('kt-board');
+function buildGrid() {
+  boardEl.style.setProperty('--kt-n', String(N));
+  let h = '';
+  for (let i = 0; i < N * N; i++) h += '<button type="button" class="kt-cell" data-i="' + i + '" aria-label="row ' + (rowOf(i) + 1) + ' column ' + (colOf(i) + 1) + '"></button>';
+  boardEl.innerHTML = h;
+  for (let i = 0; i < N * N; i++) {
+    boardEl.children[i].addEventListener('click', () => move(i));
+  }
+}
+
+let hintCells = [];
+function paint(hints) {
+  if (hints) hintCells = hints;
+  const goal = GOALS[N];
+  for (let i = 0; i < N * N; i++) {
+    const el = boardEl.children[i];
+    if (!el) continue;
+    const r = rowOf(i), c = colOf(i);
+    const v = visits[i];
+    const isGoal = r === goal[0] && c === goal[1];
+    const legal = !won && legalFrom(at).indexOf(i) >= 0;
+    el.textContent = v ? String(v) : '';
+    el.className = 'kt-cell'
+      + ((r + c) % 2 ? ' kt-dark' : ' kt-light')
+      + (v ? ' kt-done' : '')
+      + (i === at ? ' kt-at' : '')
+      + (isGoal ? ' kt-goal' : '')
+      + (legal ? ' kt-legal' : '')
+      + (hintCells.indexOf(i) >= 0 ? ' kt-hint' : '');
+    el.setAttribute('aria-label',
+      'row ' + (r + 1) + ' column ' + (c + 1) + ', move ' + (v || 0) + ' of ' + (N * N));
+  }
+  $('kt-sizeout').textContent = N + '\u00d7' + N;
+  $('kt-total').textContent = (N * N) + ' squares';
+  $('kt-count').textContent = order.length + ' / ' + (N * N);
+  $('kt-legal').textContent = 'legal hops: ' + (won ? 0 : legalFrom(at).length);
+  $('kt-state').textContent = state;
+  $('kt-bestsq').textContent = 'tours solved: ' + sq;
+}
+
+function setSize(n) {
+  N = n;
+  hintCells = [];
+  buildGrid();
+  clearBoard();
+}
+
+/* ---------------- wiring ---------------- */
+$('kt-size').addEventListener('click', () => {
+  const k = SIZES.indexOf(N);
+  setSize(SIZES[(k + 1) % SIZES.length]);
+});
+$('kt-new').addEventListener('click', () => { hintCells = []; clearBoard(); });
+$('kt-undo').addEventListener('click', undo);
+$('kt-clear').addEventListener('click', () => { hintCells = []; clearBoard(); });
+$('kt-hint').addEventListener('click', hint);
+
+const KEYDIR = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1],
+                 w: [-1, 0], s: [1, 0], a: [0, -1], d: [0, 1],
+                 W: [-1, 0], S: [1, 0], A: [0, -1], D: [0, 1] };
+addEventListener('keydown', e => {
+  const v = KEYDIR[e.key];
+  if (!v) return;
+  e.preventDefault();
+  hintCells = [];
+  const r = rowOf(at) + v[0], c = colOf(at) + v[1];
+  if (inside(r, c)) move(idx(r, c));
+});
+
+setSize(SIZES[0]);
+paint();
+
+/* ---------------- test hook ----------------
+   Synchronous by design: a backgrounded tab throttles timers, so every
+   value a headless check needs is computed on demand from live state. */
+window.__knight_tour = {
+  C: { SIZES: SIZES, START: START, MOVES: MOVES, HINT_STEPS: HINT_STEPS,
+       WIN_STATE: WIN_STATE, GOALS: GOALS },
+  TOURS: TOURS,
+  /* The proved tour the next "New tour" would suggest, straight from the data.
+     A checker can walk it and assert the knight's own rules accept it. */
+  solution: function () { return TOURS[N][tourIdx]; },
+  setSize: setSize,
+  move: move,
+  undo: undo,
+  clearBoard: clearBoard,
+  hint: hint,
+  legalFrom: function (i) { return legalFrom(i); },
+  /* Play a whole solution through the REAL move() and report what the game
+     said, so a passing result means the real rules agree, not a model. */
+  autoplay: function () {
+    const path = TOURS[N][tourIdx];
+    let applied = 0;
+    for (let i = 0; i < path.length; i++) {
+      if (move(path[i][0] * N + path[i][1])) applied++;
+    }
+    return { applied: applied, wanted: path.length, state: state, won: won };
+  },
+  state: function () {
+    return { N: N, at: at, order: order.slice(), visits: visits.slice(),
+             won: won, state: state, sq: sq, tourIdx: tourIdx,
+             total: N * N, goal: GOALS[N],
+             cells: (boardEl.children ? boardEl.children.length : 0) };
+  }
+};
+</script>
+
+<style>
+.kt-board{display:grid;grid-template-columns:repeat(var(--kt-n,5),minmax(0,1fr));
+  gap:3px;max-width:min(620px,100%);border:1px solid rgba(255,255,255,.10);
+  border-radius:14px;padding:6px;background:#050505;touch-action:manipulation}
+.kt-cell{aspect-ratio:1/1;border:1px solid rgba(255,255,255,.07);border-radius:6px;
+  font-family:'IBM Plex Sans',ui-monospace,monospace;font-size:13px;font-weight:700;
+  color:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;padding:0;min-height:34px;background:#0f0f0f;transition:background .12s,border-color .12s}
+.kt-light{background:#141414}
+.kt-cell:hover{border-color:rgba(255,95,31,.4)}
+.kt-done{background:#1d1207;color:#FF5F1F;border-color:rgba(255,95,31,.35)}
+.kt-at{border-color:#FF5F1F;box-shadow:0 0 0 1px #FF5F1F inset}
+.kt-goal{outline:1px dashed rgba(255,255,255,.45);outline-offset:-3px}
+.kt-legal{border-color:rgba(255,95,31,.55);background:#241608}
+.kt-hint{background:#FF5F1F;color:#000;border-color:#FF5F1F}
+.kt-btn{min-height:44px}
+.kt-kv{font-family:'IBM Plex Sans',ui-monospace,monospace;font-size:11px;color:rgba(255,255,255,.5)}
+.kt-card{border:1px solid rgba(255,255,255,.10)}
+</style>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/games/2048/">
+      <span class="ocurp-related-n">2048</span>
+      <span class="ocurp-related-b">Merge the tiles and chase 2048.</span>
+    </a></li>
+    <li><a href="/workspace/games/aim-trainer/">
+      <span class="ocurp-related-n">Aim Trainer</span>
+      <span class="ocurp-related-b">Click as many shrinking targets as you can in 30 seconds. Real canvas hit detection with h</span>
+    </a></li>
+    <li><a href="/workspace/games/asteroids/">
+      <span class="ocurp-related-n">Asteroids</span>
+      <span class="ocurp-related-b">Thrust</span>
+    </a></li>
+    <li><a href="/workspace/games/battleship/">
+      <span class="ocurp-related-n">Battleship</span>
+      <span class="ocurp-related-b">Sink the whole fleet. The AI hunts with real targeting logic</span>
+    </a></li>
+    <li><a href="/workspace/games/blackjack/">
+      <span class="ocurp-related-n">Blackjack</span>
+      <span class="ocurp-related-b">Hit, stand, double, split and insure against a dealer who stands on 17.</span>
+    </a></li>
+    <li><a href="/workspace/games/boggle/">
+      <span class="ocurp-related-n">Boggle</span>
+      <span class="ocurp-related-b">Find ten words on a 4x4 letter grid before the three-minute clock runs out.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/games/">See all games →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

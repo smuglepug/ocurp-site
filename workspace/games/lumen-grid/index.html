@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumen Grid — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#5ec8ff', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#5ec8ff; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Space Grotesk',system-ui,sans-serif; }
+  .font-mono { font-family:'JetBrains Mono',ui-monospace,monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(94,200,255,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#5ec8ff !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#5ec8ff !important; color:#000 !important }
+  .ws-label { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#5ec8ff; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'JetBrains Mono',ui-monospace,monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Light every white cell with bulbs that never see each other. One proven solution. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/lumen-grid/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Lumen Grid">
+<meta property="og:description" content="Light every white cell with bulbs that never see each other. One proven solution. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/lumen-grid/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Lumen Grid on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Lumen Grid">
+<meta name="twitter:description" content="Light every white cell with bulbs that never see each other. One proven solution. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Lumen Grid on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Lumen Grid","url":"https://ocurp.com/workspace/games/lumen-grid/","description":"Light every white cell with bulbs that never see each other. One proven solution. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#5ec8ff">
+<a class="skip" href="#ws-play">Skip to the game</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/">Tools</a><a href="/workspace/games/" aria-current="true">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/">Tools</a><a href="/workspace/games/" aria-current="true">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/games/lumen-grid/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/games/">Games</a><span aria-hidden="true">/</span><a href="/workspace/games/?c=arcade">Arcade</a></nav><h1>Lumen Grid</h1><p class="lede">Light every white cell with bulbs that never see each other. One proven solution.</p><div class="d-tags"><span class="g">Arcade</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Play now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/games/">All games</a></div></div><div class="d-shot"><img src="/workspace/games/lumen-grid/card.jpg?v=20261006" alt="Lumen Grid screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+      
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="cove" class="ws-btn">Cove 5&times;5</button>
+      <button id="bay" class="ws-btn-ghost">Bay 7&times;7</button>
+      <button id="deep" class="ws-btn-ghost">Deep 9&times;9</button>
+      <button id="new" class="ws-btn-ghost">New board</button>
+      <span class="ws-chip">ONE SOLUTION &mdash; PROVEN</span>
+    </div>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_250px]">
+      <div>
+        <div id="board" class="grid w-full max-w-[460px] gap-px"></div>
+        <p class="mt-3 text-[10px] text-white/35">
+          Click a white cell to place or lift a bulb. Every white cell must be lit,
+          and no two bulbs may see each other. Two bulbs that cross on different
+          rows and columns can light the same cell - that is fine. The number in a
+          black cell counts the bulbs touching it.
+        </p>
+      </div>
+
+      <div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Bulbs</div>
+            <div class="font-display text-xl font-black text-white" id="nlamp">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Dark cells</div>
+            <div class="font-display text-xl font-black text-white" id="ndark">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Bulbs in solution</div>
+            <div class="font-display text-xl font-black text-accent" id="nsol">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Status</div>
+            <div class="font-display text-sm font-black text-white" id="status">Playing</div></div>
+        </div>
+        <div class="mt-3 rounded-xl border border-white/10 bg-white/[0.04] p-3">
+          <div class="ws-label mb-1">Cells</div>
+          <div class="font-display text-lg font-black text-white" id="ncells">0</div>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="undo" class="ws-btn-ghost">Undo</button>
+          <button id="solve" class="ws-btn-ghost">Show solution</button>
+        </div>
+        <p class="mt-3 text-[10px] text-white/35">
+          Black cells block sight and hold no bulb. Two bulbs clash when they share an
+          unbroken white stretch of row or column.
+        </p>
+      </div>
+    </div>
+  </section>
+</div>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+const LG_N = { cove: 5, bay: 7, deep: 9 };
+const LG_BLACKP = { cove: 0.24, bay: 0.26, deep: 0.28 };
+const LG_KEYOFF = { cove: 1, bay: 2, deep: 3 };
+const LG_MAXTRY = 400;
+const LG_NODE_CAP = 40000;
+
+let lgKey = 'cove', lgSeed = 1, lgN = 5;
+let lgBlack = [], lgBulbs = [], lgSol = [], lgHist = [];
+let lgStatus = 'Playing', lgSolved = false;
+
+/* Deterministic PRNG. mulberry32 keeps the page's boards reproducible, and the
+   Python prover runs the identical integer arithmetic, so a board generated in
+   the browser is byte-for-byte the board the prover analyses. */
+function lgRng(a) {
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function lgSeedFor(key, seed) { return Math.imul(seed, 7919) + LG_KEYOFF[key]; }
+
+/* ---------------------------------------------------------------- geometry */
+/* Visibility of a white cell: itself plus the unbroken white run left, right,
+   up and down. Black cells stop the run. H is the row run, V the column run,
+   F the union (the cells this bulb would light). */
+function lgGeom(n, black) {
+  const N = n * n;
+  const H = [], V = [], F = [];
+  for (let i = 0; i < N; i++) {
+    const r = (i / n) | 0, c = i % n;
+    if (black[i]) { H.push([]); V.push([]); F.push([]); continue; }
+    const h = [i];
+    for (let x = c - 1; x >= 0 && !black[r * n + x]; x--) h.push(r * n + x);
+    for (let x = c + 1; x < n && !black[r * n + x]; x++) h.push(r * n + x);
+    const v = [i];
+    for (let y = r - 1; y >= 0 && !black[y * n + c]; y--) v.push(y * n + c);
+    for (let y = r + 1; y < n && !black[y * n + c]; y++) v.push(y * n + c);
+    const f = [], seen = new Set();
+    for (const x of h.concat(v)) if (!seen.has(x)) { seen.add(x); f.push(x); }
+    H.push(h); V.push(v); F.push(f);
+  }
+  return { H, V, F };
+}
+
+/* ------------------------------------------------------------------ solver */
+/* Exhaustive backtracking over bulb placements.
+ *
+ * cov[i] = how many placed bulbs light cell i (its own bulb counts too, since a
+ * bulb lights itself). A white cell with cov 0 still needs a bulb, and that bulb
+ * must be a cell it can see which is not already clashing.
+ *
+ * Returns {count, best, nodes, gaveUp}: count saturates at `limit`, best is the
+ * first solution found, gaveUp says the node cap truncated the search (which
+ * makes the answer UNPROVEN - the generator rejects such a board outright). */
+function lgSolve(n, black, limit) {
+  limit = limit || 2;
+  const N = n * n;
+  const { H, V, F } = lgGeom(n, black);
+  const st = new Int8Array(N).fill(-1);   // -1 free, 1 bulb
+  const cov = new Int32Array(N);
+  const res = { count: 0, best: null, nodes: 0, gaveUp: false };
+  let nodes = 0;
+
+  const clashFree = (i) => F[i].every((j) => st[j] !== 1);
+
+  function place(i) {
+    st[i] = 1;
+    for (const j of H[i]) cov[j]++;
+    for (const j of V[i]) cov[j]++;
+  }
+  function lift(i) {
+    st[i] = -1;
+    for (const j of H[i]) cov[j]--;
+    for (const j of V[i]) cov[j]--;
+  }
+
+  function dfs() {
+    nodes++;
+    if (nodes > LG_NODE_CAP) { res.gaveUp = true; return true; }
+    // Pick the first white cell nothing lights yet.
+    let t = -1;
+    for (let i = 0; i < N; i++) if (!black[i] && cov[i] === 0) { t = i; break; }
+    if (t < 0) {
+      res.count++;
+      if (res.count === 1) {
+        res.best = [];
+        for (let i = 0; i < N; i++) if (st[i] === 1) res.best.push(i);
+      }
+      // Could another bulb still go somewhere without breaking RULE 1 or 2?
+      for (let i = 0; i < N; i++) {
+        if (!black[i] && st[i] === -1 && clashFree(i)) { res.count = 2; return true; }
+      }
+      return res.count >= limit;
+    }
+    const seen = new Set();
+    for (const cand of H[t].concat(V[t])) {
+      if (seen.has(cand) || black[cand] || st[cand] === 1 || !clashFree(cand)) continue;
+      seen.add(cand);
+      place(cand);
+      if (dfs()) return true;
+      lift(cand);
+    }
+    return false;
+  }
+
+  dfs();
+  res.nodes = nodes;
+  return res;
+}
+
+/* --------------------------------------------------------------- generator */
+function lgLayout(n, blackFrac, rng) {
+  const N = n * n;
+  const pool = [];
+  for (let i = 0; i < N; i++) pool.push(i);
+  for (let i = N - 1; i > 0; i--) {                 // Fisher-Yates
+    const j = (rng() * (i + 1)) | 0;
+    const tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+  }
+  const black = new Uint8Array(N);
+  for (let k = 0; k < Math.round(blackFrac * N); k++) black[pool[k]] = 1;
+  return black;
+}
+
+function lgGen(key, seed) {
+  const n = LG_N[key];
+  const rng = lgRng(lgSeedFor(key, seed));
+  let tries = 0, fallback = null;
+  for (let a = 0; a < LG_MAXTRY; a++) {
+    tries = a + 1;
+    const black = lgLayout(n, LG_BLACKP[key], rng);
+    const r = lgSolve(n, black, 2);
+    if (r.gaveUp) continue;                        // unproven: never print it
+    if (r.count === 1) return { black: black, sol: r.best, tries: tries, nodes: r.nodes, proven: true };
+    if (r.count >= 1 && !fallback) {
+      fallback = { black: black, sol: r.best, tries: tries, nodes: r.nodes, proven: false };
+    }
+  }
+  return fallback;                                  // must never happen; tested
+}
+
+/* ------------------------------------------------------------------- state */
+function lgLoad(key, seed) {
+  lgKey = key; lgSeed = seed; lgN = LG_N[key];
+  const g = lgGen(key, seed);
+  lgBlack = Array.prototype.slice.call(g.black);
+  lgBulbs = new Array(lgN * lgN).fill(0);
+  lgSol = g.sol || [];
+  lgHist = [];
+  lgStatus = 'Playing';
+  lgSolved = !!g.proven;
+  lgRender();
+  return g;
+}
+
+function lgLit(black, bulbs) {
+  const { H, V } = lgGeom(lgN, black);
+  const cov = new Int32Array(lgN * lgN);
+  for (let i = 0; i < lgN * lgN; i++) {
+    if (black[i] || !bulbs[i]) continue;
+    for (const j of H[i]) cov[j]++;
+    for (const j of V[i]) cov[j]++;
+  }
+  return cov;
+}
+
+/* lgSees: do bulbs i and j share an unbroken white run? That is the ONLY
+   illegal placement, and it is what lgSolve enforces. NOTE: cov counts a
+   bulb's own row run and column run, so a bulb always covers its own cell
+   twice, and two NON-seeing bulbs can still both light a crossing cell.
+   `overlit` is therefore normal in a finished board and must NOT gate the
+   win - doing so made the win unreachable, because lgLit adds H[i] and V[i]
+   and the bulb's own index i is the first member of both. */
+function lgInspect() {
+  const { F } = lgGeom(lgN, lgBlack);
+  const cov = lgLit(lgBlack, lgBulbs);
+  let dark = 0, double = 0, clash = 0;
+  for (let i = 0; i < lgN * lgN; i++) {
+    if (lgBlack[i]) continue;
+    if (cov[i] === 0) dark++;
+    if (cov[i] > 1) double++;
+  }
+  // clash = the number of ILLegal bulb pairs, counted once per pair.
+  const bulbs = [];
+  for (let i = 0; i < lgN * lgN; i++) if (!lgBlack[i] && lgBulbs[i]) bulbs.push(i);
+  for (let a = 0; a < bulbs.length; a++)
+    for (let b = a + 1; b < bulbs.length; b++)
+      if (F[bulbs[a]].indexOf(bulbs[b]) >= 0) clash++;
+  return {
+    n: lgN, bulbs: bulbs.length,
+    dark: dark, overlit: double, clash: clash,
+    win: dark === 0 && clash === 0,
+    status: lgStatus,
+  };
+}
+
+function lgToggle(i) {
+  if (lgBlack[i]) return lgInspect();
+  lgHist.push({ i: i, v: lgBulbs[i] });
+  lgBulbs[i] = lgBulbs[i] ? 0 : 1;
+  const s = lgInspect();
+  if (s.win && !lgBulbs.includes(2)) lgStatus = 'Solved';
+  lgRender();
+  return s;
+}
+
+/* ------------------------------------------------------------------ render */
+function lgRender() {
+  const b = document.getElementById('board');
+  if (!b) return;
+  b.style.gridTemplateColumns = 'repeat(' + lgN + ',minmax(0,1fr))';
+  b.innerHTML = '';
+  const cov = lgLit(lgBlack, lgBulbs);
+  for (let i = 0; i < lgN * lgN; i++) {
+    const r = (i / lgN) | 0, c = i % lgN;
+    const d = document.createElement('div');
+    if (lgBlack[i]) {
+      let n = 0;
+      const nb = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      for (const [dr, dc] of nb) {
+        const rr = r + dr, cc = c + dc;
+        if (rr < 0 || rr >= lgN || cc < 0 || cc >= lgN) continue;
+        if (lgBulbs[rr * lgN + cc]) n++;
+      }
+      d.className = 'flex aspect-square items-center justify-center rounded bg-black text-[11px] font-bold text-white/50';
+      d.textContent = n === 0 ? '.' : String(n);
+    } else {
+      const on = cov[i] > 0;
+      d.className = 'flex aspect-square cursor-pointer items-center justify-center rounded border ' +
+        (on ? 'border-accent/40 bg-accent/[0.07] ' : 'border-white/10 bg-white/[0.02] ') +
+        'transition-colors hover:border-accent/60';
+      if (lgBulbs[i]) {
+        d.innerHTML = '<span class="block h-2.5 w-2.5 rounded-full bg-accent"></span>';
+      }
+      d.onclick = function () { lgToggle(i); };
+    }
+    b.appendChild(d);
+  }
+  const s = lgInspect();
+  const set = function (id, v) { const e = document.getElementById(id); if (e) e.textContent = v; };
+  set('nlamp', s.bulbs);
+  set('ndark', s.dark);
+  set('nsol', lgSol.length);
+  set('ncells', lgN * lgN + ' cells, ' + lgBlack.reduce((a, b2) => a + b2, 0) + ' black');
+  set('status', s.win ? 'Solved' : lgStatus);
+}
+
+/* ------------------------------------------------------------------- wire */
+function lgWire() {
+  const bind = function (id, fn) { const e = document.getElementById(id); if (e) e.onclick = fn; };
+  bind('cove', function () { lgLoad('cove', (lgSeed % 9973) + 1); });
+  bind('bay', function () { lgLoad('bay', (lgSeed % 9973) + 1); });
+  bind('deep', function () { lgLoad('deep', (lgSeed % 9973) + 1); });
+  bind('new', function () { lgLoad(lgKey, (lgSeed % 99991) + 1); });
+  bind('undo', function () {
+    const h = lgHist.pop();
+    if (h) { lgBulbs[h.i] = h.v; lgStatus = 'Playing'; lgRender(); }
+  });
+  bind('solve', function () {
+    lgBulbs = lgBulbs.map(function (v, i) { return lgSol.indexOf(i) >= 0 ? 1 : 0; });
+    lgHist = [];
+    lgRender();
+  });
+}
+
+/* --------------------------------------------------- synchronous test hooks */
+window.__lumen = {
+  generate: function (key, seed) { return lgGen(key || 'cove', seed || 1); },
+  board: function () {
+    return {
+      n: lgN, key: lgKey, seed: lgSeed, black: lgBlack.slice(),
+      bulbs: lgBulbs.slice(), sol: lgSol.slice(),
+      status: lgStatus, proven: lgSolved,
+    };
+  },
+  load: function (key, seed) { lgLoad(key, seed); return window.__lumen.board(); },
+  solve: function (key, seed) {
+    const black = key ? Array.from(lgGen(key, seed).black) : lgBlack;
+    return lgSolve(lgN, black, 2);
+  },
+  inspect: lgInspect,
+  toggle: lgToggle,
+  lit: function () { return Array.from(lgLit(lgBlack, lgBulbs)); },
+  adjacent: function (i) {
+    const r = (i / lgN) | 0, c = i % lgN;
+    let n = 0;
+    const nb = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    for (const [dr, dc] of nb) {
+      const rr = r + dr, cc = c + dc;
+      if (rr < 0 || rr >= lgN || cc < 0 || cc >= lgN) continue;
+      if (!lgBlack[rr * lgN + cc] && lgBulbs[rr * lgN + cc]) n++;
+    }
+    return n;
+  },
+  playSolution: function () {
+    lgBulbs = lgBulbs.map(function (v, i) { return lgSol.indexOf(i) >= 0 ? 1 : 0; });
+    lgRender();
+    return lgInspect();
+  },
+};
+
+lgWire();
+lgLoad('cove', 1);
+</script>
+<section class="d-more"><div class="wrap"><h2>More games</h2><div class="ws-grid"><a class="tile-card" href="/workspace/games/space-invaders/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/space-invaders/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Space Invaders</h3><p>Descending waves, destructible shields and a rising score.</p></div></a><a class="tile-card" href="/workspace/games/fruit-slice/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/fruit-slice/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Fruit Slice</h3><p>Swipe through flying fruit, chain combos and dodge the bombs.</p></div></a><a class="tile-card" href="/workspace/games/lane-runner/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/lane-runner/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Lane Runner</h3><p>Endless three-lane runner: switch lanes, jump crates and slide under beams.</p></div></a><a class="tile-card" href="/workspace/games/mole-mash/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/mole-mash/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Mole Mash</h3><p>Thirty seconds of whack-a-mole. Fast hits build a combo multiplier.</p></div></a><a class="tile-card" href="/workspace/games/lights-out/" style="--c:#b49bff"><div class="shot"><img src="/workspace/games/lights-out/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Puzzle</span><h3>Lights Out</h3><p>Classic 3x3, 4x4 or 5x5 Lights Out. Click a cell to toggle it and its neighbours, clear every light to win.</p></div></a><a class="tile-card" href="/workspace/games/math-sprint/" style="--c:#ffd166"><div class="shot"><img src="/workspace/games/math-sprint/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Words &amp; brain</span><h3>Math Sprint</h3><p>60 seconds of arithmetic. Type the answers, watch accuracy and score, and the difficulty ramps as you go.</p></div></a><a class="tile-card" href="/workspace/games/memory-sequence/" style="--c:#ffd166"><div class="shot"><img src="/workspace/games/memory-sequence/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Words &amp; brain</span><h3>Memory Sequence</h3><p>Simon-style: watch the pads flash, repeat the order, and beat your best level on this device.</p></div></a><a class="tile-card" href="/workspace/games/word-ladder/" style="--c:#ffd166"><div class="shot"><img src="/workspace/games/word-ladder/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Words &amp; brain</span><h3>Word Ladder</h3><p>Climb one letter at a time from one real dictionary word to another. Undo, hints and a new ladder on demand.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kaplan-Meier Estimator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#43e0d0', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#43e0d0; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#43e0d0; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(67,224,208,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(67,224,208,.28); background:rgba(67,224,208,.06);
+    padding:1rem 1.1rem; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.95rem; line-height:1.7; overflow-x:auto; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.9rem; color:#fff; text-align:right; }
+  table.km { border-collapse:collapse; width:100%; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.78rem; }
+  table.km th, table.km td { border:1px solid rgba(255,255,255,.09); padding:.4rem .55rem; text-align:right; white-space:nowrap; }
+  table.km th { color:rgba(255,255,255,.5); font-weight:700; }
+  table.km td.frac { color:rgba(67,224,208,.95); }
+</style>
+<meta name="description" content="Survival from a table of event and censor times: the risk set at every step. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/kaplan-meier-survival-estimator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Kaplan-Meier Estimator">
+<meta property="og:description" content="Survival from a table of event and censor times: the risk set at every step. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/kaplan-meier-survival-estimator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Kaplan-Meier Estimator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kaplan-Meier Estimator">
+<meta name="twitter:description" content="Survival from a table of event and censor times: the risk set at every step. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Kaplan-Meier Estimator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Kaplan-Meier Estimator","url":"https://ocurp.com/workspace/tools/kaplan-meier-survival-estimator/","description":"Survival from a table of event and censor times: the risk set at every step. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#43e0d0">
+<a class="skip" href="#ws-play">Skip to the tool</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/tools/kaplan-meier-survival-estimator/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/tools/">Tools</a><span aria-hidden="true">/</span><a href="/workspace/tools/?c=science">Science</a></nav><h1>Kaplan-Meier Estimator</h1><p class="lede">Survival from a table of event and censor times: the risk set at every step, the curve as exact fractions, Greenwood standard errors, confidence bounds and median survival.</p><div class="d-tags"><span class="g">Science</span><span>Survival</span><span>Kaplan-Meier</span><span>Statistics</span><span>Clinical</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Open now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/tools/">All tools</a></div></div><div class="d-shot"><img src="/workspace/tools/kaplan-meier-survival-estimator/card.jpg?v=20261006" alt="Kaplan-Meier Estimator screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+  <p class="mb-8 max-w-2xl text-base text-white/55">The estimator that made survival analysis ordinary. At each event time the survival probability is multiplied by the fraction of the risk set that survives, and censored subjects leave the risk set without counting as deaths. Every probability here is carried as an exact fraction, so the survival function is never rounded on its way to a chart. It also reports the Greenwood standard error and the median survival time.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">EXACT FRACTIONS</span>
+    <span class="ws-chip">GREENWOOD SE</span>
+    <span class="ws-chip">NUMBER AT RISK</span>
+  </div>
+  <p class="mt-0 mb-3 text-[11px] leading-relaxed text-white/40">
+    One subject per line, <span class="text-white/70">time event</span> where
+    <span class="text-white/70">event</span> is <span class="text-white/70">1</span> for a death
+    and <span class="text-white/70">0</span> for a censoring. Several subjects can share a time;
+    they are grouped into one risk-set step.
+  </p>
+  <label class="ws-label mb-2 block" for="km-in">Times and statuses</label>
+  <textarea id="km-in" class="ws-input" rows="6" spellcheck="false">1 1
+2 0
+3 1
+4 1
+5 0
+6 1
+6 0
+8 1
+9 0
+12 0</textarea>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="km-go" class="ws-btn" style="width:auto">Estimate</button>
+    <button id="km-c1" class="ws-btn-ghost" style="width:auto">Worked example</button>
+    <button id="km-c2" class="ws-btn-ghost" style="width:auto">All censored</button>
+    <button id="km-c3" class="ws-btn-ghost" style="width:auto">All events</button>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="km-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Verdict</div>
+  <div id="km-out" class="ws-out"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Every risk-set step</div>
+  <div id="km-table"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Numbers</div>
+  <div id="km-kv"></div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+
+/* Exact rational arithmetic. Multiplying survival probabilities by (n-d)/n
+   and reporting the running product as a decimal is where a naive tool loses
+   precision on a long series; BigInt fractions never do. */
+function gcdB(a,b){ a=a<0n?-a:a; b=b<0n?-b:b;
+  while(b!==0n){ var t=a%b; a=b; b=t; } return a; }
+function nrat(n,d){ var g=gcdB(n,d)||1n; return {n:n/g,d:d/g}; }
+function fstr(f){ return f.d===1n? f.n.toString() : f.n.toString()+'/'+f.d.toString(); }
+function fmul(a,b){ return nrat(a.n*b.n, a.d*b.d); }
+function fdiv(a,b){ return nrat(a.n*b.d, a.d*b.n); }
+function fsqrtNum(a){
+  // sqrt of a rational, for Greenwood's standard error: sqrt(num/den) as a double.
+  return Math.sqrt(Number(a.n)/Number(a.d));
+}
+
+var KM = (function(){
+  function parse(txt){
+    var out=[], raw=String(txt).split(/[\n,;]+/);
+    for(var i=0;i<raw.length;i++){
+      var s=raw[i].trim();
+      if(!s) continue;
+      var p=s.split(/[\s]+/).filter(function(x){return x.length>0;});
+      if(p.length<2) return {error:'line '+(i+1)+' needs a time and a status'};
+      var t=Number(p[0]), e=Number(p[1]);
+      if(!isFinite(t)) return {error:'line '+(i+1)+' time is not a number: "'+p[0]+'"'};
+      if(e!==0&&e!==1) return {error:'line '+(i+1)+' status must be 1 (event) or 0 (censored), got "'+p[1]+'"'};
+      out.push({t:t, e:e});
+    }
+    if(!out.length) return {error:'no observations'};
+    out.sort(function(a,b){ return a.t-b.t || b.e-a.e; });
+    return {obs:out};
+  }
+
+  /* The risk set at time t is everyone whose time is >= t: a subject censored
+     at t has NOT yet left when the event at t is processed. At each distinct
+     event time we multiply S by (n - d)/n, where d counts every event at that
+     time - ties are grouped, never processed one at a time. */
+  function estimate(obs){
+    var times=[];
+    for(var i=0;i<obs.length;i++) if(obs[i].e===1 && times.indexOf(obs[i].t)<0) times.push(obs[i].t);
+    times.sort(function(a,b){return a-b;});
+    var S={n:1n,d:1n}, steps=[], i, j;
+    for(i=0;i<times.length;i++){
+      var t=times[i], n=0, d=0;
+      for(j=0;j<obs.length;j++){
+        if(obs[j].t>=t) n++;
+        if(obs[j].t===t && obs[j].e===1) d++;
+      }
+      if(n===0||d===0) continue;
+      S=fmul(S, {n:BigInt(n-d), d:BigInt(n)});
+      steps.push({t:t, n:n, d:d, c:n-d, S:S});
+    }
+    return {steps:steps, S:S, events:times.length};
+  }
+
+  /* Greenwood: var(S) = S^2 * sum over event times of d / (n*(n-d)).
+     Reported at the last event time, which is the only point where the
+     numerator is non-zero and the variance is defined. */
+  function greenwood(steps){
+    if(!steps.length) return null;
+    var acc={n:0n,d:1n}, i;
+    for(i=0;i<steps.length;i++){
+      var s=steps[i];
+      // acc + d/(n*(n-d)) = acc + s.d/(s.n*s.c), as exact fractions.
+      var nn=acc.n*BigInt(s.n*s.c) + BigInt(s.d)*acc.d;
+      var dd=acc.d*BigInt(s.n*s.c);
+      acc=nrat(nn,dd);
+    }
+    var last=steps[steps.length-1];
+    var varS=fmul(fmul(last.S,last.S), acc);
+    var se=fsqrtNum(varS);
+    return {acc:acc, varS:varS, se:se, lo:Number(last.S.n)/Number(last.S.d)-1.96*se,
+            hi:Number(last.S.n)/Number(last.S.d)+1.96*se};
+  }
+
+  /* Median survival: the first event time at which S drops to 0.5 or below.
+     If S never gets there the median is simply not reached. */
+  function median(steps){
+    var half={n:1n,d:2n}, i;
+    for(i=0;i<steps.length;i++){
+      var s=steps[i].S;
+      if(s.n*2n<=s.d) return {reached:true, t:steps[i].t, S:s};
+    }
+    return {reached:false, t:null, S:null};
+  }
+
+  /* Number at risk just before each time point: everyone with time >= t. */
+  function riskTable(obs){
+    var pts=[], i;
+    for(i=0;i<obs.length;i++) if(pts.indexOf(obs[i].t)<0) pts.push(obs[i].t);
+    pts.sort(function(a,b){return a-b;});
+    return pts.map(function(t){
+      var n=0,e=0,c=0;
+      for(var j=0;j<obs.length;j++){
+        if(obs[j].t>=t) n++;
+        if(obs[j].t===t){ if(obs[j].e===1) e++; else c++; }
+      }
+      return {t:t, n:n, e:e, c:c};
+    });
+  }
+
+  function compute(obs){
+    var est=estimate(obs);
+    return {est:est, gw:greenwood(est.steps), med:median(est.steps),
+            risk:riskTable(obs)};
+  }
+
+  function r6(x){ if(Object.is(x,-0)) x=0; return Math.round(x*1e6)/1e6; }
+
+  function render(){
+    var err=$('km-err'), p=parse($('km-in').value);
+    if(p.error){ err.textContent=p.error; return null; }
+    err.textContent='';
+    var obs=p.obs, c=compute(obs);
+    var n=obs.length, ev=0, cs=0, i;
+    for(i=0;i<n;i++) if(obs[i].e===1) ev++; else cs++;
+
+    var html='<table class="km"><tr><th>time</th><th>at risk n</th><th>events d</th><th>surviving n-d</th><th>factor</th><th>S(t) exact</th><th>S(t)</th></tr>';
+    for(i=0;i<c.est.steps.length;i++){
+      var s=c.est.steps[i];
+      html+='<tr><td>'+esc(s.t)+'</td><td>'+s.n+'</td><td>'+s.d+'</td><td>'+s.c+
+        '</td><td>'+(s.c)+'/'+s.n+'</td><td class="frac">'+esc(fstr(s.S))+
+        '</td><td>'+esc(r6(Number(s.S.n)/Number(s.S.d)))+'</td></tr>';
+    }
+    if(!c.est.steps.length) html+='<tr><td colspan="7">no events - the survival curve stays at 1</td></tr>';
+    html+='</table>';
+    $('km-table').innerHTML=html;
+
+    var Sval=Number(c.est.S.n)/Number(c.est.S.d);
+    var o='';
+    o+='N:           '+n+'  ('+ev+' events, '+cs+' censored)\n';
+    o+='event times: '+(c.est.events?(c.est.steps.map(function(s){return s.t;}).join(', ')):'(none)')+'\n';
+    o+='S(end):      '+fstr(c.est.S)+'  = '+r6(Sval)+'\n';
+    o+='median:      '+(c.med.reached? 't = '+c.med.t+' (S drops to '+fstr(c.med.S)+')' : 'not reached - S never falls to 0.5')+'\n';
+    if(c.gw){
+      o+='Greenwood SE:'+r6(c.gw.se)+'\n';
+      o+='95% CI:      ['+r6(c.gw.lo)+', '+r6(c.gw.hi)+']  (clipped: '+r6(Math.max(0,c.gw.lo))+', '+r6(Math.min(1,c.gw.hi))+')\n';
+    } else o+='Greenwood SE:n/a - no events\n';
+    $('km-out').textContent=o;
+
+    fill('km-kv',[
+      ['observations', n],
+      ['events', ev],
+      ['censored', cs],
+      ['distinct event times', c.est.events],
+      ['final S (exact)', fstr(c.est.S)],
+      ['final S (decimal)', r6(Sval)],
+      ['median survival', c.med.reached? c.med.t : 'not reached'],
+      ['Greenwood SE at last event', c.gw? r6(c.gw.se) : 'n/a'],
+      ['CI lower (clipped to 0)', c.gw? r6(Math.max(0,c.gw.lo)) : 'n/a'],
+      ['CI upper (clipped to 1)', c.gw? r6(Math.min(1,c.gw.hi)) : 'n/a'],
+      ['Greenwood sum d/(n(n-d))', c.gw? fstr(c.gw.acc) : 'n/a']
+    ]);
+    return {obs:obs, c:c};
+  }
+
+  $('km-go').addEventListener('click',render);
+  $('km-c1').addEventListener('click',function(){ put('km-in','1 1\n2 0\n3 1\n4 1\n5 0\n6 1\n6 0\n8 1\n9 0\n12 0'); render(); });
+  $('km-c2').addEventListener('click',function(){ put('km-in','2 0\n4 0\n6 0\n8 0'); render(); });
+  $('km-c3').addEventListener('click',function(){ put('km-in','1 1\n2 1\n3 1\n4 1'); render(); });
+  $('km-in').addEventListener('input',render);
+  render();
+  return {render:render, parse:parse, estimate:estimate, greenwood:greenwood,
+          median:median, compute:compute, fstr:fstr};
+})();
+
+window.__kaplan_meier_survival_estimator = {
+  run: function(i){
+    var p = i.data!==undefined ? KM.parse(i.data) : KM.parse($('km-in').value);
+    if(p.error) return JSON.stringify({error:p.error});
+    var c=KM.compute(p.obs);
+    var S=Number(c.est.S.n)/Number(c.est.S.d);
+    var out={n:p.obs.length,
+      events:c.est.events,
+      steps:c.est.steps.map(function(s){ return s.t+':'+s.n+'/'+s.d+'->'+KM.fstr(s.S); }).join(' '),
+      stepCount:c.est.steps.length,
+      finalS:KM.fstr(c.est.S),
+      finalSDec:Math.round(S*1e6)/1e6,
+      median: c.med.reached? c.med.t : null,
+      medianReached: c.med.reached,
+      greenwoodSE: c.gw? Math.round(c.gw.se*1e6)/1e6 : null,
+      ciLower: c.gw? Math.round(Math.max(0,c.gw.lo)*1e6)/1e6 : null,
+      ciUpper: c.gw? Math.round(Math.min(1,c.gw.hi)*1e6)/1e6 : null};
+    return JSON.stringify(out);
+  }
+};
+
+</script>
+  </div>
+</div>
+<section class="d-more"><div class="wrap"><h2>More tools</h2><div class="ws-grid"><a class="tile-card" href="/workspace/tools/barometric-altitude/" style="--c:#43e0d0"><div class="shot"><img src="/workspace/tools/barometric-altitude/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Science</span><h3>Barometric Altitude &amp; Hypsometric Pressure</h3><p>The barometric formula reading an altitude straight off a pressure, beside the hypsometric equation turning a known height change and temperature into the pressure you should expect to read there.</p></div></a><a class="tile-card" href="/workspace/tools/earthquake-magnitude/" style="--c:#43e0d0"><div class="shot"><img src="/workspace/tools/earthquake-magnitude/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Science</span><h3>Earthquake Magnitude Converter</h3><p>Convert between Mw, mb, Ms and ML with the published linear relations, then read the radiated energy in joules and in tonnes of TNT.</p></div></a><a class="tile-card" href="/workspace/tools/cistern-sizing/" style="--c:#43e0d0"><div class="shot"><img src="/workspace/tools/cistern-sizing/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Science</span><h3>Rainwater Cistern Sizer</h3><p>Size a rain tank from a monthly mass balance of catchment, rainfall, runoff coefficient and household demand, with days of autonomy.</p></div></a><a class="tile-card" href="/workspace/tools/molecule-converter/" style="--c:#43e0d0"><div class="shot"><img src="/workspace/tools/molecule-converter/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Science</span><h3>Molecule Converter</h3><p>Mass to moles to STP volume for any compound, plus M, mM, mol/L, g/L, mg/mL and ppm, with the molar mass table shown.</p></div></a><a class="tile-card" href="/workspace/tools/duration-formatter/" style="--c:#ffd166"><div class="shot"><img src="/workspace/tools/duration-formatter/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Writing &amp; text</span><h3>Duration Formatter</h3><p>Turn any span of seconds, minutes, hours or days into a readable duration and back, with a millisecond-precision breakdown and total-unit readouts.</p></div></a><a class="tile-card" href="/workspace/tools/heron-triangle-solver/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/heron-triangle-solver/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Heron&#x27;s Triangle Solver</h3><p>Area, perimeter, altitude, median and the inradius and circumradius of any triangle from its three sides, with an exact validity check on the triangle inequality before it computes anything.</p></div></a><a class="tile-card" href="/workspace/tools/regular-polygon-calculator/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/regular-polygon-calculator/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Regular Polygon Calculator</h3><p>Interior and exterior angles, the apothem, circumradius, perimeter and area of a regular n-gon from the side or the circumradius, with a drawn polygon at any vertex count.</p></div></a><a class="tile-card" href="/workspace/tools/spherical-cap-calculator/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/spherical-cap-calculator/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Spherical Cap Calculator</h3><p>Surface area and volume of a spherical cap or segment from radius and cap height, with base-circle area and the flat-cut comparison.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>

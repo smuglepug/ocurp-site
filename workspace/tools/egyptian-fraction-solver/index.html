@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Egyptian Fraction Solver — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#b49bff', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#b49bff; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#b49bff; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(180,155,255,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(180,155,255,.28); background:rgba(180,155,255,.06);
+    padding:1rem 1.1rem; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.9rem; color:#fff; text-align:right; }
+  .ws-note { font-size:.75rem; line-height:1.6; color:rgba(255,255,255,.45); }
+</style>
+<meta name="description" content="Decompose any fraction into a sum of distinct unit fractions - the greedy Sylvester chain in exact BigInt arithmetic. Runs entirely in your browser -...">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/egyptian-fraction-solver/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Egyptian Fraction Solver">
+<meta property="og:description" content="Decompose any fraction into a sum of distinct unit fractions - the greedy Sylvester chain in exact BigInt arithmetic. Runs entirely in your browser -...">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/egyptian-fraction-solver/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Egyptian Fraction Solver on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Egyptian Fraction Solver">
+<meta name="twitter:description" content="Decompose any fraction into a sum of distinct unit fractions - the greedy Sylvester chain in exact BigInt arithmetic. Runs entirely in your browser -...">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Egyptian Fraction Solver on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Egyptian Fraction Solver","url":"https://ocurp.com/workspace/tools/egyptian-fraction-solver/","description":"Decompose any fraction into a sum of distinct unit fractions - the greedy Sylvester chain in exact BigInt arithmetic. Runs entirely in your browser -...","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#b49bff">
+<a class="skip" href="#ws-play">Skip to the tool</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/tools/egyptian-fraction-solver/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/tools/">Tools</a><span aria-hidden="true">/</span><a href="/workspace/tools/?c=math">Math &amp; convert</a></nav><h1>Egyptian Fraction Solver</h1><p class="lede">Decompose any fraction into a sum of distinct unit fractions - the greedy Sylvester chain in exact BigInt arithmetic, plus a bounded search for the shortest expansion.</p><div class="d-tags"><span class="g">Math &amp; convert</span><span>Fractions</span><span>Sylvester</span><span>Greedy</span><span>Bigint</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Open now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/tools/">All tools</a></div></div><div class="d-shot"><img src="/workspace/tools/egyptian-fraction-solver/card.jpg?v=20261006" alt="Egyptian Fraction Solver screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+  <p class="mb-8 max-w-2xl text-base text-white/55">Every proper fraction can be written as a sum of distinct unit fractions, and the proof is two lines long: subtract the largest unit fraction that does not exceed the number, and repeat. This page runs that greedy chain in exact arbitrary-precision integers, then searches a bounded space for a shorter expansion and proves the shorter one is genuinely shorter.</p>
+  <div class="ws-grid2">
+
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="ws-chip">EXACT BIGINT</span>
+    <span class="ws-chip">GREEDY SYLVESTER CHAIN</span>
+    <span class="ws-chip">BOUNDED MINIMUM SEARCH</span>
+  </div>
+  <p class="mt-0 mb-3 text-[11px] leading-relaxed text-white/40">
+    A fraction <span class="text-white/70">p/q</span>, or a decimal like
+    <span class="text-white/70">0.4375</span>. Denominators above 2^53 are handled as
+    BigInt, so a greedy chain that ends near 10^17 is reported exactly rather than
+    rounded into a lie.
+  </p>
+  <div class="grid gap-3 sm:grid-cols-3">
+    <div class="sm:col-span-2">
+      <label class="ws-label mb-2 block" for="ef-in">Fraction</label>
+      <input id="ef-in" class="ws-input" value="43/91" spellcheck="false" placeholder="43/91 or 0.4375">
+    </div>
+    <div>
+      <label class="ws-label mb-2 block" for="ef-maxd">Max denominator</label>
+      <input id="ef-maxd" class="ws-input" type="number" min="2" max="1000000" step="1" value="600">
+    </div>
+  </div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="ef-go" class="ws-btn" style="width:auto">Decompose</button>
+    <button id="ef-c1" class="ws-btn-ghost" style="width:auto">Two terms</button>
+    <button id="ef-c2" class="ws-btn-ghost" style="width:auto">The hard one</button>
+    <button id="ef-c3" class="ws-btn-ghost" style="width:auto">Small max</button>
+  </div>
+  <div class="mt-3 font-mono text-[11px] text-white/45" id="ef-err"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Verdict</div>
+  <div id="ef-out" class="ws-out"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">The greedy chain, one subtraction per line</div>
+  <div id="ef-steps" class="ws-out"></div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Numbers</div>
+  <div id="ef-kv"></div>
+</div>
+
+  </div>
+  <div class="mt-8">
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function bceil(a,b){ // ceil(a/b) for positive BigInt a, b
+  return (a + b - 1n) / b;
+}
+
+var EF = (function(){
+  /* Parse "p/q" or a decimal into an exact BigInt fraction, reduced.
+     A decimal is read as an integer over a power of ten, never via parseFloat,
+     so 0.1 stays 1/10 instead of becoming 0.1000000000000000055. */
+  function parse(txt){
+    var s=String(txt).trim();
+    if(!s) return null;
+    var m=s.match(/^([+-]?\d+)\s*\/\s*([+-]?\d+)$/);
+    var num, den;
+    if(m){
+      num=BigInt(m[1]); den=BigInt(m[2]);
+      if(den===0n) return null;
+      if(den<0n){ den=-den; num=-num; }
+    } else if(s.match(/^[+-]?(\d+\.?\d*|\.\d+)$/)){
+      var neg=false;
+      if(s[0]==='-'){ neg=true; s=s.slice(1); } else if(s[0]==='+'){ s=s.slice(1); }
+      var parts=s.split('.');
+      var ip=parts[0]===''?'0':parts[0];
+      var fp=parts[1]||'';
+      num=BigInt(ip+fp);
+      den=10n**BigInt(fp.length);
+      if(neg) num=-num;
+    } else return null;
+    var g=gcdBig(abs(num),den);
+    return {n:num/g, d:den/g};
+  }
+  function abs(x){ return x<0n?-x:x; }
+  function gcdBig(a,b){ a=abs(a); b=abs(b);
+    while(b!==0n){ var t=a%b; a=b; b=t; } return a; }
+  function str(f){ return f.d===1n? f.n.toString() : f.n.toString()+'/'+f.d.toString(); }
+
+  /* Greedy (Sylvester) chain. At each step the largest unit fraction not
+     exceeding the remainder is 1/ceil(den/num), and subtracting it keeps the
+     remainder strictly smaller, so the chain always terminates. Every value is
+     BigInt, so nothing is ever lost to double rounding. */
+  function greedy(f, cap){
+    var terms=[], trace=[], rem={n:f.n,d:f.d}, guard=0;
+    while(rem.n!==0n && guard<cap){
+      guard++;
+      var q = bceil(rem.d, rem.n);
+      if(q<1n) q=1n;
+      if(q>BigInt(cap)){ trace.push({q:q.toString(),rem:str(rem),cut:true}); break; }
+      terms.push(q);
+      trace.push({step:terms.length, q:q.toString(), rem:str(rem)});
+      // rem - 1/q = (rem.n*q - rem.d) / (rem.d*q), then reduce.
+      var nn=rem.n*q-rem.d, dd=rem.d*q;
+      if(nn===0n){ rem={n:0n,d:1n}; trace.push({step:terms.length, q:q.toString(), rem:'0'}); break; }
+      var g=gcdBig(nn,dd);
+      rem={n:nn/g,d:dd/g};
+    }
+    var exact = rem.n===0n;
+    return {terms:terms.map(function(q){return q.toString()}),
+            trace:trace, exact:exact, leftover:exact?null:str(rem)};
+  }
+
+  function sumOk(terms){
+    // Exact check: sum 1/q_i, all in one common denominator.
+    var den=1n, i;
+    for(i=0;i<terms.length;i++) den*=BigInt(terms[i]);
+    var num=0n;
+    for(i=0;i<terms.length;i++) num+=den/BigInt(terms[i]);
+    return {num:num, den:den, value:{n:num,d:den}};
+  }
+
+  /* Smallest k for which p/q is a sum of k unit fractions with denominators
+     in [lo,maxd]. Order matters: denominators are strictly increasing, so the
+     first candidate for a remainder r is ceil(den(r)/num(r)) - the largest unit
+     fraction that still fits - which is what makes the search tractable.
+     feasible() is the pruning test: with k terms left and denominators >= lo
+     the largest achievable total is k/lo, so rem > k/lo is dead on arrival. */
+  function shortest(f, maxd, kmax){
+    maxd=BigInt(maxd);
+    function feasible(rem, lo, k){
+      if(k===0) return rem.n===0n;
+      if(rem.n<=0n) return false;
+      if(rem.n*lo > BigInt(k)*rem.d) return false; // rem > k/lo
+      if(k===1) return rem.n===1n && lo<=rem.d && rem.d<=maxd;
+      var d0=bceil(rem.d,rem.n); if(d0<lo) d0=lo;
+      for(var d=d0; d<=maxd; d++){
+        var nn=rem.n*d-rem.d;
+        if(nn<0n) break;
+        var g=gcdBig(nn,rem.d*d);
+        if(feasible({n:nn/g,d:rem.d*d/g}, d+1n, k-1)) return true;
+      }
+      return false;
+    }
+    function rec(rem, lo, k, acc){
+      if(k===0) return rem.n===0n?acc:null;
+      if(rem.n<=0n) return null;
+      if(!feasible(rem,lo,k)) return null;
+      if(k===1){
+        if(rem.n===1n && lo<=rem.d && rem.d<=maxd) return acc.concat([rem.d.toString()]);
+        return null;
+      }
+      var d0=bceil(rem.d,rem.n); if(d0<lo) d0=lo;
+      for(var d=d0; d<=maxd; d++){
+        var nn=rem.n*d-rem.d;
+        if(nn<0n) break;
+        if(nn===0n && k-1!==0) continue; // would finish early, not a k-term split
+        var g=gcdBig(nn,rem.d*d);
+        var o=rec({n:nn/g,d:rem.d*d/g}, d+1n, k-1, acc.concat([d.toString()]));
+        if(o) return o;
+      }
+      return null;
+    }
+    for(var k=1;k<=kmax;k++){
+      var o=rec({n:f.n,d:f.d}, 1n, k, []);
+      if(o) return {terms:o, k:k};
+    }
+    return {terms:null, k:null};
+  }
+
+  function fmt(terms){
+    if(!terms||!terms.length) return '(none)';
+    return terms.map(function(q){return '1/'+q;}).join(' + ');
+  }
+  function distinct(terms){
+    for(var i=1;i<terms.length;i++) if(BigInt(terms[i-1])>=BigInt(terms[i])) return false;
+    return true;
+  }
+
+  function compute(f, maxd, kmax){
+    var g=greedy(f, 1000000);
+    var s=sumOk(g.terms);
+    var target={n:f.n,d:f.d};
+    var g2=gcdBig(s.num,s.den);
+    var sumExact = (s.num/g2===target.n && s.den/g2===target.d);
+    var best=shortest(f, maxd, kmax);
+    var bestOk=null;
+    if(best.terms){
+      var b=sumOk(best.terms);
+      var bg=gcdBig(b.num,b.den);
+      bestOk = (b.num/bg===target.n && b.den/bg===target.d) && distinct(best.terms);
+    }
+    return {greedy:g, best:best, sumExact:sumExact, bestExact:bestOk,
+      improved: !!(best.terms && g.terms.length>best.k)};
+  }
+
+  function render(){
+    var err=$('ef-err');
+    var f=parse($('ef-in').value);
+    var maxd=parseInt($('ef-maxd').value,10);
+    if(!isFinite(maxd)||maxd<2) maxd=600;
+    if(maxd>1000000) maxd=1000000;
+    $('ef-maxd').value=maxd;
+    if(!f){ err.textContent='type a fraction like 43/91 or a decimal like 0.4375'; return null; }
+    if(f.n<=0n||f.d<=0n){
+      if(f.n===0n){ err.textContent=''; $('ef-out').textContent='0 = the empty sum';
+        $('ef-steps').textContent=''; fill('ef-kv',[['value','0']]); return null; }
+      err.textContent='this page handles proper positive fractions; 1/1 and above are already unit fractions, so use the Greedy chain on a decimal below 1 or write it as a mixed sum yourself';
+      return null;
+    }
+    err.textContent='';
+    var kmax=Math.min(6, maxd);
+    var c=compute(f, maxd, kmax);
+
+    var h='';
+    for(var i=0;i<c.greedy.trace.length;i++){
+      var t=c.greedy.trace[i];
+      if(t.cut){ h+='remainder '+t.rem+' needs 1/'+t.q+', past the cap - stopped\n'; continue; }
+      h+='step '+t.step+':  1/'+t.q+'  leaves  '+t.rem+'\n';
+    }
+    $('ef-steps').textContent=h;
+
+    var o='';
+    o+='greedy:  '+fmt(c.greedy.terms)+'\n';
+    o+='terms:   '+c.greedy.terms.length+'\n';
+    o+='exact:   '+(c.greedy.exact?'yes':'no, remainder '+c.greedy.leftover)+'\n';
+    if(c.best.terms){
+      o+='shortest (<= '+maxd+'):  '+fmt(c.best.terms)+'\n';
+      o+='k:       '+c.best.k+(c.improved?'   ('+(c.greedy.terms.length-c.best.k)+' shorter than greedy)':'')+'\n';
+    } else {
+      o+='shortest: not found within '+maxd+' and k <= '+kmax+'\n';
+    }
+    $('ef-out').textContent=o;
+
+    fill('ef-kv',[
+      ['input', str(f)],
+      ['greedy terms', c.greedy.terms.length],
+      ['greedy sums exactly', c.sumExact?'yes':'NO'],
+      ['greedy distinct', distinct(c.greedy.terms)?'yes':'NO'],
+      ['shortest k', c.best.terms?c.best.k:'n/a'],
+      ['shortest k terms sum exactly', c.best.terms?(c.bestExact?'yes':'NO'):'n/a'],
+      ['max denominator searched', maxd]
+    ]);
+    return {f:f, maxd:maxd, c:c};
+  }
+
+  $('ef-go').addEventListener('click',render);
+  $('ef-c1').addEventListener('click',function(){ put('ef-in','5/6'); put('ef-maxd','60'); render(); });
+  $('ef-c2').addEventListener('click',function(){ put('ef-in','43/91'); put('ef-maxd','6000'); render(); });
+  $('ef-c3').addEventListener('click',function(){ put('ef-in','7/15'); put('ef-maxd','60'); render(); });
+  $('ef-in').addEventListener('input',render);
+  $('ef-maxd').addEventListener('input',render);
+  render();
+  return {render:render, parse:parse, greedy:greedy, shortest:shortest,
+          sumOk:sumOk, compute:compute, gcdBig:gcdBig};
+})();
+
+/* Headless hook: pure functions over a parsed fraction, so a test harness can
+   assert the exact denominators without driving the DOM. */
+function __ef_run(i){
+  var f = EF.parse(i.fraction!==undefined? i.fraction : $('ef-in').value);
+  if(!f || f.n<=0n) return JSON.stringify({error:'invalid fraction'});
+  var maxd = i.maxd!==undefined? i.maxd : parseInt($('ef-maxd').value,10);
+  if(!isFinite(maxd)||maxd<2) maxd=600;
+  var kmax = i.kmax!==undefined? i.kmax : Math.min(6,maxd);
+  var c = EF.compute(f, maxd, kmax);
+  var g=c.greedy, b=c.best;
+  return JSON.stringify({
+    input: f.n.toString()+'/'+f.d.toString(),
+    greedy: g.terms.join(','),
+    greedyTerms: g.terms.length,
+    greedyExact: g.exact,
+    sumExact: c.sumExact,
+    maxDenominator: g.terms.length? g.terms[g.terms.length-1] : null,
+    best: b.terms? b.terms.join(',') : null,
+    bestK: b.k,
+    bestExact: c.bestExact,
+    improved: c.improved
+  });
+}
+window.__egyptian_fraction_solver = { run: __ef_run,
+  greedy: function(t){ var f=EF.parse(t); return f? EF.greedy(f,1000000).terms.join(',') : null; },
+  shortest: function(t,m,k){ var f=EF.parse(t); if(!f) return null;
+    var r=EF.shortest(f,m,k||6); return r.terms? r.terms.join(',') : null; },
+  sumOf: function(csv){ var t=csv.split(',').map(function(s){return s.trim()}).filter(Boolean);
+    return EF.sumOk(t).value.n.toString()+'/'+EF.sumOk(t).value.d.toString(); }
+};
+
+</script>
+  </div>
+</div>
+<section class="d-more"><div class="wrap"><h2>More tools</h2><div class="ws-grid"><a class="tile-card" href="/workspace/tools/aspect-ratio/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/aspect-ratio/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Aspect Ratio Calculator</h3><p>Fit widths and heights at any ratio.</p></div></a><a class="tile-card" href="/workspace/tools/loan-calc/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/loan-calc/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Loan &amp; Interest Simulator</h3><p>Compound interest and repayment schedules, charted.</p></div></a><a class="tile-card" href="/workspace/tools/bmi/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/bmi/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>BMI Calculator</h3><p>Body mass index with healthy-range context.</p></div></a><a class="tile-card" href="/workspace/tools/gpa/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/gpa/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>GPA Calculator</h3><p>Semester GPA from your grades and credit units.</p></div></a><a class="tile-card" href="/workspace/tools/css-clip-path-generator/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/tools/css-clip-path-generator/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Design &amp; colour</span><h3>CSS Clip Path Generator</h3><p>Pick a shape or drag the points, then copy the exact clip-path polygon CSS.</p></div></a><a class="tile-card" href="/workspace/tools/css-shadow/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/tools/css-shadow/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Design &amp; colour</span><h3>CSS Box Shadow Builder</h3><p>Layer up to three shadows with x, y, blur, spread, opacity and inset, then copy the CSS.</p></div></a><a class="tile-card" href="/workspace/tools/cubic-bezier/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/tools/cubic-bezier/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Design &amp; colour</span><h3>Cubic Bezier Editor</h3><p>Drag the two control points on a curve, watch the easing play and copy the cubic-bezier CSS.</p></div></a><a class="tile-card" href="/workspace/tools/stopwatch/" style="--c:#fcd34d"><div class="shot"><img src="/workspace/tools/stopwatch/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Study &amp; career</span><h3>Stopwatch</h3><p>Millisecond stopwatch with lap splits, fastest lap and keyboard start/stop.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>

@@ -1,52 +1,66 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Voltage Divider Calculator — Free Online Tool | Ocurp</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config = { theme: { extend: {
-  colors: { accent:'#b49bff', secondary:'#e0f2fe', dark:'#050505' },
-  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
-}}};
-</script>
 <style>
-  :root { --accent:#b49bff; --secondary:#e0f2fe; --dark:#050505; }
-  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
-  h1,h2,h3 { font-family:'Space Grotesk',system-ui,sans-serif; }
-  .font-mono { font-family:'JetBrains Mono',ui-monospace,monospace; }
-  html,body { max-width:100vw; overflow-x:hidden; }
-  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
-    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
-  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
-  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
-  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
-  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
-  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
-  .ws-input:focus { outline:none; border-color:rgba(180,155,255,.5) }
-  .ws-input::placeholder { color:rgba(255,255,255,.3) }
-  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
-  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
-  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
-  .ws-input option { background-color:#141414 !important; color:#fff !important }
-  select.ws-input option:checked { background-color:#b49bff !important; color:#000 !important }
-  .ws-input[type=range] { padding:0; height:1.5rem }
-  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
-  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
-  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
-  .ws-input option { background-color:#141414 !important; color:#fff !important }
-  select.ws-input option:checked { background-color:#b49bff !important; color:#000 !important }
-  .ws-label { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
-  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#b49bff; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
-  .ws-btn:hover { opacity:.9 }
-  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
-  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
-  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
-  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
-  .ws-out { font-family:'JetBrains Mono',ui-monospace,monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
-  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+  :root{--accent:#FF5F1F;--bg:#050505;--line:rgba(255,255,255,.08);--dim:rgba(255,255,255,.42)}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;overflow-x:hidden}
+  body{background:var(--bg);color:#fff;
+    font-family:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    -webkit-font-smoothing:antialiased;line-height:1.6}
+  .noise-overlay{position:fixed;inset:0;pointer-events:none;opacity:.03;z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .wrap{position:relative;z-index:10;max-width:64rem;margin:0 auto;padding:2rem 1.25rem 4rem}
+  .topbar{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-bottom:2rem}
+  .back{display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--line);background:rgba(255,255,255,.03);
+    padding:.55rem .9rem;border-radius:.65rem;font-size:10px;font-weight:800;letter-spacing:.22em;
+    text-transform:uppercase;color:rgba(255,255,255,.7);text-decoration:none}
+  .back:hover{color:#fff;border-color:rgba(255,95,31,.5)}
+  h1{font-size:1.35rem;font-weight:800;margin:0}
+  .kicker{margin:.25rem 0 0;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+  .lede{max-width:44rem;color:rgba(255,255,255,.55);font-size:.92rem;margin:0 0 2rem}
+  .panel{border:1px solid var(--line);background:rgba(255,255,255,.02);border-radius:1rem;padding:1.25rem}
+  .label{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+  input{width:100%;border-radius:.75rem;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);
+    padding:.7rem .9rem;color:#fff;font:inherit;font-size:.9rem;text-align:right;
+    font-variant-numeric:tabular-nums}
+  input:focus{outline:none;border-color:rgba(255,95,31,.5)}
+  button{font:inherit;border-radius:.75rem;cursor:pointer}
+  .btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#000;
+    padding:.7rem 1.1rem;font-size:.82rem;font-weight:800;border:0}
+  .btn:hover{opacity:.9}
+  .btn-ghost{display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.12);
+    background:transparent;color:rgba(255,255,255,.8);padding:.7rem 1rem;font-size:.82rem;font-weight:600}
+  .btn-ghost:hover{background:rgba(255,255,255,.06)}
+  .chip{display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.12);border-radius:999px;
+    padding:.28rem .65rem;font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.55)}
+  .out{border:1px solid rgba(255,95,31,.28);background:rgba(255,95,31,.06);border-radius:.75rem;
+    padding:1rem 1.1rem;font-size:.92rem;line-height:1.8;word-break:break-word}
+  .out.bad{border-color:rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:rgba(255,255,255,.6)}
+  .row{display:flex;justify-content:space-between;gap:1rem;padding:.55rem 0;border-bottom:1px solid rgba(255,255,255,.06)}
+  .row:last-child{border-bottom:0}
+  .row .k{color:var(--dim);font-size:.78rem}
+  .row .v{color:#fff;font-size:.86rem;text-align:right}
+  .big{font-size:1.25rem;font-weight:800;color:var(--accent)}
+  .cols{display:grid;gap:1rem;grid-template-columns:1fr;margin-bottom:1rem}
+  @media(min-width:820px){.cols{grid-template-columns:1.05fr .95fr}}
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+  .ops{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.9rem}
+  svg{display:block;max-width:100%;height:auto}
+  .wires{stroke:rgba(255,255,255,.45);stroke-width:2;fill:none}
+  .box{fill:rgba(255,255,255,.04);stroke:rgba(255,255,255,.35);stroke-width:2}
+  .ac{fill:none;stroke:#FF5F1F;stroke-width:2}
+  .t{fill:#fff;font:700 13px ui-monospace,monospace}
+  .ts{fill:rgba(255,255,255,.55);font:400 11px ui-monospace,monospace}
+  .ta{fill:#FF5F1F;font:700 13px ui-monospace,monospace}
+  h2.sect{font-size:.7rem;font-weight:900;letter-spacing:.26em;text-transform:uppercase;
+    color:rgba(255,255,255,.32);margin:2.5rem 0 1rem}
+  footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--line);
+    font-size:11px;color:rgba(255,255,255,.3)}
 </style>
 <meta name="description" content="Vout. Free voltage divider calculator that runs entirely in your browser - nothing is uploaded.">
 <link rel="canonical" href="https://ocurp.com/workspace/tools/resistor-divider/">
@@ -65,173 +79,364 @@ tailwind.config = { theme: { extend: {
 <meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
 <meta name="twitter:image:alt" content="Voltage Divider Calculator on Ocurp - free, runs in your browser">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Voltage Divider Calculator","url":"https://ocurp.com/workspace/tools/resistor-divider/","description":"Vout. Free voltage divider calculator that runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
 </head>
-<body class="ws" data-reskin="1" style="--hue:#b49bff">
-<a class="skip" href="#ws-play">Skip to the tool</a>
-<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
-<section class="d-hero"><div class="bg" style="background-image:url(/workspace/tools/resistor-divider/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/tools/">Tools</a><span aria-hidden="true">/</span><a href="/workspace/tools/?c=math">Math &amp; convert</a></nav><h1>Voltage Divider Calculator</h1><p class="lede">Vout, current and per-resistor power for a loaded or unloaded divider, plus the inverse solve for R1, with a warning as soon as the load impedance comes within 100x of R2 and the divider stops being ideal.</p><div class="d-tags"><span class="g">Math &amp; convert</span><span>Voltage Divider</span><span>Resistor</span><span>Electronics</span><span>Ohm&#x27;S Law</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Open now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/tools/">All tools</a></div></div><div class="d-shot"><img src="/workspace/tools/resistor-divider/card.jpg?v=20261006" alt="Voltage Divider Calculator screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
-<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
-  
-      <section class="ws-panel p-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><div><label class="ws-label mb-2 block" for="mode">Mode</label><select id="mode" class="ws-input !w-full"><option value="fwd" selected>Forward: Vs, R1, R2 → Vout</option><option value="inv">Inverse: given Vout and load, solve R1</option></select></div><div><label class="ws-label mb-2 block" for="vs">Source Vs (V)</label><input id="vs" type="number" class="ws-input" placeholder="5" value="5"></div><div><label class="ws-label mb-2 block" for="r1">R1 — top (Ω)</label><input id="r1" type="number" class="ws-input" placeholder="10000" value="10000"></div><div><label class="ws-label mb-2 block" for="r2">R2 — bottom (Ω)</label><input id="r2" type="number" class="ws-input" placeholder="10000" value="10000"></div><div><label class="ws-label mb-2 block" for="vout">Target Vout (V)</label><input id="vout" type="number" class="ws-input" placeholder="2.5" value="2.5"></div><div><label class="ws-label mb-2 block" for="rl">Load RL on output (Ω)</label><input id="rl" type="number" class="ws-input" placeholder="100000" value="100000"></div><div><label class="ws-label mb-2 block" for="runit">R1 unit</label><input id="runit" type="text" class="ws-input" placeholder=""></div></div><div class="mt-4 flex flex-wrap gap-4"><label class="flex items-center gap-2 text-sm text-white/70"><input id="useRL" type="checkbox" class="accent-[#b49bff]"> Load RL is connected on the output</label></div><div class="mt-4 flex flex-wrap gap-2" id="quick"></div><div class="mt-3 text-[11px] font-mono text-white/45" id="err"></div></section><div id="stats" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"></div><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Result</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="big" onclick="cp(this)">Copy summary</button></div><div class="rounded-xl border border-white/10 bg-[#0d0d0d] p-5"><div class="ws-label">Output voltage</div><div id="big" class="mt-2 font-display text-4xl font-black text-accent">-</div><div id="bigsub" class="mt-1 text-xs text-white/45">-</div></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Working</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="tbl" onclick="cp(this)"></button></div><div class="overflow-x-auto"><table class="w-full text-left text-sm "><thead class="ws-label"><tr><th class="py-2 pr-4">Quantity</th><th class="py-2 pr-4">Value</th></tr></thead><tbody id="tbl"></tbody></table></div></section><section class="ws-panel mt-4 p-5"><div class="mb-3 flex items-center justify-between"><span class="ws-label">Notes</span><button class="ws-btn-ghost !px-3 !py-1.5" data-t="notes" onclick="cp(this)"></button></div><p class="text-xs leading-relaxed text-white/45">A divider is only ideal while the load draws nothing. The output impedance is <span class="text-white/70">R1∥R2</span>, so once RL comes within about 100× of R2 the parallel pair is dominated by the load and Vout sags far below Vs·R2/(R1+R2). Buffer the output (op-amp follower) or use a much smaller divider impedance.</p></section>
-</div>
-<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
-     the page instead of steering the game), a Fullscreen control that requests
-     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
-     desktop. Regenerate every game page after editing either file. -->
-<link rel="stylesheet" href="/workspace/play.css?v=20261006">
-<script src="/workspace/play.js?v=20261006" defer></script>
-<script>
-function cp(btn){
-  var el=document.getElementById(btn.getAttribute('data-t')||'out');
-  var t=el?el.textContent:'';
-  try{navigator.clipboard.writeText(t)}catch(e){}
-  btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200);
-}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function card(k,v){return '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center">'
- +'<div class="font-display text-xl font-black text-accent">'+esc(v)+'</div>'
- +'<div class="ws-label mt-1">'+esc(k)+'</div></div>';}
-function show(list){document.getElementById('stats').innerHTML=list.map(function(p){return card(p[0],p[1])}).join('');}
-function seterr(pid,msg){var e=document.getElementById(pid);if(!e)return;
-  e.textContent=msg?'\u2717 '+msg:''; e.style.color=msg?'#f87171':'';}
-var $=function(id){return document.getElementById(id)};
-// Round to n decimals but drop a trailing -0 so 0.30000000000000004 never shows.
-function r(n,d){
-  if(!isFinite(n)) return String(n);
-  var f=Math.pow(10,d===undefined?6:d);
-  var v=Math.round(n*f)/f;
-  if(Object.is(v,-0)) v=0;
-  return v;
-}
-// Thousands separators for display; grouping is presentation only.
-function grp(n,d){
-  var v=r(n,d===undefined?2:d);
-  var s=String(Math.abs(v));
-  var parts=s.split('.');
-  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
-  // Pad to the requested decimals. Without this grp(20000,2) returned
-  // '20,000' and a money column rendered as a bare integer.
-  while(parts.length<2) parts.push('');
-  if(d>0 && parts[1].length<d) parts[1]=(parts[1]+'0'.repeat(d)).slice(0,d);
-  return (v<0?'-':'')+parts.join('.');
-}
-function bind(ids,fn){ids.forEach(function(id){var el=$(id);if(!el)return;
-  el.addEventListener('input',fn); el.addEventListener('change',fn);});}
-function wire(fn){fn();}
-// Table-row builder. Cells are trusted HTML (values are escaped at the
-// point they are produced), matching the Python row() used server-side.
-function row(cells){return '<tr class="border-t border-white/5">'+cells.map(function(c){
-  return '<td class="py-2 pr-4">'+c+'</td>';}).join('')+'</tr>';}
+<body>
+<div class="noise-overlay"></div>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="/workspace/tools/">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div>
+      <h1>Resistor Divider</h1>
+      <p class="kicker">Electronics &mdash; client-side</p>
+    </div>
+  </div>
 
-function ohm(v){ return v >= 1000 ? grp(v/1000,4)+' kΩ' : r(v,4)+' Ω'; }
-function divForward(vs, r1, r2, rl){
-  if(!(isFinite(vs) && isFinite(r1) && isFinite(r2))) return {err:'Vs, R1 and R2 must be numbers'};
-  if(r1 <= 0 || r2 <= 0) return {err:'R1 and R2 must be above zero ohms'};
-  if(vs < 0) return {err:'source voltage must be zero or more'};
-  var rt = r1 + r2;
-  var i = vs / rt;              // unloaded series current
-  var vopen = i * r2;           // unloaded output
-  var req = r2;                 // resistance actually tied to the node
-  if(isFinite(rl) && rl > 0) req = r2*rl/(r2+rl);   // R2 in parallel with the load
-  // Loading drops the node: with R1 above req the divider is exactly Vs*req/(R1+req).
-  var vout = vs * req / (r1 + req);
-  var rpar = r1 * req / (r1 + req);
-  var iTotal = vs / (r1 + req);
-  var iLoad = isFinite(rl) && rl > 0 ? vout / rl : 0;
-  return {i:iTotal, iNoLoad:i, vopen:vopen, vout:vout,
-          pR1:iTotal*iTotal*r1, pR2:vout*vout/req,
-          pTotal:vs*iTotal, rpar:rpar, iLoad:iLoad};
-}
-function divInverse(vs, vout, r2, rl){
-  if(!(isFinite(vs) && isFinite(vout) && isFinite(r2))) return {err:'Vs, Vout and R2 must be numbers'};
-  if(r2 <= 0) return {err:'R2 must be above zero ohms'};
-  if(vs <= 0) return {err:'source must be above zero volts'};
-  if(vout <= 0 || vout >= vs) return {err:'target Vout must be between 0 and Vs'};
-  var load = (isFinite(rl) && rl > 0) ? rl : Infinity;
-  // KCL at the node: (Vs-V)/R1 = V/R2 + V/RL  ->  R1 = Vs*Req/V - R2 - RL
-  var req = load === Infinity ? r2 : r2*load/(r2+load);
-  var r1 = vs * req / vout - req;
-  if(!isFinite(r1)) return {err:'no finite R1 gives that Vout with this load'};
-  if(r1 <= 0) return {err:'no positive R1 reaches ' + r(vout,4) + ' V: the divider '
-      + 'cannot step down that far without a buffer (R1 would be '
-      + r(r1,3) + ' Ω)'};
-  var f = divForward(vs, r1, r2, load);
-  if(f.err) return f;
-  f.r1solved = r1;
-  return f;
-}
-var QUICK = [['5','10000','10000'],['3.3','47000','10000'],['12','100000','47000'],
-             ['1.8','1000','1000'],['24','33000','6800']];
-$('quick').innerHTML = QUICK.map(function(q,i){
-  return '<button class="ws-btn-ghost !px-3 !py-1.5" data-i="'+i+'" onclick="useQuick(this)">'
-    + q[0]+'V '+q[1]+'/'+q[2]+'</button>';}).join('');
-function useQuick(b){
-  var q=QUICK[Number(b.getAttribute('data-i'))];
-  $('mode').value='fwd'; $('vs').value=q[0]; $('r1').value=q[1]; $('r2').value=q[2];
-  $('useRL').checked=false; run();
-}
-window.__T = window.__T || {};
-window.__T['resistor-divider'] = {divForward:divForward, divInverse:divInverse,
-  run:function(o){
-    o=o||{};
-    var mode=o.mode||'fwd';
-    var vs=o.vs===undefined?5:o.vs, r1=o.r1===undefined?10000:o.r1,
-        r2=o.r2===undefined?10000:o.r2, vout=o.vout===undefined?2.5:o.vout,
-        rl=o.useRL ? (o.rl===undefined?100000:o.rl) : NaN;
-    var f = mode==='inv' ? divInverse(vs,vout,r2,rl) : divForward(vs,r1,r2,rl);
-    if(f.err) return {error:f.err};
-    var out={Vout:f.vout, I_A:f.i, P_R1_mW:f.pR1*1000, P_total_mW:f.pTotal*1000,
-             Rpar:r(f.rpar,4)};
-    if(f.r1solved!==undefined) out.R1=r(f.r1solved,4);
-    if(isFinite(f.iLoad)) out.load_pct = r((1-f.vout/f.vopen)*100,4);
-    return out;
-  }};
-function run(){
-  var vs=parseFloat($('vs').value), r1=parseFloat($('r1').value),
-      r2=parseFloat($('r2').value), vout=parseFloat($('vout').value),
-      rl=parseFloat($('rl').value), useRL=$('useRL').checked;
-  var f = $('mode').value==='inv'
-      ? divInverse(vs, vout, r2, useRL?rl:NaN)
-      : divForward(vs, r1, r2, useRL?rl:NaN);
-  if(f.err){ seterr('err', f.err); $('big').textContent='—'; $('bigsub').textContent='—';
-            $('tbl').innerHTML=''; show([]); return; }
-  seterr('err','');
-  var warns = [];
-  if(useRL && rl <= r2*100){
-    warns.push('Load ' + ohm(rl) + ' is within 100× of R2 (' + ohm(r2) +
-      ') — the divider is no longer ideal, the load dominates.');
+  <p class="lede">Two resistors, one supply, one output tap. The output is a share of the supply
+  proportional to resistance, the current is the supply divided by the series total, and each resistor
+  pays for that current. Add a load and the tap sags, because the load really is there.</p>
+
+  <div class="cols">
+    <div class="panel">
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem">
+        <span class="chip">OHMS LAW</span><span class="chip">POWER DISSIPATION</span><span class="chip">LOAD-AWARE</span>
+      </div>
+      <div class="fields">
+        <div>
+          <label class="label" for="r1" style="display:block;margin-bottom:.45rem">R1 (top, ohms)</label>
+          <input id="r1" type="text" inputmode="decimal" value="10000" autocomplete="off">
+        </div>
+        <div>
+          <label class="label" for="r2" style="display:block;margin-bottom:.45rem">R2 (bottom, ohms)</label>
+          <input id="r2" type="text" inputmode="decimal" value="10000" autocomplete="off">
+        </div>
+        <div>
+          <label class="label" for="vin" style="display:block;margin-bottom:.45rem">Vin (volts)</label>
+          <input id="vin" type="text" inputmode="decimal" value="5" autocomplete="off">
+        </div>
+        <div>
+          <label class="label" for="rload" style="display:block;margin-bottom:.45rem">Load on output (ohms, 0 = none)</label>
+          <input id="rload" type="text" inputmode="decimal" value="0" autocomplete="off">
+        </div>
+      </div>
+      <div class="ops">
+        <button id="go" class="btn">Solve</button>
+        <button class="btn-ghost demo" data-r1="10000" data-r2="10000" data-vin="5" data-rl="0">10k / 10k on 5V</button>
+        <button class="btn-ghost demo" data-r1="1000" data-r2="2000" data-vin="9" data-rl="0">1k / 2k on 9V</button>
+        <button class="btn-ghost demo" data-r1="10000" data-r2="10000" data-vin="5" data-rl="10000">10k / 10k + 10k load</button>
+        <button class="btn-ghost demo" data-r1="220" data-r2="330" data-vin="12" data-rl="4700">220 / 330 on 12V</button>
+      </div>
+      <div id="err" style="margin-top:.8rem;font-size:11px;color:rgba(255,95,31,.9);min-height:1.2rem"></div>
+    </div>
+
+    <div class="panel">
+      <div class="label" style="margin-bottom:.6rem">Output</div>
+      <div id="out" class="out"></div>
+    </div>
+  </div>
+
+  <h2 class="sect">Circuit</h2>
+  <div class="panel"><div id="svg" style="overflow-x:auto"></div></div>
+
+  <h2 class="sect">Series and parallel forms</h2>
+  <div class="panel"><div id="forms" class="out"></div></div>
+
+  <h2 class="sect">Working</h2>
+  <div class="panel"><div id="work" class="out"></div></div>
+
+  <footer>Ideal resistors, no source or wire resistance, DC only. Power figures are what each part must survive.</footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  function num(v) {
+    var x = typeof v === 'number' ? v : Number(String(v).trim());
+    return isFinite(x) ? x : NaN;
   }
-  $('big').textContent = r(f.vout,4) + ' V';
-  $('bigsub').textContent = ($('mode').value==='inv'
-        ? 'Vout with R1 solved for: ' + ohm(f.r1solved)
-        : 'unloaded ' + r(f.vopen,4) + ' V, loaded ' + r(f.vout,4) + ' V')
-        + (warns.length ? ' ⚠' : '');
-  $('tbl').innerHTML =
-    (f.r1solved!==undefined ? row(['R1 solved', ohm(f.r1solved)]) : '') +
-    row(['Source voltage', r(vs,4) + ' V']) +
-    row(['R1 (top)', ohm(r1)]) +
-    row(['R2 (bottom)', ohm(r2)]) +
-    row(['Current through pair', r(f.i*1000,4) + ' mA (' + r(f.i*1e6,4) + ' µA)']) +
-    row(['Power in R1', r(f.pR1*1000,6) + ' mW']) +
-    row(['Power in R2', r(f.pR2*1000,6) + ' mW']) +
-    row(['Power from source', r(f.pTotal*1000,6) + ' mW']) +
-    row(['Output impedance R1∥R2', ohm(f.rpar)]) +
-    (isFinite(f.iLoad) ? row(['Load current', r(f.iLoad*1000,4) + ' mA'])
-                       : row(['Load current', 'none — output unloaded'])) +
-    (useRL && rl ? row(['Sag vs ideal', r((1 - f.vout/f.vopen)*100,4) + ' %']) : '') +
-    row(['Warnings', warns.length ? '<span class="text-accent">'+warns.join(' ')+'</span>' : 'none']);
-  show([['Vout', r(f.vout,4)+' V'],
-        ['Current', r(f.i*1000,4)+' mA'],
-        ['P in R1', r(f.pR1*1000,6)+' mW'],
-        ['Sag', (useRL&&rl) ? r((1-f.vout/f.vopen)*100,4)+' %' : '0 %']]);
-}
-bind(['vs','r1','r2','vout','rl','mode'], run);
-$('useRL').addEventListener('change', run);
-run();
+
+  // 12 significant digits: removes IEEE noise, far below any real tolerance.
+  function s(x) {
+    if (!isFinite(x) || x === 0) return x === 0 ? 0 : x;
+    return Number(x.toPrecision(12));
+  }
+
+  // Pure equivalents.
+  function series(a, b) { return a + b; }
+  function parallel(a, b) {
+    if (a === 0 || b === 0) return 0;
+    return (a * b) / (a + b);
+  }
+
+  // Pure divider solve. Returns structured JSON; never throws.
+  function divider(r1, r2, vin, rload) {
+    var R1 = num(r1), R2 = num(r2), Vin = num(vin), RL = rload === undefined || rload === null || rload === '' ? 0 : num(rload);
+    if (!isFinite(R1) || !isFinite(R2) || !isFinite(Vin) || !isFinite(RL))
+      return { ok: false, error: 'resistances and volts must be real numbers' };
+    if (R1 <= 0 || R2 <= 0) return { ok: false, error: 'both resistors must be greater than zero ohms' };
+    if (RL < 0) return { ok: false, error: 'a load cannot have negative resistance' };
+
+    // IEEE doubles give 0.009000000000000001 for a value that is plainly 9 mW.
+    // Every reported number is squeezed to 12 significant digits, which is far
+    // past any real circuit tolerance and kills the binary-noise tail.
+    var rtot = R1 + R2;                       // series pair
+    var iSeries = Vin / rtot;                 // A, unloaded loop current
+    var vopen = Vin * (R2 / rtot);            // V, no load on the tap
+    var p1 = iSeries * iSeries * R1;          // W in R1
+    var p2 = iSeries * iSeries * R2;          // W in R2
+
+    var loaded = RL > 0;
+    var rbot = loaded ? parallel(R2, RL) : R2;
+    var rLoop = R1 + rbot;
+    var iLoaded = Vin / rLoop;                // A, supply current with the load
+    var vload = Vin * (rbot / rLoop);         // V at the tap with the load
+    /* Current division: with a load, iLoaded is the current through R1 only.
+       The rest splits between R2 and RL in inverse proportion to resistance,
+       so iR2 = iLoaded * RL/(R2+RL) and iRL = iLoaded * R2/(R2+RL). Using
+       iLoaded for both dissipated I^2*R on the far leg -- the obvious
+       shortcut -- double-counts the bottom power and reports a total exactly
+       2x the supply (Vin * supplyCurrent). Checked by hand at 10k/10k into
+       10k on 5V: real total 25/15000 = 1.6667 mW, this bug said 3.3333 mW. */
+    var div = loaded ? (R2 + RL) : 0;
+    var iR2   = loaded ? iLoaded * RL / div : iSeries;
+    var iRL   = loaded ? iLoaded * R2 / div : 0;
+    var pR2   = iR2 * iR2 * R2;
+    var pLoad = iRL * iRL * RL;
+    var dropR1 = iLoaded * R1;
+
+    var pR1 = loaded ? dropR1 * iLoaded : p1;
+    var supplyCurrent = loaded ? iLoaded : iSeries;
+    var sag = loaded ? vopen - vload : 0;
+
+    return {
+      ok: true,
+      r1: R1, r2: R2, vin: Vin, rload: RL,
+      rtot: s(rtot),
+      seriesCurrent: s(iSeries),
+      vout: s(loaded ? vload : vopen),
+      voutOpen: s(vopen),
+      loaded: loaded,
+      rbot: s(rbot),
+      loopResistance: s(rLoop),
+      supplyCurrent: s(supplyCurrent),
+      dropR1: s(dropR1),
+      powerR1: s(pR1),
+      powerR2: s(pR2),
+      powerLoad: s(pLoad),
+      powerTotal: s(pR1 + pR2 + pLoad),
+      ratio: s(R2 / rtot),
+      ratioText: (R2 / rtot) === 0.5 ? '1 : 1 (even)' : R1 + ' : ' + R2,
+      // energy balance check: supply watts in == watts out
+      supplyWatts: s(Vin * supplyCurrent),
+      sag: s(sag)
+    };
+  }
+
+  function eng(x, unit, places) {
+    if (!isFinite(x)) return 'n/a';
+    var p = places === undefined ? 6 : places;
+    var a = Math.abs(x);
+    if (a === 0) return '0 ' + unit;
+    if (a >= 1e9) return (x / 1e9).toFixed(p) + ' G' + unit;
+    if (a >= 1e6) return (x / 1e6).toFixed(p) + ' M' + unit;
+    if (a >= 1e3) return (x / 1e3).toFixed(p) + ' k' + unit;
+    if (a >= 1) return x.toFixed(p) + ' ' + unit;
+    if (a >= 1e-3) return (x * 1e3).toFixed(p) + ' m' + unit;
+    if (a >= 1e-6) return (x * 1e6).toFixed(p) + ' u' + unit;
+    return (x * 1e9).toFixed(p) + ' n' + unit;
+  }
+  function ohms(x) {
+    if (!isFinite(x)) return 'n/a';
+    if (Math.abs(x) >= 1000) return (x / 1000).toFixed(x % 1000 === 0 ? 0 : 3).replace(/\.?0+$/, '') + ' kOhm';
+    return String(Math.round(x * 1000) / 1000) + ' Ohm';
+  }
+
+  // ---- view ----------------------------------------------------------------
+  var ids = ['r1', 'r2', 'vin', 'rload'];
+  var el = {};
+  ids.forEach(function (k) { el[k] = document.getElementById(k); });
+  var out = document.getElementById('out'), svgEl = document.getElementById('svg');
+  var formsEl = document.getElementById('forms'), workEl = document.getElementById('work');
+  var err = document.getElementById('err');
+
+  function row(k, v) { return '<div class="row"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>'; }
+
+  function draw(r) {
+    var w = 560, h = 250;
+    var xTop = 300, yTop = 30, yMid = 120, yBot = 210;
+    var s = '<svg viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" role="img" aria-label="resistor divider">';
+    // supply rail
+    s += '<path class="wires" d="M60 ' + yTop + ' H' + (xTop - 40) + ' M60 ' + yBot + ' H' + (xTop - 40) + '"/>';
+    s += '<text class="t" x="14" y="' + (yTop + 4) + '">' + r.vin + 'V</text>';
+    s += '<text class="ts" x="14" y="' + (yBot + 4) + '">GND</text>';
+    s += '<path class="wires" d="M40 ' + yTop + ' V' + yBot + '"/>';
+    // R1
+    s += '<rect class="box" x="' + (xTop - 40) + '" y="' + (yTop - 12) + '" width="80" height="24" rx="3"/>';
+    s += '<text class="t" x="' + (xTop - 16) + '" y="' + (yTop + 4) + '">R1</text>';
+    s += '<text class="ts" x="' + (xTop + 48) + '" y="' + (yTop + 4) + '">' + ohms(r.r1) + '</text>';
+    s += '<path class="ac" d="M' + (xTop - 40) + ' ' + (yTop - 12) + ' V' + (yMid - 12) + '"/>';
+    // R2
+    s += '<rect class="box" x="' + (xTop - 40) + '" y="' + (yMid - 12) + '" width="80" height="24" rx="3"/>';
+    s += '<text class="t" x="' + (xTop - 16) + '" y="' + (yMid + 4) + '">R2</text>';
+    s += '<text class="ts" x="' + (xTop + 48) + '" y="' + (yMid + 4) + '">' + ohms(r.r2) + '</text>';
+    s += '<path class="ac" d="M' + (xTop - 40) + ' ' + (yMid + 12) + ' V' + (yBot - 12) + '"/>';
+    // output tap
+    s += '<path class="ac" d="M' + (xTop + 40) + ' ' + yMid + ' H470"/>';
+    s += '<circle class="ac" cx="' + (xTop + 40) + '" cy="' + yMid + '" r="3" fill="#FF5F1F" stroke="none"/>';
+    s += '<text class="ta" x="470" y="' + (yMid - 8) + '">Vout</text>';
+    s += '<text class="ts" x="470" y="' + (yMid + 8) + '">' + eng(r.vout, 'V', 4) + '</text>';
+    s += '<path class="ac" d="M' + (xTop + 40) + ' ' + (yMid + 24) + ' V' + (yBot - 12) + '"/>';
+    if (r.loaded) {
+      s += '<rect class="box" x="' + (xTop + 52) + '" y="' + (yMid + 22) + '" width="66" height="24" rx="3"/>';
+      s += '<text class="t" x="' + (xTop + 60) + '" y="' + (yMid + 38) + '">RL</text>';
+      s += '<path class="ac" d="M' + (xTop + 85) + ' ' + (yMid + 34) + ' H500"/>';
+      s += '<text class="ts" x="500" y="' + (yMid + 30) + '">' + ohms(r.rload) + '</text>';
+      s += '<path class="ac" d="M' + (xTop + 85) + ' ' + (yMid + 46) + ' V' + (yBot - 12) + '"/>';
+    }
+    s += '<text class="ts" x="' + (xTop + 60) + '" y="' + (yTop + 4) + '">' + ohms(r.rtot) + ' total</text>';
+    s += '</svg>';
+    return s;
+  }
+
+  function render() {
+    var r = divider(el.r1.value, el.r2.value, el.vin.value, el.rload.value);
+    err.textContent = r.ok ? '' : r.error;
+    if (!r.ok) {
+      out.className = 'out bad';
+      out.innerHTML = '<div>No solution.</div><div style="font-size:.78rem;margin-top:.4rem">' + r.error + '</div>';
+      formsEl.className = 'out bad'; formsEl.innerHTML = '<div style="font-size:.82rem">Nothing computed.</div>';
+      workEl.className = 'out bad'; workEl.innerHTML = '<div style="font-size:.82rem">No working shown.</div>';
+      svgEl.innerHTML = '<div style="font-size:.82rem;color:rgba(255,255,255,.5)">No circuit to draw.</div>';
+      return null;
+    }
+
+    out.className = 'out';
+    var h = '<div class="big">Vout = ' + eng(r.vout, 'V', 5) + '</div>';
+    h += row('Unloaded Vout', eng(r.voutOpen, 'V', 5) + (r.loaded ? ' (before load)' : ''));
+    h += row('Divider ratio', r.ratioText);
+    h += row('Vout / Vin', (r.vout / r.vin).toFixed(6));
+    h += row('Loop resistance', ohms(r.loopResistance));
+    h += row('Supply current', eng(r.supplyCurrent, 'A', 5));
+    h += row('Drop across R1', eng(r.dropR1, 'V', 5));
+    h += row('Power in R1', eng(r.powerR1, 'W', 5));
+    h += row('Power in R2', eng(r.powerR2, 'W', 5));
+    if (r.loaded) h += row('Power in load', eng(r.powerLoad, 'W', 5));
+    h += row('Total dissipated', eng(r.powerTotal, 'W', 5));
+    h += row('Supply watts in', eng(r.supplyWatts, 'W', 5));
+    if (r.loaded) h += row('Sag vs unloaded', eng(r.sag, 'V', 5));
+    out.innerHTML = h;
+
+    svgEl.innerHTML = draw(r);
+
+    formsEl.className = 'out';
+    var f = '<div class="label" style="margin-bottom:.5rem">Two ways to combine the same two resistors</div>';
+    f += row('R1 in series with R2', ohms(series(r.r1, r.r2)));
+    f += row('R1 in parallel with R2', ohms(parallel(r.r1, r.r2)));
+    f += row('Bottom leg with load (R2 || RL)', r.loaded ? ohms(r.rbot) : 'no load, so just ' + ohms(r.r2));
+    f += row('R1 + (R2 || RL)', ohms(r.loopResistance));
+    f += row('Series step of voltages', eng(r.vin, 'V', 4) + ' / ' + eng(r.dropR1, 'V', 4) + ' + ' + eng(r.vout, 'V', 4));
+    f += '<div style="margin-top:.6rem;color:var(--dim);font-size:.8rem">Parallel always lands below the smaller of the two; ' +
+         'series always lands above the larger. Neither can equal the other unless they are equal.</div>';
+    formsEl.innerHTML = f;
+
+    workEl.className = 'out';
+    var w = '<div>1. series total = ' + r.r1 + ' + ' + r.r2 + ' = ' + r.rtot + ' Ohm</div>';
+    if (r.loaded) {
+      w += '<div>2. R2 || RL = (' + r.r2 + ' x ' + r.rload + ') / (' + r.r2 + ' + ' + r.rload + ') = ' + r.rbot + ' Ohm</div>';
+      w += '<div>3. loop = ' + r.r1 + ' + ' + r.rbot + ' = ' + r.loopResistance + ' Ohm</div>';
+      w += '<div>4. I = ' + r.vin + ' / ' + r.loopResistance + ' = ' + eng(r.supplyCurrent, 'A', 6) + '</div>';
+      w += '<div>5. Vout = ' + r.vin + ' x (' + r.rbot + ' / ' + r.loopResistance + ') = ' + eng(r.vout, 'V', 6) + '</div>';
+    } else {
+      w += '<div>2. I = ' + r.vin + ' / ' + r.rtot + ' = ' + eng(r.seriesCurrent, 'A', 6) + '</div>';
+      w += '<div>3. Vout = ' + r.vin + ' x (' + r.r2 + ' / ' + r.rtot + ') = ' + eng(r.vout, 'V', 6) + '</div>';
+    }
+    w += '<div>' + (r.loaded ? '6' : '4') + '. P(R1) = I x V(R1) = ' + eng(r.powerR1, 'W', 6) +
+         ', P(R2) = ' + eng(r.powerR2, 'W', 6) + (r.loaded ? ', P(RL) = ' + eng(r.powerLoad, 'W', 6) : '') + '</div>';
+    w += '<div style="margin-top:.5rem;color:var(--dim);font-size:.8rem">check: supply in ' + eng(r.supplyWatts, 'W', 6) +
+         ' vs dissipated ' + eng(r.powerTotal, 'W', 6) + '</div>';
+    workEl.innerHTML = w;
+    return r;
+  }
+
+  document.getElementById('go').addEventListener('click', render);
+  ids.forEach(function (k) {
+    el[k].addEventListener('change', render);
+    el[k].addEventListener('keydown', function (e) { if (e.key === 'Enter') render(); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.demo'), function (b) {
+    b.addEventListener('click', function () {
+      el.r1.value = b.getAttribute('data-r1');
+      el.r2.value = b.getAttribute('data-r2');
+      el.vin.value = b.getAttribute('data-vin');
+      el.rload.value = b.getAttribute('data-rl');
+      render();
+    });
+  });
+
+  render();
+
+  window.__resistor_divider = {
+    divider: divider,
+    series: series,
+    parallel: parallel,
+    state: function () { return { r1: el.r1.value, r2: el.r2.value, vin: el.vin.value, rload: el.rload.value }; }
+  };
+})();
 </script>
-<section class="d-more"><div class="wrap"><h2>More tools</h2><div class="ws-grid"><a class="tile-card" href="/workspace/tools/half-life-decay/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/half-life-decay/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Half-Life &amp; Radioactive Decay</h3><p>A = A0 exp(-lambda t) with lambda = ln2/T-half, the inverse solve for the time that reaches a target amount, and a half-life chain readout, for C-14, U-238, K-40, I-131, Tc-99 and eight more real nuclides. Refuses a zero target rather than printing an infinite time.</p></div></a><a class="tile-card" href="/workspace/tools/battery-runtime/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/battery-runtime/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Battery Runtime &amp; Pack Sizing</h3><p>Runtime from Ah or mAh capacity, load current and efficiency, with usable energy in Wh, a series and parallel pack ladder, and a Peukert discharge derate that only ever shortens the run. Shows the naive no-derate answer next to the derated one.</p></div></a><a class="tile-card" href="/workspace/tools/thermal-resistance/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/thermal-resistance/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Thermal Resistance Network</h3><p>Conduction, convection and Stefan-Boltzmann radiation in series and in parallel, solving for Q, thickness, k, h, emissivity or area. The series case iterates the radiation term at the unknown surface temperature instead of summing a resistance that is not constant, and air at 0.026 W/(m K) is in the table.</p></div></a><a class="tile-card" href="/workspace/tools/flow-rate-calculator/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/flow-rate-calculator/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Pipe Flow Rate Calculator</h3><p>Pipe flow from ID and velocity, or solved from a pressure drop and length with an iterated Colebrook-White friction factor alongside the explicit Swamee-Jain and Haaland approximations and the gap between them. Separates laminar, transition and turbulent regimes and says where the equations stop being reliable.</p></div></a><a class="tile-card" href="/workspace/tools/reverse-text/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/reverse-text/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>Reverse Text</h3><p>Reverse characters, word order or line order in one click.</p></div></a><a class="tile-card" href="/workspace/tools/add-line-numbers/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/add-line-numbers/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>Add Line Numbers</h3><p>Prefix each line with a configurable number, padding and separator.</p></div></a><a class="tile-card" href="/workspace/tools/text-to-emoji/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/text-to-emoji/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>Text to Emoji</h3><p>Convert letters to regional flags, bold, monospace or squared emoji.</p></div></a><a class="tile-card" href="/workspace/tools/zalgo/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/zalgo/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>Zalgo Text</h3><p>Corrupt text with combining diacritical marks at adjustable intensity.</p></div></a></div></div></section>
-<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
-<script src="/assets/site.js?v=2" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years</span>
+    </a></li>
+    <li><a href="/workspace/tools/apy-vs-apr-calculator/">
+      <span class="ocurp-related-n">APY vs APR Calculator</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
 </body>
 </html>

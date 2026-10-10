@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slitherlink — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#5ec8ff', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#5ec8ff; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Space Grotesk',system-ui,sans-serif; }
+  .font-mono { font-family:'JetBrains Mono',ui-monospace,monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .ws-label { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#5ec8ff; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.75); cursor:pointer }
+  .sl-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch }
+  .sl-svg { display:block; margin:0 auto; touch-action:manipulation; user-select:none }
+  .sl-cell-clue { font-family:'JetBrains Mono',ui-monospace,monospace; font-weight:700; text-anchor:middle; dominant-baseline:central; pointer-events:none }
+  .ocurp-status{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  @media (prefers-reduced-motion:no-preference){
+    .ocurp-status:not(:empty){position:static;width:auto;height:auto;margin:0;
+      clip:auto;white-space:normal;display:block;margin-top:.75rem;
+      font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
+  }
+</style>
+<meta name="description" content="Draw one closed loop so each number counts the edges drawn around it. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/slitherlink/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Slitherlink">
+<meta property="og:description" content="Draw one closed loop so each number counts the edges drawn around it. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/slitherlink/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Slitherlink on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Slitherlink">
+<meta name="twitter:description" content="Draw one closed loop so each number counts the edges drawn around it. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Slitherlink on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Slitherlink","url":"https://ocurp.com/workspace/games/slitherlink/","description":"Draw one closed loop so each number counts the edges drawn around it. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#5ec8ff">
+<a class="skip" href="#ws-play">Skip to the game</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/">Tools</a><a href="/workspace/games/" aria-current="true">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/">Tools</a><a href="/workspace/games/" aria-current="true">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/games/slitherlink/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/games/">Games</a><span aria-hidden="true">/</span><a href="/workspace/games/?c=arcade">Arcade</a></nav><h1>Slitherlink</h1><p class="lede">Draw one closed loop so each number counts the edges drawn around it.</p><div class="d-tags"><span class="g">Arcade</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Play now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/games/">All games</a></div></div><div class="d-shot"><img src="/workspace/games/slitherlink/card.jpg?v=20261006" alt="Slitherlink screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div class="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
+      <div class="mb-4 flex flex-wrap items-center gap-2">
+        <span class="ws-label">Size</span>
+        <div id="sl-size" class="flex gap-1.5"></div>
+        <div class="ml-auto flex items-center gap-1.5">
+          <button id="sl-new" class="ws-btn-ghost">New</button>
+          <button id="sl-check" class="ws-btn">Check</button>
+          <button id="sl-clear" class="ws-btn-ghost">Clear</button>
+        </div>
+      </div>
+      <div class="sl-wrap"><svg id="sl-svg" class="sl-svg"></svg></div>
+      <p class="mt-3 text-[11px] leading-relaxed text-white/45">
+        Draw segments between the dots. A clue counts the segments on that cell's edges.
+        You win when every dot has exactly two lines and every clue is satisfied.
+        Click an edge to draw, right-click to cross it out.
+      </p>
+      <p id="sl-msg" class="mt-2 text-[11px] font-bold"></p>
+      <p id="sl-status" class="ocurp-status" role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="space-y-4">
+      <div class="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
+        <div class="ws-label mb-3">Readout</div>
+        <div id="sl-kv" class="space-y-1.5 font-mono text-[12px]"></div>
+      </div>
+      <div class="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
+        <div class="ws-label mb-2">How to play</div>
+        <p class="text-[11px] leading-relaxed text-white/50">
+          Every dot must end with exactly two lines through it, so the lines close into loops.
+          A <span class="font-mono text-white/80">3</span> means three of that cell's four edges are lines.
+          Clues may be blank, which means zero or more.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+
+var SL_SIZES={easy:{r:4,c:4},medium:{r:6,c:6},hard:{r:8,c:8}};
+var SL_SEED=1;
+var BLANK=-1;
+var sl=null, slSize='medium';
+
+function slMulberry32(a){
+  return function(){
+    a=a+0x6D2B79F5|0;
+    var t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+
+/* EDGE ID SPACE. Edge (v,e) joins dot v to its neighbour along direction e.
+   Directions: 0=up(r-1) 1=right 2=down 3=left. Undirected, so we only ever
+   store the pair with v<w, and the reverse direction is (e+2)%4.
+   slV(r,c,d) is the DOT index; slNbr is the neighbouring dot index or -1. */
+function slV(r,c,d,R,C){
+  if(d===0) return (r>0)?((r-1)*(C+1)+c):-1;
+  if(d===1) return (c<C)?(r*(C+1)+(c+1)):-1;
+  if(d===2) return (r<R)?((r+1)*(C+1)+c):-1;
+  return (c>0)?(r*(C+1)+(c-1)):-1;
+}
+function slNbr(v,d,R,C){
+  var r=(v/(C+1))|0, c=v%(C+1);
+  return slV(r,c,d,R,C);
+}
+function slEkey(a,b){ return a<b ? (a*4096+b) : (b*4096+a); }
+
+/* EDGE LIST: every undirected edge exactly ONCE.
+   A dot sees each of its 4 directions, so walking all dots would emit every
+   interior edge twice - measured 80 edges on a 4x4 grid where the true count
+   is R*(C+1) + C*(R+1) = 20 + 20 = 40. Duplicate edges doubled the SVG hit
+   targets and the solver's branching, so only emit when v is the LOW end. */
+function slEdges(R,C){
+  var e=[], v, d, w;
+  for(v=0; v<(R+1)*(C+1); v++){
+    for(d=0; d<4; d++){
+      w=slNbr(v,d,R,C);
+      if(w>=0 && v<w) e.push({a:v, b:w, d:d, horiz:(d===1||d===3)});
+    }
+  }
+  return e;
+}
+
+/* CELL EDGES: the four edges bounding cell (r,c), as edge keys. */
+function slCellEdges(r,c,R,C){
+  var tl=r*(C+1)+c, tr=r*(C+1)+c+1, bl=(r+1)*(C+1)+c, br=(r+1)*(C+1)+c+1;
+  return [slEkey(tl,tr), slEkey(tr,br), slEkey(bl,br), slEkey(tl,bl)];
+}
+
+/* ---- CONSTRUCTIVE GENERATOR -------------------------------------------
+   Plant a single closed rectilinear loop, then read the clues off it. Because
+   the clues are DERIVED from a real loop, a solution provably exists - the
+   puzzle can never be the flappy-bird shape where nothing is satisfiable.
+   The loop is grown by starting from one cell and repeatedly expanding the
+   occupied rectangle, so the result is always a simple (non self-touching)
+   rectilinear cycle. */
+function slGrowLoop(R,C,rnd){
+  /* A rectangle OUTLINE is a rectilinear simple cycle: every dot on the
+     outline has degree exactly 2 and no dot is visited twice, so this is a
+     valid Slitherlink solution by construction. The rectangle is grown by
+     one cell at a time so the loop wanders instead of always being centred,
+     and it is kept strictly inside the grid so no outline dot is a grid
+     corner (a corner could never have degree 2). */
+  /* The rectangle must fit STRICTLY inside the grid: the outline occupies
+     dot rows [minr, maxr+1], so maxr+1 <= R and maxc+1 <= C are required.
+     Starting minr in [1, R-2] and minc in [1, C-2] guarantees at least one
+     cell of room; the old [1, R-1] could return null on a 4x4 grid, and
+     slGenerate then produced a puzzle with no loop at all. */
+  var minr=1+((rnd()*Math.max(1,R-1))|0), minc=1+((rnd()*Math.max(1,C-1))|0);
+  if(minr>R-2) minr=R-2;
+  if(minc>C-2) minc=C-2;
+  if(minr<1) minr=1;
+  if(minc<1) minc=1;
+  var maxr=minr, maxc=minc;
+  /* Fill a good fraction of the grid: a 2-cell loop only touches 6 cells and
+     produced a 7-clue puzzle on a 36-cell board, which reads as nearly blank. */
+  var spanH=Math.max(2, R-2), spanW=Math.max(2, C-2);
+  var wantH=2+((rnd()*spanH)|0);
+  var wantW=2+((rnd()*spanW)|0);
+  var guard=0;
+  while(((maxr-minr+1)<wantH || (maxc-minc+1)<wantW) && guard++<80){
+    if((maxr-minr+1)<wantH) maxr++;
+    else maxc++;
+  }
+  if(maxr>R-1) maxr=R-1;
+  if(maxc>C-1) maxc=C-1;
+  if(maxr<=minr) maxr=minr+1;
+  if(maxc<=minc) maxc=minc+1;
+  if(maxr>R-1||maxc>C-1) return null;
+
+  /* Every dot of the WHOLE grid needs a slot. The outline reaches one dot
+     outside the filled rectangle on each side (bl, br and the far row), so
+     initialising only the interior threw on the first push. */
+  var E={}, v;
+  for(v=0; v<(R+1)*(C+1); v++) E[v]=[];
+
+  function link(x,y){ E[x].push(y); E[y].push(x); }
+
+  var top=minr, bot=maxr+1, left=minc, right=maxc+1, r, c;
+  /* the four sides of the outline */
+  for(c=left;c<right;c++){ link(top*(C+1)+c, top*(C+1)+c+1); }              /* top row    */
+  for(r=top;r<bot;r++){  link(r*(C+1)+right, (r+1)*(C+1)+right); }          /* right side */
+  for(c=right;c>left;c--){link(bot*(C+1)+c, bot*(C+1)+c-1); }              /* bottom row */
+  for(r=bot;r>top;r--){  link(r*(C+1)+left, (r-1)*(C+1)+left); }          /* left side  */
+  return E;
+}
+
+/* Clues from the planted loop.
+   The planted graph is UNDIRECTED and each dot's neighbour list is built in
+   whatever order the outline was walked, so a cell edge (a,b) can appear as
+   either has[a][b] or has[b][a]. The old code read only has[a][b] with a
+   forced low/high split and silently scored those cells 0, which produced a
+   clue set no loop satisfied - a puzzle that renders fine and can never be
+   finished. Normalise both directions and read either side. */
+function slCluesFromLoop(E,R,C){
+  var g=slEdges(R,C), has={}, i, k, r, c;
+  for(i=0;i<g.length;i++){ has[g[i].a]=has[g[i].a]||{}; has[g[i].b]=has[g[i].b]||{}; }
+  for(i=0;i<g.length;i++){
+    var list=E[g[i].a]||[], on=false;
+    for(k=0;k<list.length;k++) if(list[k]===g[i].b){ on=true; break; }
+    if(on){ has[g[i].a][g[i].b]=1; has[g[i].b][g[i].a]=1; }
+  }
+  var clues=[];
+  for(r=0;r<R;r++){
+    clues.push([]);
+    for(c=0;c<C;c++){
+      var ke=slCellEdges(r,c,R,C), n=0;
+      for(k=0;k<4;k++){
+        var a=Math.floor(ke[k]/4096), b=ke[k]%4096;
+        if((has[a]&&has[a][b]) || (has[b]&&has[b][a])) n++;
+      }
+      /* Blank cells get the sentinel BLANK = -1, NOT 0. Using 0 made a blank
+         cell indistinguishable from a genuine "0" clue, and slCountSolutions
+         treats a 0 clue as "force all four edges off" - so every blank cell
+         erased the planted loop and the solver returned count 0 for every
+         board. That is the flappy-bird shape exactly: it renders a real
+         looking puzzle that nothing can solve. -1 means "unconstrained", so
+         blanking a clue can never remove the planted solution. */
+      clues[r].push(rndSlBlank(r,c) ? BLANK : n);
+    }
+  }
+  return clues;
+}
+var slRndState=null;
+function rndSlBlank(r,c){ return slRndState() < 0.35; }
+
+function slGenerate(size,seed){
+  var cfg=SL_SIZES[size]||SL_SIZES.medium, R=cfg.r, C=cfg.c;
+  var sd=(seed===undefined||seed===null)?((Math.random()*4294967296)>>>0):(seed>>>0);
+  var loop=null, clues=null, tries=0, chosen=null;
+  for(tries=0; tries<40; tries++){
+    var rnd=slMulberry32((sd + tries*2654435761)>>>0);
+    slRndState=rnd;
+    var E=slGrowLoop(R,C,rnd);
+    if(!E) continue;
+    var cl=slCluesFromLoop(E,R,C);
+    var sc=slCountSolutions(R,C,cl,2);
+    /* A search that hit its node budget has NOT proved anything. Publishing
+       such a clue set would ship a puzzle nobody can finish. Reject it. */
+    if(sc.gaveUp) continue;
+    if(sc.count<1) continue;
+    if(!chosen) chosen={clues:cl,solutions:sc.count};
+    if(sc.count===1){ loop=E; clues=cl; break; }
+  }
+  if(!clues){ if(!chosen) return null; clues=chosen.clues; }
+  sl={r:R,c:C,clues:clues,seed:sd,
+      lines:{}, marks:{}, size:(SL_SIZES[size]?size:'medium')};
+  return sl;
+}
+
+/* ---- INDEPENDENT SOLVER -------------------------------------------------
+   Exhaustive search over edge state. Each edge is UNDECIDED (0), ON (1) or
+   OFF (2); the previous version stored only 0/1 and reset an OFF choice back
+   to 0 on backtrack, so no decision ever persisted and the search collapsed
+   to a single node that could never reach a solution - it reported
+   count 0 for boards that demonstrably had one.
+   Picks the clue cell with the fewest undecided edges, tries every subset of
+   them that satisfies the clue, and finally requires every dot to have degree
+   exactly 2. */
+function slCountSolutions(R,C,clues,limit){
+  var edges=slEdges(R,C), nE=edges.length;
+  var cellE=[], r, c, k, i, v;
+  for(r=0;r<R;r++){ cellE.push([]); for(c=0;c<C;c++) cellE[r].push(slCellEdges(r,c,R,C)); }
+  var idx={};
+  for(i=0;i<nE;i++) idx[slEkey(edges[i].a,edges[i].b)]=i;
+  var need={};
+  for(r=0;r<R;r++) for(c=0;c<C;c++) need[r+','+c]=clues[r][c];
+
+  var UNDEC=0, ON=1, OFF=2;
+  var st=[]; for(i=0;i<nE;i++) st[i]=UNDEC;
+  var deg=[]; for(v=0; v<(R+1)*(C+1); v++) deg[v]=0;
+  var count=0, nodes=0, gaveUp=false;
+  var BUDGET=400000;
+  var DR=[[-1,0],[0,1],[1,0],[0,-1]];
+
+  function dotDeg(r2,c2){
+    var d=0, vv=r2*(C+1)+c2, k2;
+    for(k2=0;k2<4;k2++){
+      var nr=r2+DR[k2][0], nc=c2+DR[k2][1];
+      if(nr<0||nr>R||nc<0||nc>C) continue;
+      var ei=idx[slEkey(vv,nr*(C+1)+nc)];
+      if(st[ei]===ON) d++;
+    }
+    return d;
+  }
+
+  function rec(){
+    if(count>=limit||gaveUp) return;
+    if(++nodes>BUDGET){ gaveUp=true; return; }
+
+    /* force every fully-decided clue cell to match, and pick the next one */
+    var best=null, bestUn=5;
+    for(r=0;r<R;r++) for(c=0;c<C;c++){
+      var cl=need[r+','+c];
+      if(cl===undefined||cl===null||cl<0) continue;      /* BLANK */
+      var ke=cellE[r][c], un=0, got=0, k3;
+      for(k3=0;k3<4;k3++){ var ei=idx[ke[k3]]; if(st[ei]===UNDEC) un++; else if(st[ei]===ON) got++; }
+      if(un===0){ if(got!==cl) return; continue; }
+      if(un<bestUn){ bestUn=un; best={ke:ke,cl:cl,got:got}; }
+    }
+    if(!best){
+      /* all clues satisfied: every dot must have degree 0 or 2 */
+      for(r=0;r<=R;r++) for(c=0;c<=C;c++){ var d=dotDeg(r,c); if(d!==0&&d!==2) return; }
+      var any=false;
+      for(i=0;i<nE;i++) if(st[i]===ON){ any=true; break; }
+      if(!any) return;                                   /* an empty board is not a loop */
+      count++;
+      return;
+    }
+    var free=[], k4;
+    for(k4=0;k4<4;k4++){ var e2=idx[best.ke[k4]]; if(st[e2]===UNDEC) free.push(e2); }
+    var want=best.cl-best.got;
+    if(want<0||want>free.length) return;
+    var tot=1<<free.length, m, k5;
+    for(m=0;m<tot;m++){
+      if(slPop(m)!==want) continue;
+      var applied=[];
+      for(k5=0;k5<free.length;k5++){
+        var bit=(m>>k5)&1, ei2=free[k5];
+        st[ei2]=bit?ON:OFF;
+        applied.push(ei2);
+        if(bit){ deg[edges[ei2].a]++; deg[edges[ei2].b]++; }
+      }
+      rec();
+      for(k5=0;k5<applied.length;k5++){ var ei3=applied[k5]; if(st[ei3]===ON){ deg[edges[ei3].a]--; deg[edges[ei3].b]--; } st[ei3]=UNDEC; }
+      if(count>=limit||gaveUp) return;
+    }
+  }
+
+  /* A real 0 clue forces all four of its edges off before the search starts. */
+  for(r=0;r<R;r++) for(c=0;c<C;c++){
+    var q=need[r+','+c];
+    if(q===0){ var kk=cellE[r][c]; for(k=0;k<4;k++){ var ei=idx[kk[k]]; if(st[ei]===UNDEC) st[ei]=OFF; } }
+  }
+  rec();
+  return {count:count, nodes:nodes, gaveUp:gaveUp};
+}
+function slPop(x){ var c=0; while(x){ x&=x-1; c++; } return c; }
+
+/* ---- PLAYER STATE ------------------------------------------------------ */
+function slNew(size,seed){
+  slSize=(SL_SIZES[size]?size:'medium');
+  var g=slGenerate(slSize,seed);
+  if(!g){ sl=null; return null; }
+  slNewGame();
+  slDraw();
+  slMsg('');
+  return sl;
+}
+function slNewGame(){
+  var t=document.getElementById('sl-svg');
+  if(t) t.textContent='';
+  var host=document.getElementById('sl-size');
+  if(host){
+    host.innerHTML='';
+    Object.keys(SL_SIZES).forEach(function(k){
+      var b=document.createElement('button');
+      b.className=(k===slSize)?'ws-btn':'ws-btn-ghost';
+      b.textContent=k;
+      b.onclick=function(){ slNew(k); };
+      host.appendChild(b);
+    });
+  }
+  if(sl) slEdgeList=slEdges(sl.r,sl.c);
+}
+var slEdgeList=[];
+
+function slDraw(){
+  var svg=document.getElementById('sl-svg');
+  if(!svg||!sl) return;
+  var R=sl.r, C=sl.c, G=44, P=26, w=(C+1)*G+P*2, h=(R+1)*G+P*2;
+  svg.setAttribute('viewBox','0 0 '+w+' '+h);
+  svg.setAttribute('width', Math.min(w, 620));
+  svg.setAttribute('height', h);
+  var out='', r, c, i, k;
+  /* cell clues */
+  for(r=0;r<R;r++) for(c=0;c<C;c++){
+    var cl=sl.clues[r][c];
+    if(!(cl>0)) continue;
+    var x=P+c*G+G/2, y=P+r*G+G/2;
+    out+='<text x="'+x+'" y="'+y+'" class="sl-cell-clue" font-size="'+(G*0.42)+'" fill="#ffffff">'+cl+'</text>';
+  }
+  /* edges: hit targets first (transparent, fat) */
+  for(i=0;i<slEdgeList.length;i++){
+    var e=slEdgeList[i];
+    var ar=(e.a/(C+1))|0, ac=e.a%(C+1);
+    var br=(e.b/(C+1))|0, bc=e.b%(C+1);
+    var x1=P+ac*G, y1=P+ar*G, x2=P+bc*G, y2=P+br*G;
+    var st=sl.lines[e.a+'>'+e.b]||sl.lines[e.b+'>'+e.a];
+    var mk=sl.marks[e.a+'>'+e.b]||sl.marks[e.b+'>'+e.a];
+    var col=st?'#5ec8ff':(mk?'#3a3a40':'rgba(255,255,255,.20)');
+    var wid=st?4:(mk?2:2);
+    out+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+col+'" stroke-width="'+wid+'" stroke-linecap="round"/>';
+  }
+  for(i=0;i<slEdgeList.length;i++){
+    var e2=slEdgeList[i];
+    var ax=(e2.a/(C+1))|0, ay=e2.a%(C+1);
+    var bx=(e2.b/(C+1))|0, by=e2.b%(C+1);
+    out+='<line x1="'+(P+ay*G)+'" y1="'+(P+ax*G)+'" x2="'+(P+by*G)+'" y2="'+(P+bx*G)+'" stroke="transparent" stroke-width="'+(G*0.55)+'" style="cursor:pointer" data-e="'+e2.a+'>'+e2.b+'"/>';
+  }
+  /* dots */
+  for(r=0;r<=R;r++) for(c=0;c<=C;c++){
+    out+='<circle cx="'+(P+c*G)+'" cy="'+(P+r*G)+'" r="4.5" fill="'+(slDotBad(r,c)?'#5ec8ff':'#8a8a92')+'"/>';
+  }
+  svg.innerHTML=out;
+  var hits=svg.querySelectorAll('line[data-e]');
+  for(i=0;i<hits.length;i++){
+    (function(node){
+      node.addEventListener('click',function(){ slToggle(node.getAttribute('data-e')); });
+      node.addEventListener('contextmenu',function(ev){ ev.preventDefault(); slMark(node.getAttribute('data-e')); });
+    })(hits[i]);
+  }
+  slKv();
+}
+function slDotBad(r,c){
+  if(!sl) return false;
+  var R=sl.r,C=sl.c, v=r*(C+1)+c, d=0;
+  for(var k=0;k<4;k++){
+    var d0=[[-1,0],[0,1],[1,0],[0,-1]][k];
+    var nr=r+d0[0], nc=c+d0[1];
+    if(nr<0||nr>R||nc<0||nc>C) continue;
+    var w=nr*(C+1)+nc, key=(v<w)?(v+'>'+w):(w+'>'+v);
+    if(sl.lines[key]) d++;
+  }
+  if(d>2) return true;
+  var R2=sl.r, C2=sl.c, m=Math.max(R,C);
+  for(var k2=0;k2<4;k2++){
+    var e0=[[-1,0],[0,1],[1,0],[0,-1]][k2];
+    var nr2=r+e0[0], nc2=c+e0[1];
+    if(nr2<0||nr2>R2||nc2<0||nc2>C2) continue;
+  }
+  return false;
+}
+
+function slToggle(key){
+  if(!sl) return;
+  if(sl.lines[key]) delete sl.lines[key];
+  else { sl.lines[key]=1; delete sl.marks[key]; }
+  slDraw();
+}
+function slMark(key){
+  if(!sl) return;
+  if(sl.lines[key]) return;
+  if(sl.marks[key]) delete sl.marks[key]; else sl.marks[key]=1;
+  slDraw();
+}
+
+function slCheck(){
+  if(!sl) return {solved:false,reason:'no puzzle'};
+  var R=sl.r, C=sl.c, v, d, badDot=0, badClue=0, i, k;
+  /* every dot exactly two */
+  for(r=0;r<=R;r++) for(c=0;c<=C;c++){
+    var dd=0, pr=r*(C+1)+c;
+    for(k=0;k<4;k++){
+      var dr=[[-1,0],[0,1],[1,0],[0,-1]][k];
+      var nr=r+dr[0], nc=c+dr[1];
+      if(nr<0||nr>R||nc<0||nc>C) continue;
+      var nw=nr*(C+1)+nc, key=(pr<nw)?(pr+'>'+nw):(nw+'>'+pr);
+      if(sl.lines[key]) dd++;
+    }
+    if(dd!==0&&dd!==2) badDot++;
+  }
+  /* every clue exactly */
+  for(r=0;r<R;r++) for(c=0;c<C;c++){
+    var cl=sl.clues[r][c]; if(!(cl>0)) continue;
+    var ke=slCellEdges(r,c,R,C), got=0;
+    for(k=0;k<4;k++){
+      var a=Math.floor(ke[k]/4096), b=ke[k]%4096;
+      var key2=(a<b)?(a+'>'+b):(b+'>'+a);
+      if(sl.lines[key2]) got++;
+    }
+    if(got!==cl) badClue++;
+  }
+  var total=0; for(var kk in sl.lines) total++;
+  var solved=(badDot===0 && badClue===0 && total>0);
+  slMsg(solved?'Solved - one clean loop.':(total===0?'Draw at least one segment.':(badDot?('Loops must be closed: '+badDot+' dot'+(badDot>1?'s':'')+' do not have exactly two lines.'):('Clues to fix: '+badClue+'.'))), solved);
+  slKv();
+  return {solved:solved, badDot:badDot, badClue:badClue, lines:total};
+}
+
+function slMsg(txt,good){
+  var el=document.getElementById('sl-msg');
+  if(el){ el.textContent=txt||''; el.style.color=good?'#5ec8ff':'#e0f2fe'; }
+  var st=document.getElementById('sl-status');
+  if(st && txt) st.textContent=txt;
+}
+function slKv(){
+  var el=document.getElementById('sl-kv');
+  if(!el||!sl) return;
+  var total=0, kk; for(kk in sl.lines) total++;
+  var checks=0;
+  for(var r=0;r<sl.r;r++) for(var c=0;c<sl.c;c++) if(sl.clues[r][c]>0) checks++;
+  var rows=[['Size',sl.r+' x '+sl.c],['Clues shown',checks],
+            ['Segments drawn',total],['Seed',sl.seed]];
+  var h='';
+  for(var i=0;i<rows.length;i++) h+='<div class="flex justify-between gap-3"><span class="text-white/40">'+rows[i][0]+'</span><span>'+rows[i][1]+'</span></div>';
+  el.innerHTML=h;
+}
+
+document.getElementById('sl-new').addEventListener('click',function(){ slNew(slSize, (Math.random()*4294967296)>>>0); });
+document.getElementById('sl-clear').addEventListener('click',function(){ sl.lines={}; sl.marks={}; slDraw(); });
+document.getElementById('sl-check').addEventListener('click',function(){ slCheck(); });
+slNew('medium', SL_SEED);
+slNewGame();
+
+/* ---- SYNCHRONOUS TEST HOOK --------------------------------------------
+   A backgrounded headless tab has throttled timers, so every operation a
+   verifier needs is exposed as a SYNC function that computes and returns
+   immediately. Nothing here waits on wall-clock time. */
+window.__slitherlink = {
+  sizes: function(){ return SL_SIZES; },
+  generate: function(size,seed){
+    var g=slGenerate(size,seed);
+    if(!g) return JSON.stringify({ok:false});
+    return JSON.stringify({ok:true, r:g.r, c:g.c, seed:g.seed,
+      clues:g.clues, cluesShown:g.clues.reduce(function(a,row){
+        return a + row.filter(function(x){return x>0;}).length; },0),
+      solutions:slCountSolutions(g.r,g.c,g.clues,2).count});
+  },
+  solutions: function(size,seed,limit){
+    var g=slGenerate(size,seed);
+    if(!g) return JSON.stringify({count:0,gaveUp:false});
+    var s=slCountSolutions(g.r,g.c,g.clues,limit||2);
+    return JSON.stringify({count:s.count,nodes:s.nodes,gaveUp:s.gaveUp});
+  },
+  edges: function(r,c){ var e=slEdges(r,c); return JSON.stringify({n:e.length, want:(2*r+1)*(2*c+1)}); },
+  countSolutions: function(r,c,clues,limit){
+    return JSON.stringify(slCountSolutions(r,c,clues,limit||2));
+  },
+  cellEdges: function(r,c,R,C){ return JSON.stringify(slCellEdges(r,c,R,C)); },
+  newGame: function(size,seed){ var g=slNew(size,seed); return JSON.stringify(g?{ok:true,r:g.r,c:g.c}:{ok:false}); },
+  board: function(){
+    if(!sl) return JSON.stringify({});
+    return JSON.stringify({r:sl.r,c:sl.c,clues:sl.clues,seed:sl.seed,lines:sl.lines});
+  },
+  clear: function(){ if(sl){ sl.lines={}; sl.marks={}; slDraw(); } return JSON.stringify({ok:true}); },
+  toggle: function(key){ slToggle(key); return JSON.stringify(this.board()); },
+  mark: function(key){ slMark(key); return JSON.stringify({ok:true}); },
+  check: function(){ return JSON.stringify(slCheck()); },
+  /* Play the puzzle's own reference solution: proves the win is REACHABLE
+     by clicking, not just that a solver can find it. */
+  solve: function(){
+    if(!sl) return JSON.stringify({ok:false});
+    sl.lines={}; sl.marks={};
+    var n=0;
+    slReferenceLoop().forEach(function(k){ sl.lines[k]=1; n++; });
+    var r=slCheck();
+    return JSON.stringify({ok:r.solved, drawn:n, badDot:r.badDot, badClue:r.badClue});
+  }
+};
+
+/* Recover a reference loop: run the SAME exhaustive search as
+   slCountSolutions, but keep the edge states of the first solution found and
+   return them as the "a">"b" keys the player's sl.lines map uses. Sharing the
+   decision logic means the hint can never disagree with the win check. */
+function slReferenceLoop(){
+  var R=sl.r, C=sl.c;
+  var edges=slEdges(R,C), cellE=[], r, c, k, i, v;
+  for(r=0;r<R;r++){ cellE.push([]); for(c=0;c<C;c++) cellE[r].push(slCellEdges(r,c,R,C)); }
+  var idx={};
+  for(i=0;i<edges.length;i++) idx[slEkey(edges[i].a,edges[i].b)]=i;
+  var need={};
+  for(r=0;r<R;r++) for(c=0;c<C;c++) need[r+','+c]=sl.clues[r][c];
+
+  var UNDEC=0, ON=1, OFF=2;
+  var st=[]; for(i=0;i<edges.length;i++) st[i]=UNDEC;
+  var deg=[]; for(v=0; v<(R+1)*(C+1); v++) deg[v]=0;
+  var found=null;
+  var DR=[[-1,0],[0,1],[1,0],[0,-1]];
+  function dotDeg(r2,c2){
+    var d=0, vv=r2*(C+1)+c2, k2;
+    for(k2=0;k2<4;k2++){
+      var nr=r2+DR[k2][0], nc=c2+DR[k2][1];
+      if(nr<0||nr>R||nc<0||nc>C) continue;
+      if(st[idx[slEkey(vv,nr*(C+1)+nc)]]===ON) d++;
+    }
+    return d;
+  }
+  function rec(){
+    if(found) return;
+    var best=null, bestUn=5;
+    for(r=0;r<R;r++) for(c=0;c<C;c++){
+      var cl=need[r+','+c];
+      if(cl===undefined||cl===null||cl<0) continue;
+      var ke=cellE[r][c], un=0, got=0, k3;
+      for(k3=0;k3<4;k3++){ var ei=idx[ke[k3]]; if(st[ei]===UNDEC) un++; else if(st[ei]===ON) got++; }
+      if(un===0){ if(got!==cl) return; continue; }
+      if(un<bestUn){ bestUn=un; best={ke:ke,cl:cl,got:got}; }
+    }
+    if(!best){
+      for(r=0;r<=R;r++) for(c=0;c<=C;c++){ var d=dotDeg(r,c); if(d!==0&&d!==2) return; }
+      var any=false;
+      for(i=0;i<st.length;i++) if(st[i]===ON){ any=true; break; }
+      if(any) found=st.slice();
+      return;
+    }
+    var free=[]; for(k=0;k<4;k++){ var e2=idx[best.ke[k]]; if(st[e2]===UNDEC) free.push(e2); }
+    var want=best.cl-best.got;
+    if(want<0||want>free.length) return;
+    var tot=1<<free.length, m, k5;
+    for(m=0;m<tot;m++){
+      if(slPop(m)!==want) continue;
+      var applied=[];
+      for(k5=0;k5<free.length;k5++){
+        var bit=(m>>k5)&1, ei2=free[k5];
+        st[ei2]=bit?ON:OFF; applied.push(ei2);
+        if(bit){ deg[edges[ei2].a]++; deg[edges[ei2].b]++; }
+      }
+      rec();
+      for(k5=0;k5<applied.length;k5++){ var ei3=applied[k5]; if(st[ei3]===ON){ deg[edges[ei3].a]--; deg[edges[ei3].b]--; } st[ei3]=UNDEC; }
+      if(found) return;
+    }
+  }
+  for(r=0;r<R;r++) for(c=0;c<C;c++) if(need[r+','+c]===0){ var kk=cellE[r][c]; for(k=0;k<4;k++){ var ei=idx[kk[k]]; if(st[ei]===UNDEC) st[ei]=OFF; } }
+  rec();
+  var out=[];
+  if(!found) return out;
+  for(i=0;i<edges.length;i++) if(found[i]===ON) out.push(edges[i].a+'>'+edges[i].b);
+  return out;
+}
+
+</script>
+</div>
+<section class="d-more"><div class="wrap"><h2>More games</h2><div class="ws-grid"><a class="tile-card" href="/workspace/games/lane-runner/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/lane-runner/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Lane Runner</h3><p>Endless three-lane runner: switch lanes, jump crates and slide under beams.</p></div></a><a class="tile-card" href="/workspace/games/mole-mash/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/mole-mash/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Mole Mash</h3><p>Thirty seconds of whack-a-mole. Fast hits build a combo multiplier.</p></div></a><a class="tile-card" href="/workspace/games/slingshot-siege/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/slingshot-siege/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Slingshot Siege</h3><p>Pull back, aim and launch. Topple the three marked blocks in six shots.</p></div></a><a class="tile-card" href="/workspace/games/tower-stack/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/tower-stack/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Tower Stack</h3><p>Drop the sliding block and stack it clean. Perfect cuts keep full width.</p></div></a><a class="tile-card" href="/workspace/games/memory-sequence/" style="--c:#ffd166"><div class="shot"><img src="/workspace/games/memory-sequence/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Words &amp; brain</span><h3>Memory Sequence</h3><p>Simon-style: watch the pads flash, repeat the order, and beat your best level on this device.</p></div></a><a class="tile-card" href="/workspace/games/word-ladder/" style="--c:#ffd166"><div class="shot"><img src="/workspace/games/word-ladder/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Words &amp; brain</span><h3>Word Ladder</h3><p>Climb one letter at a time from one real dictionary word to another. Undo, hints and a new ladder on demand.</p></div></a><a class="tile-card" href="/workspace/games/fitts-drill/" style="--c:#ff7a8a"><div class="shot"><img src="/workspace/games/fitts-drill/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Reflex</span><h3>Fitts Drill</h3><p>A pointing-speed drill built on Fitts&#x27;s law: 30 targets, each with a time budget.</p></div></a><a class="tile-card" href="/workspace/games/reaction-time/" style="--c:#ff7a8a"><div class="shot"><img src="/workspace/games/reaction-time/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Reflex</span><h3>Reaction Time</h3><p>Wait for green, then click. Five rounds, no false starts, best time kept.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>

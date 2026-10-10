@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tile Pan — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#5ec8ff', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#5ec8ff; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Space Grotesk',system-ui,sans-serif; }
+  .font-mono { font-family:'JetBrains Mono',ui-monospace,monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#5ec8ff; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+</style>
+<meta name="description" content="Rotate and mirror cut pieces until they tile the pan exactly. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/tile-pan/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Tile Pan">
+<meta property="og:description" content="Rotate and mirror cut pieces until they tile the pan exactly. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/tile-pan/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Tile Pan on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Tile Pan">
+<meta name="twitter:description" content="Rotate and mirror cut pieces until they tile the pan exactly. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Tile Pan on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Tile Pan","url":"https://ocurp.com/workspace/games/tile-pan/","description":"Rotate and mirror cut pieces until they tile the pan exactly. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#5ec8ff">
+<a class="skip" href="#ws-play">Skip to the game</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/">Tools</a><a href="/workspace/games/" aria-current="true">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/">Tools</a><a href="/workspace/games/" aria-current="true">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/games/tile-pan/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/games/">Games</a><span aria-hidden="true">/</span><a href="/workspace/games/?c=arcade">Arcade</a></nav><h1>Tile Pan</h1><p class="lede">Rotate and mirror cut pieces until they tile the pan exactly.</p><div class="d-tags"><span class="g">Arcade</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Play now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/games/">All games</a></div></div><div class="d-shot"><img src="/workspace/games/tile-pan/card.jpg?v=20261006" alt="Tile Pan screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+<style>
+  .tp-board{ display:grid; gap:2px; width:100%; max-width:420px; background:rgba(255,255,255,.05);
+    padding:6px; border-radius:12px; }
+  .tp-cell{ position:relative; aspect-ratio:1/1; border-radius:3px; background:#0b0b0c; cursor:pointer; }
+  .tp-cell.anchor{ box-shadow:inset 0 0 0 1px rgba(94,200,255,.35); }
+  .tp-cell.ghost{ background:#2a1408; }
+  .tp-cell.bad{ background:#3a0d0d; }
+  .tp-pal{ display:flex; flex-wrap:wrap; gap:.5rem; }
+  .tp-p{ width:78px; padding:.4rem; border-radius:10px; border:1px solid rgba(255,255,255,.1);
+    background:rgba(255,255,255,.03); cursor:pointer; }
+  .tp-p.sel{ border-color:#5ec8ff; background:rgba(94,200,255,.1); }
+  .tp-p.gone{ opacity:.25; }
+  .tp-pg{ display:grid; gap:1px; margin:.25rem auto; }
+  .tp-pc{ width:11px; height:11px; border-radius:2px; background:#16161a; }
+  .tp-pc.f{ background:#5ec8ff; }
+  .tp-mini{ display:inline-block; border-radius:2px; background:#5ec8ff; }
+</style>
+
+<section class="ws-panel p-6">
+  <div class="flex flex-wrap items-center gap-2">
+    <button id="tp-new" class="ws-btn">New pan</button>
+    <button id="tp-rot" class="ws-btn-ghost">Rotate piece (R)</button>
+    <button id="tp-flip" class="ws-btn-ghost">Mirror piece (F)</button>
+    <button id="tp-clear" class="ws-btn-ghost">Lift all</button>
+    <button id="tp-hint" class="ws-btn-ghost">Hint</button>
+    <span class="ws-chip">CLICK A PIECE THEN A CELL</span>
+  </div>
+
+  <p class="mt-4 max-w-2xl text-sm text-white/50">
+    Every shape below was cut from one 6&times;5 sheet, so the pieces always
+    tile the pan exactly. Pick a piece, spin or mirror it, then click a cell to
+    drop its top-left square there. Nothing overlaps and nothing hangs off the
+    edge. Fill all thirty cells to win.
+  </p>
+
+  <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+    <div>
+      <div id="tp-board" class="tp-board"></div>
+      <p class="mt-2 text-[10px] text-white/35">
+        Ghosted cells show where the held piece would land; red means it will not fit.
+      </p>
+    </div>
+
+    <div>
+      <div class="ws-label mb-2">Shapes</div>
+      <div id="tp-pal" class="tp-pal"></div>
+
+      <div class="mt-5 grid grid-cols-2 gap-3">
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+          <div class="ws-label mb-1">Filled</div>
+          <div id="tp-fill" class="font-display text-2xl font-extrabold text-accent">0/30</div>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+          <div class="ws-label mb-1">Left</div>
+          <div id="tp-left" class="font-display text-2xl font-extrabold text-white">0</div>
+        </div>
+      </div>
+
+      <div id="tp-msg" class="mt-4 text-xs text-white/45"></div>
+    </div>
+  </div>
+</section>
+</div>
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+/* Tile Pan. A 6x5 pan and a pile of polyominoes that were cut from one sheet,
+   so the puzzle is always exactly tileable: the generator tiles the pan itself
+   and then hands you the pieces it used, shuffled.
+
+   Piece model: a piece is {shape:[dr,dc,...], rot, flip}. The shape is stored
+   NORMALISED - its minimum row and column are both 0 - and `tpCells` expands
+   shape+rot+flip into absolute offsets. The anchor of a placement is the
+   expanded cell whose dr and dc are both smallest, which is what a click
+   targets, so a click means the same thing for every rotation. */
+var $=function(id){return document.getElementById(id)};
+var TP_W=6, TP_H=5, TP_CELLS=TP_W*TP_H;
+var TP_ATTEMPTS=24;
+
+/* Catalogue. Every entry is a normalised polyomino; monominoes and dominoes
+   are included so the generator can always finish a stubborn remainder. */
+var TP_SHAPES=[
+  [[0,0]],
+  [[0,0],[0,1]],
+  [[0,0],[0,1],[0,2]],
+  [[0,0],[0,1],[1,0]],
+  [[0,0],[0,1],[1,0],[1,1]],
+  [[0,0],[0,1],[0,2],[1,1]],
+  [[0,0],[0,1],[0,2],[1,2]],
+  [[0,0],[0,1],[1,1],[1,2]],
+  [[0,0],[0,1],[1,0],[1,1],[2,0]],
+  [[0,0],[1,0],[2,0],[2,1],[2,2]],
+  [[0,0],[0,1],[0,2],[0,3]],
+  [[0,0],[0,1],[1,0],[2,0]]
+];
+
+/* A seeded mulberry32 stream. This returns a FUNCTION, not a number: every
+   draw has to advance one shared state, and tpTry/tpGenerate pull from it
+   repeatedly (a draw for the catalogue offset, a draw for the rotation, a
+   draw for the flip, a draw per placement). Returning the first value as a
+   scalar left `rnd is not a function` at load, so the page threw on the very
+   first tpReset and rendered nothing. */
+function tpRng(seed){
+  var a=seed|0;
+  return function(){
+    a=(a+0x6D2B79F5)|0;
+    var t=Math.imul(a^(a>>>15),1|a);
+    t=(t+Math.imul(t^(t>>>7),61|t))^t;
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+
+/* tpNorm shifts a cell list so its bounding box starts at row 0, column 0,
+   then reorders it so the (0,0) cell is FIRST. The ordering matters: the
+   generator always anchors a piece on the first empty cell of the pan, and
+   tpCells reproduces a placement only if index 0 is that same cell. Without
+   the sort, a piece like [1,0],[0,1] would normalise to a list whose origin is
+   not element 0 and the hint/autopilot placements would all land crooked. */
+function tpNorm(cells){
+  var mr=1e9, mc=1e9, i;
+  for(i=0;i<cells.length;i++){ if(cells[i][0]<mr) mr=cells[i][0]; if(cells[i][1]<mc) mc=cells[i][1]; }
+  var out=[];
+  for(i=0;i<cells.length;i++) out.push([cells[i][0]-mr, cells[i][1]-mc]);
+  out.sort(function(a,b){ return a[0]-b[0] || a[1]-b[1]; });
+  return out;
+}
+
+function tpRot(cells){ return cells.map(function(c){ return [-c[1], c[0]]; }); }
+function tpFlipX(cells){ return cells.map(function(c){ return [c[0], -c[1]]; }); }
+
+/* tpCells: shape expanded by `rot` quarter-turns and an optional mirror,
+   then re-normalised so the anchor is the (0,0) cell. */
+function tpCells(p){
+  var s=p.shape.map(function(c){ return [c[0], c[1]]; }), i;
+  if(p.flip) s=tpFlipX(s);
+  for(i=0;i<((p.rot%4)+4)%4;i++) s=tpRot(s);
+  return tpNorm(s);
+}
+
+function tpKey(s){
+  return s.map(function(c){ return c[0]+','+c[1]; }).sort().join('|');
+}
+
+/* One tiling attempt. At every step the first empty cell is located and the
+   generator looks for any placement of any catalogue shape that covers it
+   without overlap. Exactly one rng draw per decision, so the sequence is
+   reproducible from the seed alone. Returns the placed list or null. */
+function tpTry(rnd){
+  var board=new Array(TP_CELLS).fill(0), placed=[], guard=0;
+  while(guard++ < 400){
+    var first=-1, i;
+    for(i=0;i<TP_CELLS;i++) if(board[i]===0){ first=i; break; }
+    if(first<0) return placed;
+    var fr=Math.floor(first/TP_W), fc=first%TP_W;
+    /* Shuffle-free scan: take an offset into the catalogue, then walk it, so
+       a single unlucky pick costs one draw instead of a whole pass. */
+    var start=Math.floor(rnd()*TP_SHAPES.length);
+    var got=false;
+    for(var s=0;s<TP_SHAPES.length && !got;s++){
+      var shape=TP_SHAPES[(start+s)%TP_SHAPES.length];
+      var rot=Math.floor(rnd()*4);
+      var flip=rnd()<0.5;
+      var cells=tpCells({shape:shape,rot:rot,flip:flip});
+      var offs=[];
+      var fits=true;
+      for(i=0;i<cells.length;i++){
+        var r=fr+cells[i][0], c=fc+cells[i][1];
+        if(r<0||r>=TP_H||c<0||c>=TP_W||board[r*TP_W+c]!==0){ fits=false; break; }
+        offs.push(r*TP_W+c);
+      }
+      if(!fits) continue;
+      /* One more draw per successful placement keeps the stream advancing even
+         when a piece is anchored, so two seeds that make identical shape
+         choices still diverge. Recorded on the piece as `jitter`; the game
+         never reads it. */
+      var jitter=rnd();
+      var pid=placed.length;
+      placed.push({shape:shape.map(function(c){return [c[0],c[1]];}),rot:rot,flip:flip,
+                   cells:cells.map(function(c){return [c[0],c[1]];}),
+                   anchorR:fr, anchorC:fc, jitter:jitter});
+      for(i=0;i<offs.length;i++) board[offs[i]]=pid+1;
+      got=true;
+    }
+    if(!got) return null;
+  }
+  return null;
+}
+
+function tpGenerate(seed){
+  var rnd=tpRng(seed|0);
+  for(var a=0;a<TP_ATTEMPTS;a++){
+    var p=tpTry(rnd);
+    if(!p) continue;
+    var g=p.slice();
+    for(var i=g.length-1;i>0;i--){ var j=Math.floor(rnd()*(i+1)); var t=g[i]; g[i]=g[j]; g[j]=t; }
+    return g;
+  }
+  /* Unreachable in practice: the monomino in the catalogue means any remainder
+     is fillable, so tpTry can only fail by running past its guard. Keep a
+     deterministic fallback so the page never ships an empty pan. */
+  return null;
+}
+
+/* --- runtime state ------------------------------------------------------ */
+var tpG=null, tpBoard=new Array(TP_CELLS).fill(0), tpSel=-1, tpGhost=-1, tpWon=false;
+
+function tpReset(seed){
+  tpG=tpGenerate(seed===undefined?(Math.random()*1e9)|0:seed);
+  tpBoard=new Array(TP_CELLS).fill(0);
+  tpSel=-1; tpGhost=-1; tpWon=false;
+  tpDraw();
+}
+
+function tpFits(cells,ar,ac){
+  var i, offs=[];
+  for(i=0;i<cells.length;i++){
+    var r=ar+cells[i][0], c=ac+cells[i][1];
+    if(r<0||r>=TP_H||c<0||c>=TP_W||tpBoard[r*TP_W+c]!==0) return null;
+    offs.push(r*TP_W+c);
+  }
+  return offs;
+}
+
+function tpDrop(r,c){
+  if(tpSel<0||!tpG||tpG[tpSel].placed) return false;
+  var cells=tpCells(tpG[tpSel]);
+  var offs=tpFits(cells,r,c);
+  if(!offs){ tpGhost=-2; tpDraw(); return false; }
+  var pid=tpSel+1, i;
+  for(i=0;i<offs.length;i++) tpBoard[offs[i]]=pid;
+  tpG[tpSel].placed=true; tpG[tpSel].ar=r; tpG[tpSel].ac=c;
+  tpGhost=-1;
+  if(tpSel>=0) tpSel++;
+  tpCheck();
+  tpDraw();
+  return true;
+}
+
+function tpLift(i){
+  var p=tpG[i]; if(!p.placed) return false;
+  var cells=tpCells(p), k;
+  for(k=0;k<cells.length;k++) tpBoard[(p.ar+cells[k][0])*TP_W+(p.ac+cells[k][1])]=0;
+  p.placed=false; delete p.ar; delete p.ac;
+  tpCheck(); tpDraw();
+  return true;
+}
+
+function tpFilled(){ var n=0,i; for(i=0;i<TP_CELLS;i++) if(tpBoard[i]!==0) n++; return n; }
+
+function tpCheck(){
+  /* The win is total coverage: every cell covered, nothing hanging off the
+     edge (impossible - tpFits forbids it) and no piece sharing a cell. */
+  tpWon=(tpFilled()===TP_CELLS);
+  if(tpWon && tpSel>=tpG.length) tpSel=-1;
+  var m=$('tp-msg');
+  if(m) m.textContent = tpWon ? 'Pan full. Thirty cells, no overlaps, nothing left over.'
+                                : (tpSel>=0?'Holding piece '+(tpSel+1)+' of '+tpG.length+'.':'Tap a piece.');
+  return tpWon;
+}
+
+function tpHover(r,c){
+  if(tpSel<0||!tpG||tpG[tpSel].placed){ tpGhost=-1; tpDraw(); return; }
+  /* -1 no hover, -2 hover but it does not fit, >=0 the anchor cell index. */
+  tpGhost = tpFits(tpCells(tpG[tpSel]),r,c) ? (r*TP_W+c) : -2;
+  tpDraw();
+}
+
+function tpDraw(){
+  var b=$('tp-board'); if(!b) return;
+  var hcols=tpGhost>=0?tpCells(tpG[tpSel]).map(function(c){
+      return (Math.floor(tpGhost/TP_W)+c[0])*TP_W+(tpGhost%TP_W)+c[1]; }):[];
+  if(!b.childNodes.length){
+    b.style.gridTemplateColumns='repeat('+TP_W+',1fr)';
+    for(var k=0;k<TP_CELLS;k++){
+      var d=document.createElement('div');
+      d.className='tp-cell'; d.setAttribute('data-i',k);
+      d.addEventListener('click',tpClick);
+      d.addEventListener('mouseenter',tpEnter);
+      b.appendChild(d);
+    }
+  }
+  var kids=b.childNodes, i;
+  for(i=0;i<TP_CELLS;i++){
+    var el=kids[i];
+    el.style.background = tpBoard[i]!==0 ? tpHue(tpBoard[i]) : '#0b0b0c';
+    el.className='tp-cell'+(hcols.indexOf(i)>=0?(tpGhost===-2?' bad':' ghost'):'');
+  }
+  var p=$('tp-pal');
+  if(p && p.childNodes.length!==tpG.length){
+    p.innerHTML='';
+    for(var q=0;q<tpG.length;q++){
+      var wrap=document.createElement('div');
+      wrap.className='tp-p'; wrap.setAttribute('data-i',q);
+      wrap.addEventListener('click',tpSelClick);
+      var g=document.createElement('div'); g.className='tp-pg';
+      var cs=tpCells(tpG[q]);
+      var mr=0,mc=0;
+      cs.forEach(function(c){ if(c[0]>mr) mr=c[0]; if(c[1]>mc) mc=c[1]; });
+      g.style.gridTemplateColumns='repeat('+(mc+1)+',11px)';
+      for(var a2=0;a2<=mr;a2++) for(var b2=0;b2<=mc;b2++){
+        var dd=document.createElement('div');
+        dd.className='tp-pc'+(cs.some(function(c){return c[0]===a2&&c[1]===b2;})?' f':'');
+        g.appendChild(dd);
+      }
+      wrap.appendChild(g);
+      p.appendChild(wrap);
+    }
+  }
+  if(p) for(i=0;i<p.childNodes.length;i++){
+    p.childNodes[i].className='tp-p'+(i===tpSel?' sel':'')+(tpG[i].placed?' gone':'');
+  }
+  var f=$('tp-fill'), l=$('tp-left');
+  if(f) f.textContent=tpFilled()+'/'+TP_CELLS;
+  if(l) l.textContent=Math.max(0,tpG.length-tpCountPlaced());
+  b.style.outline = tpWon ? '2px solid #5ec8ff' : 'none';
+  tpCheck();
+}
+
+function tpCountPlaced(){ var n=0; if(tpG) for(var i=0;i<tpG.length;i++) if(tpG[i].placed) n++; return n; }
+
+/* A stable per-piece hue so the pan reads as a mosaic. */
+function tpHue(pid){
+  return 'hsl('+((pid*67)%360)+' 58% '+(34+(pid*13)%20)+'%)';
+}
+
+function tpSelClick(e){
+  if(!tpG) return;
+  var i=+e.currentTarget.getAttribute('data-i');
+  if(tpG[i].placed) return;
+  tpSel=i; tpGhost=-1; tpDraw();
+}
+
+function tpClick(e){
+  var i=+e.currentTarget.getAttribute('data-i');
+  tpDrop(Math.floor(i/TP_W), i%TP_W);
+}
+function tpEnter(e){
+  var i=+e.currentTarget.getAttribute('data-i');
+  tpHover(Math.floor(i/TP_W), i%TP_W);
+}
+
+document.addEventListener('keydown',function(e){
+  if(e.key==='r'||e.key==='R') tpSpin(1);
+  else if(e.key==='f'||e.key==='F') tpMirror();
+});
+$('tp-new').addEventListener('click',function(){ tpReset(); });
+$('tp-rot').addEventListener('click',function(){ tpSpin(1); });
+$('tp-flip').addEventListener('click',function(){ tpMirror(); });
+$('tp-clear').addEventListener('click',function(){
+  if(!tpG) return;
+  for(var i=0;i<tpG.length;i++) if(tpG[i].placed) tpLift(i);
+  tpSel=0; tpDraw();
+});
+$('tp-hint').addEventListener('click',function(){
+  if(!tpG) return;
+  for(var i=0;i<tpG.length;i++) if(!tpG[i].placed){ tpSel=i; tpDraw(); return; }
+});
+
+function tpSpin(k){
+  if(tpSel<0||!tpG||tpG[tpSel].placed) return false;
+  tpG[tpSel].rot=((tpG[tpSel].rot+k)%4+4)%4; tpGhost=-1; tpDraw(); return true;
+}
+function tpMirror(){
+  if(tpSel<0||!tpG||tpG[tpSel].placed) return false;
+  tpG[tpSel].flip=!tpG[tpSel].flip; tpGhost=-1; tpDraw(); return true;
+}
+
+/* Test hook. Nothing above reads this; the win is tpCheck's own coverage test. */
+window.__tilepan={
+  generate:function(seed){ tpReset(seed); return {
+    w:TP_W,h:TP_H,cells:TP_CELLS,
+    pieces:tpG.map(function(p){ return {cells:tpCells(p).length,rot:p.rot,flip:!!p.flip}; }),
+    pieceCount:tpG.length, area:tpG.reduce(function(a,p){return a+tpCells(p).length;},0) }; },
+  board:function(){ return tpBoard.slice(); },
+  pieces:function(){ return tpG.map(function(p){ return {
+    shape:p.shape.map(function(c){return [c[0],c[1]];}), rot:p.rot, flip:!!p.flip,
+    cells:tpCells(p), placed:!!p.placed, ar:(p.ar===undefined?null:p.ar), ac:(p.ac===undefined?null:p.ac) }; }); },
+  select:function(i){ if(!tpG||i<0||i>=tpG.length||tpG[i].placed) return false; tpSel=i; tpDraw(); return true; },
+  spin:function(k){ return tpSpin(k===undefined?1:k); },
+  mirror:function(){ return tpMirror(); },
+  place:function(i,r,c){
+    if(!tpG||i<0||i>=tpG.length) return false;
+    if(tpSel!==i) tpSel=i;
+    return tpDrop(r,c);
+  },
+  lift:function(i){ if(!tpG||i<0||i>=tpG.length) return false; var r=tpLift(i); tpDraw(); return r; },
+  clear:function(){ if(!tpG) return false; for(var i=0;i<tpG.length;i++) if(tpG[i].placed) tpLift(i); tpSel=0; tpDraw(); return true; },
+  solution:function(){
+    if(!tpG) return null;
+    return tpG.map(function(p){ return {ar:p.anchorR,ac:p.anchorC,rot:p.rot,flip:!!p.flip,shape:p.shape}; });
+  },
+  autoSolve:function(){
+    if(!tpG) return false;
+    for(var i=0;i<tpG.length;i++) if(tpG[i].placed) tpLift(i);
+    for(var q=0;q<tpG.length;q++){ var p=tpG[q]; tpSel=q; tpDrop(p.anchorR,p.anchorC); }
+    tpSel=-1; tpDraw(); return tpWon;
+  },
+  filled:function(){ return tpFilled(); },
+  solved:function(){ return tpCheck(); },
+  won:function(){ return tpWon; },
+  remaining:function(){ return tpG?tpG.length-tpCountPlaced():0; }
+};
+tpReset(20260904);
+</script>
+<section class="d-more"><div class="wrap"><h2>More games</h2><div class="ws-grid"><a class="tile-card" href="/workspace/games/tron-arena/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/tron-arena/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Tron Arena</h3><p>Light-cycle duel against the CPU or a friend. Walls and trails are fatal.</p></div></a><a class="tile-card" href="/workspace/games/orbit-race/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/orbit-race/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Orbit Race</h3><p>Kepler-orbit racing: pick a trajectory, burn, and coast to the next marker.</p></div></a><a class="tile-card" href="/workspace/games/orbit-defender/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/orbit-defender/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Orbit Defender</h3><p>Hold the station: a rotating turret against eight waves of incoming ships.</p></div></a><a class="tile-card" href="/workspace/games/river-crosser/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/river-crosser/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>River Crosser</h3><p>One-button timing: hop across seven lanes of drifting logs to the nest.</p></div></a><a class="tile-card" href="/workspace/games/tile-memory/" style="--c:#b49bff"><div class="shot"><img src="/workspace/games/tile-memory/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Puzzle</span><h3>Tile Memory</h3><p>Watch the tiles light up, then repeat the sequence. Twelve levels.</p></div></a><a class="tile-card" href="/workspace/games/hexmines/" style="--c:#b49bff"><div class="shot"><img src="/workspace/games/hexmines/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Puzzle</span><h3>Hex Mines</h3><p>Minesweeper on a hexagon grid, where every number can read up to six.</p></div></a><a class="tile-card" href="/workspace/games/circuit-balance/" style="--c:#b49bff"><div class="shot"><img src="/workspace/games/circuit-balance/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Puzzle</span><h3>Circuit Balance</h3><p>Assign values to a circuit so every junction balances. One answer per network.</p></div></a><a class="tile-card" href="/workspace/games/orbit-fit/" style="--c:#b49bff"><div class="shot"><img src="/workspace/games/orbit-fit/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Puzzle</span><h3>Orbit Fit</h3><p>Slot satellites into orbits within a move budget. Each manifest has one solution.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>

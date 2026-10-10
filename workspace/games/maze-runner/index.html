@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maze Runner — Play Free in Browser | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#5ec8ff', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#5ec8ff; --secondary:#e0f2fe; --dark:#050505; }
+  body { font-family:'Inter',sans-serif; background:var(--dark); color:#fff; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'Space Grotesk',system-ui,sans-serif; }
+  .font-mono { font-family:'JetBrains Mono',ui-monospace,monospace; }
+  html,body { max-width:100vw; overflow-x:hidden; }
+  .noise-overlay { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.015;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:fixed; width:80vw; height:80vw; filter:blur(140px); z-index:-1; pointer-events:none; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1);opacity:.18} 50%{transform:translate(2vw,-1vh) scale(1.05);opacity:.1} 100%{transform:translate(0,0) scale(1);opacity:.18} }
+  ::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:10px; border:1px solid rgba(224,242,254,.1) }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.9rem 1rem; color:#fff; font-size:.875rem; transition:border-color .2s }
+  .ws-input:focus { outline:none; border-color:rgba(94,200,255,.5) }
+  .ws-input::placeholder { color:rgba(255,255,255,.3) }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#5ec8ff !important; color:#000 !important }
+  .ws-input[type=range] { padding:0; height:1.5rem }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield }
+  .ws-input option { background-color:#141414 !important; color:#fff !important }
+  select.ws-input option:checked { background-color:#5ec8ff !important; color:#000 !important }
+  .ws-label { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:9px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.3) }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:#5ec8ff; padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#000; cursor:pointer }
+  .ws-btn:hover { opacity:.9 }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); padding:.75rem 1.25rem; font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.5); cursor:pointer }
+  .ws-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,.3) }
+  .ws-panel { border-radius:1rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03) }
+  .ws-chip { border-radius:9999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); padding:.2rem .6rem; font-size:8px; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.35) }
+  .ws-out { font-family:'JetBrains Mono',ui-monospace,monospace; white-space:pre-wrap; word-break:break-word; color:rgba(255,255,255,.85); font-size:12.5px; line-height:1.6 }
+  .ws-copy { position:relative } .ws-copy.ok::after { content:'COPIED'; position:absolute; right:.75rem; top:.5rem; font-size:8px; font-weight:900; letter-spacing:.2em; color:#4ade80 }
+</style>
+<meta name="description" content="Run a freshly carved maze to the exit in three sizes, with a solution reveal. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/games/maze-runner/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Maze Runner">
+<meta property="og:description" content="Run a freshly carved maze to the exit in three sizes, with a solution reveal. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/games/maze-runner/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Maze Runner on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Maze Runner">
+<meta name="twitter:description" content="Run a freshly carved maze to the exit in three sizes, with a solution reveal. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
+<meta name="twitter:image:alt" content="Maze Runner on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Maze Runner","url":"https://ocurp.com/workspace/games/maze-runner/","description":"Run a freshly carved maze to the exit in three sizes, with a solution reveal. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#5ec8ff">
+<a class="skip" href="#ws-play">Skip to the game</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/">Tools</a><a href="/workspace/games/" aria-current="true">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/">Tools</a><a href="/workspace/games/" aria-current="true">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/games/maze-runner/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/games/">Games</a><span aria-hidden="true">/</span><a href="/workspace/games/?c=arcade">Arcade</a></nav><h1>Maze Runner</h1><p class="lede">Run a freshly carved maze to the exit in three sizes, with a solution reveal.</p><div class="d-tags"><span class="g">Arcade</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Play now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/games/">All games</a></div></div><div class="d-shot"><img src="/workspace/games/maze-runner/card.jpg?v=20261006" alt="Maze Runner screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+      
+<style>
+  .mz-grid{ display:grid; gap:0; width:100%; max-width:640px; touch-action:manipulation; }
+  .mz-cell{ position:relative; aspect-ratio:1/1; border:0; padding:0; margin:0;
+    background:#0b0b0c; cursor:default; border-radius:0; }
+  .mz-cell.floor{ background:#101013; }
+  .mz-cell.here::after{ content:''; position:absolute; inset:22%; border-radius:2px;
+    background:#5ec8ff; }
+  .mz-cell.exit{ background:#3a1c08; }
+  .mz-cell.exit::before{ content:''; position:absolute; inset:28%;
+    border:2px solid #5ec8ff; border-radius:2px; }
+  .mz-cell.route{ background:#1b1310; }
+</style>
+
+  <section class="ws-panel p-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="mz-easy" class="ws-btn">12 x 12</button>
+      <button id="mz-medium" class="ws-btn-ghost">20 x 20</button>
+      <button id="mz-large" class="ws-btn-ghost">28 x 28</button>
+      <button id="mz-new" class="ws-btn-ghost">New maze</button>
+      <button id="mz-path" class="ws-btn-ghost">Show solution</button>
+      <span class="ws-chip">WASD OR ARROW KEYS</span>
+    </div>
+
+    <p class="mt-4 max-w-2xl text-sm text-white/50">
+      Every maze is carved by walking a single path across the grid and knocking
+      through the wall it steps through, so the open passages form a tree: the
+      number you have to walk is fixed by the maze, and there is a route to the
+      exit in every single one. Reach the orange gate. Time is the only score.
+    </p>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+      <div>
+        <div id="mz-grid" class="mz-grid"></div>
+        <p class="mt-2 text-[10px] text-white/35">
+          Orange cell is the exit, dimmed orange is the route the solver found.
+          Click a cell to jump there only when it is adjacent - walls still stop
+          you, exactly as they stop the keyboard.
+        </p>
+      </div>
+
+      <div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Time</div>
+            <div class="font-display text-xl font-black text-white" id="mz-time">0.00</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Best</div>
+            <div class="font-display text-xl font-black text-white" id="mz-best">-</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Steps</div>
+            <div class="font-display text-xl font-black text-white" id="mz-steps">0</div></div>
+          <div class="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-center">
+            <div class="ws-label mb-1">Shortest</div>
+            <div class="font-display text-xl font-black text-white" id="mz-short">-</div></div>
+        </div>
+
+        <div class="mt-4">
+          <div class="ws-label mb-1">Maze</div>
+          <div id="mz-info" class="ws-out"></div>
+        </div>
+
+        <div class="mt-4">
+          <div class="ws-label mb-1">Status</div>
+          <div id="mz-status" class="text-xs text-white/45">Loading</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<!-- Mobile play mode: touch-action none on the canvas (otherwise a swipe scrolls
+     the page instead of steering the game), a Fullscreen control that requests
+     real fullscreen + landscape lock, and a persistent top-left Exit. Inert on
+     desktop. Regenerate every game page after editing either file. -->
+<link rel="stylesheet" href="/workspace/play.css">
+<script src="/workspace/play.js" defer></script>
+<script>
+/* Maze Runner. The maze is a cell grid with a 4-bit wall mask per cell:
+   bit 0 = north, 1 = east, 2 = south, 3 = west. A SET bit is a wall. */
+var $=function(id){return document.getElementById(id)};
+var MSIZE={easy:12,medium:20,large:28};
+var MDX=[0,1,0,-1], MDY=[-1,0,1,0];
+var mg=null, mbest={}, mtimer=null, mstart=0, mshow=null;
+
+function mulberry32(a){
+  return function(){
+    a=a+0x6D2B79F5|0;
+    var t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+/* Recursive backtracker, iterative so a 28x28 maze cannot blow the JS stack.
+   Each pop-off-the-stack step removes exactly one wall from the grid, so the
+   open passages are a spanning tree with cells-1 edges. */
+function mazeCarve(w,h,rnd){
+  var n=w*h, walls=[], seen=[], st=[], i, pass=0;
+  for(i=0;i<n;i++){ walls[i]=15; seen[i]=false; }
+  var start=Math.floor(rnd()*n);
+  seen[start]=true; st.push(start);
+  while(st.length){
+    var cur=st[st.length-1], x=cur%w, y=(cur/w)|0, opts=[], d;
+    for(d=0;d<4;d++){
+      var nx=x+MDX[d], ny=y+MDY[d];
+      if(nx<0||ny<0||nx>=w||ny>=h) continue;
+      var ni=ny*w+nx;
+      if(seen[ni]) continue;
+      opts.push(ni,d);
+    }
+    if(!opts.length){ st.pop(); continue; }
+    var k=(Math.floor(rnd()*(opts.length/2)))*2;
+    var ni=opts[k], dd=opts[k+1], opp=(dd+2)%4;
+    walls[cur]=walls[cur]&~(1<<dd);
+    walls[ni]=walls[ni]&~(1<<opp);
+    seen[ni]=true; st.push(ni); pass++;
+  }
+  return {w:w,h:h,walls:walls,passages:pass};
+}
+
+/* Breadth-first walk. Returns the list of cell indices from `from` to `to`,
+   or null when `to` is not reachable. */
+function mazeBfs(m,from,to){
+  var n=m.w*m.h, prev=[], dist=[], q=[], i;
+  if(!m||from<0||from>=n||to<0||to>=n) return null;
+  for(i=0;i<n;i++){ prev[i]=-1; dist[i]=-1; }
+  dist[from]=0; q.push(from);
+  while(q.length){
+    var c=q.shift(), d=m.walls[c], x=c%m.w, y=(c/m.w)|0;
+    for(i=0;i<4;i++){
+      if(d&(1<<i)) continue;
+      var nx=x+MDX[i], ny=y+MDY[i];
+      if(nx<0||ny<0||nx>=m.w||ny>=m.h) continue;
+      var ni=ny*m.w+nx;
+      if(dist[ni]>=0) continue;
+      dist[ni]=dist[c]+1; prev[ni]=c; q.push(ni);
+    }
+  }
+  if(dist[to]<0) return null;
+  var path=[to], p=to;
+  while(p!==from){ p=prev[p]; if(p<0) return null; path.push(p); }
+  path.reverse();
+  return path;
+}
+function mazeFarthest(m,from){
+  var n=m.w*m.h, dist=[], q=[from], far=from, i;
+  for(i=0;i<n;i++) dist[i]=-1;
+  dist[from]=0;
+  while(q.length){
+    var c=q.shift();
+    if(dist[c]>dist[far]) far=c;
+    var d=m.walls[c], x=c%m.w, y=(c/m.w)|0;
+    for(i=0;i<4;i++){
+      if(d&(1<<i)) continue;
+      var nx=x+MDX[i], ny=y+MDY[i];
+      if(nx<0||ny<0||nx>=m.w||ny>=m.h) continue;
+      var ni=ny*m.w+nx;
+      if(dist[ni]>=0) continue;
+      dist[ni]=dist[c]+1; q.push(ni);
+    }
+  }
+  return {cell:far,dist:dist[far],seen:dist};
+}
+
+/* The exit is the BFS-FARTHEST cell from the spawn, so dist>=1: the exit is
+   never the spawn tile, and it is reachable by construction. */
+function mazeGenerate(size,seed){
+  var key=(size&&MSIZE[size])?size:'medium';
+  var n=MSIZE[key];
+  var sd=(seed===undefined||seed===null)?((Math.random()*4294967296)>>>0):(seed>>>0);
+  var rnd=mulberry32(sd);
+  var m=mazeCarve(n,n,rnd);
+  var cells=n*n;
+  var spawn=Math.floor(rnd()*cells);
+  var f=mazeFarthest(m,spawn);
+  m.size=key; m.seed=sd; m.cells=cells; m.spawn=spawn; m.exit=f.cell;
+  m.pos=spawn; m.steps=0; m.solved=false;
+  var sp=mazeBfs(m,spawn,f.cell);
+  m.reach=sp!==null;
+  m.short=sp===null?-1:sp.length-1;
+  return m;
+}
+function mazeMove(dir){
+  if(!mg) return {moved:false,blocked:true,reason:'no maze'};
+  var d=dir|0;
+  if(d<0||d>3) return {moved:false,blocked:true,reason:'bad direction'};
+  if(mg.walls[mg.pos]&(1<<d)) return {moved:false,blocked:true,reason:'wall'};
+  var x=mg.pos%mg.w, y=(mg.pos/mg.w)|0;
+  var nx=x+MDX[d], ny=y+MDY[d];
+  if(nx<0||ny<0||nx>=mg.w||ny>=mg.h) return {moved:false,blocked:true,reason:'edge'};
+  mg.pos=ny*mg.w+nx; mg.steps++;
+  if(mg.pos===mg.exit && !mg.solved){
+    mg.solved=true;
+    mg.ms=Date.now()-mstart;
+    var b=mbest[mg.size];
+    if(b===undefined || mg.ms<b){ mbest[mg.size]=mg.ms; mg.record=true; } else mg.record=false;
+    if(mtimer){ clearInterval(mtimer); mtimer=null; }
+  }
+  mazeDraw();
+  return {moved:true,blocked:false,pos:mg.pos,solved:mg.solved,steps:mg.steps};
+}
+function mazeReset(size,seed){
+  if(mtimer){ clearInterval(mtimer); mtimer=null; }
+  mg=mazeGenerate(size|| (mg?mg.size:'medium'), seed);
+  mshow=null; mstart=Date.now(); mg.ms=0;
+  mtimer=setInterval(function(){
+    if(!mg||mg.solved) return;
+    mg.ms=Date.now()-mstart;
+    var e=$('mz-time'); if(e) e.textContent=(mg.ms/1000).toFixed(2);
+  },50);
+  mazeDraw();
+  return mg;
+}
+function mazeDraw(){
+  if(!mg) return;
+  var g=mg, n=g.w*g.h, route={}, i;
+  if(mshow) for(i=0;i<mshow.length;i++) route[mshow[i]]=1;
+  var size=Math.max(1,Math.floor(100/g.w)), html='';
+  for(i=0;i<n;i++){
+    var w=g.walls[i], x=i%g.w, y=(i/g.w)|0;
+    var st='border-top:'+(w&1?3:1)+'px solid '+((w&1)?'#2b2b30':'#0b0b0c')+';';
+    st+='border-right:'+((w&2)?3:1)+'px solid '+((w&2)?'#2b2b30':'#0b0b0c')+';';
+    st+='border-bottom:'+((w&4)?3:1)+'px solid '+((w&4)?'#2b2b30':'#0b0b0c')+';';
+    st+='border-left:'+((w&8)?3:1)+'px solid '+((w&8)?'#2b2b30':'#0b0b0c')+';';
+    var cls='mz-cell';
+    if(i===g.exit) cls+=' exit';
+    else if(route[i]) cls+=' route';
+    if(i!==g.spawn&&i!==g.exit&&!(w&1&&w&2&&w&4&&w&8)) cls+=' floor';
+    if(i===g.pos) cls+=' here';
+    html+='<button class="'+cls+'" style="'+st+'" data-c="'+i+'"></button>';
+  }
+  $('mz-grid').innerHTML=html;
+  $('mz-grid').style.gridTemplateColumns='repeat('+g.w+',minmax(0,1fr))';
+  $('mz-grid').style.maxWidth=(g.w*size)+'px';
+  $('mz-time').textContent=(g.ms/1000).toFixed(2);
+  $('mz-best').textContent=mbest[g.size]===undefined?'-':(mbest[g.size]/1000).toFixed(2);
+  $('mz-steps').textContent=g.steps;
+  $('mz-short').textContent=g.short;
+  var leaves=0;
+  for(i=0;i<n;i++){ var d=0,w=g.walls[i]; if(!(w&1))d++; if(!(w&2))d++; if(!(w&4))d++; if(!(w&8))d++; if(d===1) leaves++; }
+  $('mz-info').textContent=
+      'size      '+g.w+' x '+g.h+' ('+g.cells+' cells)\n'
+    + 'passages  '+g.passages+'  (cells - 1 = '+(g.cells-1)+')\n'
+    + 'spawn     '+g.spawn+'  exit '+g.exit+'  at distance '+g.short+'\n'
+    + 'exit live '+(g.reach?'yes':'NO')+'\n'
+    + 'dead ends '+leaves+'\n'
+    + 'seed      '+g.seed;
+  $('mz-status').textContent=g.solved?('Solved in '+g.steps+' steps'
+      +(g.record?' - new best':'')):('Playing - '+g.steps+' steps taken');
+}
+$('mz-grid').addEventListener('click',function(e){
+  var b=e.target.closest('[data-c]'); if(!b||!mg) return;
+  var t=+b.getAttribute('data-c');
+  if(t===mg.pos) return;
+  var dx=(t%mg.w)-(mg.pos%mg.w), dy=((t/mg.w)|0)-((mg.pos/mg.w)|0);
+  if(Math.abs(dx)+Math.abs(dy)!==1) return;
+  var d=-1;
+  if(dx===1) d=1; else if(dx===-1) d=3; else if(dy===1) d=2; else if(dy===-1) d=0;
+  mazeMove(d);
+});
+document.addEventListener('keydown',function(e){
+  if(!mg) return;
+  var k=e.key, d=-1;
+  if(k==='ArrowUp'||k==='w'||k==='W') d=0;
+  else if(k==='ArrowRight'||k==='d'||k==='D') d=1;
+  else if(k==='ArrowDown'||k==='s'||k==='S') d=2;
+  else if(k==='ArrowLeft'||k==='a'||k==='A') d=3;
+  else return;
+  e.preventDefault();
+  if(mg.solved){ mazeReset(mg.size); return; }
+  mazeMove(d);
+});
+$('mz-easy').addEventListener('click',function(){mazeReset('easy');});
+$('mz-medium').addEventListener('click',function(){mazeReset('medium');});
+$('mz-large').addEventListener('click',function(){mazeReset('large');});
+$('mz-new').addEventListener('click',function(){mazeReset(mg?mg.size:'medium');});
+$('mz-path').addEventListener('click',function(){
+  if(!mg) return;
+  mshow=(mshow===null)?mazeBfs(mg,mg.pos,mg.exit):null;
+  mazeDraw();
+});
+
+/* Test hook. Nothing in the page reads this to decide the win - the win is
+   the player standing on the exit cell, checked in mazeMove. */
+window.__maze={
+  generate:function(size,seed){ return mazeReset(size,seed), {
+    size:mg.size,w:mg.w,h:mg.h,cells:mg.cells,seed:mg.seed,
+    spawn:mg.spawn,exit:mg.exit,passages:mg.passages,
+    shortestPath:mg.short,exitReachable:mg.reach}; },
+  bfsPath:function(a,b){ return mazeBfs(mg,a,b); },
+  pathLength:function(a,b){ var p=mazeBfs(mg,a,b); return p===null?-1:p.length-1; },
+  shortestPath:function(){ return mg?mg.short:-1; },
+  exitReachable:function(){ return mg?!!mazeBfs(mg,mg.spawn,mg.exit):false; },
+  maze:function(){ return {w:mg.w,h:mg.h,walls:mg.walls.slice(),spawn:mg.spawn,
+             exit:mg.exit,pos:mg.pos,steps:mg.steps,passages:mg.passages}; },
+  move:function(d){ return mazeMove(d); },
+  solved:function(){ return !!(mg&&mg.solved); },
+  bestTime:function(size){ return mbest[(size&&MSIZE[size])?size:(mg?mg.size:'medium')]; }
+};
+mazeReset('medium');
+</script>
+<section class="d-more"><div class="wrap"><h2>More games</h2><div class="ws-grid"><a class="tile-card" href="/workspace/games/fruit-slice/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/fruit-slice/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Fruit Slice</h3><p>Swipe through flying fruit, chain combos and dodge the bombs.</p></div></a><a class="tile-card" href="/workspace/games/lane-runner/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/lane-runner/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Lane Runner</h3><p>Endless three-lane runner: switch lanes, jump crates and slide under beams.</p></div></a><a class="tile-card" href="/workspace/games/mole-mash/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/mole-mash/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Mole Mash</h3><p>Thirty seconds of whack-a-mole. Fast hits build a combo multiplier.</p></div></a><a class="tile-card" href="/workspace/games/slingshot-siege/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/games/slingshot-siege/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Arcade</span><h3>Slingshot Siege</h3><p>Pull back, aim and launch. Topple the three marked blocks in six shots.</p></div></a><a class="tile-card" href="/workspace/games/math-sprint/" style="--c:#ffd166"><div class="shot"><img src="/workspace/games/math-sprint/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Words &amp; brain</span><h3>Math Sprint</h3><p>60 seconds of arithmetic. Type the answers, watch accuracy and score, and the difficulty ramps as you go.</p></div></a><a class="tile-card" href="/workspace/games/memory-sequence/" style="--c:#ffd166"><div class="shot"><img src="/workspace/games/memory-sequence/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Words &amp; brain</span><h3>Memory Sequence</h3><p>Simon-style: watch the pads flash, repeat the order, and beat your best level on this device.</p></div></a><a class="tile-card" href="/workspace/games/word-ladder/" style="--c:#ffd166"><div class="shot"><img src="/workspace/games/word-ladder/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Words &amp; brain</span><h3>Word Ladder</h3><p>Climb one letter at a time from one real dictionary word to another. Undo, hints and a new ladder on demand.</p></div></a><a class="tile-card" href="/workspace/games/fitts-drill/" style="--c:#ff7a8a"><div class="shot"><img src="/workspace/games/fitts-drill/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Play</span></div><div class="tc-body"><span class="genre">Reflex</span><h3>Fitts Drill</h3><p>A pointing-speed drill built on Fitts&#x27;s law: 30 targets, each with a time budget.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>

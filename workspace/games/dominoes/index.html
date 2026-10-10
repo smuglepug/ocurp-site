@@ -57,11 +57,11 @@ tailwind.config = { theme: { extend: {
       font-size:12px;line-height:1.45;color:rgba(255,255,255,.55)}
   }
 </style>
-<meta name="description" content="Dominoes - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="description" content="Match pips end to end against the AI and race to the target score. Runs entirely in your browser - nothing is uploaded.">
 <link rel="canonical" href="https://ocurp.com/workspace/games/dominoes/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Dominoes">
-<meta property="og:description" content="Dominoes - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:description" content="Match pips end to end against the AI and race to the target score. Runs entirely in your browser - nothing is uploaded.">
 <meta property="og:url" content="https://ocurp.com/workspace/games/dominoes/">
 <meta property="og:site_name" content="Ocurp">
 <meta property="og:image" content="https://ocurp.com/images/og-card-games.png">
@@ -70,10 +70,10 @@ tailwind.config = { theme: { extend: {
 <meta property="og:image:alt" content="Dominoes on Ocurp - free, runs in your browser">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Dominoes">
-<meta name="twitter:description" content="Dominoes - playable in the browser. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:description" content="Match pips end to end against the AI and race to the target score. Runs entirely in your browser - nothing is uploaded.">
 <meta name="twitter:image" content="https://ocurp.com/images/og-card-games.png">
 <meta name="twitter:image:alt" content="Dominoes on Ocurp - free, runs in your browser">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Dominoes","url":"https://ocurp.com/workspace/games/dominoes/","description":"Dominoes - playable in the browser. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Dominoes","url":"https://ocurp.com/workspace/games/dominoes/","description":"Match pips end to end against the AI and race to the target score. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
 <style>
 .dm-t{display:block!important;width:40px!important;height:80px!important;padding:0!important;background:none!important;border:0!important;filter:drop-shadow(0 3px 4px rgba(0,0,0,.45));transition:transform .15s}
@@ -186,18 +186,33 @@ function dmLegal(hand,chain){
   for(var i=0;i<hand.length;i++)if(dmFits(hand[i],e))out.push(i);
   return out;
 }
-/* A played tile is stored oriented left-to-right so that every pair of
-   neighbours touches on equal pips and dmEnds() is always the true open ends.
-   It goes on the right end when it fits there, otherwise on the left. */
+/* Tiles are stored ORIENTED: "a|b" always reads with a on the left of the
+   chain and b on the right. A tile may present EITHER of its numbers to
+   either end, so the end it matches is tested against both halves - testing
+   only a[0] silently refused 4|0 onto a chain whose low end is 0, and only
+   appended, which is what froze dmEnds at chain[0].a forever. */
+function dmMatch(t,e){var a=t.split('|').map(Number);
+  return {hi:a.indexOf(e[1])>=0,lo:a.indexOf(e[0])>=0};}
 function dmPlay(hand,chain,i){
-  var t=hand[i],h=hand.slice();h.splice(i,1);
-  var a=t.split('|').map(Number),e=dmEnds(chain),nc;
-  if(e===null)nc=[t];
-  else if(a[0]===e[1])nc=chain.concat([a[0]+'|'+a[1]]);
-  else if(a[1]===e[1])nc=chain.concat([a[1]+'|'+a[0]]);
-  else if(a[1]===e[0])nc=[a[0]+'|'+a[1]].concat(chain);
-  else nc=[a[1]+'|'+a[0]].concat(chain);
-  return {hand:h,chain:nc,tile:t};
+  var t=hand[i],h=hand.slice();
+  var e=dmEnds(chain);
+  /* Reject a tile that reaches neither end instead of silently forcing it
+     somewhere. dmAdvance only ever passes indices from dmLegal, so the UI
+     never hits this, but an unguarded play would corrupt the chain. */
+  if(e!==null&&!dmFits(t,e))return null;
+  h.splice(i,1);
+  if(e===null)return {hand:h,chain:[t],tile:t,oriented:t,end:'high'};
+  var a=t.split('|'),m=dmMatch(t,e);
+  /* Join on the high end if the tile reaches it, else the low end. The half
+     that matches must face the MIDDLE of the chain: on the tile's left when
+     appending high, on its right when prepending low. Everything else is a
+     180-degree flip. */
+  var hi=m.hi,want=hi?e[1]:e[0];
+  var wantIdx=a.map(Number).indexOf(want);
+  var wantSlot=hi?0:1;
+  var nt=(wantIdx===wantSlot)?t:a[1]+'|'+a[0];
+  var nc=hi?chain.concat([nt]):[nt].concat(chain);
+  return {hand:h,chain:nc,tile:t,oriented:nt,end:hi?'high':'low'};
 }
 function dmChainPips(chain){var s=0;for(var i=0;i<chain.length;i++)s+=DM_PIPS(chain[i]);return s}
 
@@ -253,6 +268,10 @@ function dmAdvance(){
       i=lg[0];
     }
     var r=dmPlay(DM.hand[p],DM.chain,i);
+    /* dmPlay refuses a tile that reaches neither end. Indices come from
+       dmLegal so this should be unreachable; if it ever fires, fall through
+       to the draw branch rather than dereferencing null. */
+    if(!r){DM.chosen=null;DM.turn=1-p;DM.pass++;DM.render();return 'illegal';}
     DM.hand[p]=r.hand;DM.chain=r.chain;DM.chosen=null;
     dmSay((p===0?'You':'AI')+' played '+r.tile.replace('|','-')+'  (ends '
       +dmEnds(DM.chain).join(' / ')+')');
@@ -268,6 +287,7 @@ function dmAdvance(){
       var j=(p===0?DM.chosen:dmAIChoice(DM.hand[p],DM.chain));
       if(j===null||j===undefined||lg2.indexOf(j)<0)j=lg2[0];
       var r2=dmPlay(DM.hand[p],DM.chain,j);
+      if(!r2){DM.chosen=null;DM.turn=1-p;DM.pass++;DM.render();return 'illegal';}
       DM.hand[p]=r2.hand;DM.chain=r2.chain;DM.chosen=null;
       dmSay((p===0?'You':'AI')+' drew and played '+r2.tile.replace('|','-'));
       DM.turn=1-p;DM.pass=0;
@@ -293,9 +313,11 @@ function dmEndRound(p,empty){
   var gain=empty?hp[other]:Math.max(0,hp[other]-hp[p]);
   DM.scores[p]+=gain;
   DM.roundOver=true;DM.round++;
-  dmSay('Round over ('+(empty?'hand emptied':'blocked')+'). '
-    +(p===0?'You':'AI')+' scores '+gain+' (chain '+chain+' pips)'
+  dmSay('Round over ('+(empty?'hand emptied':'boneyard empty, blocked')+'). '
+    +(p===0?'You':'AI')+' scores the chain: '+chain
     +'. Pickups: '+hp[0]+' / '+hp[1]+'.  Totals '+DM.scores[0]+' / '+DM.scores[1]);
+  /* NB: the line above names p, not DM.turn. turn has already flipped by the
+     time the round ends, so printing it credited the chain to the loser. */
   if(DM.scores[p]>=DM.target)DM.over=true;
   if(DM.over)dmSay((p===0?'You win':'AI wins')+' the match.');
 }
