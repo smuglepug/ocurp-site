@@ -72,9 +72,9 @@ tailwind.config = { theme: { extend: {
 
 <section class="ws-panel p-6">
   <div class="flex flex-wrap items-center gap-2">
-    <button id="sb-5" class="ws-btn">6 x 6 &middot; 2 stars</button>
-    <button id="sb-6" class="ws-btn-ghost">7 x 7 &middot; 3 stars</button>
-    <button id="sb-7" class="ws-btn-ghost">8 x 8 &middot; 3 stars</button>
+    <button id="sb-5" class="ws-btn">5 x 5 &middot; 1 star</button>
+    <button id="sb-6" class="ws-btn-ghost">8 x 8 &middot; 2 stars</button>
+    <button id="sb-7" class="ws-btn-ghost">10 x 10 &middot; 2 stars</button>
     <button id="sb-new" class="ws-btn-ghost">New puzzle</button>
     <button id="sb-solve" class="ws-btn-ghost">Solve</button>
     <span class="ws-chip">CLICK CYCLES EMPTY &rarr; STAR &rarr; CROSS</span>
@@ -132,7 +132,10 @@ tailwind.config = { theme: { extend: {
    player receives is always uniquely solvable by the rules - never by luck. */
 var $=function(id){return document.getElementById(id)};
 var SB_EMPTY=-1, SB_CROSS=0, SB_STAR=1;
-var SB_SIZES={five:{n:6,k:2}, six:{n:7,k:3}, seven:{n:8,k:3}};
+/* The old sizes (6x6/2, 7x7/3, 8x8/3) cannot be solved at all: any two adjacent rows split into
+   2x2 blocks that each hold at most one star, so two rows can hold at most ceil(n/2) stars, fewer
+   than the 2k needed. Every board came back 'could not build a puzzle'. These sizes are solvable. */
+var SB_SIZES={five:{n:5,k:1}, six:{n:8,k:2}, seven:{n:10,k:2}};
 var SB_TRIES=160;
 
 /* A seeded mulberry32 stream. Returns a FUNCTION, not a number: every draw has
@@ -168,28 +171,34 @@ function sbValid(star, n, k){
    star somewhere that keeps every row and column UNDER its quota and stays
    clear of existing stars. Restart on a stuck board. Always terminates with a
    valid set because the last star to satisfy a quota is accepted. */
+/* Randomised row-by-row backtracking (the old random-drop planter almost never finished). */
 function sbPlant(n, k, rnd){
-  var attempt, i, j;
-  for(attempt=0; attempt<SB_TRIES; attempt++){
-    var star=new Array(n*n).fill(false);
-    var rc=new Array(n).fill(0), cc=new Array(n).fill(0), left=n*k;
-    var guard=0;
-    while(left>0 && guard++ < 4000){
-      var r=Math.floor(rnd()*n), c=Math.floor(rnd()*n);
-      var idx=r*n+c;
-      if(star[idx]) continue;
-      if(rc[r]>=k || cc[c]>=k) continue;
-      var okSpot=true;
-      for(i=0;i<n && okSpot;i++) for(j=0;j<n;j++){
-        if(sbAdjacent(r,c,i,j) && star[i*n+j]){ okSpot=false; break; }
+  var pats=sbPatterns(n,k).slice(), cc=new Array(n).fill(0), rows=new Array(n), nodes=0;
+  function shuf(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(rnd()*(i+1)), t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+  function rec(r){
+    if(++nodes>200000) return false;
+    if(r===n){ for(var c=0;c<n;c++) if(cc[c]!==k) return false; return true; }
+    var order=shuf(pats.slice());
+    for(var p=0;p<order.length;p++){
+      var cols=order[p], ok=true, z;
+      for(z=0;z<cols.length&&ok;z++){
+        if(cc[cols[z]]>=k) ok=false;
+        else if(r>0) for(var y=0;y<rows[r-1].length;y++) if(Math.abs(rows[r-1][y]-cols[z])<=1){ ok=false; break; }
       }
-      if(!okSpot) continue;
-      star[idx]=true; rc[r]++; cc[c]++; left--;
+      if(!ok) continue;
+      var left=n-r-1, bad=false;
+      for(z=0;z<cols.length;z++) cc[cols[z]]++;
+      for(var c2=0;c2<n;c2++) if(cc[c2]+left<k){ bad=true; break; }
+      rows[r]=cols;
+      if(!bad && rec(r+1)) return true;
+      for(z=0;z<cols.length;z++) cc[cols[z]]--;
     }
-    if(left!==0) continue;
-    if(sbValid(star,n,k)) return star;
+    return false;
   }
-  return null;
+  if(!rec(0)) return null;
+  var star=new Array(n*n).fill(false);
+  for(var r=0;r<n;r++) for(var q=0;q<rows[r].length;q++) star[r*n+rows[r][q]]=true;
+  return star;
 }
 
 /* Row patterns: every length-n row with exactly k stars and none adjacent in
@@ -257,10 +266,11 @@ function sbSolve(given, n, k, limit){
     for(var p=0;p<pats.length;p++){
       var cols=pats[p];
       var bad=false;
-      for(var gi=0;gi<n;gi++) if(given[gi]>=0 && given[gi]!==SB_CROSS){
-        var gc=gi%n;
-        if(given[gi]===SB_STAR && cols.indexOf(gc)<0){ bad=true; break; }
-        if(given[gi]===SB_EMPTY && cols.indexOf(gc)>=0){ bad=true; break; }
+      /* givens for THIS row (the old loop only ever read row 0's cells, for every row) */
+      for(var gc=0;gc<n;gc++){
+        var gv=given[r*n+gc];
+        if(gv===SB_STAR && cols.indexOf(gc)<0){ bad=true; break; }
+        if(gv===SB_CROSS && cols.indexOf(gc)>=0){ bad=true; break; }
       }
       if(bad) continue;
       if(!okRow(r, cols)) continue;
@@ -295,8 +305,10 @@ function sbGenerate(size, seed){
     if(!sbValid(full, cfg.n, cfg.k)) continue;
     /* Require the puzzle with NO givens to have exactly one solution, so the
        grid is genuinely unique rather than merely solvable. */
-    var free=sbSolve(new Array(cfg.n*cfg.n).fill(SB_EMPTY), cfg.n, cfg.k, 2);
-    if(free.count!==1) continue;
+    /* (Removed: demanding a unique solution with NO givens. A rows-and-columns star grid is
+       mirror-symmetric, so that almost never holds; every try re-ran a full solve and the page
+       froze for 2-3 s or gave up with "could not build a puzzle". Givens are now added one at a
+       time below until the solution is unique.) */
     var target=full.map(function(v){return v?SB_STAR:SB_CROSS;});
     var want=Math.max(1, Math.round(cfg.n*cfg.n*0.10));
     var idx=[];
@@ -304,7 +316,8 @@ function sbGenerate(size, seed){
     for(var i2=idx.length-1;i2>0;i2--){ var j=Math.floor(rnd()*(i2+1)); var t2=idx[i2]; idx[i2]=idx[j]; idx[j]=t2; }
     var given=new Array(cfg.n*cfg.n).fill(SB_EMPTY);
     for(var q=0;q<Math.min(want, idx.length);q++) given[idx[q]]=SB_STAR;
-    var s2=sbSolve(given, cfg.n, cfg.k, 2);
+    var s2=sbSolve(given, cfg.n, cfg.k, 2), q2=Math.min(want, idx.length);
+    while(s2.count>1 && q2<idx.length){ given[idx[q2++]]=SB_STAR; s2=sbSolve(given, cfg.n, cfg.k, 2); }
     if(s2.count!==1 || !s2.sol) continue;
     var sol=sbFromRows(s2.sol, cfg.n);
     return {n:cfg.n, k:cfg.k, given:given, sol:sol};
@@ -426,13 +439,14 @@ function sbViolations(){
 $('sb-5').addEventListener('click',function(){ sbReset('five'); });
 $('sb-6').addEventListener('click',function(){ sbReset('six'); });
 $('sb-7').addEventListener('click',function(){ sbReset('seven'); });
+['sb-5','sb-6','sb-7'].forEach(function(id){ $(id).addEventListener('click',function(){ ['sb-5','sb-6','sb-7'].forEach(function(o){ $(o).className=o===id?'ws-btn':'ws-btn-ghost'; }); }); });
 $('sb-new').addEventListener('click',function(){ sbReset(sbG?sizeName(sbG.n):'five'); });
 $('sb-solve').addEventListener('click',function(){
   if(!sbG) return;
   var r=sbSolve(sbG.given, sbG.n, sbG.k, 1);
   if(r.sol){ sbGrid=sbFromRows(r.sol, sbG.n); sbWon=sbSolved(); sbDraw(); }
 });
-function sizeName(n){ return n===6?'five':n===7?'six':'seven'; }
+function sizeName(n){ return n===5?'five':n===8?'six':'seven'; }
 
 /* Test hook. The win above is sbSolved's own rule check - this never feeds it. */
 window.__starbattle={

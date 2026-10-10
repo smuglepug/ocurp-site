@@ -193,7 +193,14 @@ function twPermsFrom(pool){
   }
   return out;
 }
+/* memoised: the generator called this (5040 arrays for 7x7) several times per try, 40 tries per
+   board, which froze Hard for ~9 s */
+var twPermCache={};
 function twPerms(n){
+  if(twPermCache[n]) return twPermCache[n];
+  return (twPermCache[n]=twPermsRaw(n));
+}
+function twPermsRaw(n){
   var pool=[];
   for(var v=1;v<=n;v++) pool.push(v);
   return twPermsFrom(pool);
@@ -318,7 +325,7 @@ function twClassify(cl,N,nodeBudget){
   (function rec(row){
     if(amb||over) return;
     nodes++;
-    if(nodes>nodeBudget){ over=true; return; }
+    if(nodes>nodeBudget||((nodes&127)===0&&twDL&&performance.now()>twDL)){ over=true; return; }
     if(row===N){
       for(k=0;k<N;k++){
         var col=cols[k];
@@ -342,12 +349,15 @@ function twClassify(cl,N,nodeBudget){
   return {verdict:'unique',seen:count,nodes:nodes};
 }
 
+var twDL=0;
 function twNewBoard(N){
+  twDL=performance.now()+(N>=7?900:600);  /* time box: Hard used to block the tab for ~8 s */
   /* Always returns a board. The clues come from the solution, so it is
      solvable. Never returns null -- that was the crash. */
   var budget = N>=7 ? 60000 : (N===6 ? 30000 : 8000);
   var fallback=null, tries, sol, cl, cls;
   for(tries=0; tries<40; tries++){
+    if(tries>0&&performance.now()>twDL) break;
     sol=twRandomLatin(N);
     cl=twCluesFor(sol);
     cls=twClassify(cl,N,budget);
@@ -357,6 +367,7 @@ function twNewBoard(N){
     if(!fallback && cls.verdict!=='ambiguous') fallback={sol:sol,cl:cl,unique:false,tries:tries+1};
     if(cls.verdict==='ambiguous' && !fallback) fallback={sol:sol,cl:cl,unique:false,tries:tries+1};
   }
+  twDL=0;
   if(!fallback){
     sol=twRandomLatin(N);
     fallback={sol:sol,cl:twCluesFor(sol),unique:false,tries:0};
