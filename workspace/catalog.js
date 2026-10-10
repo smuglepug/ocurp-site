@@ -36,7 +36,9 @@
       var g = groups[groupOf(e)] || { label: '', c: '#8ab4ff' };
       return '<a class="feat" href="' + href(e) + '" style="--c:' + g.c + '"><img src="' + shot(e) + '" alt="" decoding="async">'
         + '<span class="btn btn-primary play" aria-hidden="true">' + verb + ' ' + arrow + '</span>'
-        + '<div class="meta"><span class="genre">' + esc(g.label) + '</span><h3>' + esc(e.name) + '</h3><p>' + esc(e.blurb || '') + '</p></div></a>';
+        + (kind === 'tools' /* tool card art already carries the name and blurb */
+          ? '<h3 class="skip" style="position:absolute;left:-9999px">' + esc(e.name) + '</h3></a>'
+          : '<div class="meta"><span class="genre">' + esc(g.label) + '</span><h3>' + esc(e.name) + '</h3><p>' + esc(e.blurb || '') + '</p></div></a>');
     }).join('');
   }
 
