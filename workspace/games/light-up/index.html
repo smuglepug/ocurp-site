@@ -182,8 +182,8 @@ tailwind.config = { theme: { extend: {
   }
   function cluesOK(g,bulbs){
     for(let r=0;r<g.n;r++) for(let c=0;c<g.n;c++){
-      const v=g.walls[r][c];
-      if(v>0){
+      const v0=g.walls[r][c], v=(v0===10?0:v0);
+      if(v0>0 && v0!==9){
         let k=0;
         const nb=openNeighbours(g,r,c);
         for(let i=0;i<nb.length;i++) if(bulbAt(g,bulbs,nb[i][0],nb[i][1])) k++;
@@ -228,6 +228,7 @@ tailwind.config = { theme: { extend: {
   }
   function validCarve(n,rng){
     for(let t=0;t<CARVE_TRIES;t++){
+      if(window.__luDL&&performance.now()>window.__luDL) return null;
       const built=carve(n,rng);
       const g={n:n,walls:built.walls};
       if(darkList(g,built.bulbs).length===0) return built;
@@ -277,14 +278,22 @@ tailwind.config = { theme: { extend: {
   // along one of its four open runs. Collects up to `limit` complete solutions.
   // Returned rather than merely counted, because the generator's own bulb set
   // is NOT automatically a solution once walls are added.
+  /* prune: a new bulb may not push any neighbouring clue above its number */
+  function overClue(g,B,cell){
+    const d=[[-1,0],[1,0],[0,-1],[0,1]];
+    for(const q of d){const r=cell[0]+q[0],c=cell[1]+q[1];
+      if(r<0||c<0||r>=g.n||c>=g.n)continue;const v0=g.walls[r][c];if(!v0||v0===9)continue;
+      const v=v0===10?0:v0;let k=0;for(const e of d){const rr=r+e[0],cc=c+e[1];if(B.some(b=>b[0]===rr&&b[1]===cc))k++}
+      if(k>v)return true}
+    return false}
   function findSolutions(walls,n,limit,nodeCap){
     const g={n:n,walls:walls};
-    const B=[], found=[];
+    const B=[], found=[], NO=new Set();
     const cap=nodeCap||200000;
     let nodes=0, capped=false;
     function rec(){
-      if(found.length>=limit){ capped=true; return; }
-      if(nodes>=cap){ capped=true; return; }
+      if(found.length>=limit){ return; }
+      if(nodes>=cap||((nodes&255)===0&&window.__luDL&&performance.now()>window.__luDL)){ capped=true; return; }
       nodes++;
       const dark=darkList(g,B);
       if(dark.length===0){ if(cluesOK(g,B)) found.push(B.map(function(b){return [b[0],b[1]];})); return; }
@@ -292,47 +301,69 @@ tailwind.config = { theme: { extend: {
       const reach=[[u[0],u[1]]];
       const seg=segments(g,u[0],u[1]);
       for(let i=0;i<seg.length;i++) for(let m=0;m<seg[i].length;m++) reach.push(seg[i][m]);
-      const key={};
+      /* Each sibling branch forbids the candidates already tried, so a bulb set is reached once
+         instead of once per ordering (the old search re-explored every permutation). */
+      const key={}, added=[];
       for(let i=0;i<reach.length;i++){
         const cell=reach[i];
-        if(conflicts(g,B,cell[0],cell[1])) continue;
         const kid=idx(cell[0],cell[1]);
-        if(key[kid]) continue;
+        if(key[kid]||NO.has(kid)) continue;
         key[kid]=1;
+        if(conflicts(g,B,cell[0],cell[1])) continue;
         B.push(cell);
-        rec();
+        if(!overClue(g,B,cell)) rec();
         B.pop();
-        if(found.length>=limit) return;
+        NO.add(kid); added.push(kid);
+        if(found.length>=limit||capped) break;
       }
+      for(const k of added) NO.delete(k);
     }
     rec();
     return {solutions:found, nodes:nodes, capped:capped};
   }
   function countSolutions(walls,n,limit){ return findSolutions(walls,n,limit).solutions.length; }
 
-  function makePuzzle(n,rng){
-    let drop=0.12;
-    for(let a=1;a<=ATTEMPTS;a++){
-      if(a>1 && (a-1)%MORE_EVERY===0) drop=Math.min(0.48, drop+0.06);
-      const cv=validCarve(n,rng);
-      if(!cv) continue;
-      const g={n:n,walls:cv.walls};
-      if(darkList(g,cv.bulbs).length) continue;
-      const walls=wallsFrom(g,cv.bulbs,drop,rng);
-      if(!walls) continue;
-      // The solver - not the generator's own bulb set - decides whether this
-      // board is playable. Adding a wall can strand a square, so the old
-      // shortcut of trusting the generating bulbs produced boards with ZERO
-      // solutions and every puzzle was silently thrown away.
-      const fs=findSolutions(walls,n,2);
-      // capped=true means the search hit its node budget before exhausting the
-      // board, so "exactly one solution found" is NOT proof of uniqueness - it
-      // may have been cut off mid-branch. Reject rather than ship an ambiguous
-      // puzzle; makePuzzle simply tries another carve.
-      if(fs.capped || fs.solutions.length!==1) continue;
-      return {n:n, walls:walls, sol:fs.solutions[0], drop:drop};
+  /* Time-boxed: Medium and Hard used to run up to 640 carves x 200k-node solves on the main
+     thread, which froze the tab (and crashed it in Chrome). Each call now gets a deadline and the
+     best non-unique-but-solvable board is kept as a fallback. */
+  /* Generator (rewritten): random black walls, then bulbs placed greedily on unlit squares (never
+     a clash), then every wall numbered with its bulb count, then clues removed one by one while the
+     solver still finds exactly one solution. The old one could only represent walls numbered 2+, so
+     Medium/Hard almost never found a unique board and Hard often came up empty.
+     Encoding: 1-4 clue, 10 = clue 0, 9 = plain wall. */
+  function makePuzzle(n,rng,deadline){
+    let spare=null;
+    for(let a=0;a<400;a++){
+      if(deadline&&performance.now()>deadline) break;
+      const walls=emptyWalls(n);
+      for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(rng()<(n>=7?0.26:0.2)) walls[r][c]=9;
+      const g={n:n,walls:walls}, bulbs=[];
+      const cells=[];for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(!walls[r][c])cells.push([r,c]);
+      if(cells.length<n*n*0.6) continue;
+      for(let i=cells.length-1;i>0;i--){const j=(rng()*(i+1))|0,t=cells[i];cells[i]=cells[j];cells[j]=t;}
+      let lit=litSet(g,bulbs);
+      for(const cell of cells){ if(!lit.has(idx(cell[0],cell[1]))){ bulbs.push(cell); lit=litSet(g,bulbs); } }
+      for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(walls[r][c]===9){
+        let k=0; const nb=openNeighbours(g,r,c);
+        for(const q of nb) if(bulbAt(g,bulbs,q[0],q[1])) k++;
+        walls[r][c]=k===0?10:k;
+      }
+      let fs=findSolutions(walls,n,2,40000);
+      if(fs.solutions.length<1) continue;
+      if(!spare) spare={n:n,walls:walls.map(x=>x.slice()),sol:fs.solutions[0],fallback:true};
+      if(fs.capped||fs.solutions.length!==1) continue;
+      const clues=[];for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(walls[r][c]&&walls[r][c]!==9)clues.push([r,c]);
+      for(let i=clues.length-1;i>0;i--){const j=(rng()*(i+1))|0,t=clues[i];clues[i]=clues[j];clues[j]=t;}
+      for(const q of clues){
+        if(deadline&&performance.now()>deadline) break;
+        const keep=walls[q[0]][q[1]]; walls[q[0]][q[1]]=9;
+        const f2=findSolutions(walls,n,2,40000);
+        if(f2.capped||f2.solutions.length!==1) walls[q[0]][q[1]]=keep;
+      }
+      const fin=findSolutions(walls,n,1,40000);
+      return {n:n,walls:walls,sol:fin.solutions[0]||fs.solutions[0]};
     }
-    return null;
+    return spare;
   }
 
   // --- game state ---------------------------------------------------------
@@ -344,7 +375,9 @@ tailwind.config = { theme: { extend: {
   function newGame(level){
     const n=DIFF[level]||DIFF.easy;
     let pz=null;
-    for(let t=0;t<8 && !pz;t++) pz=makePuzzle(n,Math.random);
+    const dl=performance.now()+(n>=7?1200:900); window.__luDL=dl;
+    for(let t=0;t<8 && !pz && performance.now()<dl;t++) pz=makePuzzle(n,Math.random,dl);
+    window.__luDL=0;
     if(pz) G={level:level,n:n,walls:pz.walls,sol:pz.sol,bulbs:[],status:'Playing',fallback:!!pz.fallback};
     else   G={level:level,n:n,walls:emptyWalls(n),sol:[],bulbs:[],status:'Playing',fallback:true,empty:true};
     render();
@@ -408,7 +441,7 @@ tailwind.config = { theme: { extend: {
       const d=document.createElement('div'), w=G.walls[r][c];
       if(w>0){
         d.className='flex aspect-square items-center justify-center rounded-[6px] bg-white/[0.14] font-display text-lg font-black text-white';
-        d.textContent=String(w);
+        d.textContent=w===9?'':String(w===10?0:w);
       } else if(bulbAt(G,G.bulbs,r,c)){
         d.className='flex aspect-square cursor-pointer items-center justify-center rounded-[6px] bg-accent/25';
         const dot=document.createElement('span');
