@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSV Column Slicer — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Pull one column out of a CSV with a real RFC 4180 parser: quoted delimiters. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/csv-column-slicer/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="CSV Column Slicer">
+<meta property="og:description" content="Pull one column out of a CSV with a real RFC 4180 parser: quoted delimiters. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/csv-column-slicer/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="CSV Column Slicer on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CSV Column Slicer">
+<meta name="twitter:description" content="Pull one column out of a CSV with a real RFC 4180 parser: quoted delimiters. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="CSV Column Slicer on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSV Column Slicer","url":"https://ocurp.com/workspace/tools/csv-column-slicer/","description":"Pull one column out of a CSV with a real RFC 4180 parser: quoted delimiters. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">CSV Column Slicer</h1>
+      <p class="mt-1 text-xs text-white/40">DATA &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Pull one column out of a CSV. The parser is written to RFC 4180, so a quoted field containing the delimiter or a line break comes through intact, and rows that do not match the header width are counted and reported instead of being quietly padded. Give it a column number or the header name, copy the result, and check the value frequency while you are there.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-5">
+  <label class="ws-label mb-1 block" for="vCsv">CSV</label>
+  <textarea id="vCsv" class="ws-input" rows="6">name,role,city
+Ada,engineer,London
+Linus,maintainer,Helsinki
+Grace,admiral,New York</textarea>
+  <label class="ws-label mb-1 block mt-3" for="vCol">Columns (1-based, or a header name)</label>
+  <input id="vCol" class="ws-input" value="3">
+  <label class="ws-label mb-1 block mt-3" for="vDelim">Delimiter</label>
+  <select id="vDelim" class="ws-input">
+    <option value="auto">auto-detect comma / tab / semicolon / pipe</option>
+    <option value=",">comma</option>
+    <option value=";">semicolon</option>
+    <option value="tab">tab</option>
+    <option value="|">pipe</option>
+  </select>
+  <div id="vErr"></div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="vGo" class="ws-btn" style="width:auto">Extract</button>
+    <button id="vCopy" class="ws-btn-ghost" style="width:auto">Copy</button>
+  </div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Extracted</div>
+  <div id="vKv"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Values</div>
+  <div id="vOut" class="w77-out"></div>
+  <div id="vTable" class="mt-3 w77-scroll"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3">
+  <p class="w77-note">
+    A real CSV parser, not a split on commas: quoted fields containing the
+    delimiter or a newline are handled, and rows of unequal width are reported
+    rather than padded into shape. Auto-detect reads the header line only, which
+    is why a file whose first row happens to contain an unbalanced quote falls
+    back to a comma instead of shredding the whole file.
+  </p>
+</div>
+
+  </div>
+  <div class="mt-8">
+<style>
+<style>
+.w77-table{width:100%;border-collapse:collapse;font-size:.8rem;
+  font-family:'IBM Plex Sans',monospace;}
+.w77-table th{text-align:left;font-family:Inter,sans-serif;font-size:9px;
+  font-weight:800;text-transform:uppercase;letter-spacing:.13em;
+  color:rgba(255,255,255,.4);padding:.55rem .6rem;border-bottom:1px solid rgba(255,255,255,.12);}
+.w77-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.06);
+  color:#fff;vertical-align:top;}
+.w77-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.w77-table tr.t1 td{background:rgba(255,95,31,.09);}
+.w77-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.w77-add{color:#FF5F1F}
+.w77-note{font-size:.75rem;color:rgba(255,255,255,.4);line-height:1.6}
+.w77-bad{display:block;margin-top:1rem;border:1px solid rgba(255,95,31,.45);
+  background:rgba(255,95,31,.08);border-radius:.75rem;padding:.85rem 1rem;
+  font-size:.8rem;color:rgba(255,255,255,.8);line-height:1.6}
+.w77-frac{display:inline-flex;flex-direction:column;align-items:center;
+  font-family:'IBM Plex Sans',monospace;font-size:1.9rem;line-height:1.15;
+  color:#FF5F1F;padding:.35rem .6rem}
+.w77-frac span:first-child{border-bottom:2px solid rgba(255,255,255,.4);
+  padding:0 .35rem .15rem}
+.w77-frac span:last-child{padding:.15rem .35rem 0}
+textarea.ws-input{font-family:'IBM Plex Sans',monospace;font-size:.85rem;line-height:1.6}
+</style>
+</style>
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function R(n){ var v=Math.round(n*1e6)/1e6; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id){ var el=$(id); if(!el) return NaN; return parseFloat(el.value); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function wireCopy(btnId,getText){
+  var b=$(btnId); if(!b) return;
+  b.addEventListener('click',function(){
+    var t=getText();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){
+        b.textContent='Copied'; },function(){ b.textContent='Copy failed'; });
+    }else{ b.textContent='Copy unavailable'; }
+    setTimeout(function(){ b.textContent='Copy'; },1400);
+  });
+}
+function table(head,rows){
+  var h='<table class="w77-table"><thead><tr>'+
+    head.map(function(t){return '<th>'+esc(t)+'</th>';}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(row){
+    h+='<tr>'+row.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';
+  });
+  return h+'</tbody></table>';
+}
+function bad(id,msg){ var e=$(id); if(e) e.innerHTML='<span class="w77-bad">'+esc(msg)+'</span>'; }
+
+/* RFC 4180 parser, written out. Returns {rows, errors}. */
+function parseCsv(text, delim){
+  var rows=[], row=[], cur='', inQ=false, errors=[], i=0, line=1;
+  while(i<text.length){
+    var c=text[i];
+    if(inQ){
+      if(c==='"'){
+        if(text[i+1]==='"'){ cur+='"'; i+=2; continue; }
+        inQ=false; i++; continue;
+      }
+      if(c==='\n') line++;
+      cur+=c; i++; continue;
+    }
+    if(c==='"'){ inQ=true; i++; continue; }
+    if(c===delim){ row.push(cur); cur=''; i++; continue; }
+    if(c==='\r'){ i++; continue; }
+    if(c==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; line++; i++; continue; }
+    cur+=c; i++;
+  }
+  if(inQ) errors.push('a quoted field was never closed');
+  if(cur!==''||row.length){ row.push(cur); rows.push(row); }
+  while(rows.length && rows[rows.length-1].length===1 && rows[rows.length-1][0]==='')
+    rows.pop();
+  return {rows:rows, errors:errors};
+}
+function detectDelim(text){
+  var head=text.split(/\r?\n/)[0]||'';
+  var cands=[',','\t',';','|'], best=',', bestN=0;
+  cands.forEach(function(d){
+    var n=head.split(d).length-1;
+    if(n>bestN){ bestN=n; best=d; }
+  });
+  return best;
+}
+function csvAll(src, colSpec, delimSpec){
+  var text=String(src==null?'':src);
+  if(!text.trim()) return {ok:false,error:'Paste some CSV first'};
+  /* The hook is driven with the SELECT's value - 'comma' - not with ','.
+     Only 'tab' and 'auto' were mapped, so 'comma' was used as a literal
+     5-character delimiter and the whole file parsed as one column. Map every
+     name the select can produce. */
+  var DELIMS={comma:',',tab:'\t',semicolon:';',pipe:'|'};
+  var delim = delimSpec==='auto' ? detectDelim(text)
+            : (DELIMS[delimSpec]!==undefined ? DELIMS[delimSpec] : delimSpec);
+  var p=parseCsv(text, delim);
+  if(p.rows.length<2) return {ok:false,error:'Need a header row and at least one data row'};
+  var header=p.rows[0], data=p.rows.slice(1);
+  var idx, byName=false, name=null;
+  var spec=String(colSpec==null?'':colSpec).trim();
+  if(/^\d+$/.test(spec)){ idx=parseInt(spec,10)-1; }
+  else{
+    byName=true; name=spec;
+    idx=header.findIndex(function(h){ return h.trim().toLowerCase()===spec.toLowerCase(); });
+    if(idx<0) return {ok:false,error:'No column named "'+spec+'". Header: '+header.join(', ')};
+  }
+  if(idx<0||idx>=header.length)
+    return {ok:false,error:'Column '+(idx+1)+' is out of range; there are '+header.length+' columns'};
+  var values=[], ragged=0;
+  data.forEach(function(r,i){
+    if(r.length!==header.length) ragged++;
+    values.push(idx<r.length? r[idx] : '');
+  });
+  var uniq=[], counts={};
+  values.forEach(function(v){ counts[v]=(counts[v]||0)+1; });
+  Object.keys(counts).forEach(function(k){ uniq.push([k,counts[k]]); });
+  uniq.sort(function(a,b){ return b[1]-a[1] || a[0].localeCompare(b[0]); });
+  return {ok:true, delim:delim, delimName: delim==='\t'?'tab':delim,
+    header:header, ncols:header.length, nrows:data.length,
+    column:header[idx], colIndex:idx+1, byName:byName,
+    values:values, unique:uniq.length, counts:uniq,
+    blanks: values.filter(function(v){ return v===''; }).length,
+    ragged:ragged, errors:p.errors,
+    nonEmpty: values.filter(function(v){ return v.trim()!==''; }).length,
+    columnLines: values.map(function(v){ return v+'\n'; }).join(''),
+    numeric: values.every(function(v){ return v.trim()==='' || !isNaN(parseFloat(v)); })};
+}
+function csvRun(){
+  var res=csvAll($('vCsv').value,$('vCol').value,$('vDelim').value);
+  var eb=$('vErr'); eb.innerHTML='';
+  if(!res.ok){ $('vKv').innerHTML=''; $('vOut').innerHTML=''; $('vTable').innerHTML='';
+    bad('vErr',res.error); return res; }
+  fill('vKv',[
+    ['Delimiter', res.delimName+'   ('+(res.delim==='\t'?'tab':res.delim)+')'],
+    ['Shape', res.ncols+' columns x '+res.nrows+' data rows'],
+    ['Column', '#'+res.colIndex+'  "'+res.column+'"'+(res.byName? '  (found by name)':'')],
+    ['Values', '<span class="w77-add">'+res.values.length+'</span>'],
+    ['Non-empty', res.nonEmpty],
+    ['Blank', res.blanks],
+    ['Distinct values', res.unique],
+    ['All numeric', res.numeric],
+    ['Rows of unequal width', res.ragged? '<span style="color:#FF5F1F">'+res.ragged+'</span>' : 'none']
+  ]);
+  $('vOut').innerHTML=esc(res.values.join('\n'));
+  $('vTable').innerHTML=table(['#','value','occurrences'], res.values.map(function(v,i){
+    var n=(res.counts.find(function(c){ return c[0]===v; })||['',0])[1];
+    return [i+1, '<span class="w77-add">'+esc(v===''?'(blank)':v)+'</span>', n];
+  }));
+  return res;
+}
+$('vGo').addEventListener('click',csvRun);
+['vCsv','vCol','vDelim'].forEach(function(id){ $(id).addEventListener('change',csvRun);
+  $(id).addEventListener('input',csvRun); });
+wireCopy('vCopy',function(){ var r=csvAll($('vCsv').value,$('vCol').value,$('vDelim').value);
+  return r.ok? r.columnLines : 'error'; });
+window.__csvColumnSlicer = { run: csvRun, all: csvAll };
+csvRun();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/add-line-numbers/">
+      <span class="ocurp-related-n">Add Line Numbers</span>
+      <span class="ocurp-related-b">Prefix each line with a configurable number</span>
+    </a></li>
+    <li><a href="/workspace/tools/barcode-gen/">
+      <span class="ocurp-related-n">Barcode Generator</span>
+      <span class="ocurp-related-b">Generate CODE128</span>
+    </a></li>
+    <li><a href="/workspace/tools/base32/">
+      <span class="ocurp-related-n">Base32 Encoder</span>
+      <span class="ocurp-related-b">Encode text to RFC 4648 Base32 and decode it back</span>
+    </a></li>
+    <li><a href="/workspace/tools/base58/">
+      <span class="ocurp-related-n">Base58 Encoder</span>
+      <span class="ocurp-related-b">Encode and decode Bitcoin&#x27;s Base58 alphabet</span>
+    </a></li>
+    <li><a href="/workspace/tools/base64/">
+      <span class="ocurp-related-n">Base64 Encoder</span>
+      <span class="ocurp-related-b">Encode and decode Base64 text or files</span>
+    </a></li>
+    <li><a href="/workspace/tools/binary-hex/">
+      <span class="ocurp-related-n">Binary / Hex / Octal</span>
+      <span class="ocurp-related-b">Convert numbers between bases with a live bit view.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

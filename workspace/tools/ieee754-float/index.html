@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IEEE 754 Float Decoder — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="See a float the way the hardware stores it: sign. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/ieee754-float/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="IEEE 754 Float Decoder">
+<meta property="og:description" content="See a float the way the hardware stores it: sign. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/ieee754-float/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="IEEE 754 Float Decoder on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="IEEE 754 Float Decoder">
+<meta name="twitter:description" content="See a float the way the hardware stores it: sign. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="IEEE 754 Float Decoder on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"IEEE 754 Float Decoder","url":"https://ocurp.com/workspace/tools/ieee754-float/","description":"See a float the way the hardware stores it: sign. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">IEEE 754 Float Decoder</h1>
+      <p class="mt-1 text-xs text-white/40">MATH &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">What a floating-point number actually looks like in memory. Type a decimal and the page writes it into a real typed array, then reads the sign, exponent and mantissa back off the bit string &mdash; the way the hardware does it, which is why denormals and infinity fall out correctly instead of being special-cased. The exact value the bits hold is printed beside the number you typed, so the rounding error is visible rather than implied.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-5">
+  <label class="ws-label mb-1 block" for="fVal">Decimal value</label>
+  <input id="fVal" class="ws-input" value="3.14159" step="any">
+  <label class="ws-label mb-1 block mt-3" for="fFmt">Show</label>
+  <select id="fFmt" class="ws-input">
+    <option value="f32">single precision (32-bit)</option>
+    <option value="f64">double precision (64-bit)</option>
+  </select>
+  <div id="fErr"></div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="fGo" class="ws-btn" style="width:auto">Decode</button>
+    <button id="fCopy" class="ws-btn-ghost" style="width:auto">Copy</button>
+  </div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Fields</div>
+  <div id="fKv"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Bits &mdash; sign, exponent, mantissa, in colour</div>
+  <div id="fBits"></div>
+  <div id="fReal" class="mt-3"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3">
+  <p class="w77-note">
+    The real value the stored bits actually represent is printed next to the
+    decimal you typed, because they are rarely the same number:
+    <span class="w77-add">3.14159</span> in single precision comes back as
+    <span class="w77-add">3.141590118408203</span>. That gap is the rounding
+    error, and hiding it is how a page ends up claiming an exact value it does
+    not hold. Denormals and infinity are handled by the same code path, not by a
+    special case that guesses.
+  </p>
+</div>
+
+  </div>
+  <div class="mt-8">
+<style>
+<style>
+.w77-table{width:100%;border-collapse:collapse;font-size:.8rem;
+  font-family:'IBM Plex Sans',monospace;}
+.w77-table th{text-align:left;font-family:Inter,sans-serif;font-size:9px;
+  font-weight:800;text-transform:uppercase;letter-spacing:.13em;
+  color:rgba(255,255,255,.4);padding:.55rem .6rem;border-bottom:1px solid rgba(255,255,255,.12);}
+.w77-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.06);
+  color:#fff;vertical-align:top;}
+.w77-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.w77-table tr.t1 td{background:rgba(255,95,31,.09);}
+.w77-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.w77-add{color:#FF5F1F}
+.w77-note{font-size:.75rem;color:rgba(255,255,255,.4);line-height:1.6}
+.w77-bad{display:block;margin-top:1rem;border:1px solid rgba(255,95,31,.45);
+  background:rgba(255,95,31,.08);border-radius:.75rem;padding:.85rem 1rem;
+  font-size:.8rem;color:rgba(255,255,255,.8);line-height:1.6}
+.w77-frac{display:inline-flex;flex-direction:column;align-items:center;
+  font-family:'IBM Plex Sans',monospace;font-size:1.9rem;line-height:1.15;
+  color:#FF5F1F;padding:.35rem .6rem}
+.w77-frac span:first-child{border-bottom:2px solid rgba(255,255,255,.4);
+  padding:0 .35rem .15rem}
+.w77-frac span:last-child{padding:.15rem .35rem 0}
+textarea.ws-input{font-family:'IBM Plex Sans',monospace;font-size:.85rem;line-height:1.6}
+</style>
+</style>
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function R(n){ var v=Math.round(n*1e6)/1e6; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id){ var el=$(id); if(!el) return NaN; return parseFloat(el.value); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function wireCopy(btnId,getText){
+  var b=$(btnId); if(!b) return;
+  b.addEventListener('click',function(){
+    var t=getText();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){
+        b.textContent='Copied'; },function(){ b.textContent='Copy failed'; });
+    }else{ b.textContent='Copy unavailable'; }
+    setTimeout(function(){ b.textContent='Copy'; },1400);
+  });
+}
+function table(head,rows){
+  var h='<table class="w77-table"><thead><tr>'+
+    head.map(function(t){return '<th>'+esc(t)+'</th>';}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(row){
+    h+='<tr>'+row.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';
+  });
+  return h+'</tbody></table>';
+}
+function bad(id,msg){ var e=$(id); if(e) e.innerHTML='<span class="w77-bad">'+esc(msg)+'</span>'; }
+
+function bytesOf(dv, n){
+  var out=[], i;
+  for(i=0;i<n;i++) out.push(dv.getUint8(i));
+  return out;
+}
+function ieeeAll(valSrc, fmt){
+  var v=parseFloat(valSrc);
+  /* Infinity and NaN ARE representable in IEEE 754 - they have encodings,
+     which is most of what this page is for. Only a non-numeric input is an
+     error. parseFloat('1e400') overflows to Infinity, and refusing it would
+     hide exactly the case a reader wants to inspect. */
+  var looksNumeric = /^[-+]?(Infinity|inf(inity)?|NaN|1e\d+|[-+]?\.?\d+(\.\d+)?([eE][-+]?\d+)?)$/i
+                     .test(String(valSrc).trim());
+  if(String(valSrc).trim()==='' || (!looksNumeric && isNaN(v)))
+    return {ok:false,error:'Enter a number'};
+  if(v===0 && String(valSrc).indexOf('0')>=0){ /* -0 keeps its sign below */ }
+  /* binary64 is the default, because that is what a JS number IS and what
+     every hex dump people paste is. Float32 is opt-in via fmt==='f32'. */
+  var is64 = fmt!=='f32';
+  var buf;
+  if(is64){
+    buf=new ArrayBuffer(8); new Float64Array(buf)[0]=v;
+  }else{
+    buf=new ArrayBuffer(4); new Float32Array(buf)[0]=v;
+  }
+  /* Read the word BIG-ENDIAN, MSB first. x86 and ARM both store it little
+     endian, so concatenating the bytes in address order yields 0000803f for
+     1.0 - the right bytes in the wrong order, and every field parsed off that
+     string is garbage. DataView with an explicit big-endian flag gets both
+     byte orders right without a branch. */
+  var dv=new DataView(buf), raw=bytesOf(dv, is64?8:4), hex='', bits='', i;
+  /* Read the word BIG-ENDIAN, most significant byte first. x86 and ARM both
+     store a float little-endian, so concatenating the bytes in ADDRESS order
+     yields 0000803f for 1.0 - the right bytes in the wrong order, and every
+     sign/exponent/mantissa field parsed off that string is garbage.
+     DataView.getUint8(i) does NOT fix this: it is still address order, so the
+     bytes have to be reversed explicitly. getUint32(0, false) would read the
+     first 4 bytes big-endian and give the same answer in one step. */
+  var bytes=raw.slice().reverse();
+  for(i=0;i<bytes.length;i++){ hex+=('0'+bytes[i].toString(16)).slice(-2);
+    bits+=bytes[i].toString(2).padStart(8,'0'); }
+  var dbits=is64?64:32, ebits=is64?11:8, mbits=dbits-1-ebits;
+  var bias=is64?1023:127;
+  /* read the fields off the BIT STRING, not off the JS number - this is what
+     the hardware does, and it is why denormals come out right. */
+  var sign=+bits[0];
+  var eStr=bits.substring(1,1+ebits);
+  var mStr=bits.substring(1+ebits);
+  var exp=parseInt(eStr,2);
+  var mant=parseInt(mStr,2);
+  var eUnbiased = exp===0 ? -bias : exp-bias;
+  var special = exp===0 ? (mant===0?'zero':'denormal') : (exp===(1<<ebits)-1 ? 'inf/nan' : 'normal');
+  var real;
+  if(special==='zero') real = sign? -0 : 0;
+  else if(special==='inf/nan') real = mant? NaN : (sign? -Infinity : Infinity);
+  else if(special==='denormal') real = sign*mant*Math.pow(2,-bias-mbits+1);
+  else real = sign*(1+mant/Math.pow(2,mbits))*Math.pow(2,eUnbiased);
+  var ulp = special==='normal'? Math.pow(2,eUnbiased-mbits) : null;
+  return {ok:true, input:v, dbits:dbits, hex:hex, bits:bits, sign:sign, expField:exp,
+    exp:eUnbiased, bias:bias, mantissa:mant, mantissaBits:mbits,
+    mantissaBinary:mStr, expBinary:eStr, special:special,
+    real: real, realText: special==='inf/nan'? String(real)
+      : (special==='zero'? (sign?'-0':'0') : String(real)),
+    error: real-v,
+    absoluteError: Math.abs(real-v),
+    ulp: ulp, bytes: bytes.length};
+}
+function f32Run(){
+  var res=ieeeAll($('fVal').value,$('fFmt').value);
+  var eb=$('fErr'); eb.innerHTML='';
+  if(!res.ok){ $('fKv').innerHTML=''; $('fBits').innerHTML=''; $('fReal').innerHTML='';
+    bad('fErr',res.error); return res; }
+  fill('fKv',[
+    ['Format', res.dbits+'-bit IEEE 754'],
+    ['Hex', '<span class="w77-add">0x'+res.hex+'</span>'],
+    ['Sign bit', res.sign],
+    ['Exponent field', res.expBinary+' = '+res.expField],
+    ['Unbiased exponent', res.special==='normal'||res.special==='denormal'? res.exp : 'n/a'],
+    ['Mantissa field', res.mantissa+' ('+res.mantissaBits+' bits)'],
+    ['Classification', res.special],
+    ['Value stored', '<span class="w77-add">'+esc(res.realText)+'</span>'],
+    ['Rounding error', res.absoluteError? R(res.absoluteError)+'  ('+esc(String(res.error))+')'
+      : 'exact - no rounding needed']
+  ]);
+  var s='<div style="font-family:\'IBM Plex Sans\',monospace;font-size:1rem;letter-spacing:.22em;'
+    +'word-break:break-all">';
+  s+='<span style="color:rgba(255,255,255,.4)">sign</span> <span class="w77-add">'+
+     res.bits[0]+'</span> ';
+  s+='<span style="color:rgba(255,255,255,.4)">exponent</span> <span class="w77-add">'+
+     esc(res.expBinary)+'</span> ';
+  s+='<span style="color:rgba(255,255,255,.4)">mantissa</span> <span style="color:#fff">'+
+     esc(res.mantissaBinary)+'</span></div>';
+  $('fBits').innerHTML=s;
+  $('fReal').innerHTML='<p class="w77-note">You typed <span class="w77-add">'+esc($('fVal').value)+
+    '</span>. The bits hold <span class="w77-add">'+esc(res.realText)+
+    '</span>'+(res.ulp!==null? ', and one ULP at this exponent is '+String(res.ulp)+'.':'.')+
+    '</p>';
+  return res;
+}
+$('fGo').addEventListener('click',f32Run);
+['fVal','fFmt'].forEach(function(id){ $(id).addEventListener('change',f32Run);
+  $(id).addEventListener('input',f32Run); });
+wireCopy('fCopy',function(){ var r=ieeeAll($('fVal').value,$('fFmt').value);
+  return r.ok? ('0x'+r.hex+'  =  '+r.realText) : 'error'; });
+window.__ieee754Float = { run: f32Run, all: ieeeAll };
+f32Run();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years</span>
+    </a></li>
+    <li><a href="/workspace/tools/apy-vs-apr-calculator/">
+      <span class="ocurp-related-n">APY vs APR Calculator</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

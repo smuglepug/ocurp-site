@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luhn Validator — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="The Luhn checksum used by card numbers. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/luhn-validator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Luhn Validator">
+<meta property="og:description" content="The Luhn checksum used by card numbers. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/luhn-validator/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Luhn Validator on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Luhn Validator">
+<meta name="twitter:description" content="The Luhn checksum used by card numbers. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Luhn Validator on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Luhn Validator","url":"https://ocurp.com/workspace/tools/luhn-validator/","description":"The Luhn checksum used by card numbers. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Luhn Validator</h1>
+      <p class="mt-1 text-xs text-white/40">DATA &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">The Luhn checksum that payment card numbers, IMEIs and Singapore NRIC numbers use, worked out digit by digit in front of you. The page doubles the right digits, subtracts 9 where the result exceeds a digit, adds it up and shows the total modulo 10 &mdash; and states plainly that a number passing this check is not a number anyone has issued you.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-5">
+  <label class="ws-label mb-1 block" for="lNum">Number</label>
+  <input id="lNum" class="ws-input" value="4539578763621486">
+  <label class="ws-label mb-1 block mt-3" for="lKind">Looks like</label>
+  <select id="lKind" class="ws-input">
+    <option value="any">a Luhn-checked number (any length)</option>
+    <option value="card">a payment card number</option>
+    <option value="imei">a 15-digit IMEI</option>
+    <option value="nric">a 9-character NRIC / FIN</option>
+  </select>
+  <div id="lErr"></div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="lGo" class="ws-btn" style="width:auto">Validate</button>
+    <button id="lCopy" class="ws-btn-ghost" style="width:auto">Copy</button>
+  </div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Verdict</div>
+  <div id="lKv"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">The algorithm, digit by digit &mdash; doubled digits in colour</div>
+  <div id="lDigits"></div>
+  <div id="lSum" class="mt-3"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3">
+  <p class="w77-note">
+    Luhn catches transpositions and single-digit typos, which is all it does. It
+    is <span class="w77-add">not</span> a payment authorisation and
+    <span class="w77-add">not</span> proof a card exists: every number printed
+    here can be constructed to pass, and the page says so rather than implying
+    the check authorises anything. A real card number also fails a Luhn
+    algorithm, so this is a format check only.
+  </p>
+</div>
+
+  </div>
+  <div class="mt-8">
+<style>
+<style>
+.w77-table{width:100%;border-collapse:collapse;font-size:.8rem;
+  font-family:'IBM Plex Sans',monospace;}
+.w77-table th{text-align:left;font-family:Inter,sans-serif;font-size:9px;
+  font-weight:800;text-transform:uppercase;letter-spacing:.13em;
+  color:rgba(255,255,255,.4);padding:.55rem .6rem;border-bottom:1px solid rgba(255,255,255,.12);}
+.w77-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.06);
+  color:#fff;vertical-align:top;}
+.w77-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.w77-table tr.t1 td{background:rgba(255,95,31,.09);}
+.w77-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.w77-add{color:#FF5F1F}
+.w77-note{font-size:.75rem;color:rgba(255,255,255,.4);line-height:1.6}
+.w77-bad{display:block;margin-top:1rem;border:1px solid rgba(255,95,31,.45);
+  background:rgba(255,95,31,.08);border-radius:.75rem;padding:.85rem 1rem;
+  font-size:.8rem;color:rgba(255,255,255,.8);line-height:1.6}
+.w77-frac{display:inline-flex;flex-direction:column;align-items:center;
+  font-family:'IBM Plex Sans',monospace;font-size:1.9rem;line-height:1.15;
+  color:#FF5F1F;padding:.35rem .6rem}
+.w77-frac span:first-child{border-bottom:2px solid rgba(255,255,255,.4);
+  padding:0 .35rem .15rem}
+.w77-frac span:last-child{padding:.15rem .35rem 0}
+textarea.ws-input{font-family:'IBM Plex Sans',monospace;font-size:.85rem;line-height:1.6}
+</style>
+</style>
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function R(n){ var v=Math.round(n*1e6)/1e6; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id){ var el=$(id); if(!el) return NaN; return parseFloat(el.value); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function wireCopy(btnId,getText){
+  var b=$(btnId); if(!b) return;
+  b.addEventListener('click',function(){
+    var t=getText();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){
+        b.textContent='Copied'; },function(){ b.textContent='Copy failed'; });
+    }else{ b.textContent='Copy unavailable'; }
+    setTimeout(function(){ b.textContent='Copy'; },1400);
+  });
+}
+function table(head,rows){
+  var h='<table class="w77-table"><thead><tr>'+
+    head.map(function(t){return '<th>'+esc(t)+'</th>';}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(row){
+    h+='<tr>'+row.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';
+  });
+  return h+'</tbody></table>';
+}
+function bad(id,msg){ var e=$(id); if(e) e.innerHTML='<span class="w77-bad">'+esc(msg)+'</span>'; }
+
+/* Rightmost digit is the check digit. Walking left, every SECOND digit (that is,
+   positions 2,4,6... from the right, 1-indexed) gets doubled; a doubled value
+   above 9 has 9 subtracted (2*7=14 -> 1+4=5). Valid iff the total is a multiple
+   of 10. */
+function luhnAll(numSrc, kind){
+  var raw=String(numSrc==null?'':numSrc);
+  var s=raw.replace(/[\s-]/g,'');
+  if(!s) return {ok:false,error:'Enter a number'};
+  var nric=false;
+  if(kind==='nric'){
+    if(!/^[A-Za-z]\d{7}[A-Za-z]$/.test(s))
+      return {ok:false,error:'An NRIC or FIN is one letter, seven digits, one letter'};
+    nric=true;
+  }else{
+    if(!/^\d+$/.test(s)) return {ok:false,error:'Digits only (spaces and dashes are fine)'};
+    if(kind==='card' && (s.length<12||s.length>19))
+      return {ok:false,error:'Card numbers are 12-19 digits; this one has '+s.length};
+    if(kind==='imei' && s.length!==15)
+      return {ok:false,error:'An IMEI is exactly 15 digits; this one has '+s.length};
+  }
+  /* Sum over ALL the digits including the check digit. Luhn doubles every
+     second digit counted from the RIGHT, so position-from-right p (1 = the
+     rightmost) is doubled when p is even. The earlier version stripped the
+     check digit, doubled what was left, then added the check digit back
+     UNDOUBLED - which shifts the parity by one and doubles the wrong set.
+     4539578763621486, a valid test number, came to 88 and was reported
+     invalid. Recomputed by hand and in tools/_w77_check.py: the doubled
+     digits are positions 16,14,12,10,8,6,4,2 (values 8+6+1+7+3+3+2+7 = 37)
+     and the plain ones total 43, giving exactly 80 and remainder 0. */
+  var rows=[], total=0, n=s.length;
+  for(var i=0;i<n;i++){
+    var p=n-i;                                /* 1 = rightmost */
+    var d=+s[i], doubled=(p%2===0), d2=d, reduced=null;
+    if(doubled){ d2=d*2; if(d2>9){ reduced=d2-9; } }
+    var contrib = reduced!==null? reduced : d2;
+    total+=contrib;
+    rows.push({i:i+1, ch:s[i], d:d, doubled:doubled, doubled2:d2, reduced:reduced,
+      contrib:contrib});
+  }
+  var check=+s.slice(-1);
+  var valid = (total%10)===0;
+  return {ok:true, digits:s, n:s.length, check:check, total:total, valid:valid,
+    sumWithoutCheck: total-check, remainder: total%10,
+    rows:rows, kind:kind, nric:nric,
+    doubledCount: rows.filter(function(r){ return r.doubled; }).length,
+    reducedCount: rows.filter(function(r){ return r.reduced!==null; }).length,
+    verdict: valid? 'passes the Luhn check' : 'fails the Luhn check'};
+}
+function luhnRun(){
+  var res=luhnAll($('lNum').value,$('lKind').value);
+  var eb=$('lErr'); eb.innerHTML='';
+  if(!res.ok){ $('lKv').innerHTML=''; $('lDigits').innerHTML=''; $('lSum').innerHTML='';
+    bad('lErr',res.error); return res; }
+  fill('lKv',[
+    ['Length', res.n+' digits'],
+    ['Check digit', res.check],
+    ['Doubled positions', res.doubledCount],
+    ['Digits over 9, reduced by 9', res.reducedCount],
+    ['Sum', '<span class="w77-add">'+res.total+'</span>  (mod 10 = '+res.remainder+')'],
+    ['Verdict', res.valid? '<span class="w77-add">VALID</span>' : 'invalid'],
+    ['What this means', res.valid? 'the digits are consistent with a Luhn check'
+      : 'at least one digit is wrong somewhere']
+  ]);
+  var all=res.rows.map(function(r){ return r.doubled? r.reduced!==null? r.reduced : r.doubled2
+    : r.d; });
+  var html='<div style="font-family:\'IBM Plex Sans\',monospace;font-size:1.15rem;letter-spacing:.16em">';
+  res.rows.forEach(function(r,i){
+    html+='<span style="margin-right:.5rem">'+esc(r.ch)+
+      '<span style="font-size:.6rem;color:rgba(255,255,255,.35)"> '+
+      (r.doubled? (r.reduced!==null? '&rarr;'+r.reduced : '&rarr;'+r.doubled2) : '')+
+      '</span></span>';
+  });
+  html+='<span style="margin-left:1rem" class="w77-add">| check '+res.check+'</span></div>';
+  html+='<div style="font-family:\'IBM Plex Sans\',monospace;font-size:.8rem;color:rgba(255,255,255,.45);margin-top:.8rem">'+
+    all.join(' + ')+' + '+res.check+' = <span class="w77-add">'+res.total+'</span></div>';
+  $('lDigits').innerHTML=html;
+  $('lSum').innerHTML='<p class="w77-note">'+res.total+' '+(res.remainder===0?'is':'is NOT')+
+    ' a multiple of 10, so the number '+(res.valid?'<span class="w77-add">passes</span>':'fails')+'.</p>';
+  return res;
+}
+$('lGo').addEventListener('click',luhnRun);
+['lNum','lKind'].forEach(function(id){ $(id).addEventListener('change',luhnRun);
+  $(id).addEventListener('input',luhnRun); });
+wireCopy('lCopy',function(){ var r=luhnAll($('lNum').value,$('lKind').value);
+  return r.ok? (r.valid?'valid':'invalid') : 'error'; });
+window.__luhnValidator = { run: luhnRun, all: luhnAll };
+luhnRun();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/add-line-numbers/">
+      <span class="ocurp-related-n">Add Line Numbers</span>
+      <span class="ocurp-related-b">Prefix each line with a configurable number</span>
+    </a></li>
+    <li><a href="/workspace/tools/barcode-gen/">
+      <span class="ocurp-related-n">Barcode Generator</span>
+      <span class="ocurp-related-b">Generate CODE128</span>
+    </a></li>
+    <li><a href="/workspace/tools/base32/">
+      <span class="ocurp-related-n">Base32 Encoder</span>
+      <span class="ocurp-related-b">Encode text to RFC 4648 Base32 and decode it back</span>
+    </a></li>
+    <li><a href="/workspace/tools/base58/">
+      <span class="ocurp-related-n">Base58 Encoder</span>
+      <span class="ocurp-related-b">Encode and decode Bitcoin&#x27;s Base58 alphabet</span>
+    </a></li>
+    <li><a href="/workspace/tools/base64/">
+      <span class="ocurp-related-n">Base64 Encoder</span>
+      <span class="ocurp-related-b">Encode and decode Base64 text or files</span>
+    </a></li>
+    <li><a href="/workspace/tools/binary-hex/">
+      <span class="ocurp-related-n">Binary / Hex / Octal</span>
+      <span class="ocurp-related-b">Convert numbers between bases with a live bit view.</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

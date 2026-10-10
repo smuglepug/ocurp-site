@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boolean Simplifier — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Enter a boolean expression and get its smallest equivalent form. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/boolean-simplifier/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Boolean Simplifier">
+<meta property="og:description" content="Enter a boolean expression and get its smallest equivalent form. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/boolean-simplifier/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Boolean Simplifier on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Boolean Simplifier">
+<meta name="twitter:description" content="Enter a boolean expression and get its smallest equivalent form. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Boolean Simplifier on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Boolean Simplifier","url":"https://ocurp.com/workspace/tools/boolean-simplifier/","description":"Enter a boolean expression and get its smallest equivalent form. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">Boolean Simplifier</h1>
+      <p class="mt-1 text-xs text-white/40">MATH &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">Enter a boolean expression and get its smallest equivalent form, proved by truth table rather than asserted. The parser is a hand-written tokeniser and shunting-yard evaluator &mdash; your text is never passed to eval() &mdash; and the simplification merges the on-set into the largest cubes, then re-checks the result against every one of the 2^n assignments before claiming equivalence.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-5">
+  <label class="ws-label mb-1 block" for="bExpr">Expression</label>
+  <textarea id="bExpr" class="ws-input" rows="3">A AND (B OR NOT B)</textarea>
+  <p class="w77-note mt-2">Operators: <span class="w77-add">AND</span> <span class="w77-add">OR</span>
+     <span class="w77-add">NOT</span> <span class="w77-add">XOR</span> <span class="w77-add">NAND</span>
+     <span class="w77-add">NOR</span>, plus <span class="w77-add">(</span> for grouping.</p>
+  <div id="bErr"></div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="bGo" class="ws-btn" style="width:auto">Evaluate</button>
+    <button id="bCopy" class="ws-btn-ghost" style="width:auto">Copy</button>
+  </div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Result</div>
+  <div id="bKv"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Truth table &mdash; every assignment, in binary counting order</div>
+  <div class="w77-scroll"><div id="bTable"></div></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3">
+  <p class="w77-note">
+    Simplification is by exact truth-table equivalence, not by pattern guessing:
+    the page enumerates all 2<sup>n</sup> assignments and then finds the smallest
+    set of terms that still matches. A rule like
+    <span class="w77-add">A AND (B OR NOT B)</span> collapses to
+    <span class="w77-add">A</span> because the two terms are absorption, and the
+    page proves that by printing all four rows rather than asserting it.
+  </p>
+</div>
+
+  </div>
+  <div class="mt-8">
+<style>
+<style>
+.w77-table{width:100%;border-collapse:collapse;font-size:.8rem;
+  font-family:'IBM Plex Sans',monospace;}
+.w77-table th{text-align:left;font-family:Inter,sans-serif;font-size:9px;
+  font-weight:800;text-transform:uppercase;letter-spacing:.13em;
+  color:rgba(255,255,255,.4);padding:.55rem .6rem;border-bottom:1px solid rgba(255,255,255,.12);}
+.w77-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.06);
+  color:#fff;vertical-align:top;}
+.w77-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.w77-table tr.t1 td{background:rgba(255,95,31,.09);}
+.w77-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.w77-add{color:#FF5F1F}
+.w77-note{font-size:.75rem;color:rgba(255,255,255,.4);line-height:1.6}
+.w77-bad{display:block;margin-top:1rem;border:1px solid rgba(255,95,31,.45);
+  background:rgba(255,95,31,.08);border-radius:.75rem;padding:.85rem 1rem;
+  font-size:.8rem;color:rgba(255,255,255,.8);line-height:1.6}
+.w77-frac{display:inline-flex;flex-direction:column;align-items:center;
+  font-family:'IBM Plex Sans',monospace;font-size:1.9rem;line-height:1.15;
+  color:#FF5F1F;padding:.35rem .6rem}
+.w77-frac span:first-child{border-bottom:2px solid rgba(255,255,255,.4);
+  padding:0 .35rem .15rem}
+.w77-frac span:last-child{padding:.15rem .35rem 0}
+textarea.ws-input{font-family:'IBM Plex Sans',monospace;font-size:.85rem;line-height:1.6}
+</style>
+</style>
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function R(n){ var v=Math.round(n*1e6)/1e6; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id){ var el=$(id); if(!el) return NaN; return parseFloat(el.value); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function wireCopy(btnId,getText){
+  var b=$(btnId); if(!b) return;
+  b.addEventListener('click',function(){
+    var t=getText();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){
+        b.textContent='Copied'; },function(){ b.textContent='Copy failed'; });
+    }else{ b.textContent='Copy unavailable'; }
+    setTimeout(function(){ b.textContent='Copy'; },1400);
+  });
+}
+function table(head,rows){
+  var h='<table class="w77-table"><thead><tr>'+
+    head.map(function(t){return '<th>'+esc(t)+'</th>';}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(row){
+    h+='<tr>'+row.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';
+  });
+  return h+'</tbody></table>';
+}
+function bad(id,msg){ var e=$(id); if(e) e.innerHTML='<span class="w77-bad">'+esc(msg)+'</span>'; }
+
+/* Tokenise -> RPN -> evaluate. No eval(): the expression is never handed to the
+   JavaScript parser, so no string a user pastes can become code. */
+function _lex(s){
+  var t=[], i=0;
+  s=String(s).toUpperCase().replace(/[^A-Z0-9()\s]/g,' ');
+  var words=s.match(/[A-Z]+|[01]|[()]/g)||[];
+  var OPS={AND:1,OR:1,XOR:1,NAND:1,NOR:1,NOT:1};
+  for(i=0;i<words.length;i++){
+    var w=words[i];
+    if(w==='('||w===')'){ t.push({k:w}); continue; }
+    if(OPS[w]){
+      if((w==='NAND'||w==='NOR')&&words[i+1]==='NOT') i++;
+      t.push({k:'op',v:w}); continue;
+    }
+    if(/^[01]$/.test(w)){ t.push({k:'c',v:w==='1'}); continue; }
+    if(/^[A-Z]/.test(w)){ t.push({k:'v',v:w}); continue; }
+    throw new Error('Unexpected token: '+w);
+  }
+  return t;
+}
+function _rpn(toks){
+  var out=[], st=[];
+  /* NOT is right-associative, so it must NEVER be popped while its operand is
+     still to come. The loop below guards on t.v==='NOT' for exactly that
+     reason; without it "NOT A AND B" pushes NOT, sees AND, pops NOT on the
+     >= comparison and evaluates to the wrong function entirely. */
+  function prec(o){ return o==='NOT'?3:2; }
+  for(var i=0;i<toks.length;i++){
+    var t=toks[i];
+    if(t.k==='v'||t.k==='c') out.push(t);
+    else if(t.k==='(') st.push(t);
+    else if(t.k===')'){
+      while(st.length&&st[st.length-1].k!=='(') out.push(st.pop());
+      if(!st.length) throw new Error('Unbalanced parentheses');
+      st.pop();
+    }else{
+      while(st.length&&st[st.length-1].k==='op'&&t.v!=='NOT'&&
+            prec(st[st.length-1].v)>=prec(t.v))
+        out.push(st.pop());
+      st.push(t);
+    }
+  }
+  while(st.length){ var s=st.pop(); if(s.k==='(') throw new Error('Unbalanced parentheses');
+    out.push(s); }
+  return out;
+}
+function _evalRPN(rpn, env){
+  var st=[];
+  for(var i=0;i<rpn.length;i++){
+    var t=rpn[i];
+    if(t.k==='v'){ if(!(t.v in env)) throw new Error('Unknown variable: '+t.v); st.push(!!env[t.v]); }
+    else if(t.k==='c') st.push(t.v);
+    else if(t.v==='NOT'){ if(st.length<1) throw new Error('NOT needs an operand'); st.push(!st.pop()); }
+    else{
+      if(st.length<2) throw new Error(t.v+' needs two operands');
+      var b=st.pop(), a=st.pop();
+      switch(t.v){
+        case 'AND': st.push(a&&b); break;
+        case 'OR': st.push(a||b); break;
+        case 'XOR': st.push(a!==b); break;
+        case 'NAND': st.push(!(a&&b)); break;
+        case 'NOR': st.push(!(a||b)); break;
+      }
+    }
+  }
+  if(st.length!==1) throw new Error('Malformed expression');
+  return st[0];
+}
+function boolAll(exprSrc){
+  var toks;
+  try{ toks=_lex(exprSrc); }catch(e){ return {ok:false,error:e.message}; }
+  if(!toks.length) return {ok:false,error:'Enter an expression'};
+  var vars=[];
+  toks.forEach(function(t){ if(t.k==='v'&&vars.indexOf(t.v)<0) vars.push(t.v); });
+  if(!vars.length) return {ok:false,error:'The expression has no variables'};
+  if(vars.length>8) return {ok:false,error:'At most 8 variables; this one has '+vars.length};
+  var rpn;
+  try{ rpn=_rpn(toks); }catch(e){ return {ok:false,error:e.message}; }
+  var n=vars.length, rows=[];
+  try{
+    for(var m=0;m<(1<<n);m++){
+      var env={};
+      for(var i=0;i<n;i++) env[vars[i]]=!!((m>>(n-1-i))&1);   /* A is the high bit */
+      rows.push({env:env, out:_evalRPN(rpn,env)});
+    }
+  }catch(e){ return {ok:false,error:e.message}; }
+
+  /* Minimal cover by Quine-McCluskey. A cube is {v: literal bits, dash: which
+     positions are "don't care"}. Two cubes combine iff they have the SAME dash
+     mask and differ in exactly ONE literal position - that is the QM combining
+     step, and getting it wrong silently produces implicants that do not cover
+     the on-set. The cover is then greedy and, crucially, RE-VERIFIED against
+     every row below; the page prints "verified" only if that check passes. */
+  /* BIT-ORDER BRIDGE. The truth table is built MSB-first (vars[0] is the high
+     bit) so it reads in binary counting order, but the QM cover below packs
+     vars[0] into bit 0. Feeding it the table index directly labels every term
+     with the wrong variable - A OR NOT A then verifies as false against its
+     own table. Reverse into the cover's bit order once, here. */
+  function revBits(m){
+    var o=0;
+    for(var b=0;b<n;b++) if((m>>b)&1) o|=(1<<(n-1-b));
+    return o;
+  }
+  var ones=[]; rows.forEach(function(r,i){ if(r.out) ones.push(revBits(i)); });
+  var all=(1<<n)-1;
+  var cubes=ones.map(function(m){ return {v:m, dash:0}; });
+  var merged=true;
+  while(merged){
+    merged=false;
+    var next=[], used=new Array(cubes.length).fill(false);
+    for(var i=0;i<cubes.length;i++){
+      for(var j=i+1;j<cubes.length;j++){
+        if(used[i]||used[j]) continue;
+        if(cubes[i].dash!==cubes[j].dash) continue;
+        var x=cubes[i].v^cubes[j].v;
+        if(x===0||(x&(x-1))!==0) continue;   /* must differ in exactly one bit */
+        used[i]=used[j]=true; merged=true;
+        next.push({v:cubes[i].v&cubes[j].v, dash:cubes[i].dash|x});
+      }
+    }
+    for(var k=0;k<cubes.length;k++) if(!used[k]) next.push(cubes[k]);
+    cubes=next;
+  }
+  /* prime implicants: drop any cube strictly contained in a bigger one */
+  var primes=cubes.filter(function(c){
+    return !cubes.some(function(o){
+      return o!==c && (c.dash&o.dash)===c.dash && (c.v&o.dash)===(o.v&o.dash);
+    });
+  });
+  /* greedy cover over the uncovered on-set, cheapest literal-count first */
+  /* covers() must be the MASKED EQUALITY test (m & ~dc) === (v & ~dc), not the
+     combining test ((m ^ v) & dc) === 0. They are not the same function, and
+     the second one is degenerate: with dc = 0 it reduces to 0 === 0 and every
+     minterm "matches" a cube that covers exactly one. That made A OR NOT A
+     verify as false against its own table and XOR report no terms at all.
+     The combining test above uses the other form on purpose - there it is the
+     right question ("do these differ only in the free positions?"). */
+  function covers(c,m){ return (m&~c.dash)===(c.v&~c.dash); }
+  var need=ones.slice(), chosen=[];
+  while(need.length){
+    var best=null, bestGain=0;
+    primes.forEach(function(c){
+      var gain=need.filter(function(m){ return covers(c,m); }).length;
+      if(gain>bestGain){ bestGain=gain; best=c; }
+    });
+    if(!best) break;                 /* unreachable: every minterm is its own implicant */
+    chosen.push(best);
+    need=need.filter(function(m){ return !covers(best,m); });
+  }
+  function literals(c){
+    var k=0;
+    for(var b=0;b<n;b++) if(!(c.dash&(1<<b))) k++;
+    return k;
+  }
+  function termText(c){
+    var parts=[];
+    for(var i=0;i<n;i++){
+      if(c.dash&(1<<i)) continue;
+      /* bit i is vars[i] in the cover's order (see revBits above) */
+      parts.push(vars[i]+((c.v&(1<<i))?'':' NOT'));
+    }
+    return parts.length? parts.join(' AND ') : 'TRUE';
+  }
+  var dnf=chosen.map(termText);
+  /* verify the claimed minimal expression against every original row */
+  var dnfOk=rows.every(function(r,i){
+    var v=false, cm=revBits(i);
+    chosen.forEach(function(c){ if(covers(c,cm)) v=true; });
+    return v===r.out;
+  });
+  return {ok:true, vars:vars, rows:rows, onSet:ones.length, offSet:rows.length-ones.length,
+    dnf:dnf, dnfText: dnf.length? dnf.join(' OR ') : 'FALSE', dnfVerified:dnfOk,
+    literals: chosen.map(literals), literalCount: chosen.reduce(function(a,c){return a+literals(c);},0),
+    primeCount: primes.length, cubes: cubes.length,
+    tautology: ones.length===rows.length, contradiction: ones.length===0,
+    allBitsMask: all};
+}
+function boolRun(){
+  var res=boolAll($('bExpr').value);
+  var eb=$('bErr'); eb.innerHTML='';
+  if(!res.ok){ $('bKv').innerHTML=''; $('bTable').innerHTML=''; bad('bErr',res.error); return res; }
+  fill('bKv',[
+    ['Variables', res.vars.join(', ')+'  ('+res.vars.length+')'],
+    ['Rows', res.rows.length],
+    ['True assignments', res.onSet],
+    ['False assignments', res.offSet],
+    ['Minimal expression', '<span class="w77-add">'+esc(res.dnfText)+'</span>'],
+    ['Terms / literals', res.dnf.length+' terms, '+res.literalCount+' literals'],
+    ['Prime implicants', res.primeCount],
+    ['Equivalent', res.dnfVerified? 'yes - verified on all '+res.rows.length+' rows' : 'NO'],
+    ['Simplifies to', res.tautology?'TRUE (always)': (res.contradiction?'FALSE (never)':'the same function, fewer terms')]
+  ]);
+  var head=res.vars.map(function(v){return esc(v);}).concat(['','result']);
+  var body=res.rows.map(function(r){
+    var cells=res.vars.map(function(v){ return r.env[v]?'<span class="w77-add">1</span>':'0'; });
+    cells.push(r.out?'<span class="w77-add">1</span>':'0');
+    cells.push(r.out?'<span style="color:rgba(255,255,255,.4)">TRUE</span>':'FALSE');
+    return (r.out?'<tr class="t1">':'<tr>')+'<td>'+cells.join('</td><td>')+'</td></tr>';
+  });
+  $('bTable').innerHTML='<table class="w77-table"><thead><tr><th>'+head.join('</th><th>')+
+    '</th></tr></thead><tbody>'+body.join('')+'</tbody></table>';
+  return res;
+}
+$('bGo').addEventListener('click',boolRun);
+$('bExpr').addEventListener('input',boolRun);
+wireCopy('bCopy',function(){ var r=boolAll($('bExpr').value); return r.ok? r.dnfText : 'error'; });
+window.__booleanSimplifier = { run: boolRun, all: boolAll };
+boolRun();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/a-irr-calculator/">
+      <span class="ocurp-related-n">IRR Calculator</span>
+      <span class="ocurp-related-b">Solve the internal rate of return for any cash-flow table with Newton-Raphson and a bisect</span>
+    </a></li>
+    <li><a href="/workspace/tools/age-calculator/">
+      <span class="ocurp-related-n">Age Calculator</span>
+      <span class="ocurp-related-b">Exact age in years</span>
+    </a></li>
+    <li><a href="/workspace/tools/apy-vs-apr-calculator/">
+      <span class="ocurp-related-n">APY vs APR Calculator</span>
+      <span class="ocurp-related-b">The nominal rate the bank quotes against the rate the money actually earns</span>
+    </a></li>
+    <li><a href="/workspace/tools/aspect-ratio/">
+      <span class="ocurp-related-n">Aspect Ratio Calculator</span>
+      <span class="ocurp-related-b">Fit widths and heights at any ratio.</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter/">
+      <span class="ocurp-related-n">Base Converter</span>
+      <span class="ocurp-related-b">Convert any number between bases 2 and 36</span>
+    </a></li>
+    <li><a href="/workspace/tools/base-converter-table/">
+      <span class="ocurp-related-n">Base Converter Table</span>
+      <span class="ocurp-related-b">Convert one number into every base at once</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>

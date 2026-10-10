@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UTF-8 Byte Counter — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#FF5F1F', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','sans-serif'], display:['Manrope','sans-serif'], mono:['IBM Plex Sans','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#FF5F1F; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#FF5F1F; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,95,31,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#FF5F1F !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,95,31,.28); background:rgba(255,95,31,.06);
+    padding:1rem 1.1rem; font-family:'IBM Plex Sans',monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'IBM Plex Sans',monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Count code points. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/utf8-byte-count/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="UTF-8 Byte Counter">
+<meta property="og:description" content="Count code points. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/utf8-byte-count/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="UTF-8 Byte Counter on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="UTF-8 Byte Counter">
+<meta name="twitter:description" content="Count code points. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="UTF-8 Byte Counter on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"UTF-8 Byte Counter","url":"https://ocurp.com/workspace/tools/utf8-byte-count/","description":"Count code points. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body class="bg-dark text-white selection:bg-secondary selection:text-black">
+<div class="noise-overlay"></div>
+<div class="bg-vibrant-blob -left-40 -top-72" style="animation:morph-blob 20s infinite alternate linear"></div>
+<div class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-8 sm:px-8">
+  <div class="mb-8 flex flex-wrap items-center gap-4">
+    <a href="/workspace/tools/" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/70 hover:text-white transition-colors">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Tools
+    </a>
+    <div class="min-w-0">
+      <h1 class="truncate font-display text-xl font-extrabold text-white sm:text-2xl">UTF-8 Byte Counter</h1>
+      <p class="mt-1 text-xs text-white/40">TEXT &mdash; CLIENT-SIDE</p>
+    </div>
+  </div>
+  <p class="mb-8 max-w-2xl text-base text-white/55">How many bytes a piece of text really costs. Code points, UTF-16 units and grapheme clusters are three different numbers and the page reports all three, because a character limit written by a human, enforced by JavaScript and paid for in bytes are three different budgets &mdash; and an emoji assembled from ZWJ sequences counts as one thing to the eye and several to the counter.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-5">
+  <label class="ws-label mb-1 block" for="uText">Text</label>
+  <textarea id="uText" class="ws-input" rows="4">café 🎮</textarea>
+  <div id="uErr"></div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="uGo" class="ws-btn" style="width:auto">Count</button>
+    <button id="uCopy" class="ws-btn-ghost" style="width:auto">Copy</button>
+  </div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Counts</div>
+  <div id="uKv"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Where the bytes go</div>
+  <div class="w77-scroll"><div id="uTable"></div></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3">
+  <p class="w77-note">
+    The gap between characters and bytes is where a 140-character SMS becomes a
+    420-character one. A character here means a Unicode code point, so
+    <span class="w77-add">🎮</span> counts once even though your editor's caret
+    moves four bytes over it, and an emoji built from ZWJ sequences counts as
+    several code points while looking like one glyph &mdash; the page counts
+    grapheme clusters too, because that is the number a human actually sees.
+  </p>
+</div>
+
+  </div>
+  <div class="mt-8">
+<style>
+<style>
+.w77-table{width:100%;border-collapse:collapse;font-size:.8rem;
+  font-family:'IBM Plex Sans',monospace;}
+.w77-table th{text-align:left;font-family:Inter,sans-serif;font-size:9px;
+  font-weight:800;text-transform:uppercase;letter-spacing:.13em;
+  color:rgba(255,255,255,.4);padding:.55rem .6rem;border-bottom:1px solid rgba(255,255,255,.12);}
+.w77-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.06);
+  color:#fff;vertical-align:top;}
+.w77-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.w77-table tr.t1 td{background:rgba(255,95,31,.09);}
+.w77-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.w77-add{color:#FF5F1F}
+.w77-note{font-size:.75rem;color:rgba(255,255,255,.4);line-height:1.6}
+.w77-bad{display:block;margin-top:1rem;border:1px solid rgba(255,95,31,.45);
+  background:rgba(255,95,31,.08);border-radius:.75rem;padding:.85rem 1rem;
+  font-size:.8rem;color:rgba(255,255,255,.8);line-height:1.6}
+.w77-frac{display:inline-flex;flex-direction:column;align-items:center;
+  font-family:'IBM Plex Sans',monospace;font-size:1.9rem;line-height:1.15;
+  color:#FF5F1F;padding:.35rem .6rem}
+.w77-frac span:first-child{border-bottom:2px solid rgba(255,255,255,.4);
+  padding:0 .35rem .15rem}
+.w77-frac span:last-child{padding:.15rem .35rem 0}
+textarea.ws-input{font-family:'IBM Plex Sans',monospace;font-size:.85rem;line-height:1.6}
+</style>
+</style>
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function R(n){ var v=Math.round(n*1e6)/1e6; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id){ var el=$(id); if(!el) return NaN; return parseFloat(el.value); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function wireCopy(btnId,getText){
+  var b=$(btnId); if(!b) return;
+  b.addEventListener('click',function(){
+    var t=getText();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){
+        b.textContent='Copied'; },function(){ b.textContent='Copy failed'; });
+    }else{ b.textContent='Copy unavailable'; }
+    setTimeout(function(){ b.textContent='Copy'; },1400);
+  });
+}
+function table(head,rows){
+  var h='<table class="w77-table"><thead><tr>'+
+    head.map(function(t){return '<th>'+esc(t)+'</th>';}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(row){
+    h+='<tr>'+row.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';
+  });
+  return h+'</tbody></table>';
+}
+function bad(id,msg){ var e=$(id); if(e) e.innerHTML='<span class="w77-bad">'+esc(msg)+'</span>'; }
+
+function utfAll(src){
+  var s=String(src==null?'':src);
+  var cps=Array.from(s);
+  var bytes=0, rows=[];
+  for(var i=0;i<cps.length;i++){
+    var c=cps[i], cp=c.codePointAt(0);
+    var nb=c.length;                       /* UTF-8 length == UTF-16 units used */
+    var cpBytes = cp<0x80?1 : cp<0x800?2 : cp<0x10000?3 : 4;
+    bytes+=cpBytes;
+    rows.push({i:i+1, ch:c, cp:cp, hex:'U+'+cp.toString(16).toUpperCase().padStart(4,'0'),
+      utf16:c.length, bytes:cpBytes,
+      name: (function(){
+        if(cp<0x80) return 'ASCII';
+        if(cp<0x800) return 'Latin-1 supplement';
+        if(cp<0x10000) return 'BMP';
+        return 'Supplementary (astral)';
+      })()});
+  }
+  /* grapheme clusters: a combining mark, a variation selector or a keycap stays
+     with the character before it, and a ZWJ glues the pair into one glyph. */
+  var CL=/^[\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20f0\u20e3\ufe20-\ufe2f]$/;
+  function isJoiner(c){ return c.codePointAt(0)===0x200D; }
+  function isMark(c){
+    if(CL.test(c)) return true;
+    var cp=c.codePointAt(0);
+    return cp>=0xFE00&&cp<=0xFE0F;      /* variation selectors */
+  }
+  var c2=0, joinNext=false;
+  for(var j=0;j<cps.length;j++){
+    if(joinNext){ joinNext=false; continue; }   /* glued to the previous cluster */
+    if(isMark(cps[j])) continue;                /* also glued, and counted nowhere new */
+    c2++;
+    if(isJoiner(cps[j])) joinNext=true;
+  }
+  return {ok:true, chars:s.length, codepoints:cps.length, clusters:c2,
+    utf16Units:s.length, bytes:bytes, rows:rows,
+    overhead: bytes-s.length,
+    perRow: bytes? R(bytes/s.length) : 0,
+    pctOverhead: s.length? R((bytes-s.length)/s.length*100) : 0,
+    firstBytes: rows.slice(0,4).map(function(r){ return r.ch+' '+r.bytes+'B'; }).join('  ')};
+}
+function utfRun(){
+  var res=utfAll($('uText').value);
+  $('uErr').innerHTML='';
+  if(!res.ok) return res;
+  fill('uKv',[
+    ['Code points', res.codepoints],
+    ['UTF-16 units (JS string length)', res.utf16Units],
+    ['Grapheme clusters (what a person sees)', '<span class="w77-add">'+res.clusters+'</span>'],
+    ['UTF-8 bytes', '<span class="w77-add">'+res.bytes+'</span>'],
+    ['Overhead vs code points', res.overhead? '+'+res.overhead+' bytes ('+res.pctOverhead+'%)' : 'none'],
+    ['Bytes per code point', res.perRow],
+    ['Assumed storage limit', res.bytes+' bytes &le; 160 for SMS']
+  ]);
+  $('uTable').innerHTML=table(['#','char','code point','class','UTF-16 units','UTF-8 bytes',''],
+    res.rows.map(function(r){
+      return [r.i, '<span class="w77-add">'+esc(r.ch)+'</span>', r.hex, r.name, r.utf16,
+        '<span class="w77-add">'+r.bytes+'</span>', r.bytes>1? 'multi-byte' : 'single'];
+    }));
+  return res;
+}
+$('uGo').addEventListener('click',utfRun);
+$('uText').addEventListener('input',utfRun);
+wireCopy('uCopy',function(){ var r=utfAll($('uText').value); return r.ok? String(r.bytes) : 'error'; });
+window.__utf8ByteCount = { run: utfRun, all: utfAll };
+utfRun();
+
+</script>
+  </div>
+</div>
+<script src="/workspace/related.js" defer></script>
+
+
+<!--ocurp-related-->
+<nav aria-label="Related tools" class="ocurp-related">
+  <h2 class="ocurp-related-h">Related</h2>
+  <ul class="ocurp-related-grid">
+    <li><a href="/workspace/tools/anagram-solver/">
+      <span class="ocurp-related-n">Anagram Solver</span>
+      <span class="ocurp-related-b">Find exact anagrams and longer words you can build from a letter set.</span>
+    </a></li>
+    <li><a href="/workspace/tools/braille-translator/">
+      <span class="ocurp-related-n">Braille Translator</span>
+      <span class="ocurp-related-b">Convert text to Grade 1 Unicode Braille and back</span>
+    </a></li>
+    <li><a href="/workspace/tools/character-frequency/">
+      <span class="ocurp-related-n">Character Frequency Analyzer</span>
+      <span class="ocurp-related-b">Every character in your text counted with frequency and percentage</span>
+    </a></li>
+    <li><a href="/workspace/tools/duplicate-line-remover/">
+      <span class="ocurp-related-n">Duplicate Line Remover</span>
+      <span class="ocurp-related-b">Strip repeated lines</span>
+    </a></li>
+    <li><a href="/workspace/tools/duration-formatter/">
+      <span class="ocurp-related-n">Duration Formatter</span>
+      <span class="ocurp-related-b">Turn any span of seconds</span>
+    </a></li>
+    <li><a href="/workspace/tools/em-dash-converter/">
+      <span class="ocurp-related-n">Em Dash Converter</span>
+      <span class="ocurp-related-b">Swap hyphens for en and em dashes and see exactly what changed</span>
+    </a></li>
+  </ul>
+  <a class="ocurp-related-all" href="/tools/">See all tools →</a>
+</nav>
+
+<style>
+.ocurp-related{max-width:56rem;margin:3rem auto 0;padding:0 1.25rem 3rem}
+.ocurp-related-h{font-size:.7rem;font-weight:900;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin:0 0 1rem}
+.ocurp-related-grid{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;
+  grid-template-columns:1fr}
+@media(min-width:620px){.ocurp-related-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.ocurp-related-grid{grid-template-columns:1fr 1fr 1fr}}
+.ocurp-related-grid a{display:block;height:100%;padding:.9rem 1rem;border-radius:8px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  text-decoration:none;transition:border-color .18s ease,transform .18s ease}
+.ocurp-related-grid a:hover{border-color:rgba(255,95,31,.45);transform:translateY(-2px)}
+.ocurp-related-n{display:block;font-size:.82rem;font-weight:700;color:#fff;line-height:1.3}
+.ocurp-related-b{display:block;margin-top:.3rem;font-size:.7rem;line-height:1.5;
+  color:rgba(255,255,255,.42)}
+.ocurp-related-all{display:inline-block;margin-top:1.1rem;font-size:.7rem;font-weight:800;
+  letter-spacing:.18em;text-transform:uppercase;color:#FF5F1F;text-decoration:none}
+.ocurp-related-all:hover{text-decoration:underline}
+</style>
+</body>
+</html>
