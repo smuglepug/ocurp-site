@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UTF-8 Byte Counter — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#ffd166', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#ffd166; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#ffd166; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(255,209,102,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#ffd166 !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(255,209,102,.28); background:rgba(255,209,102,.06);
+    padding:1rem 1.1rem; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="Count code points. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/utf8-byte-count/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="UTF-8 Byte Counter">
+<meta property="og:description" content="Count code points. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/utf8-byte-count/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="UTF-8 Byte Counter on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="UTF-8 Byte Counter">
+<meta name="twitter:description" content="Count code points. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="UTF-8 Byte Counter on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"UTF-8 Byte Counter","url":"https://ocurp.com/workspace/tools/utf8-byte-count/","description":"Count code points. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#ffd166">
+<a class="skip" href="#ws-play">Skip to the tool</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/tools/utf8-byte-count/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/tools/">Tools</a><span aria-hidden="true">/</span><a href="/workspace/tools/?c=text">Writing &amp; text</a></nav><h1>UTF-8 Byte Counter</h1><p class="lede">Count code points, UTF-16 units and grapheme clusters as well as bytes, so a 140-character message and its 420-byte cost are different numbers and both are visible.</p><div class="d-tags"><span class="g">Writing &amp; text</span><span>Utf-8</span><span>Bytes</span><span>Emoji</span><span>Grapheme</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Open now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/tools/">All tools</a></div></div><div class="d-shot"><img src="/workspace/tools/utf8-byte-count/card.jpg?v=20261006" alt="UTF-8 Byte Counter screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+  <p class="mb-8 max-w-2xl text-base text-white/55">How many bytes a piece of text really costs. Code points, UTF-16 units and grapheme clusters are three different numbers and the page reports all three, because a character limit written by a human, enforced by JavaScript and paid for in bytes are three different budgets &mdash; and an emoji assembled from ZWJ sequences counts as one thing to the eye and several to the counter.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-5">
+  <label class="ws-label mb-1 block" for="uText">Text</label>
+  <textarea id="uText" class="ws-input" rows="4">café 🎮</textarea>
+  <div id="uErr"></div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="uGo" class="ws-btn" style="width:auto">Count</button>
+    <button id="uCopy" class="ws-btn-ghost" style="width:auto">Copy</button>
+  </div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Counts</div>
+  <div id="uKv"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">Where the bytes go</div>
+  <div class="w77-scroll"><div id="uTable"></div></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3">
+  <p class="w77-note">
+    The gap between characters and bytes is where a 140-character SMS becomes a
+    420-character one. A character here means a Unicode code point, so
+    <span class="w77-add">🎮</span> counts once even though your editor's caret
+    moves four bytes over it, and an emoji built from ZWJ sequences counts as
+    several code points while looking like one glyph &mdash; the page counts
+    grapheme clusters too, because that is the number a human actually sees.
+  </p>
+</div>
+
+  </div>
+  <div class="mt-8">
+<style>
+<style>
+.w77-table{width:100%;border-collapse:collapse;font-size:.8rem;
+  font-family:'JetBrains Mono',ui-monospace,monospace;}
+.w77-table th{text-align:left;font-family:Inter,sans-serif;font-size:9px;
+  font-weight:800;text-transform:uppercase;letter-spacing:.13em;
+  color:rgba(255,255,255,.4);padding:.55rem .6rem;border-bottom:1px solid rgba(255,255,255,.12);}
+.w77-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.06);
+  color:#fff;vertical-align:top;}
+.w77-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.w77-table tr.t1 td{background:rgba(255,209,102,.09);}
+.w77-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.w77-add{color:#ffd166}
+.w77-note{font-size:.75rem;color:rgba(255,255,255,.4);line-height:1.6}
+.w77-bad{display:block;margin-top:1rem;border:1px solid rgba(255,209,102,.45);
+  background:rgba(255,209,102,.08);border-radius:.75rem;padding:.85rem 1rem;
+  font-size:.8rem;color:rgba(255,255,255,.8);line-height:1.6}
+.w77-frac{display:inline-flex;flex-direction:column;align-items:center;
+  font-family:'JetBrains Mono',ui-monospace,monospace;font-size:1.9rem;line-height:1.15;
+  color:#ffd166;padding:.35rem .6rem}
+.w77-frac span:first-child{border-bottom:2px solid rgba(255,255,255,.4);
+  padding:0 .35rem .15rem}
+.w77-frac span:last-child{padding:.15rem .35rem 0}
+textarea.ws-input{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.85rem;line-height:1.6}
+</style>
+</style>
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function R(n){ var v=Math.round(n*1e6)/1e6; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id){ var el=$(id); if(!el) return NaN; return parseFloat(el.value); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function wireCopy(btnId,getText){
+  var b=$(btnId); if(!b) return;
+  b.addEventListener('click',function(){
+    var t=getText();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){
+        b.textContent='Copied'; },function(){ b.textContent='Copy failed'; });
+    }else{ b.textContent='Copy unavailable'; }
+    setTimeout(function(){ b.textContent='Copy'; },1400);
+  });
+}
+function table(head,rows){
+  var h='<table class="w77-table"><thead><tr>'+
+    head.map(function(t){return '<th>'+esc(t)+'</th>';}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(row){
+    h+='<tr>'+row.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';
+  });
+  return h+'</tbody></table>';
+}
+function bad(id,msg){ var e=$(id); if(e) e.innerHTML='<span class="w77-bad">'+esc(msg)+'</span>'; }
+
+function utfAll(src){
+  var s=String(src==null?'':src);
+  var cps=Array.from(s);
+  var bytes=0, rows=[];
+  for(var i=0;i<cps.length;i++){
+    var c=cps[i], cp=c.codePointAt(0);
+    var nb=c.length;                       /* UTF-8 length == UTF-16 units used */
+    var cpBytes = cp<0x80?1 : cp<0x800?2 : cp<0x10000?3 : 4;
+    bytes+=cpBytes;
+    rows.push({i:i+1, ch:c, cp:cp, hex:'U+'+cp.toString(16).toUpperCase().padStart(4,'0'),
+      utf16:c.length, bytes:cpBytes,
+      name: (function(){
+        if(cp<0x80) return 'ASCII';
+        if(cp<0x800) return 'Latin-1 supplement';
+        if(cp<0x10000) return 'BMP';
+        return 'Supplementary (astral)';
+      })()});
+  }
+  /* grapheme clusters: a combining mark, a variation selector or a keycap stays
+     with the character before it, and a ZWJ glues the pair into one glyph. */
+  var CL=/^[\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20f0\u20e3\ufe20-\ufe2f]$/;
+  function isJoiner(c){ return c.codePointAt(0)===0x200D; }
+  function isMark(c){
+    if(CL.test(c)) return true;
+    var cp=c.codePointAt(0);
+    return cp>=0xFE00&&cp<=0xFE0F;      /* variation selectors */
+  }
+  var c2=0, joinNext=false;
+  for(var j=0;j<cps.length;j++){
+    if(joinNext){ joinNext=false; continue; }   /* glued to the previous cluster */
+    if(isMark(cps[j])) continue;                /* also glued, and counted nowhere new */
+    c2++;
+    if(isJoiner(cps[j])) joinNext=true;
+  }
+  return {ok:true, chars:s.length, codepoints:cps.length, clusters:c2,
+    utf16Units:s.length, bytes:bytes, rows:rows,
+    overhead: bytes-s.length,
+    perRow: bytes? R(bytes/s.length) : 0,
+    pctOverhead: s.length? R((bytes-s.length)/s.length*100) : 0,
+    firstBytes: rows.slice(0,4).map(function(r){ return r.ch+' '+r.bytes+'B'; }).join('  ')};
+}
+function utfRun(){
+  var res=utfAll($('uText').value);
+  $('uErr').innerHTML='';
+  if(!res.ok) return res;
+  fill('uKv',[
+    ['Code points', res.codepoints],
+    ['UTF-16 units (JS string length)', res.utf16Units],
+    ['Grapheme clusters (what a person sees)', '<span class="w77-add">'+res.clusters+'</span>'],
+    ['UTF-8 bytes', '<span class="w77-add">'+res.bytes+'</span>'],
+    ['Overhead vs code points', res.overhead? '+'+res.overhead+' bytes ('+res.pctOverhead+'%)' : 'none'],
+    ['Bytes per code point', res.perRow],
+    ['Assumed storage limit', res.bytes+' bytes &le; 160 for SMS']
+  ]);
+  $('uTable').innerHTML=table(['#','char','code point','class','UTF-16 units','UTF-8 bytes',''],
+    res.rows.map(function(r){
+      return [r.i, '<span class="w77-add">'+esc(r.ch)+'</span>', r.hex, r.name, r.utf16,
+        '<span class="w77-add">'+r.bytes+'</span>', r.bytes>1? 'multi-byte' : 'single'];
+    }));
+  return res;
+}
+$('uGo').addEventListener('click',utfRun);
+$('uText').addEventListener('input',utfRun);
+wireCopy('uCopy',function(){ var r=utfAll($('uText').value); return r.ok? String(r.bytes) : 'error'; });
+window.__utf8ByteCount = { run: utfRun, all: utfAll };
+utfRun();
+
+</script>
+  </div>
+</div>
+<section class="d-more"><div class="wrap"><h2>More tools</h2><div class="ws-grid"><a class="tile-card" href="/workspace/tools/braille-translator/" style="--c:#ffd166"><div class="shot"><img src="/workspace/tools/braille-translator/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Writing &amp; text</span><h3>Braille Translator</h3><p>Convert text to Grade 1 Unicode Braille and back, with capital and number signs handled properly.</p></div></a><a class="tile-card" href="/workspace/tools/vigenere-cipher/" style="--c:#ffd166"><div class="shot"><img src="/workspace/tools/vigenere-cipher/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Writing &amp; text</span><h3>Vigenere Cipher</h3><p>Encrypt or decrypt with a repeating keyword, keeping case and leaving spaces and punctuation in place.</p></div></a><a class="tile-card" href="/workspace/tools/palindrome-checker/" style="--c:#ffd166"><div class="shot"><img src="/workspace/tools/palindrome-checker/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Writing &amp; text</span><h3>Palindrome Checker</h3><p>Check any phrase as a palindrome, ignoring case, accents and punctuation, and see the first mismatch.</p></div></a><a class="tile-card" href="/workspace/tools/duplicate-line-remover/" style="--c:#ffd166"><div class="shot"><img src="/workspace/tools/duplicate-line-remover/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Writing &amp; text</span><h3>Duplicate Line Remover</h3><p>Strip repeated lines, keep first or last, case-fold, trim and sort the result.</p></div></a><a class="tile-card" href="/workspace/tools/palette/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/tools/palette/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Design &amp; colour</span><h3>Palette Extractor</h3><p>Pull a palette out of any image you drop in.</p></div></a><a class="tile-card" href="/workspace/tools/favicon-generator/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/tools/favicon-generator/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Design &amp; colour</span><h3>Favicon Generator</h3><p>Resize an image to every favicon size and zip it.</p></div></a><a class="tile-card" href="/workspace/tools/unit-converter/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/unit-converter/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Unit Converter</h3><p>Length, mass, temperature, data and more.</p></div></a><a class="tile-card" href="/workspace/tools/calculator/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/calculator/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Calculator</h3><p>Everyday arithmetic and percentages, for quick sums.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>

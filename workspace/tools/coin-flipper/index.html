@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coin Flip Probability — Free Online Tool | Ocurp</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { accent:'#b49bff', secondary:'#e0f2fe', dark:'#050505' },
+  fontFamily: { sans:['Inter','system-ui','sans-serif'], display:['Space Grotesk','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] }
+}}};
+</script>
+<style>
+  :root { --accent:#b49bff; }
+  body { background:#050505; }
+  .noise-overlay { position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-vibrant-blob { position:absolute; width:46rem; height:46rem; border-radius:50%;
+    background:radial-gradient(circle, rgba(224,242,254,.16), transparent 62%); filter:blur(90px); z-index:0; }
+  @keyframes morph-blob { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(6rem,-3rem) scale(1.15)} }
+  .ws-panel { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); border-radius:1rem; }
+  .ws-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; color:rgba(255,255,255,.4); }
+  .ws-btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem;
+    background:#b49bff; padding:.8rem 1.3rem; font-size:.875rem; font-weight:700; color:#000; transition:opacity .15s; width:100%; }
+  .ws-btn:hover { opacity:.9; }
+  .ws-btn-ghost { display:inline-flex; align-items:center; justify-content:center; border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.12); padding:.8rem 1.3rem; font-size:.875rem; font-weight:600;
+    color:rgba(255,255,255,.85); transition:background .15s; width:100%; }
+  .ws-btn-ghost:hover { background:rgba(255,255,255,.06); }
+  .ws-input { width:100%; border-radius:.75rem; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
+    padding:.9rem 1rem; color:#fff; font-size:.875rem; }
+  .ws-input:focus { outline:none; border-color:rgba(180,155,255,.5); }
+  .ws-input::placeholder { color:rgba(255,255,255,.3); }
+  .ws-input[type=number] { min-width:6rem; text-align:right; font-variant-numeric:tabular-nums; padding:.9rem .8rem; }
+  .ws-input[type=number]::-webkit-outer-spin-button, .ws-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .ws-input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  .ws-input option { background-color:#141414 !important; color:#fff !important; }
+  select.ws-input option:checked { background-color:#b49bff !important; color:#000 !important; }
+  .ws-chip { display:inline-flex; align-items:center; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:.3rem .7rem; font-size:10px; font-weight:800; letter-spacing:.1em; color:rgba(255,255,255,.6); }
+  .ws-out { border-radius:.75rem; border:1px solid rgba(180,155,255,.28); background:rgba(180,155,255,.06);
+    padding:1rem 1.1rem; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.95rem; line-height:1.7; }
+  .ws-grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  @media (min-width:768px){ .ws-grid2{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .ws-kv { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ws-kv:last-child { border-bottom:0; }
+  .ws-kv span:first-child { color:rgba(255,255,255,.45); font-size:.8rem; }
+  .ws-kv span:last-child { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.9rem; color:#fff; text-align:right; }
+</style>
+<meta name="description" content="A seeded coin you can reproduce. Runs entirely in your browser - nothing is uploaded.">
+<link rel="canonical" href="https://ocurp.com/workspace/tools/coin-flipper/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Coin Flip Probability">
+<meta property="og:description" content="A seeded coin you can reproduce. Runs entirely in your browser - nothing is uploaded.">
+<meta property="og:url" content="https://ocurp.com/workspace/tools/coin-flipper/">
+<meta property="og:site_name" content="Ocurp">
+<meta property="og:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Coin Flip Probability on Ocurp - free, runs in your browser">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Coin Flip Probability">
+<meta name="twitter:description" content="A seeded coin you can reproduce. Runs entirely in your browser - nothing is uploaded.">
+<meta name="twitter:image" content="https://ocurp.com/images/og-card-tools.png">
+<meta name="twitter:image:alt" content="Coin Flip Probability on Ocurp - free, runs in your browser">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Coin Flip Probability","url":"https://ocurp.com/workspace/tools/coin-flipper/","description":"A seeded coin you can reproduce. Runs entirely in your browser - nothing is uploaded.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1"><link rel="preload" href="/assets/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/site.css?v=3"><link rel="stylesheet" href="/workspace/hub.css?v=1"><link rel="stylesheet" href="/workspace/skin.css?v=1">
+</head>
+<body class="ws" data-reskin="1" style="--hue:#b49bff">
+<a class="skip" href="#ws-play">Skip to the tool</a>
+<header class="site-header"><div class="wrap"><a class="brand" href="/" aria-label="Ocurp home"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><nav class="nav" aria-label="Primary"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></nav><div class="header-cta"><a class="signin" href="/ocurp/signin/">Sign in</a><a class="btn btn-primary" href="/#contact">Start a project</a></div><button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path class="m-open" d="M3 6h14M3 14h14"/><path class="m-close" d="M5 5l10 10M15 5 5 15"/></svg></button></div></header><nav class="mobile-nav" id="mobile-nav" aria-label="Mobile"><a href="/">Home</a><a href="/workspace/tools/" aria-current="true">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a><a href="/ocurp/signin/">Sign in</a></nav>
+<section class="d-hero"><div class="bg" style="background-image:url(/workspace/tools/coin-flipper/card.jpg?v=20261006)"></div><div class="wrap"><div><nav class="crumbs" aria-label="Breadcrumb"><a href="/workspace/">Workspace</a><span aria-hidden="true">/</span><a href="/workspace/tools/">Tools</a><span aria-hidden="true">/</span><a href="/workspace/tools/?c=math">Math &amp; convert</a></nav><h1>Coin Flip Probability</h1><p class="lede">A seeded coin you can reproduce, with the exact binomial probability of the outcome you got, the chance of seeing at least that many heads and a two-sided p-value.</p><div class="d-tags"><span class="g">Math &amp; convert</span><span>Binomial</span><span>Probability</span><span>P-Value</span><span>Seeded</span></div><div class="d-actions"><a class="btn btn-primary" href="#ws-play">Open now <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14 14 6M7 6h7v7"/></svg></a><a class="btn btn-ghost" href="/workspace/tools/">All tools</a></div></div><div class="d-shot"><img src="/workspace/tools/coin-flipper/card.jpg?v=20261006" alt="Coin Flip Probability screenshot" width="960" height="600" decoding="async" onerror="this.parentNode.remove()"></div></div></section>
+<div id="ws-play" class="relative z-10 mx-auto w-full max-w-7xl px-5 pb-6 pt-6 sm:px-8">
+  
+  <p class="mb-8 max-w-2xl text-base text-white/55">Flip a coin with a seed you control, then find out how likely that result actually was. The generator is a specified seeded PRNG, so seed 1 always gives the same run &mdash; you cannot keep clicking until the numbers please you &mdash; and the page computes the exact binomial probability of the outcome it produced, the probability of seeing at least that many heads, and a two-sided p-value. Ten heads in ten shows up as 0.098%.</p>
+  <div class="ws-grid2">
+
+<div class="ws-panel p-5">
+  <label class="ws-label mb-1 block" for="kN">Flips</label>
+  <input id="kN" class="ws-input" type="number" value="10" min="1" max="10000">
+  <label class="ws-label mb-1 block mt-3" for="kSeed">Seed</label>
+  <input id="kSeed" class="ws-input" type="number" value="1" min="0">
+  <label class="ws-label mb-1 block mt-3">Coin</label>
+  <div class="mt-1 flex gap-2">
+    <button id="kFair" class="ws-btn" style="width:auto">Fair</button>
+    <button id="kBiased" class="ws-btn-ghost" style="width:auto">Biased 60/40</button>
+  </div>
+  <div id="kErr"></div>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button id="kGo" class="ws-btn" style="width:auto">Flip</button>
+    <button id="kCopy" class="ws-btn-ghost" style="width:auto">Copy</button>
+  </div>
+</div>
+<div class="ws-panel p-5">
+  <div class="ws-label mb-2">Result</div>
+  <div id="kKv"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3 ws-panel p-5">
+  <div class="ws-label mb-2">The run</div>
+  <div id="kStrip"></div>
+  <div id="kTable" class="mt-3 w77-scroll"></div>
+</div>
+<div class="md:col-span-2 lg:col-span-3">
+  <p class="w77-note">
+    Seeded, so the same seed gives the same run &mdash; which is the point. A coin
+    simulator that reshuffles on every click cannot be used to reason about what a
+    result means, because you can keep clicking until you get the answer you
+    liked. The page runs the exact binomial probabilities for the outcome it got
+    and reports how surprising it was, so
+    <span class="w77-add">10 heads in 10</span> shows as
+    <span class="w77-add">0.098%</span> of fair-coin outcomes rather than looking
+    like a result that simply happened.
+  </p>
+</div>
+
+  </div>
+  <div class="mt-8">
+<style>
+<style>
+.w77-table{width:100%;border-collapse:collapse;font-size:.8rem;
+  font-family:'JetBrains Mono',ui-monospace,monospace;}
+.w77-table th{text-align:left;font-family:Inter,sans-serif;font-size:9px;
+  font-weight:800;text-transform:uppercase;letter-spacing:.13em;
+  color:rgba(255,255,255,.4);padding:.55rem .6rem;border-bottom:1px solid rgba(255,255,255,.12);}
+.w77-table td{padding:.5rem .6rem;border-bottom:1px solid rgba(255,255,255,.06);
+  color:#fff;vertical-align:top;}
+.w77-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.w77-table tr.t1 td{background:rgba(180,155,255,.09);}
+.w77-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.w77-add{color:#b49bff}
+.w77-note{font-size:.75rem;color:rgba(255,255,255,.4);line-height:1.6}
+.w77-bad{display:block;margin-top:1rem;border:1px solid rgba(180,155,255,.45);
+  background:rgba(180,155,255,.08);border-radius:.75rem;padding:.85rem 1rem;
+  font-size:.8rem;color:rgba(255,255,255,.8);line-height:1.6}
+.w77-frac{display:inline-flex;flex-direction:column;align-items:center;
+  font-family:'JetBrains Mono',ui-monospace,monospace;font-size:1.9rem;line-height:1.15;
+  color:#b49bff;padding:.35rem .6rem}
+.w77-frac span:first-child{border-bottom:2px solid rgba(255,255,255,.4);
+  padding:0 .35rem .15rem}
+.w77-frac span:last-child{padding:.15rem .35rem 0}
+textarea.ws-input{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.85rem;line-height:1.6}
+</style>
+</style>
+<script>
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function R(n){ var v=Math.round(n*1e6)/1e6; if(Object.is(v,-0)) v=0; return v; }
+function put(id,val){ var el=$(id); if(!el) return; el.value=val;
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true})); }
+function num(id){ var el=$(id); if(!el) return NaN; return parseFloat(el.value); }
+function kvs(rows){ return rows.map(function(p){
+    return '<div class="ws-kv"><span>'+esc(p[0])+'</span><span>'+esc(p[1])+'</span></div>';
+  }).join(''); }
+function fill(id,rows){ var e=$(id); if(e) e.innerHTML=kvs(rows); }
+function wireCopy(btnId,getText){
+  var b=$(btnId); if(!b) return;
+  b.addEventListener('click',function(){
+    var t=getText();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){
+        b.textContent='Copied'; },function(){ b.textContent='Copy failed'; });
+    }else{ b.textContent='Copy unavailable'; }
+    setTimeout(function(){ b.textContent='Copy'; },1400);
+  });
+}
+function table(head,rows){
+  var h='<table class="w77-table"><thead><tr>'+
+    head.map(function(t){return '<th>'+esc(t)+'</th>';}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(row){
+    h+='<tr>'+row.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';
+  });
+  return h+'</tbody></table>';
+}
+function bad(id,msg){ var e=$(id); if(e) e.innerHTML='<span class="w77-bad">'+esc(msg)+'</span>'; }
+
+/* mulberry32: small, fast, fully specified. A seeded generator is what makes
+   this page a reproducible experiment rather than a random number toy. */
+function _rng(seed){
+  var a=seed>>>0;
+  return function(){
+    a=(a+0x6D2B79F5)>>>0;
+    var t=a;
+    t=Math.imul(t^(t>>>15), t|1);
+    t^=t+Math.imul(t^(t>>>7), t|61);
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+/* Exact binomial PMF by log-gamma; stable where n! overflows. */
+function _lgamma(z){
+  var g=[676.5203681218851,-1259.1392167224028,771.32342877765313,
+    -176.61502916214059,12.507343278686905,-0.13857109526572012,
+    9.9843695780195716e-6,1.5056327351493116e-7];
+  if(z<0.5) return Math.log(Math.PI/Math.sin(Math.PI*z))-_lgamma(1-z);
+  z-=1; var x=0.99999999999980993;
+  for(var i=0;i<g.length;i++) x+=g[i]/(z+i+1);
+  var t=z+g.length-0.5;
+  return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);
+}
+function binomPmf(k,n,p){
+  if(k<0||k>n) return 0;
+  var lc=_lgamma(n+1)-_lgamma(k+1)-_lgamma(n-k+1);
+  var lp=k*Math.log(p)+(n-k)*Math.log(1-p);
+  var v=Math.exp(lc+lp);
+  return isFinite(v)&&!isNaN(v)? v : 0;
+}
+/* Exact CDF by summing the PMF - n is capped at 10000 so the loop is fine. */
+function binomCdf(k,n,p){
+  var t=0;
+  for(var i=0;i<=k;i++) t+=binomPmf(i,n,p);
+  return Math.min(1,t);
+}
+function coinAll(n, seed, pHead){
+  n=Math.floor(Number(n));
+  if(!isFinite(n)||n<1) return {ok:false,error:'Number of flips must be at least 1'};
+  if(n>10000) return {ok:false,error:'Capped at 10000 flips on this page'};
+  if(!isFinite(pHead)||pHead<0||pHead>1) return {ok:false,error:'Probability must be 0-1'};
+  var rnd=_rng(seed>>>0), flips=[], heads=0;
+  for(var i=0;i<n;i++){ var h=rnd()<pHead; flips.push(h); if(h) heads++; }
+  var tails=n-heads;
+  var pHeadsExact=binomPmf(heads,n,pHead);
+  var pAtLeast= 1-binomCdf(heads-1,n,pHead);
+  var twoSided=2*Math.min(binomCdf(heads,n,pHead), 1-binomCdf(heads-1,n,pHead));
+  return {ok:true, n:n, seed:seed>>>0, pHead:pHead, heads:heads, tails:tails,
+    fraction: R(heads/n), flips:flips, runLengths: longestRun(flips),
+    pExact:pHeadsExact, pAtLeastHeads:pAtLeast,
+    twoSided:Math.min(1,twoSided),
+    expected: R(n*pHead), stdev: R(Math.sqrt(n*pHead*(1-pHead))),
+    z: n>0&&pHead>0&&pHead<1? R((heads-n*pHead)/Math.sqrt(n*pHead*(1-pHead))) : null,
+    surprising: 2*Math.min(binomCdf(heads,n,pHead), 1-binomCdf(heads-1,n,pHead))<0.05};
+}
+function longestRun(flips){
+  var best=0, cur=0, bestHead=0, curHead=flips[0];
+  for(var i=0;i<flips.length;i++){
+    if(flips[i]===curHead){ cur++; } else { cur=1; curHead=flips[i]; }
+    if(cur>best){ best=cur; bestHead=curHead; }
+  }
+  return {length:best, of:bestHead?'heads':'tails'};
+}
+function coinRun(){
+  var res=coinAll(num('kN'),num('kSeed'), window.__coinP===undefined?0.5:window.__coinP);
+  var eb=$('kErr'); eb.innerHTML='';
+  if(!res.ok){ $('kKv').innerHTML=''; $('kStrip').innerHTML=''; $('kTable').innerHTML='';
+    bad('kErr',res.error); return res; }
+  fill('kKv',[
+    ['Heads', '<span class="w77-add">'+res.heads+'</span>'],
+    ['Tails', res.tails],
+    ['Observed rate', res.fraction+'  (true p = '+res.pHead+')'],
+    ['Expected', res.expected+' +/- '+res.stdev+' (1 sd)'],
+    ['Standard deviations out', res.z===null?'n/a':res.z],
+    ['P(exactly this many heads)', '<span class="w77-add">'+(res.pExact*100).toFixed(6)+'%</span>'],
+    ['P(at least this many, or more)', (res.pAtLeastHeads*100).toFixed(4)+'%'],
+    ['Two-sided p-value', '<span class="w77-add">'+res.twoSided.toFixed(4)+'</span>'],
+    ['Longest run', res.runLengths.length+' '+res.runLengths.of],
+    ['Verdict', res.surprising? '<span class="w77-add">surprising</span> - under 5% by chance'
+      : 'ordinary - within what chance produces most of the time']
+  ]);
+  var strip='';
+  for(var i=0;i<Math.min(res.n, 300);i++)
+    strip+='<span style="display:inline-block;width:.7rem;height:1.3rem;margin:1px;'+
+      'border-radius:2px;background:'+(res.flips[i]?'#b49bff':'rgba(255,255,255,.16)')+'"></span>';
+  $('kStrip').innerHTML='<div style="max-height:11rem;overflow:auto;line-height:0">'+strip+
+    (res.n>300? '<p class="w77-note" style="margin-top:.6rem">first 300 of '+res.n+' shown</p>':'')+'</div>';
+  $('kTable').innerHTML='<p class="w77-note">Seed '+res.seed+' &mdash; the same seed always '+
+    'produces this exact run.</p>';
+  return res;
+}
+window.__coinP=0.5;
+$('kFair').addEventListener('click',function(){ window.__coinP=0.5; coinRun(); });
+$('kBiased').addEventListener('click',function(){ window.__coinP=0.6; coinRun(); });
+$('kGo').addEventListener('click',coinRun);
+['kN','kSeed'].forEach(function(id){ $(id).addEventListener('input',coinRun); });
+wireCopy('kCopy',function(){ var r=coinAll(num('kN'),num('kSeed'),
+  window.__coinP===undefined?0.5:window.__coinP);
+  return r.ok? (r.heads+' heads, '+r.tails+' tails') : 'error'; });
+window.__coinFlipper = { run: coinRun, all: coinAll };
+coinRun();
+
+</script>
+  </div>
+</div>
+<section class="d-more"><div class="wrap"><h2>More tools</h2><div class="ws-grid"><a class="tile-card" href="/workspace/tools/roman-numerals/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/roman-numerals/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Roman Numeral Converter</h3><p>Convert 1-3999 both ways, see how each numeral adds up and catch non-standard forms like IIII.</p></div></a><a class="tile-card" href="/workspace/tools/prime-checker/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/prime-checker/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Prime Checker &amp; Factoriser</h3><p>Test any number for primality with Miller-Rabin, then get its prime factorisation and every divisor.</p></div></a><a class="tile-card" href="/workspace/tools/statistics-calculator/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/statistics-calculator/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>Statistics Calculator</h3><p>Mean, median, mode, quartiles, range and standard deviation for any list of numbers.</p></div></a><a class="tile-card" href="/workspace/tools/vat-calc/" style="--c:#b49bff"><div class="shot"><img src="/workspace/tools/vat-calc/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Math &amp; convert</span><h3>VAT &amp; GST Calculator</h3><p>Add tax to a net amount or strip it back out of a gross amount, with common rates one click away.</p></div></a><a class="tile-card" href="/workspace/tools/image-color-picker/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/tools/image-color-picker/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Design &amp; colour</span><h3>Image Colour Picker</h3><p>Click any pixel in an image to get its hex, RGB and HSL values, with a magnifier for precision work.</p></div></a><a class="tile-card" href="/workspace/tools/base58/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/base58/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>Base58 Encoder</h3><p>Encode and decode Bitcoin&#x27;s Base58 alphabet, with direct Base58 to hex and Base64 conversion.</p></div></a><a class="tile-card" href="/workspace/tools/avif-to-png/" style="--c:#ff8fc7"><div class="shot"><img src="/workspace/tools/avif-to-png/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Design &amp; colour</span><h3>AVIF to PNG</h3><p>Convert an AVIF picture to PNG in your browser - the file never leaves the page.</p></div></a><a class="tile-card" href="/workspace/tools/srt-shifter/" style="--c:#5ec8ff"><div class="shot"><img src="/workspace/tools/srt-shifter/card.jpg?v=20261006" alt="" loading="lazy" width="480" height="300" onerror="this.remove()"><span class="go" aria-hidden="true">Open</span></div><div class="tc-body"><span class="genre">Data &amp; code</span><h3>SRT Shifter</h3><p>Shift subtitle timings by any amount, enforce reading speed and renumber cues without overlap.</p></div></a></div></div></section>
+<footer class="site-footer"><div class="wrap"><div class="foot"><div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="#ff6a2b" stroke-width="5"/><ellipse cx="32" cy="32" rx="28" ry="10" fill="none" stroke="#ff8a4c" stroke-width="3" transform="rotate(-28 32 32)"/><circle cx="49" cy="17" r="4.5" fill="#ffe6d2"/></svg>Ocurp</a><p class="foot-tag">Free tools and games that run on your device. Nothing is uploaded.</p></div><nav class="foot-cols" aria-label="Footer"><div><h4>Studio</h4><a href="/#work">Work</a><a href="/#about">About</a><a href="/#contact">Contact</a></div><div><h4>Workspace</h4><a href="/workspace/tools/">Tools</a><a href="/workspace/games/">Games</a><a href="/workspace/websites/">Websites</a></div></nav></div><div class="foot-social"><span class="social"><a href="https://github.com/smuglepug" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a><a href="https://x.com/OsayiiOwen" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></a><a href="https://linkedin.com/in/owen-osayi-76b740395/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></span></div><div class="foot-base"><p class="fine">&copy; 2026 Ocurp. Led by Owen Osayi.</p><p class="fine"><a href="/ocurp/signin/">Sign in</a></p></div></div></footer>
+<script src="/assets/site.js?v=2" defer></script>
+</body>
+</html>
