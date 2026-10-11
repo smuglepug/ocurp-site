@@ -217,6 +217,9 @@ document.getElementById('em-diffbtn').addEventListener('click', function(){
   while(i < at.length && j < bt.length){
     if(at[i] === bt[j]){ rows.push('<span>' + esc(at[i]) + '</span>'); i++; j++; continue; }
     var foundJ = bt.indexOf(at[i], j), foundI = at.indexOf(bt[j], i);
+    /* a changed token (the usual case: '--' became a dash) is found on neither side; the old code
+       then set i = -1 and looped forever, freezing the tab */
+    if(foundJ < 0 && foundI < 0){ rows.push('<del>' + esc(at[i]) + '</del>'); rows.push('<ins>' + esc(bt[j]) + '</ins>'); i++; j++; continue; }
     if(foundJ >= 0 && (foundI < 0 || foundJ - j <= foundI - i)){
       for(var k = j; k < foundJ; k++) rows.push('<ins>' + esc(bt[k]) + '</ins>');
       j = foundJ;
