@@ -290,7 +290,7 @@
        the pill is unambiguous so go straight in. */
     ui.enter.addEventListener('click', function (ev) {
       ev.preventDefault();
-      if (COARSE || isTouch) openSheet(); else enter();
+      if (COARSE) openSheet(); else enter();
     });
     ui.exit.addEventListener('click', function (ev) { ev.preventDefault(); exit(); });
 
@@ -360,7 +360,7 @@
   }
 
   function onDocClick(e) {
-    if (!COARSE && !isTouch) return;
+    if (!COARSE) return;
     if (inPlayMode()) return;
     /* Never react to our own UI. Without this the sheet's own "Play fullscreen"
        button matched the Start pattern, so accepting the dialog re-opened the
@@ -398,7 +398,7 @@
 
   /* auto-arm the CSS (not the fullscreen) on touch devices, so the page is at
      least non-scrolling inside the canvas before anyone taps Fullscreen */
-  if (COARSE || isTouch) {
+  if (COARSE) {
     document.addEventListener('DOMContentLoaded', function () {
       document.documentElement.classList.add('ocurp-touch');
     });
