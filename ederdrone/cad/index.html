@@ -1,0 +1,672 @@
+<meta charset="utf-8">
+<title>Ederdrone CAD viewer</title>
+<meta name="description" content="Interactive 3D viewer and free CAD downloads for owen's circular assistant drone designs.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a product showroom. One full-width studio stage, then quiet sections on a single centred column. Deliberately dark-only. */
+:root{
+  --bg:#0c0e11; --stage:#15181d; --raise:#1b1f25; --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+  --fg:#eef1f5; --muted:#8b939e; --faint:#5c646e; --accent:#9cc3ff; --accent-ink:#0c0e11;
+  --ok:#7fd1a0; --dead:#d49aa4; --warn:#e8c27a;
+  --f-sans:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.6 var(--f-sans);-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+h1,h2,h3{margin:0;text-wrap:balance;font-weight:700;letter-spacing:-.02em}
+p{margin:0}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1180px;margin:0 auto}
+.col{max-width:880px;margin:0 auto}
+.eyebrow{font:500 12px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* nav */
+nav.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:20px}
+.logo{font-weight:800;font-size:20px;letter-spacing:.32em}
+.links{display:flex;gap:22px;font-size:14px;color:var(--muted)}
+.links a{color:inherit}
+.links a:hover{color:var(--fg);text-decoration:none}
+
+/* stage */
+.stage{position:relative;height:min(76vh,760px);min-height:520px;border-radius:24px;overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 38%,#262b33 0%,var(--stage) 55%,#0f1115 100%)}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#gl:active{cursor:grabbing}
+.head{position:absolute;top:34px;left:0;right:0;text-align:center;pointer-events:none;padding-inline:20px}
+.head h1{font-size:clamp(34px,5.4vw,60px);line-height:1.02;font-weight:800}
+.head p{color:var(--muted);margin-top:8px;font-size:15px}
+.status{display:inline-flex;align-items:center;gap:7px;font:500 11px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;color:var(--muted)}
+.status i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.status.rec{color:var(--ok)} .status.alt{color:var(--accent)} .status.drop{color:var(--dead)} .status.next{color:var(--warn)}
+
+.stats{position:absolute;left:28px;bottom:26px;display:flex;gap:28px;pointer-events:none}
+.stats b{display:block;font:500 26px/1.1 var(--f-mono);letter-spacing:-.02em}
+.stats span{font-size:12px;color:var(--muted)}
+.tools{position:absolute;right:22px;bottom:22px;display:flex;gap:6px}
+.icon{appearance:none;border:1px solid var(--line2);background:rgba(20,23,28,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  height:38px;min-width:38px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;color:var(--fg)}
+.icon:hover{border-color:rgba(255,255,255,.3)}
+.icon[aria-pressed="true"]{background:var(--fg);color:var(--accent-ink);border-color:var(--fg)}
+.loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font:500 13px var(--f-mono);pointer-events:none}
+
+.switch{display:flex;justify-content:center;margin-top:-26px;position:relative;z-index:2}
+.seg{display:inline-flex;gap:4px;padding:5px;border-radius:999px;background:var(--raise);border:1px solid var(--line2);box-shadow:0 10px 30px rgba(0,0,0,.45);max-width:100%;overflow-x:auto}
+.seg button{appearance:none;border:0;background:none;padding:10px 18px;border-radius:999px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap}
+.seg button:hover{color:var(--fg)}
+.seg button[aria-selected="true"]{background:var(--fg);color:var(--accent-ink)}
+
+.shapes{display:flex;justify-content:center;gap:8px;margin-top:16px;flex-wrap:wrap}
+.shapes button{appearance:none;border:1px solid var(--line2);background:none;border-radius:999px;padding:7px 14px;font-size:13px;color:var(--muted);cursor:pointer}
+.shapes button[aria-pressed="true"]{color:var(--fg);border-color:var(--fg)}
+
+/* sections */
+section{padding-top:96px}
+.sec-head{display:flex;flex-direction:column;gap:10px;margin-bottom:32px}
+.sec-head h2{font-size:clamp(28px,3.6vw,40px)}
+.sec-head p{color:var(--muted);max-width:60ch}
+
+.spec{display:grid;grid-template-columns:1fr 1fr;column-gap:56px;margin:0}
+.spec div{display:flex;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+.spec dt{color:var(--muted);font-size:15px}
+.spec dd{margin:0;text-align:right;font-weight:600;font-size:15px}
+.spec-note{margin-top:20px;color:var(--faint);font-size:14px}
+.parts{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px}
+.parts label{position:relative;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:999px;padding:6px 14px 6px 10px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+.parts input{position:absolute;opacity:0;pointer-events:none}
+.parts label i{width:9px;height:9px;border-radius:50%;background:var(--faint)}
+.parts label:has(input:checked){color:var(--fg)}
+.parts label:has(input:checked) i{background:var(--accent)}
+.parts label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:15px}
+th,td{text-align:left;padding:16px 14px;border-bottom:1px solid var(--line);white-space:nowrap;color:var(--muted)}
+th{font:500 11px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+td:first-child{font-weight:700;color:var(--fg)}
+td.dim{color:var(--faint)}
+tbody tr{cursor:pointer;transition:background .15s}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+tr.cur td{color:var(--fg)}
+tr.cur td:first-child::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:10px;vertical-align:middle}
+
+.sketch{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:40px;align-items:center}
+.sketch-frame{aspect-ratio:4/3;max-width:100%;border-radius:20px;border:1px dashed var(--line2);display:grid;place-items:center;text-align:center;padding:24px;color:var(--faint);font-size:14px;
+  background:repeating-linear-gradient(0deg,transparent 0 23px,rgba(255,255,255,.03) 23px 24px),repeating-linear-gradient(90deg,transparent 0 23px,rgba(255,255,255,.03) 23px 24px)}
+.sketch-frame b{display:block;color:var(--muted);font-size:16px;margin-bottom:6px}
+.sketch-copy{display:flex;flex-direction:column;gap:14px;color:var(--muted)}
+.sketch-copy h3{color:var(--fg);font-size:24px}
+
+.gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.shot{appearance:none;border:0;padding:0;background:none;cursor:zoom-in;text-align:left}
+.shot img{display:block;width:100%;aspect-ratio:2/1;object-fit:cover;border-radius:16px;background:#fff}
+.shot span{display:block;margin-top:10px;font-size:14px;color:var(--muted)}
+.shot span b{color:var(--fg);font-weight:600}
+
+.steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-top:1px solid var(--line)}
+.steps div{padding:18px 16px 0 0}
+.steps .n{font:500 12px var(--f-mono);color:var(--accent)}
+.steps h3{font-size:15px;margin:8px 0 6px;letter-spacing:-.01em}
+.steps p{font-size:13px;color:var(--muted);line-height:1.5}
+
+.open{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.open div{padding:22px;border-radius:18px;background:var(--raise)}
+.open h3{font-size:16px;margin-bottom:6px}
+.open p{color:var(--muted);font-size:14px}
+
+details{border-top:1px solid var(--line)}
+details:last-of-type{border-bottom:1px solid var(--line)}
+summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:20px 0;font-weight:600}
+summary::-webkit-details-marker{display:none}
+summary span{font:400 13px var(--f-mono);color:var(--faint);margin-left:auto}
+summary::after{content:"+";font-size:20px;color:var(--muted);flex:none;width:16px;text-align:center}
+details[open] summary::after{content:"–"}
+.codebox{position:relative;margin-bottom:22px}
+pre{margin:0;padding:18px 20px;border-radius:14px;background:var(--stage);max-height:440px;overflow:auto;font:12.5px/1.6 var(--f-mono);color:#c9d0d9;tab-size:4}
+.copy{position:absolute;top:10px;right:12px}
+.c-com{color:#6b7480} .c-str{color:#a8d8b9} .c-num{color:#f0c38e} .c-kw{color:#9cc3ff}
+
+.files{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:56px;margin-top:40px}
+.files div{padding:14px 0;border-bottom:1px solid var(--line);font-size:14px;display:flex;justify-content:space-between;gap:16px}
+.files b{font-weight:600}
+.files span{font:13px var(--f-mono);color:var(--muted);text-align:right;overflow-wrap:anywhere}
+
+footer{margin-top:96px;padding-top:24px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;color:var(--faint);font-size:13px}
+
+dialog{border:0;padding:0;background:transparent;max-width:min(1200px,94vw)}
+dialog::backdrop{background:rgba(0,0,0,.82)}
+dialog img{display:block;max-width:100%;max-height:88vh;border-radius:14px;background:#fff}
+
+@media (max-width:900px){
+  .spec,.files{grid-template-columns:1fr}
+  .sketch{grid-template-columns:1fr}
+  .gallery{grid-template-columns:1fr}
+  .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .open{grid-template-columns:1fr}
+}
+@media (max-width:600px){
+  .links{display:none}
+  .stage{height:68vh;min-height:460px;border-radius:18px}
+  .head{top:22px}
+  .stats{left:18px;bottom:72px;gap:18px}
+  .stats b{font-size:20px}
+  .tools{left:14px;right:14px;bottom:16px;justify-content:center}
+  .switch{margin-top:16px}
+  .seg button{padding:9px 13px;font-size:13px}
+  section{padding-top:72px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+  <nav class="top">
+    <div class="logo">EDER</div>
+    <div class="links"><a href="#specs">Specs</a><a href="#compare">Compare</a><a href="#sketch">Sketch</a><a href="#inside">Inside</a><a href="#files">Files</a></div>
+  </nav>
+
+  <div class="stage" id="stage">
+    <canvas id="gl" aria-label="3D model. Drag to rotate, scroll or pinch to zoom."></canvas>
+    <div class="head">
+      <div class="status" id="status"><i></i><span></span></div>
+      <h1 id="name">Orbit 30</h1>
+      <p id="sub"></p>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="loading" id="loading">Loading model</div>
+    <div class="tools">
+      <button class="icon" id="bView">Top view</button>
+      <button class="icon" id="bExplode" aria-pressed="false">Explode</button>
+      <button class="icon" id="bSpin" aria-pressed="true">Props</button>
+    </div>
+  </div>
+  <div class="switch"><div class="seg" role="tablist" aria-label="Designs" id="seg"></div></div>
+  <div class="shapes" id="shapes" hidden></div>
+
+  <section id="specs" class="col">
+    <div class="sec-head">
+      <span class="eyebrow" id="specEyebrow">Specification</span>
+      <h2 id="specTitle"></h2>
+      <p id="specBlurb"></p>
+    </div>
+    <dl class="spec" id="spec"></dl>
+    <div class="parts" id="parts" aria-label="Show or hide parts"></div>
+    <p class="spec-note" id="specNote"></p>
+  </section>
+
+  <section id="compare" class="col">
+    <div class="sec-head">
+      <span class="eyebrow">Compare</span>
+      <h2>Four bodies, one assistant</h2>
+      <p>Flight times are the realistic figures from the spec, about 70 to 80 % of the theory. Select a row to load it above.</p>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Design</th><th>Across</th><th>Props</th><th>Battery</th><th>Weight</th><th>Flight</th></tr></thead>
+      <tbody id="cmp"></tbody>
+    </table></div>
+  </section>
+
+  <section id="sketch" class="col">
+    <div class="sketch">
+      <button class="sketch-frame shot" id="sketchFrame" style="padding:0;border-style:solid;background:#f3f3f1;overflow:hidden">
+        <img src="img/owen_sketch.webp" alt="owen's pencil sketch of the drone: three views of a capsule body with four round duct pods and a camera eye" style="width:100%;height:100%;object-fit:cover;border-radius:0">
+      </button>
+      <div class="sketch-copy">
+        <span class="eyebrow">Original idea</span>
+        <h3>owen's design sketch</h3>
+        <p>Three pencil views: from above, from the side and at three quarters. A smooth capsule runs down the middle, four round duct pods hug it in an X, a camera eye looks out of the nose, and a hexagon marks a hatch on top.</p>
+        <p>That became <b style="color:var(--fg)">Orbit Pod</b>, the first design in the viewer. <a href="#stage" id="toPod">See it in 3D</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="renders">
+    <div class="sec-head col" style="width:100%">
+      <span class="eyebrow">Renders</span>
+      <h2>From the FreeCAD models</h2>
+    </div>
+    <div class="gallery" id="gallery"></div>
+  </section>
+
+  <section id="inside" class="col">
+    <div class="sec-head">
+      <span class="eyebrow">Inside every body</span>
+      <h2>From your voice to flight</h2>
+      <p>The body can change; the assistant inside it stays the same. ArduPilot on a Kakute H7 Mini flies it, a Radxa Zero 3W thinks, and Claude answers over Wi-Fi.</p>
+    </div>
+    <div class="steps">
+      <div><span class="n">01</span><h3>Wake word</h3><p>"Hey Orbit" on two mics in the lid</p></div>
+      <div><span class="n">02</span><h3>Transcribe</h3><p>faster-whisper on the Radxa</p></div>
+      <div><span class="n">03</span><h3>Claude decides</h3><p>follow_me, take_photo, return_to_dock</p></div>
+      <div><span class="n">04</span><h3>Safety gate</h3><p>Battery, sensors, geofence, 1 m/s indoors</p></div>
+      <div><span class="n">05</span><h3>Fly</h3><p>MAVSDK sends it to ArduPilot</p></div>
+      <div><span class="n">06</span><h3>Reply</h3><p>Piper voice through a 28 mm speaker</p></div>
+    </div>
+  </section>
+
+  <section class="col">
+    <div class="sec-head">
+      <span class="eyebrow">Still open</span>
+      <h2>Decisions waiting on you</h2>
+    </div>
+    <div class="open">
+      <div><h3>Body type</h3><p>Orbit Pod follows your sketch. Say if the proportions feel right, or what to change.</p></div>
+      <div><h3>Indoor or outdoor</h3><p>Outdoor adds GPS and probably bigger ducts.</p></div>
+      <div><h3>Charging dock</h3><p>The landing feet are already placed to become dock pins.</p></div>
+    </div>
+  </section>
+
+  <section id="files" class="col">
+    <div class="sec-head">
+      <span class="eyebrow">Source</span>
+      <h2>Scripts and files</h2>
+      <p>Each design is a parametric FreeCAD macro. Change a number in the <span class="mono">P</span> table and run it again.</p>
+    </div>
+    <details>
+      <summary>orbit_pod.py <span>Orbit Pod</span></summary>
+      <div class="codebox"><button class="icon copy" data-copy="orbit_pod.py">Copy</button><pre id="code-orbit_pod.py">Loading</pre></div>
+    </details>
+    <details>
+      <summary>orbit_frame.py <span>Orbit 30, Indoor</span></summary>
+      <div class="codebox"><button class="icon copy" data-copy="orbit_frame.py">Copy</button><pre id="code-orbit_frame.py">Loading</pre></div>
+    </details>
+    <details>
+      <summary>orbit7_shroud.py <span>Orbit 7</span></summary>
+      <div class="codebox"><button class="icon copy" data-copy="orbit7_shroud.py">Copy</button><pre id="code-orbit7_shroud.py">Loading</pre></div>
+    </details>
+    <div class="files">
+      <div><b>Orbit Pod</b><span><a href="downloads/orbit-pod.zip" download>STEP, STL, FCStd (2.1 MB)</a></span></div>
+      <div><b>Orbit 30</b><span><a href="downloads/orbit-30.zip" download>STEP, STL, FCStd (1.1 MB)</a></span></div>
+      <div><b>Orbit Indoor</b><span><a href="downloads/orbit-indoor.zip" download>STEP, STL, FCStd (1.1 MB)</a></span></div>
+      <div><b>Orbit 7</b><span><a href="downloads/orbit-7.zip" download>STEP, STL, FCStd (0.9 MB)</a></span></div>
+      <div><b>Scripts</b><span><a href="src/orbit_pod.py" download>orbit_pod.py</a> · <a href="src/orbit_frame.py" download>orbit_frame.py</a> · <a href="src/orbit7_shroud.py" download>orbit7_shroud.py</a></span></div>
+      <div><b>Project</b><span><a href="/ederdrone/">Back to Ederdrone</a></span></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Eder · owen's circular assistant drone</span>
+    <span>Motors, props and battery are stand-in shapes. Weights are catalogue figures.</span>
+  </footer>
+</div>
+
+<dialog id="lightbox"><img id="lbImg" alt=""></dialog>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/STLLoader.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script>
+(function(){
+"use strict";
+const deg = Math.PI/180, ANG = [45,135,225,315];
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// ---------- design data (spec doc + FreeCAD P tables) ----------
+const DESIGNS = {
+  pod:{ tab:"Orbit Pod", name:"Orbit Pod", status:"next", statusText:"From your sketch", dia:444,
+    sub:"A capsule body with four duct pods, drawn by owen",
+    blurb:"Your sketch, modelled in FreeCAD: a smooth capsule runs front to back, four round duct pods hug its sides, a camera eye sits on the nose and a hexagonal hatch opens on top. It keeps the Orbit 30 running gear, so the flight time should stay close to 25 to 30 minutes.",
+    stats:[["25–30","min flight (est.)"],["~1.15 kg","ready to fly"],["404 × 444","mm"]],
+    kv:[["Body","300 × 120 mm capsule"],["Ducts","4 × 156 mm, 45 mm tall"],["Duct layout","236 × 276 mm X"],["Camera","22 mm eye in the nose"],["Hatch","hexagon, 80 mm across"],["Battery","4S2P 21700, inside the body"],["Frame","426 cm³ · ~256 g LW-PLA"],["Motors","2306/2207, ~1800 KV"]],
+    note:"Built by orbit_pod.py in FreeCAD. The frame is one solid and no parts collide. Weight is estimated from Orbit 30 plus 26 g more frame.",
+    stl:{frame:"models/pod_frame.stl", hatch:"models/pod_hatch.stl", tray:"models/pod_tray.stl"},
+    vis:{pod:true}, floor:-15,
+    row:["404 × 444 mm","6 in","4S2P Li-ion","~1.15 kg","25–30 min"] },
+  orbit30:{ tab:"Orbit 30", name:"Orbit 30", status:"rec", statusText:"Recommended", dia:462,
+    sub:"462 mm ring with four 6 inch ducts",
+    blurb:"The smallest circular Orbit that reaches half an hour in the air: bigger props and a Li-ion pack, still smaller than the 535 mm Ederdrone build.",
+    stats:[["25–30","min flight"],["1.1 kg","ready to fly"],["462","mm across"]],
+    kv:[["Ring","462 mm, 30 mm tall"],["Ducts","4 × 156 mm, 45 mm tall"],["Hub","116 × 82 mm"],["Motors","2306/2207, ~1800 KV"],["ESC","4-in-1 45 A"],["Battery","4S2P 21700, 10 Ah"],["Frame","~230 g in LW-PLA"],["Theory","34–39 min"]],
+    note:"Built by orbit_frame.py with PRESET = \"orbit30\".",
+    stl:{frame:"models/o30_frame.stl", lid:"models/o30_lid.stl", deck:"models/o30_deck.stl"},
+    vis:{dcr:143, prop:152, motorD:29, motorH:20, mountZ:10, bat:[84,70,44], batY:0, batZ:28}, floor:-20,
+    row:["462 mm","6 in","4S2P Li-ion","1.1 kg","25–30 min"] },
+  indoor:{ tab:"Indoor", name:"Orbit Indoor", status:"alt", statusText:"Original v1", dia:330,
+    sub:"330 mm ring with four 3.5 inch ducts",
+    blurb:"The first Orbit: a disc with four portholes that can bump a wall or a hand. Light and nimble, but small props drain the pack quickly.",
+    stats:[["6–7","min flight"],["550 g","ready to fly"],["330","mm across"]],
+    kv:[["Ring","330 mm, 30 mm tall"],["Ducts","4 × 92 mm, 36 mm tall"],["Hub","100 × 70 mm"],["Motors","2004, 2800 KV"],["ESC","4-in-1 35 A"],["Battery","4S 1500 mAh LiPo"],["Frame","~140 g in LW-PLA"],["Li-ion option","12–15 min"]],
+    note:"Same script as Orbit 30, with PRESET = \"indoor\".",
+    stl:{frame:"models/indoor_frame.stl", lid:"models/indoor_lid.stl", deck:"models/indoor_deck.stl"},
+    vis:{dcr:105, prop:89, motorD:25, motorH:15, mountZ:10, bat:[75,35,35], batY:-10, batZ:28}, floor:-15,
+    row:["330 mm","3.5 in","4S LiPo","550 g","6–7 min"] },
+  orbit7:{ tab:"Orbit 7", name:"Orbit 7", status:"drop", statusText:"Set aside", dia:535,
+    sub:"A printed shroud around the Chimera7 carbon frame",
+    blurb:"Turns the 7 inch Ederdrone build into a circular drone with clip-on ducts. You chose something smaller, so it stays here for comparison.",
+    stats:[["7 in","props"],["12","print pieces"],["535","mm across"]],
+    kv:[["Skeleton","Chimera7 Pro V2"],["Wheelbase","327 mm"],["Ducts","4 × 184 mm, 55 mm tall"],["Motors","EMAX ECO II 2807"],["Props","7040, 178 mm"],["Battery","6S1P 21700"],["Print split","4 ducts, 8 ring arcs"],["Bed","220 × 220 mm"]],
+    note:"Built by orbit7_shroud.py. Arm sizes are estimates; measure the real frame first.",
+    stl:{ducts:"models/o7_ducts.stl", ring:"models/o7_ring.stl", canopy:"models/o7_canopy.stl"},
+    vis:{o7:true}, floor:-15,
+    row:["535 mm","7 in","6S1P Li-ion","—","—"] },
+  next:{ tab:"Next body", name:"Next body", status:"next", statusText:"Your call", dia:460,
+    sub:"Rough shapes on the Orbit 30 ducts, not modelled yet",
+    blurb:"You mentioned changing the body type. These are quick sketches built around the Orbit 30 running gear, so you can picture each one before it's modelled properly in FreeCAD.",
+    stats:[["6 in","ducts kept"],["~460","mm across"],["?","body type"]],
+    kv:[["Ducts and motors","as Orbit 30"],["Battery","as Orbit 30"],["Shell","to be chosen"],["Weight","to be worked out"]],
+    note:"Pick a shape, or send your sketch, and it becomes the next FreeCAD design.",
+    concept:true, floor:-20,
+    row:["~460 mm","6 in","as Orbit 30","—","—"] }
+};
+const ORDER = ["pod","orbit30","indoor","orbit7"];
+const CONCEPTS = {saucer:"Saucer", sphere:"Sphere cage", dome:"Dome top"};
+
+// ---------- renderer: soft studio, Z-up like FreeCAD ----------
+const canvas = $("gl"), stageEl = $("stage");
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 1, 10, 20000);
+camera.up.set(0,0,1);
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = .07;
+controls.minDistance = 250; controls.maxDistance = 3200;
+controls.maxPolarAngle = 88*deg;
+
+scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x1a1d22, .75));
+const key = new THREE.DirectionalLight(0xffffff, 1.5);
+key.position.set(380,-260,900); key.castShadow = true;
+key.shadow.mapSize.set(2048,2048);
+Object.assign(key.shadow.camera,{left:-420,right:420,top:420,bottom:-420,near:100,far:2000});
+key.shadow.radius = 6; key.shadow.bias = -0.0004;
+scene.add(key);
+const fill = new THREE.DirectionalLight(0x9cc3ff, .45); fill.position.set(-600,500,250); scene.add(fill);
+const back = new THREE.DirectionalLight(0xffffff, .5); back.position.set(0,700,500); scene.add(back);
+
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(4000,4000), new THREE.ShadowMaterial({opacity:.38}));
+floor.receiveShadow = true; scene.add(floor);
+
+function resize(){
+  const r = stageEl.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false);
+  camera.aspect = r.width/Math.max(r.height,1); camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stageEl); resize();
+
+// ---------- materials: calm, mostly monochrome ----------
+const mat = {
+  frame: ()=> new THREE.MeshStandardMaterial({color:0xf1f2f4, roughness:.62, metalness:0}),
+  shell: ()=> new THREE.MeshStandardMaterial({color:0xeef0f3, roughness:.5, metalness:0}),
+  dark:  ()=> new THREE.MeshStandardMaterial({color:0x2a2f37, roughness:.45, metalness:.2}),
+  deck:  ()=> new THREE.MeshStandardMaterial({color:0x58616d, roughness:.6}),
+  motor: ()=> new THREE.MeshStandardMaterial({color:0x1d2127, roughness:.3, metalness:.75}),
+  prop:  ()=> new THREE.MeshStandardMaterial({color:0x9cc3ff, roughness:.3, transparent:true, opacity:.16, side:THREE.DoubleSide, depthWrite:false}),
+  blade: ()=> new THREE.MeshStandardMaterial({color:0x3a414b, roughness:.5}),
+  bat:   ()=> new THREE.MeshStandardMaterial({color:0x7b8794, roughness:.55}),
+  glass: ()=> new THREE.MeshPhysicalMaterial({color:0x14181e, roughness:.08, metalness:.1, clearcoat:1}),
+  accent:()=> new THREE.MeshStandardMaterial({color:0x9cc3ff, roughness:.35, emissive:0x2a4670, emissiveIntensity:.35}),
+};
+
+const loader = new THREE.STLLoader(), stlCache = {};
+function loadSTL(url){
+  // STLs ship as base64 inside JSON, since artifacts don't serve .stl
+  if(!stlCache[url]) stlCache[url] = fetch(url.replace(/\.stl$/,".json")).then(r=>{ if(!r.ok) throw new Error(url); return r.json(); }).then(j=>{
+    const bin = atob(j.stl), u8 = new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) u8[i] = bin.charCodeAt(i);
+    const g = loader.parse(u8.buffer); g.computeVertexNormals(); return g;
+  });
+  return stlCache[url];
+}
+const mesh = (g,m)=>{ const o = new THREE.Mesh(g,m); o.castShadow = true; o.receiveShadow = true; return o; };
+function cyl(r,h,x,y,z,m,seg){ const g = new THREE.CylinderGeometry(r,r,h,seg||48); g.rotateX(Math.PI/2); const o = mesh(g,m); o.position.set(x,y,z+h/2); return o; }
+function box(l,w,h,x,y,z,m){ const o = mesh(new THREE.BoxGeometry(l,w,h),m); o.position.set(x+l/2,y+w/2,z+h/2); return o; }
+const polar = (r,a)=> [r*Math.cos(a*deg), r*Math.sin(a*deg)];
+function prop(r, n){
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.CircleGeometry(r,64), mat.prop()));
+  const bm = mat.blade();
+  for(let i=0;i<n;i++){
+    const b = mesh(new THREE.BoxGeometry(r*.9, r*.11, 1.4), bm); b.position.x = r*.45;
+    const p = new THREE.Group(); p.add(b); p.rotation.z = i*2*Math.PI/n; g.add(p);
+  }
+  return g;
+}
+
+// ---------- build each design once ----------
+const built = {};
+let conceptKey = "saucer";
+async function build(key){
+  if(built[key]) return built[key];
+  const d = DESIGNS[key], root = new THREE.Group(), parts = [], spinners = [];
+  const add = (id,label,obj,explode)=>{ obj.userData.base = obj.position.z; obj.userData.explode = explode*.6; root.add(obj); parts.push({id,label,obj}); };
+  const rotors = (r, z, n, dcr, motorD, motorH, motorZ)=>{
+    const motors = new THREE.Group(), props = new THREE.Group();
+    ANG.forEach(a=>{
+      const [x,y] = polar(dcr,a);
+      motors.add(cyl(motorD/2, motorH, x,y, motorZ, mat.motor()));
+      const p = prop(r, n); p.position.set(x,y,z); p.userData.dir = (a===45||a===225)?1:-1; props.add(p); spinners.push(p);
+    });
+    return [motors, props];
+  };
+
+  if(d.vis && d.vis.pod){
+    const [gf,gh,gt] = await Promise.all([loadSTL(d.stl.frame),loadSTL(d.stl.hatch),loadSTL(d.stl.tray)]);
+    add("frame","Body and ducts",mesh(gf,mat.frame()),0);
+    add("hatch","Top hatch",mesh(gh,mat.dark()),260);
+    add("tray","Electronics tray",mesh(gt,mat.deck()),170);
+    add("bat","Battery",box(84,70,44,-42,-35,4,mat.bat()),90);
+    const eye = new THREE.Mesh(new THREE.CircleGeometry(11,40), new THREE.MeshBasicMaterial({color:0x9cc3ff}));
+    eye.rotation.y = Math.PI/2; eye.position.set(149,0,34); add("eye","Camera eye",eye,0);
+    const pos = [[118,138],[-118,138],[-118,-138],[118,-138]];
+    const motors = new THREE.Group(), props = new THREE.Group();
+    pos.forEach(([x,y],i)=>{
+      motors.add(cyl(14.5,20,x,y,10,mat.motor()));
+      const p = prop(76,3); p.position.set(x,y,31); p.userData.dir = (i%2)?-1:1; props.add(p); spinners.push(p);
+    });
+    add("motors","Motors",motors,50); add("props","Props",props,100);
+  } else if(d.vis && !d.vis.o7){
+    const v = d.vis;
+    const [gf,gl,gd] = await Promise.all([loadSTL(d.stl.frame),loadSTL(d.stl.lid),loadSTL(d.stl.deck)]);
+    add("frame","Frame",mesh(gf,mat.frame()),0);
+    add("deck","Electronics deck",mesh(gd,mat.deck()),90);
+    add("lid","Hub lid",mesh(gl,mat.dark()),240);
+    const [m,p] = rotors(v.prop/2, v.mountZ+v.motorH+2, 3, v.dcr, v.motorD, v.motorH, v.mountZ);
+    add("motors","Motors",m,60); add("props","Props",p,120);
+    const [bl,bw,bh] = v.bat;
+    add("bat","Battery",box(bl,bw,bh,-bl/2,v.batY-bw/2,v.batZ,mat.bat()),170);
+  } else if(d.vis && d.vis.o7){
+    const [gd,gr,gc] = await Promise.all([loadSTL(d.stl.ducts),loadSTL(d.stl.ring),loadSTL(d.stl.canopy)]);
+    const core = new THREE.Group();
+    ANG.forEach(a=>{ const arm = box(183.5,14,6,0,-7,-6,mat.motor()); const piv = new THREE.Group(); piv.add(arm); piv.rotation.z = a*deg; core.add(piv); });
+    core.add(box(120,44,40,-60,-22,0,mat.motor()));
+    add("core","Carbon frame",core,-50);
+    add("ducts","Ducts",mesh(gd,mat.frame()),0);
+    add("ring","Ring",mesh(gr,mat.frame()),0);
+    add("canopy","Canopy",mesh(gc,mat.dark()),160);
+    const [m,p] = rotors(89, 30, 2, 163.5, 34, 22, 0);
+    add("motors","Motors",m,50); add("props","Props",p,100);
+    add("bat","Battery",box(75,45,72,-37.5,-22.5,61,mat.bat()),250);
+  } else {
+    const R = 232, shells = {};
+    const gear = new THREE.Group();
+    ANG.forEach(a=>{
+      const [x,y] = polar(143,a);
+      const t = mesh(new THREE.CylinderGeometry(80,80,45,64,1,true), new THREE.MeshStandardMaterial({color:0xd8dce2,roughness:.55,side:THREE.DoubleSide}));
+      t.rotation.x = Math.PI/2; t.position.set(x,y,22.5); gear.add(t);
+    });
+    gear.add(cyl(58,82,0,0,0,mat.dark()));
+    add("gear","Ducts and hub",gear,0);
+    const [m,p] = rotors(76, 32, 3, 143, 29, 20, 10);
+    add("motors","Motors",m,50); add("props","Props",p,100);
+
+    // saucer: one lathed lens around the ducts, translucent so the running gear shows through
+    const sau = new THREE.Group(), pts = [];
+    for(let i=0;i<=24;i++){ const t = i/24; pts.push(new THREE.Vector2(R*Math.sin(t*Math.PI/2), 96 - 50*(1-Math.cos(t*Math.PI/2)))); }
+    pts.push(new THREE.Vector2(R,14));
+    for(let i=0;i<=16;i++){ const t = i/16; pts.push(new THREE.Vector2(R*Math.cos(t*Math.PI/2), 14 - 30*Math.sin(t*Math.PI/2))); }
+    const lg = new THREE.LatheGeometry(pts, 160); lg.rotateX(Math.PI/2);
+    const lens = new THREE.Mesh(lg, new THREE.MeshPhysicalMaterial({color:0xf3f5f8, roughness:.25, metalness:0, transparent:true, opacity:.42, side:THREE.DoubleSide, depthWrite:false, clearcoat:1}));
+    sau.add(lens);
+    const strip = mesh(new THREE.TorusGeometry(R,2,10,180), mat.accent()); strip.position.z = 30; sau.add(strip);
+    shells.saucer = sau;
+
+    const sph = new THREE.Group(), cm = new THREE.MeshStandardMaterial({color:0xe9ecf0,roughness:.45});
+    const Rs = R+18;
+    for(let i=0;i<6;i++){ const t = mesh(new THREE.TorusGeometry(Rs,3,10,128),cm); t.rotation.x = Math.PI/2; t.rotation.y = i*Math.PI/6; t.position.z = 22; sph.add(t); }
+    [-.55,.55].forEach(f=>{ const t = mesh(new THREE.TorusGeometry(Math.sqrt(1-f*f)*Rs,3,10,128),cm); t.position.z = 22+f*Rs; sph.add(t); });
+    const eq = mesh(new THREE.TorusGeometry(Rs,4.5,12,160), mat.accent()); eq.position.z = 22; sph.add(eq);
+    shells.sphere = sph;
+
+    const dom = new THREE.Group();
+    const ring = mesh(new THREE.CylinderGeometry(R,R,30,128,1,true), new THREE.MeshStandardMaterial({color:0xeef0f3,roughness:.55,side:THREE.DoubleSide})); ring.rotation.x = Math.PI/2; ring.position.z = 15; dom.add(ring);
+    const cg = new THREE.SphereGeometry(70,64,32,0,Math.PI*2,0,Math.PI/2); cg.rotateX(Math.PI/2); const cap = mesh(cg, mat.glass()); cap.scale.z = 1.05; cap.position.z = 82; dom.add(cap);
+    const eye = new THREE.Mesh(new THREE.CircleGeometry(18,48), new THREE.MeshBasicMaterial({color:0x9cc3ff})); eye.position.set(58,0,112); eye.rotation.y = 60*deg; dom.add(eye);
+    shells.dome = dom;
+    Object.entries(shells).forEach(([k,o])=>{ o.visible = k===conceptKey; add("shell_"+k,"Shell",o,140); });
+    root.userData.shells = shells;
+  }
+  root.userData.spinners = spinners;
+  scene.add(root);
+  built[key] = {root, parts};
+  return built[key];
+}
+
+// ---------- state ----------
+let current = null, spinOn = true, exploded = false, explodeT = 0, viewIdx = 0, placed = false, camTween = null;
+const VIEWS = ["3/4 view","Top view","Side view"];
+function camFor(kind){
+  const s = DESIGNS[current].dia/462 * (current==="next" ? 1.18 : 1);
+  if(kind===1) return new THREE.Vector3(0,-1,1500*s);
+  if(kind===2) return new THREE.Vector3(0,-1450*s,60);
+  return new THREE.Vector3(720*s,-860*s,560*s);
+}
+function goView(kind, instant){
+  const to = camFor(kind), from = camera.position.clone();
+  controls.target.set(0,0,85); // aim above the model so it sits below the title
+  if(instant || matchMedia("(prefers-reduced-motion: reduce)").matches){ camera.position.copy(to); camTween = null; }
+  else camTween = {from, to, t:0};
+  $("bView").textContent = VIEWS[(kind+1)%3];
+}
+
+function renderHead(key){
+  const d = DESIGNS[key];
+  $("status").className = "status "+d.status; $("status").querySelector("span").textContent = d.statusText;
+  $("name").textContent = d.name; $("sub").textContent = d.sub;
+  $("stats").innerHTML = d.stats.map(([v,l])=>'<div><b>'+esc(v)+'</b><span>'+esc(l)+'</span></div>').join("");
+  $("specEyebrow").textContent = d.name+" specification";
+  $("specTitle").textContent = d.concept ? "A new body, still to be chosen" : d.sub.charAt(0).toUpperCase()+d.sub.slice(1);
+  $("specBlurb").textContent = d.blurb;
+  $("spec").innerHTML = d.kv.map(([k,v])=>'<div><dt>'+esc(k)+'</dt><dd>'+esc(v)+'</dd></div>').join("");
+  $("specNote").textContent = d.note;
+  document.querySelectorAll("#seg button").forEach(b=> b.setAttribute("aria-selected", String(b.dataset.key===key)));
+  document.querySelectorAll("#cmp tr").forEach(r=> r.classList.toggle("cur", r.dataset.key===key));
+  const sh = $("shapes"); sh.hidden = !d.concept;
+  sh.innerHTML = Object.entries(CONCEPTS).map(([k,l])=>'<button data-c="'+k+'" aria-pressed="'+(k===conceptKey)+'">'+l+'</button>').join("");
+}
+function renderParts(parts){
+  $("parts").innerHTML = (parts||[]).filter(p=> !p.id.startsWith("shell_") || p.id==="shell_"+conceptKey)
+    .map(p=>'<label><input type="checkbox" data-part="'+p.id+'" '+(p.obj.visible?"checked":"")+'><i></i>'+esc(p.label)+'</label>').join("");
+}
+
+async function show(key){
+  if(!DESIGNS[key]) key = "orbit30";
+  current = key; renderHead(key); renderParts(null);
+  try{ history.replaceState(null,"","#"+key); }catch(e){}
+  Object.values(built).forEach(b=> b.root.visible = false);
+  $("loading").hidden = !!built[key]; $("loading").textContent = "Loading "+DESIGNS[key].name;
+  let b;
+  try{ b = await build(key); }catch(e){ $("loading").hidden = false; $("loading").textContent = "This model didn't load. Reload the page to try again."; return; }
+  if(current!==key) return;
+  b.root.visible = true; $("loading").hidden = true;
+  floor.position.z = DESIGNS[key].floor - 0.5;
+  renderParts(b.parts);
+  viewIdx = 0; goView(0, !placed); placed = true;
+}
+
+ORDER.forEach(k=>{
+  const d = DESIGNS[k];
+  const b = document.createElement("button"); b.setAttribute("role","tab"); b.dataset.key = k; b.textContent = d.tab;
+  b.addEventListener("click",()=> show(k)); $("seg").appendChild(b);
+  const tr = document.createElement("tr"); tr.dataset.key = k; tr.tabIndex = 0;
+  tr.innerHTML = '<td>'+esc(d.name)+'</td>'+d.row.map((v,i)=>'<td class="'+(v==="—"?"dim":(i===0||i>=3?"mono":""))+'">'+esc(v)+'</td>').join("");
+  const go = ()=>{ show(k); stageEl.scrollIntoView({behavior:"smooth",block:"center"}); };
+  tr.addEventListener("click",go); tr.addEventListener("keydown",e=>{ if(e.key==="Enter") go(); });
+  $("cmp").appendChild(tr);
+});
+$("shapes").addEventListener("click", e=>{
+  const b = e.target.closest("[data-c]"); if(!b) return;
+  conceptKey = b.dataset.c;
+  const sh = built.next && built.next.root.userData.shells;
+  if(sh) Object.entries(sh).forEach(([k,o])=> o.visible = k===conceptKey);
+  document.querySelectorAll("#shapes button").forEach(x=> x.setAttribute("aria-pressed", String(x===b)));
+  if(built.next) renderParts(built.next.parts);
+});
+$("parts").addEventListener("change", e=>{
+  const id = e.target.dataset.part, p = built[current] && built[current].parts.find(x=>x.id===id);
+  if(p) p.obj.visible = e.target.checked;
+});
+$("bView").addEventListener("click",()=>{ viewIdx = (viewIdx+1)%3; goView(viewIdx); });
+$("bExplode").addEventListener("click",e=>{ exploded = !exploded; e.currentTarget.setAttribute("aria-pressed",String(exploded)); });
+$("bSpin").addEventListener("click",e=>{ spinOn = !spinOn; e.currentTarget.setAttribute("aria-pressed",String(spinOn)); });
+if(matchMedia("(prefers-reduced-motion: reduce)").matches){ spinOn = false; $("bSpin").setAttribute("aria-pressed","false"); }
+
+const clock = new THREE.Clock();
+const ease = t=> t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+(function tick(){
+  const dt = Math.min(clock.getDelta(), .05);
+  const b = current && built[current];
+  if(b && b.root.visible){
+    if(spinOn) b.root.userData.spinners.forEach(p=> p.rotation.z += p.userData.dir*dt*16);
+    explodeT += ((exploded?1:0) - explodeT) * Math.min(1, dt*6);
+    b.parts.forEach(p=>{ p.obj.position.z = p.obj.userData.base + p.obj.userData.explode*explodeT; });
+  }
+  if(camTween){
+    camTween.t = Math.min(1, camTween.t + dt*1.6);
+    camera.position.lerpVectors(camTween.from, camTween.to, ease(camTween.t));
+    if(camTween.t>=1) camTween = null;
+  }
+  controls.update();
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
+})();
+
+const IMGS = [["img/orbit30_draft.webp","Orbit 30"],["img/orbit_indoor_draft.webp","Orbit Indoor"],["img/orbit7_draft.webp","Orbit 7"]];
+const lb = $("lightbox"), lbImg = $("lbImg");
+IMGS.forEach(([src,name])=>{
+  const b = document.createElement("button"); b.className = "shot";
+  b.innerHTML = '<img src="'+src+'" alt="'+esc(name)+' draft render" loading="lazy"><span><b>'+esc(name)+'</b> · draft render</span>';
+  b.addEventListener("click",()=>{ lbImg.src = src; lbImg.alt = name+" draft render"; try{ lb.showModal(); }catch(e){ lb.setAttribute("open",""); } });
+  $("gallery").appendChild(b);
+});
+lb.addEventListener("click",()=> lb.close());
+
+const src = {};
+function hl(s){
+  const re = /(#[^\n]*)|("""[\s\S]*?"""|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|\b(\d+\.?\d*)\b|\b(def|return|for|in|if|else|elif|import|from|as|and|or|not|None|True|False|with|try|except|while|lambda|class)\b/g;
+  let out = "", last = 0, m;
+  while((m = re.exec(s))){ out += esc(s.slice(last,m.index)); out += '<span class="'+(m[1]?"c-com":m[2]?"c-str":m[3]?"c-num":"c-kw")+'">'+esc(m[0])+'</span>'; last = re.lastIndex; }
+  return out + esc(s.slice(last));
+}
+["orbit_pod.py","orbit_frame.py","orbit7_shroud.py"].forEach(n=>{
+  fetch("src/"+n).then(r=>{ if(!r.ok) throw 0; return r.text(); })
+    .then(t=>{ src[n] = t; $("code-"+n).innerHTML = hl(t); })
+    .catch(()=>{ $("code-"+n).textContent = "The script didn't load. It's in the project at drone/"+n+"."; });
+});
+document.querySelectorAll("[data-copy]").forEach(b=> b.addEventListener("click",()=>{
+  const n = b.dataset.copy, pre = $("code-"+n);
+  const done = ok=>{ b.textContent = ok?"Copied":"Selected"; setTimeout(()=> b.textContent = "Copy", 1500); };
+  navigator.clipboard.writeText(src[n]||"").then(()=>done(true),()=>{ const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); done(false); });
+}));
+
+const start = location.hash.slice(1);
+show(DESIGNS[start] ? start : "pod");
+$("toPod").addEventListener("click",e=>{ e.preventDefault(); show("pod"); stageEl.scrollIntoView({behavior:"smooth",block:"center"}); });
+$("sketchFrame").addEventListener("click",()=>{ lbImg.src = "img/owen_sketch_page.webp"; lbImg.alt = "owen's full sketch page"; try{ lb.showModal(); }catch(e){ lb.setAttribute("open",""); } });
+addEventListener("hashchange",()=>{ const k = location.hash.slice(1); if(DESIGNS[k] && k!==current) show(k); });
+})();
+</script>
