@@ -1,0 +1,66 @@
+/* Home page depth layer. Loaded only by /, after site.css, so the /workspace/ hub is untouched.
+   Everything here is opt-in: .globe.gl is set by globe3d.js once WebGL is running, and html.d3 by
+   depth.js (never under prefers-reduced-motion). Without them the page is exactly the flat version. */
+
+/* WebGL hero: the canvas covers the whole hero so dust and the orbit ring can reach the edges */
+.globe.gl { left: 0; top: 0; width: 100%; height: 100%; transform: none; opacity: 0; transition: opacity 1.2s var(--ease); }
+.globe.gl.on { opacity: 1; }
+.hero-inner { will-change: transform, opacity; }
+
+/* Sections arrive from depth instead of sliding up flat */
+.d3 .reveal { opacity: 0; transform: perspective(900px) rotateX(12deg) translate3d(0, 34px, -70px); transform-origin: 50% 100%; }
+
+/* Tilting surfaces: depth.js feeds --tx / --ty (degrees) and --px / --py / --sy (-1..1) */
+.d3 .tilt.reveal.in, .d3 .tilt.settled {
+  transform: perspective(1000px) rotateX(var(--ty, 0deg)) rotateY(var(--tx, 0deg)) translateY(var(--lift, 0px));
+  transform-origin: 50% 50%;
+}
+.d3 .tilt.settled { transition: transform .16s ease-out, border-color .35s var(--ease), box-shadow .35s var(--ease); }
+.d3 .work-grid .tilt.settled:nth-child(n) { transition-delay: 0s; }
+.d3 a.card.tilt:hover { --lift: -4px; }
+
+/* Layers inside a work card: under the pointer the screenshot slides behind the frame and the
+   status pill floats in front. At rest the screenshot is untouched, so nothing is cropped. */
+.d3 .work-grid .card .card-media img { transition: transform .3s ease-out; }
+.d3 .work-grid a.card:hover .card-media img { transform: translate3d(calc(var(--px, 0) * -1.4%), calc(var(--py, 0) * -1.4%), 0) scale(1.06); }
+.d3 .work-grid .card .status { transform: translate3d(calc(var(--px, 0) * 5px), calc(var(--py, 0) * 5px), 0); transition: transform .2s ease-out; }
+
+/* Workspace catalogue: tiles lift off the row */
+.d3 .cat-item .tile, .d3 .cat-item img { transition: transform .4s var(--ease), border-color .3s; }
+.d3 .cat-item:hover .tile, .d3 .cat-item:hover img,
+.d3 .cat-item:focus-visible .tile, .d3 .cat-item:focus-visible img { transform: perspective(260px) rotateX(10deg) rotateY(-18deg) translateZ(10px); }
+.d3 .cat-item:hover .tile { border-color: rgba(255, 106, 43, .5); }
+
+/* Hero globe can be grabbed and spun */
+.hero.spin { cursor: grab; touch-action: pan-y; }
+.hero.spin.dragging { cursor: grabbing; -webkit-user-select: none; user-select: none; }
+.hero-hint { margin-top: 18px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); transition: opacity .6s; }
+.hero-hint.gone { opacity: 0; }
+
+/* Live 3D model stage (drone3d.js). Without JS or WebGL it is a picture with a link. */
+.model { display: grid; gap: 0; margin-top: 20px; border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; background: linear-gradient(180deg, var(--surface), var(--bg-2)); }
+.model-stage { position: relative; aspect-ratio: 1 / 1; background: radial-gradient(85% 75% at 50% 42%, #2c2520, #14110e 78%); overflow: hidden; }
+.model-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity .6s var(--ease); }
+.model-stage.live .model-poster { opacity: 0; pointer-events: none; }
+.model-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: pan-y; outline-offset: -4px; }
+.model-canvas[hidden] { display: none; }
+.model-stage.dragging .model-canvas { cursor: grabbing; }
+.model-stage.loading::after { content: "Loading the model"; position: absolute; left: 12px; bottom: 12px; padding: 4px 12px; border-radius: 999px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: rgba(13,11,10,.8); border: 1px solid var(--line-strong); }
+.model-hint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); padding: 5px 14px; border-radius: 999px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--text); background: rgba(13,11,10,.72); border: 1px solid var(--line-strong); pointer-events: none; transition: opacity .5s; white-space: nowrap; }
+.model-hint.gone { opacity: 0; }
+.model-info { display: flex; flex-direction: column; gap: 12px; padding: 20px; }
+.model-info h3 { font-size: 24px; }
+.model-info p { color: var(--muted); font-size: 15px; max-width: 46ch; }
+.model-tools { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.model-tools .btn { flex: 1 1 auto; min-height: 46px; }
+.model-tools .btn[hidden] { display: none; }
+.model-tools .btn[aria-pressed="true"][data-act="explode"] { border-color: rgba(255,106,43,.55); }
+@media (min-width: 600px) { .model { margin-top: 24px; } .model-stage { aspect-ratio: 16 / 10; } .model-info { padding: 24px 28px 28px; } }
+@media (min-width: 900px) {
+  .model { grid-template-columns: 1.35fr 1fr; }
+  .model-stage { aspect-ratio: auto; min-height: 460px; }
+  .model-info { padding: 40px; justify-content: center; }
+  .model-info h3 { font-size: 34px; }
+  .model-info p { font-size: 16px; }
+  .model-tools .btn { flex: 0 1 auto; }
+}

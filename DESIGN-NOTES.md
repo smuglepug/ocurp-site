@@ -47,3 +47,12 @@ git -C "C:\Users\ZEPHYRUS G14\Documents\ocurp-workspace\appsite" merge design/po
 - Footer and contact use real GitHub / X / LinkedIn SVG logo buttons, like the original footer.
 - Type: self-hosted Space Grotesk, Inter, JetBrains Mono (assets/fonts, latin subsets, OFL).
 - Screenshots: ../design_review/v2/before_home_*.png and after_home_*.png.
+
+## v3 (2026-11-12, branch design/home-3d): interactive 3D
+Owner brief: "3D" means things you can grab, like the drone as a real model.
+- Hero globe is now real WebGL (`assets/globe3d.js`, hand-written, no library): same point cloud and wireframe, plus an ember orbit ring with one satellite (the brand mark) and sparse dust for depth. Drag anywhere in the hero to spin it; the pointer or phone tilt turns it; scrolling dollies the camera in. Normal alpha blending, no glow. Pauses off-screen and when the tab is hidden. Without WebGL it loads the old `assets/globe.js` canvas globe.
+- New block under the work grid (`#drone3d`, `assets/drone3d.js`): the Orbit 30 drone as a live model. Drag (or arrow keys) to turn, "Pull it apart" explodes it, props spin. It uses the three.js already hosted for `/ederdrone/cad/` and three packed meshes in `assets/models/*.bin` (0.6 MB instead of the viewer's 4.4 MB JSON; rebuild with `python ederdrone/cad/src/pack_mesh.py`). Nothing downloads until the block is near the screen. Without JS or WebGL it is a picture (`images/work/orbit30-3d.webp`) with the link to the CAD viewer.
+- `assets/depth.js` + `assets/home3d.css` (home page only, so `/workspace/` is untouched): cards tilt toward the pointer on desktop and with scroll on touch, sections arrive from depth, catalogue tiles lift on hover. All of it is off under `prefers-reduced-motion`.
+- This branch also merges `ederdrone-cad-viewer`, which was live but not on master.
+- Checked in headless Chrome at 390, 768 and 1280: no console errors, no sideways scroll, menu, counts and contact form work, reduced-motion and no-WebGL fallbacks render. Not tested: Safari/iOS, Firefox, frame rate on a real mid-range phone, whether Hostinger serves `.bin` files.
+- Upload for this change: `index.html`, `assets/globe3d.js`, `assets/depth.js`, `assets/drone3d.js`, `assets/home3d.css`, `assets/models/` (3 files), `images/work/orbit30-3d.webp`. Keep `assets/globe.js` on the server (fallback).
